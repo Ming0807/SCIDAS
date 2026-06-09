@@ -21,7 +21,7 @@ export function Header() {
       <div className="flex items-center gap-4 lg:hidden">
         <button className="text-muted-foreground hover:text-foreground transition-colors">
           <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle Sidebar</span>
+          <span className="sr-only">เปิดปิดเมนูด้านข้าง</span>
         </button>
       </div>
       
@@ -34,7 +34,7 @@ export function Header() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="search"
-            placeholder="Search students..."
+            placeholder="ค้นหานักเรียน..."
             className="h-9 w-64 rounded-md border border-input bg-background px-8 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200"
           />
         </div>
@@ -42,7 +42,7 @@ export function Header() {
         <button className="relative text-muted-foreground hover:text-foreground transition-colors group">
           <Bell className="h-5 w-5 group-hover:animate-scale-in" />
           <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive border border-background"></span>
-          <span className="sr-only">Notifications</span>
+          <span className="sr-only">การแจ้งเตือน</span>
         </button>
 
         <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center border border-border cursor-pointer hover:ring-2 hover:ring-ring hover:ring-offset-2 transition-all">

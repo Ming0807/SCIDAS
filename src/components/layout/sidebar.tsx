@@ -18,16 +18,16 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Students", href: "/students", icon: Users },
-  { title: "Attendance", href: "/attendance", icon: CalendarCheck },
-  { title: "Academics", href: "/academics", icon: GraduationCap },
-  { title: "Behavior", href: "/behavior", icon: Activity },
-  { title: "Home Visits", href: "/home-visits", icon: HomeIcon },
-  { title: "Support", href: "/support", icon: HeartHandshake },
-  { title: "Risk Analysis", href: "/risk-analysis", icon: ShieldAlert },
-  { title: "Dev Plans", href: "/development-plans", icon: Target },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { title: "ภาพรวมระบบ", href: "/dashboard", icon: LayoutDashboard },
+  { title: "ข้อมูลนักเรียน", href: "/students", icon: Users },
+  { title: "การเข้าเรียน", href: "/attendance", icon: CalendarCheck },
+  { title: "ผลการเรียน", href: "/academics", icon: GraduationCap },
+  { title: "พฤติกรรม", href: "/behavior", icon: Activity },
+  { title: "เยี่ยมบ้าน", href: "/home-visits", icon: HomeIcon },
+  { title: "การช่วยเหลือ", href: "/support", icon: HeartHandshake },
+  { title: "วิเคราะห์ความเสี่ยง", href: "/risk-analysis", icon: ShieldAlert },
+  { title: "แผนพัฒนา", href: "/development-plans", icon: Target },
+  { title: "การตั้งค่า", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -46,7 +46,7 @@ export function Sidebar() {
       
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         <div className="text-xs font-medium text-muted-foreground mb-4 px-3 uppercase tracking-wider">
-          Main Menu
+          เมนูหลัก
         </div>
         <nav className="space-y-1">
           {NAV_ITEMS.map((item) => {
@@ -77,8 +77,8 @@ export function Sidebar() {
       
       <div className="p-4 border-t border-border">
         <div className="bg-muted/50 p-3 rounded-lg border border-border/50">
-          <p className="text-xs font-medium text-foreground">Teacher Portal</p>
-          <p className="text-micro text-muted-foreground mt-1">Version 1.0.0</p>
+          <p className="text-xs font-medium text-foreground">ระบบครูผู้สอน</p>
+          <p className="text-micro text-muted-foreground mt-1">เวอร์ชัน 1.0.0</p>
         </div>
       </div>
     </aside>

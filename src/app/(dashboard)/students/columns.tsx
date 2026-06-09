@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
@@ -10,13 +10,13 @@ export type Student = {
   name: string
   grade: string
   attendance: number
-  riskStatus: "Low" | "Medium" | "High"
+  riskStatus: "ต่ำ" | "ปานกลาง" | "สูง"
 }
 
 export const columns: ColumnDef<Student>[] = [
   {
     accessorKey: "name",
-    header: "Student",
+    header: "ชื่อนักเรียน",
     cell: ({ row }) => {
       return (
         <div className="flex items-center gap-3">
@@ -31,12 +31,12 @@ export const columns: ColumnDef<Student>[] = [
     },
   },
   {
-    accessorKey: "grade",
-    header: "Grade",
+    accessorKey: "ระดับชั้น",
+    header: "ระดับชั้น",
   },
   {
-    accessorKey: "attendance",
-    header: "Attendance",
+    accessorKey: "เปอร์เซ็นต์เข้าเรียน",
+    header: "เปอร์เซ็นต์เข้าเรียน",
     cell: ({ row }) => {
       const att = row.original.attendance
       return <span>{att}%</span>
@@ -44,11 +44,11 @@ export const columns: ColumnDef<Student>[] = [
   },
   {
     accessorKey: "riskStatus",
-    header: "Risk Status",
+    header: "สถานะความเสี่ยง",
     cell: ({ row }) => {
       const risk = row.original.riskStatus
       return (
-        <Badge variant={risk === "High" ? "destructive" : risk === "Medium" ? "secondary" : "default"}>
+        <Badge variant={risk === "สูง" ? "destructive" : risk === "ปานกลาง" ? "secondary" : "default"}>
           {risk}
         </Badge>
       )

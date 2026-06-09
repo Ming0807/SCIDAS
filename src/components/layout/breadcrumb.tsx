@@ -19,7 +19,7 @@ export function Breadcrumb() {
         className="flex items-center hover:text-foreground transition-colors duration-200"
       >
         <Home className="h-4 w-4" />
-        <span className="sr-only">Home</span>
+        <span className="sr-only">หน้าหลัก</span>
       </Link>
       
       {segments.map((segment, index) => {

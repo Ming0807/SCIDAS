@@ -6,14 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 
 const mockStudents = [
-  { id: 1, name: "Alice Johnson", attendance: { "Mon": "Present", "Tue": "Present", "Wed": "Absent", "Thu": "Present", "Fri": "Present" } },
-  { id: 2, name: "Bob Smith", attendance: { "Mon": "Late", "Tue": "Present", "Wed": "Present", "Thu": "Present", "Fri": "Present" } },
-  { id: 3, name: "Charlie Davis", attendance: { "Mon": "Present", "Tue": "Absent", "Wed": "Present", "Thu": "Present", "Fri": "Present" } },
-  { id: 4, name: "Diana Evans", attendance: { "Mon": "Present", "Tue": "Present", "Wed": "Present", "Thu": "Excused", "Fri": "Present" } },
+  { id: 1, name: "อลิซ จอห์นสัน", attendance: { "จันทร์": "มาเรียน", "อังคาร": "มาเรียน", "พุธ": "ขาดเรียน", "พฤหัสบดี": "มาเรียน", "ศุกร์": "มาเรียน" } },
+  { id: 2, name: "บ็อบ สมิธ", attendance: { "จันทร์": "สาย", "อังคาร": "มาเรียน", "พุธ": "มาเรียน", "พฤหัสบดี": "มาเรียน", "ศุกร์": "มาเรียน" } },
+  { id: 3, name: "ชาร์ลี เดวิส", attendance: { "จันทร์": "มาเรียน", "อังคาร": "ขาดเรียน", "พุธ": "มาเรียน", "พฤหัสบดี": "มาเรียน", "ศุกร์": "มาเรียน" } },
+  { id: 4, name: "ไดอาน่า อีวานส์", attendance: { "จันทร์": "มาเรียน", "อังคาร": "มาเรียน", "พุธ": "มาเรียน", "พฤหัสบดี": "ลากิจ", "ศุกร์": "มาเรียน" } },
 ]
 
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
-const statuses = ["Present", "Absent", "Late", "Excused"]
+const days = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์"]
+const statuses = ["มาเรียน", "ขาดเรียน", "สาย", "ลากิจ"]
 
 export default function AttendancePage() {
   const [data, setData] = useState(mockStudents)
@@ -41,14 +41,14 @@ export default function AttendancePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Bulk Attendance</h1>
-        <p className="text-muted-foreground">Record attendance for your homeroom students.</p>
+        <h1 className="text-2xl font-bold tracking-tight">บันทึกการเข้าเรียนรวม</h1>
+        <p className="text-muted-foreground">บันทึกการเข้าเรียนสำหรับนักเรียนในที่ปรึกษาของคุณ</p>
       </div>
 
       <div className="flex items-center justify-between">
         <div className="w-full max-w-sm">
           <Input 
-            placeholder="Search students..." 
+            placeholder="ค้นหานักเรียน..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -56,11 +56,11 @@ export default function AttendancePage() {
         <div className="flex gap-2">
           <Select defaultValue="week1">
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select Week" />
+              <SelectValue placeholder="เลือกสัปดาห์" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="week1">Week of June 1</SelectItem>
-              <SelectItem value="week2">Week of June 8</SelectItem>
+              <SelectItem value="week1">สัปดาห์ที่ 1 มิ.ย.</SelectItem>
+              <SelectItem value="week2">สัปดาห์ที่ 8 มิ.ย.</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -70,7 +70,7 @@ export default function AttendancePage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Student Name</TableHead>
+              <TableHead className="w-[200px]">ชื่อนักเรียน</TableHead>
               {days.map((day) => (
                 <TableHead key={day} className="text-center w-[120px]">{day}</TableHead>
               ))}
@@ -87,7 +87,7 @@ export default function AttendancePage() {
                       onValueChange={(val) => handleAttendanceChange(student.id, day, val)}
                     >
                       <SelectTrigger className="w-full text-sm">
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder="สถานะ" />
                       </SelectTrigger>
                       <SelectContent>
                         {statuses.map(status => (
