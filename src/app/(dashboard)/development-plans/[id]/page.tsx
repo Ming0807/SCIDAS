@@ -1,165 +1,322 @@
-import React from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronLeft, Save, CheckCircle, Clock, Target } from "lucide-react";
-import Link from "next/link";
+import { getDevelopmentPlanById, getDevelopmentGoals, getDevelopmentActivities } from "@/app/actions/idp.actions"
+import { notFound } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ChevronLeft, Calendar, User, FileText, CheckCircle2, Circle, Clock } from "lucide-react"
+import Link from "next/link"
+import { format } from "date-fns"
+import { th } from "date-fns/locale"
 
-export default function DevelopmentPlanDetailsPage({ params }: { params: { id: string } }) {
-  // Mock data for display
-  const plan = {
-    id: params.id,
-    studentName: "สมชาย ใจดี",
-    studentId: "STU-001",
-    grade: "ม.3/1",
-    status: "กำลังดำเนินการ",
-    createdAt: "15 พ.ค. 2024",
-    goal: "เพิ่มผลการเรียนวิชาคณิตศาสตร์ให้ผ่านเกณฑ์",
-    strategies: [
-      "เรียนเสริมหลังเลิกเรียนสัปดาห์ละ 2 วัน",
-      "ส่งงานที่ค้างให้ครบ",
-      "ติดตามโดยครูที่ปรึกษาอย่างใกล้ชิด"
-    ],
-    evaluations: [
-      { date: "30 พ.ค. 2024", note: "นักเรียนส่งงานมากขึ้น แต่ยังต้องปรับปรุงความเข้าใจ", evaluator: "ครูสมศรี" },
-      { date: "15 มิ.ย. 2024", note: "สอบย่อยครั้งล่าสุดได้คะแนน 65/100 ดีขึ้น", evaluator: "ครูสมชาย" }
-    ]
-  };
+interface PageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function DevelopmentPlanDetailsPage({ params }: PageProps) {
+  const { id } = await params
+  
+  const plan = await getDevelopmentPlanById(id)
+  
+  if (!plan) {
+    notFound()
+  }
+
+  const goals = await getDevelopmentGoals(id)
+  
+  // Fetch activities for each goal
+  // Normally we might do a join, but let's fetch them in parallel for the goals
+  const activitiesByGoal = await Promise.all(
+    goals.map(async (goal) => {
+      const activities = await getDevelopmentActivities(goal.id)
+      return { goalId: goal.id, activities }
+    })
+  )
+  
+  const activitiesMap = activitiesByGoal.reduce((acc, curr) => {
+    acc[curr.goalId] = curr.activities
+    return acc
+  }, {} as Record<string, any[]>)
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center space-x-4">
-        <Link href="/development-plans">
-          <Button variant="ghost" size="icon">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+    <div className="space-y-6">
+      {/* Header with back button */}
+      <div className="flex items-center gap-4">
+        <Link 
+          href="/development-plans" 
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white hover:bg-slate-100"
+        >
+          <ChevronLeft className="h-4 w-4" />
         </Link>
-        <div className="flex flex-1 items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">แผนพัฒนา: {plan.id}</h2>
-            <p className="text-muted-foreground">สร้างเมื่อ {plan.createdAt}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-sm py-1 px-3">
-              {plan.status}
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-800">
+              {plan.title}
+            </h2>
+            <Badge 
+              variant="outline" 
+              className={
+                plan.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                plan.status === 'active' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                plan.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-200' :
+                'bg-slate-50 text-slate-600 border-slate-200'
+              }
+            >
+              {plan.status === 'draft' && 'ฉบับร่าง'}
+              {plan.status === 'active' && 'กำลังดำเนินการ'}
+              {plan.status === 'completed' && 'เสร็จสิ้น'}
+              {plan.status === 'cancelled' && 'ยกเลิก'}
             </Badge>
-            <Button>
-              <Save className="mr-2 h-4 w-4" /> บันทึกการแก้ไข
-            </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="md:col-span-1 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>ข้อมูลนักเรียน</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt={plan.studentName} />
-                  <AvatarFallback className="text-2xl">{plan.studentName.substring(0, 2)}</AvatarFallback>
-                </Avatar>
-                <div className="text-center">
-                  <h3 className="text-xl font-bold">{plan.studentName}</h3>
-                  <p className="text-muted-foreground">รหัส: {plan.studentId}</p>
-                  <p className="text-sm font-medium mt-1">ชั้น {plan.grade}</p>
+      {/* Overview Card */}
+      <Card className="rounded-xl shadow-sm border-slate-200">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <User className="h-4 w-4" /> นักเรียน
+              </p>
+              <p className="text-base font-medium text-slate-900">
+                {/* @ts-ignore */}
+                {plan.student?.first_name} {plan.student?.last_name}
+              </p>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> ระยะเวลา
+              </p>
+              <p className="text-base font-medium text-slate-900">
+                {format(new Date(plan.start_date), 'd MMM yy', { locale: th })} - {format(new Date(plan.end_date), 'd MMM yy', { locale: th })}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <FileText className="h-4 w-4" /> ผู้จัดทำ
+              </p>
+              <p className="text-base font-medium text-slate-900">
+                {/* @ts-ignore */}
+                {plan.creator?.first_name} {plan.creator?.last_name}
+              </p>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" /> ความก้าวหน้าโดยรวม
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-600 rounded-full" 
+                    style={{ width: `${plan.overall_progress || 0}%` }}
+                  />
                 </div>
+                <span className="text-sm font-medium text-slate-700">
+                  {plan.overall_progress || 0}%
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          
+          {plan.description && (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <h4 className="text-sm font-medium text-slate-900 mb-2">รายละเอียด</h4>
+              <p className="text-sm text-slate-600 whitespace-pre-wrap">{plan.description}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>ปัจจัยความเสี่ยง (EWS)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">การมาเรียน</span>
-                  <Badge variant="destructive">เสี่ยงสูง</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">ผลการเรียน</span>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">เฝ้าระวัง</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="md:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>แผนพัฒนาตนเองรายบุคคล (IDP)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="details">รายละเอียดแผน</TabsTrigger>
-                  <TabsTrigger value="evaluation">บันทึกการประเมินผล</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="details" className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold flex items-center">
-                      <Target className="mr-2 h-4 w-4 text-blue-500" /> เป้าหมายการพัฒนา
-                    </h4>
-                    <p className="text-sm p-3 bg-muted rounded-md">{plan.goal}</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold flex items-center">
-                      <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> วิธีการ/กิจกรรมการพัฒนา
-                    </h4>
-                    <ul className="list-disc pl-5 space-y-1 text-sm">
-                      {plan.strategies.map((strategy, idx) => (
-                        <li key={idx}>{strategy}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="evaluation" className="space-y-4 pt-4">
-                  <div className="space-y-4">
-                    {plan.evaluations.map((evalItem, idx) => (
-                      <div key={idx} className="flex gap-4 p-3 border rounded-md">
-                        <div className="mt-0.5">
-                          <Clock className="h-5 w-5 text-muted-foreground" />
+      <Tabs defaultValue="goals" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsTrigger value="goals">เป้าหมาย</TabsTrigger>
+          <TabsTrigger value="activities">กิจกรรม</TabsTrigger>
+          <TabsTrigger value="evaluation">การประเมิน</TabsTrigger>
+        </TabsList>
+        
+        {/* Goals Tab */}
+        <TabsContent value="goals" className="mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-slate-800">เป้าหมายการพัฒนา</h3>
+            <Button size="sm" className="bg-slate-900 hover:bg-blue-600">เพิ่มเป้าหมาย</Button>
+          </div>
+          
+          {goals.length > 0 ? (
+            <div className="space-y-4">
+              {goals.map((goal) => (
+                <Card key={goal.id} className="rounded-xl shadow-sm border-slate-200">
+                  <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex gap-3">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium text-sm">
+                          {goal.goal_number}
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">{evalItem.date}</p>
-                            <span className="text-xs text-muted-foreground">โดย {evalItem.evaluator}</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{evalItem.note}</p>
+                        <div>
+                          <CardTitle className="text-base text-slate-800">{goal.title}</CardTitle>
+                          <CardDescription className="mt-1">{goal.description}</CardDescription>
                         </div>
                       </div>
-                    ))}
-
-                    <div className="pt-4 border-t">
-                      <h4 className="text-sm font-semibold mb-2">เพิ่มผลการประเมิน</h4>
-                      <Textarea placeholder="บันทึกผลการพัฒนา..." className="min-h-[100px]" />
-                      <Button className="mt-2" size="sm">บันทึก</Button>
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          goal.status === 'achieved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                          goal.status === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                          'bg-slate-50 text-slate-600 border-slate-200'
+                        }
+                      >
+                        {goal.status === 'not_started' && 'รอดำเนินการ'}
+                        {goal.status === 'in_progress' && 'กำลังดำเนินการ'}
+                        {goal.status === 'achieved' && 'บรรลุเป้าหมาย'}
+                        {goal.status === 'cancelled' && 'ยกเลิก'}
+                      </Badge>
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">หมวดหมู่</p>
+                        <p className="text-sm font-medium">{goal.category || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">สถานะปัจจุบัน</p>
+                        <p className="text-sm font-medium">{goal.current_value || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">เป้าหมายที่คาดหวัง</p>
+                        <p className="text-sm font-medium">{goal.target_value || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">กำหนดเสร็จสิ้น</p>
+                        <p className="text-sm font-medium">
+                          {goal.target_date ? format(new Date(goal.target_date), 'd MMM yy', { locale: th }) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <p className="text-xs font-medium text-slate-500 min-w-[60px]">ความก้าวหน้า</p>
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full ${goal.status === 'achieved' ? 'bg-emerald-500' : 'bg-blue-600'}`}
+                          style={{ width: `${goal.progress || 0}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-slate-700 w-8 text-right">
+                        {goal.progress || 0}%
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="rounded-xl border-dashed border-slate-300 bg-slate-50">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <CheckCircle2 className="h-6 w-6 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-800">ยังไม่มีเป้าหมาย</h3>
+                <p className="text-sm text-slate-500 mt-1 mb-4">เพิ่มเป้าหมายเพื่อเริ่มติดตามการพัฒนา</p>
+                <Button size="sm">เพิ่มเป้าหมายแรก</Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Activities Tab */}
+        <TabsContent value="activities" className="mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-slate-800">กิจกรรมที่เกี่ยวข้อง</h3>
+            <Button size="sm" variant="outline">เพิ่มกิจกรรม</Button>
+          </div>
+          
+          <Card className="rounded-xl shadow-sm border-slate-200 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow>
+                  <TableHead className="w-[40px]"></TableHead>
+                  <TableHead>กิจกรรม</TableHead>
+                  <TableHead>เป้าหมายที่เกี่ยวข้อง</TableHead>
+                  <TableHead>ระยะเวลา</TableHead>
+                  <TableHead>ผู้รับผิดชอบ</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {goals.flatMap(goal => activitiesMap[goal.id] || []).length > 0 ? (
+                  goals.flatMap(goal => (
+                    (activitiesMap[goal.id] || []).map((activity) => (
+                      <TableRow key={activity.id}>
+                        <TableCell>
+                          {activity.is_completed ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-slate-300" />
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium text-slate-900">
+                          {activity.title}
+                          {activity.description && (
+                            <p className="text-xs text-slate-500 font-normal mt-0.5">{activity.description}</p>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                            เป้าหมายที่ {goal.goal_number}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <Clock className="h-3.5 w-3.5" />
+                            {activity.start_date ? format(new Date(activity.start_date), 'd MMM', { locale: th }) : '?'} 
+                            {' - '} 
+                            {activity.end_date ? format(new Date(activity.end_date), 'd MMM', { locale: th }) : '?'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          {activity.responsible_person || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {activity.is_completed ? (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">เสร็จสิ้น</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">รอรับการประเมิน</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                      ไม่พบกิจกรรมในแผนพัฒนานี้
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+        
+        {/* Evaluation Tab */}
+        <TabsContent value="evaluation" className="mt-6">
+          <Card className="rounded-xl border-dashed border-slate-300 bg-slate-50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <FileText className="h-6 w-6 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-800">ยังไม่มีการประเมิน</h3>
+              <p className="text-sm text-slate-500 mt-1 mb-4">การประเมินจะสามารถทำได้เมื่อดำเนินกิจกรรมแล้วเสร็จ</p>
+              <Button size="sm" variant="outline">เพิ่มบันทึกการประเมิน</Button>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
-  );
+  )
 }

@@ -28,3 +28,33 @@ export async function createClient() {
     }
   )
 }
+
+export async function getUserRole(): Promise<Database['public']['Enums']['user_role'] | 'student' | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  // Check if user is in profiles (staff/admin)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile) {
+    return profile.role
+  }
+
+  // Check if user is in students
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('id', user.id)
+    .single()
+
+  if (student) {
+    return 'student'
+  }
+
+  return null
+}

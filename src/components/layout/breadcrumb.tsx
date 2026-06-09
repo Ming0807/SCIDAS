@@ -10,12 +10,12 @@ export function Breadcrumb() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
-  if (segments.length === 0 || pathname === "/dashboard") return null;
+  if (segments.length === 0 || pathname === "/") return null;
 
   return (
     <nav aria-label="Breadcrumb" className="flex items-center space-x-1 text-sm text-muted-foreground mb-4">
       <Link
-        href="/dashboard"
+        href="/"
         className="flex items-center hover:text-foreground transition-colors duration-200"
       >
         <Home className="h-4 w-4" />
