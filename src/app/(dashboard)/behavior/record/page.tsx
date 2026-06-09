@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,89 +17,89 @@ export default function RecordBehaviorPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Record Behavior</h1>
-          <p className="text-slate-500 mt-1">Submit a new behavior log for a student.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">บันทึกพฤติกรรม</h1>
+          <p className="text-slate-500 mt-1">เพิ่มข้อมูลพฤติกรรมเชิงบวกหรือเชิงลบของนักเรียน</p>
         </div>
       </div>
 
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader>
-          <CardTitle>Behavior Details</CardTitle>
-          <CardDescription>Fill out the form below to record a behavior incident or merit.</CardDescription>
+          <CardTitle>รายละเอียดพฤติกรรม</CardTitle>
+          <CardDescription>กรอกข้อมูลฟอร์มด้านล่างเพื่อบันทึกพฤติกรรมของนักเรียน</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Student</label>
+              <label className="text-sm font-medium text-slate-700">ชื่อนักเรียน</label>
               <Select>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select student..." />
+                  <SelectValue placeholder="เลือกนักเรียน..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="alice">Alice Johnson</SelectItem>
-                  <SelectItem value="bob">Bob Smith</SelectItem>
-                  <SelectItem value="charlie">Charlie Davis</SelectItem>
-                  <SelectItem value="diana">Diana Prince</SelectItem>
+                  <SelectItem value="STU-001">สมชาย ใจดี</SelectItem>
+                  <SelectItem value="STU-002">สมศรี เรียนดี</SelectItem>
+                  <SelectItem value="STU-003">ชูใจ น่ารัก</SelectItem>
+                  <SelectItem value="STU-004">มานะ ขยัน</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Behavior Type</label>
+              <label className="text-sm font-medium text-slate-700">ประเภทพฤติกรรม</label>
               <Select>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type..." />
+                  <SelectValue placeholder="เลือกประเภท..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="positive">Positive (Merit)</SelectItem>
-                  <SelectItem value="negative">Negative (Demerit)</SelectItem>
+                  <SelectItem value="positive">เชิงบวก (+)</SelectItem>
+                  <SelectItem value="negative">เชิงลบ (-)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Incident Category</label>
+            <label className="text-sm font-medium text-slate-700">หมวดหมู่</label>
             <Select>
               <SelectTrigger>
-                <SelectValue placeholder="Select category..." />
+                <SelectValue placeholder="เลือกหมวดหมู่..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="academic">Academic Excellence</SelectItem>
-                <SelectItem value="helpfulness">Helpfulness</SelectItem>
-                <SelectItem value="disruption">Class Disruption</SelectItem>
-                <SelectItem value="tardiness">Tardiness</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="academic">ผลการเรียนโดดเด่น</SelectItem>
+                <SelectItem value="helpfulness">มีน้ำใจช่วยเหลือ</SelectItem>
+                <SelectItem value="disruption">ก่อกวนในชั้นเรียน</SelectItem>
+                <SelectItem value="tardiness">มาสาย / ขาดเรียน</SelectItem>
+                <SelectItem value="other">อื่นๆ</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Date & Time</label>
+              <label className="text-sm font-medium text-slate-700">วันและเวลา</label>
               <Input type="datetime-local" className="w-full" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Points Modifier</label>
-              <Input type="number" placeholder="e.g., 5 or -2" className="w-full" />
+              <label className="text-sm font-medium text-slate-700">คะแนน (บวก/หัก)</label>
+              <Input type="number" placeholder="เช่น 5 หรือ -2" className="w-full" />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Description / Notes</label>
+            <label className="text-sm font-medium text-slate-700">รายละเอียดเพิ่มเติม</label>
             <Textarea 
-              placeholder="Provide context about what happened..." 
+              placeholder="อธิบายเหตุการณ์ที่เกิดขึ้น..." 
               className="min-h-[100px] resize-none"
             />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between border-t border-slate-100 pt-6">
           <Link href="/behavior">
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="ghost">ยกเลิก</Button>
           </Link>
           <Button className="gap-2">
             <Save className="h-4 w-4" />
-            Save Record
+            บันทึกข้อมูล
           </Button>
         </CardFooter>
       </Card>

@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,18 +10,18 @@ import Link from "next/link"
 
 export default function SupportCasesPage() {
   const supportCases = [
-    { id: "CAS-001", student: "Alice Johnson", type: "Academic Tutoring", status: "Active", priority: "High", date: "May 12, 2026", assignedTo: "Mr. Smith" },
-    { id: "CAS-002", student: "Bob Smith", type: "Counseling", status: "Pending", priority: "Medium", date: "May 14, 2026", assignedTo: "Unassigned" },
-    { id: "CAS-003", student: "Charlie Davis", type: "Behavioral Intervention", status: "Resolved", priority: "Low", date: "Apr 28, 2026", assignedTo: "Ms. Lee" },
-    { id: "CAS-004", student: "Diana Prince", type: "Family Support", status: "Active", priority: "High", date: "May 15, 2026", assignedTo: "Dr. Evans" },
-    { id: "CAS-005", student: "Eve Adams", type: "Academic Tutoring", status: "Pending", priority: "Low", date: "May 16, 2026", assignedTo: "Unassigned" },
+    { id: "CAS-001", student: "สมชาย ใจดี", type: "สอนเสริมวิชาการ", status: "Active", priority: "High", date: "12 พ.ค. 2026", assignedTo: "ครูสมชาย" },
+    { id: "CAS-002", student: "สมศรี เรียนดี", type: "ให้คำปรึกษา", status: "Pending", priority: "Medium", date: "14 พ.ค. 2026", assignedTo: "รอผู้รับผิดชอบ" },
+    { id: "CAS-003", student: "ชูใจ น่ารัก", type: "ปรับพฤติกรรม", status: "Resolved", priority: "Low", date: "28 เม.ย. 2026", assignedTo: "ครูสมศรี" },
+    { id: "CAS-004", student: "มานะ ขยัน", type: "สนับสนุนครอบครัว", status: "Active", priority: "High", date: "15 พ.ค. 2026", assignedTo: "ผอ.โรงเรียน" },
+    { id: "CAS-005", student: "ปิติ ดีใจ", type: "สอนเสริมวิชาการ", status: "Pending", priority: "Low", date: "16 พ.ค. 2026", assignedTo: "รอผู้รับผิดชอบ" },
   ]
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Active": return <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">{status}</Badge>
-      case "Pending": return <Badge className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20">{status}</Badge>
-      case "Resolved": return <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20">{status}</Badge>
+      case "Active": return <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">กำลังช่วยเหลือ</Badge>
+      case "Pending": return <Badge className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20">รอดำเนินการ</Badge>
+      case "Resolved": return <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20">แก้ไขแล้ว</Badge>
       default: return <Badge variant="outline">{status}</Badge>
     }
   }
@@ -39,49 +39,49 @@ export default function SupportCasesPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Support & Interventions</h1>
-          <p className="text-slate-500 mt-1">Manage student support cases, counseling, and interventions.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">ระบบส่งต่อและช่วยเหลือ</h1>
+          <p className="text-slate-500 mt-1">จัดการเคสส่งต่อนักเรียน, ให้คำปรึกษา และให้ความช่วยเหลือ</p>
         </div>
         <Link href="/support/new">
-          <Button className="gap-2">
+          <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
             <Plus className="h-4 w-4" />
-            New Case
+            เปิดเคสใหม่
           </Button>
         </Link>
       </div>
 
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-md transition-shadow border-slate-200">
         <CardHeader className="pb-4">
-          <CardTitle>Case Directory</CardTitle>
-          <CardDescription>View and manage all active, pending, and resolved support cases.</CardDescription>
+          <CardTitle>รายการเคสทั้งหมด</CardTitle>
+          <CardDescription>ดูและจัดการเคสทั้งหมดที่กำลังช่วยเหลือ, รอดำเนินการ, หรือแก้ไขแล้ว</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-              <Input placeholder="Search student or case ID..." className="pl-9" />
+              <Input placeholder="ค้นหาชื่อนักเรียน หรือรหัสเคส..." className="pl-9" />
             </div>
             <div className="flex gap-2">
               <Select defaultValue="all">
                 <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="สถานะ" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="all">สถานะทั้งหมด</SelectItem>
+                  <SelectItem value="active">กำลังช่วยเหลือ</SelectItem>
+                  <SelectItem value="pending">รอดำเนินการ</SelectItem>
+                  <SelectItem value="resolved">แก้ไขแล้ว</SelectItem>
                 </SelectContent>
               </Select>
               <Select defaultValue="all">
                 <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Type" />
+                  <SelectValue placeholder="ประเภท" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="academic">Academic</SelectItem>
-                  <SelectItem value="behavioral">Behavioral</SelectItem>
-                  <SelectItem value="counseling">Counseling</SelectItem>
+                  <SelectItem value="all">ประเภททั้งหมด</SelectItem>
+                  <SelectItem value="academic">วิชาการ</SelectItem>
+                  <SelectItem value="behavioral">พฤติกรรม</SelectItem>
+                  <SelectItem value="counseling">ให้คำปรึกษา</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -91,14 +91,14 @@ export default function SupportCasesPage() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="w-[100px]">Case ID</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[100px]">รหัสเคส</TableHead>
+                  <TableHead>นักเรียน</TableHead>
+                  <TableHead>ประเภท</TableHead>
+                  <TableHead>ความเร่งด่วน</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                  <TableHead>วันที่</TableHead>
+                  <TableHead>ผู้รับผิดชอบ</TableHead>
+                  <TableHead className="text-right">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -110,7 +110,9 @@ export default function SupportCasesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getPriorityIcon(c.priority)}
-                        <span className="text-sm text-slate-600">{c.priority}</span>
+                        <span className="text-sm text-slate-600">
+                          {c.priority === "High" ? "สูง" : c.priority === "Medium" ? "ปานกลาง" : "ต่ำ"}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(c.status)}</TableCell>
@@ -119,7 +121,7 @@ export default function SupportCasesPage() {
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" className="h-8 gap-1 text-slate-500 hover:text-slate-900">
                         <FileText className="h-3 w-3" />
-                        View
+                        ดูรายละเอียด
                       </Button>
                     </TableCell>
                   </TableRow>
