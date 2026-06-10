@@ -26,14 +26,26 @@ Source of truth:
 - [ ] `supabase db reset` or `supabase db push`: not run locally because Supabase CLI is not installed in this environment.
 - [ ] SQL migration preview on Supabase: still required before production deploy.
 
+### 2026-06-10 Real Frontend Integration Pass
+
+- [x] Added shared display helpers in `src/lib/student-care-formatters.ts`.
+- [x] Replaced `/students` mock route data with `getStudentWorklist()`, URL search params, server-side filtering, pagination, shared table/mobile list, and real profile snapshot.
+- [x] Replaced dashboard summary/action/tracking/mobile mock data with `getStudentCareDashboard()`.
+- [x] Added `src/lib/server/home-visit-read-models.ts` and replaced `/home-visits` mock gallery with real `home_visits`, `home_visit_images`, student/visitor joins, metrics, filters, empty state, and error state.
+- [x] Connected `/risk-analysis` overview, top-risk table, and recommendations to `v_student_worklist`.
+- [x] Replaced `/support` static profile layout with a real support workbench backed by `getStudentCareDashboard()` and `action_items`.
+- [x] Updated the Students page test to await the async Server Component and mock the student worklist read model.
+
 ### P0 Next Tasks
 
 - [ ] Apply migration `0008_ux_data_foundation.sql` in a Supabase preview project and fix any SQL/RLS issues found there.
-- [ ] Replace dashboard static components with props from `getStudentCareDashboard()`.
-- [ ] Replace `/students` route-local `student-data.ts` with `getStudentWorklist()`.
-- [ ] Replace mock `/home-visits` cards with real `home_visits` + `student_attachments`.
-- [ ] Connect `/risk-analysis` top-risk and recommendations to `v_student_worklist`, `student_flags`, and `action_items`.
-- [ ] Connect `/support` notes/actions to `student_notes`, `action_items`, and `student_timeline_events`.
+- [x] Replace dashboard static components with props from `getStudentCareDashboard()`.
+- [x] Replace `/students` route-local mock data with `getStudentWorklist()`.
+- [x] Replace mock `/home-visits` cards with real `home_visits` + `home_visit_images`.
+- [x] Connect `/risk-analysis` top-risk and recommendations to `v_student_worklist`.
+- [x] Connect `/support` actions to `action_items`.
+- [ ] Connect `/support` notes and timeline panels to `student_notes` and `student_timeline_events`.
+- [ ] Add generic evidence upload flow using `student_attachments` for support/home-visit/report evidence.
 - [ ] Convert migrated mutations to `ActionResult<T>` and verify auth/authorization inside every action.
 
 ### P1 Next Tasks

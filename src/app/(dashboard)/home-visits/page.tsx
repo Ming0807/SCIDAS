@@ -1,162 +1,361 @@
-"use client"
-
-import * as React from "react"
+import Form from "next/form"
 import Link from "next/link"
-import { Plus, MapPin, Calendar, Clock, Search, Filter } from "lucide-react"
+import {
+  AlertTriangle,
+  Calendar,
+  Clock,
+  Home,
+  MapPin,
+  Plus,
+  Route,
+  Search,
+} from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { MetricCard, PageHeader, PageShell, StatusBadge, StudentIdentity } from "@/components/dashboard"
+import { FilterBar } from "@/components/data"
+import { EmptyState, ErrorState } from "@/components/feedback"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  formatThaiShortDate,
+  type StudentRiskLevel,
+} from "@/lib/student-care-formatters"
+import {
+  getHomeVisitDashboard,
+  type HomeVisitRecord,
+  type HomeVisitSummary,
+  type HomeVisitStatus,
+} from "@/lib/server/home-visit-read-models"
+import { cn } from "@/lib/utils"
 
-const mockVisits = [
-  {
-    id: 1,
-    studentName: "Alex Mercer",
-    date: "2026-06-05",
-    time: "14:30",
-    location: "123 Main St, Springfield",
-    status: "Completed",
-    purpose: "Routine Follow-up",
-    image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: 2,
-    studentName: "Sarah Connor",
-    date: "2026-06-08",
-    time: "10:00",
-    location: "456 Elm St, Springfield",
-    status: "Scheduled",
-    purpose: "Behavioral Intervention",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: 3,
-    studentName: "John Doe",
-    date: "2026-06-10",
-    time: "09:00",
-    location: "789 Pine St, Springfield",
-    status: "Pending",
-    purpose: "Attendance Check",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: 4,
-    studentName: "Emily Davis",
-    date: "2026-06-12",
-    time: "15:00",
-    location: "321 Oak St, Springfield",
-    status: "Scheduled",
-    purpose: "Academic Support",
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80"
+type SearchParams = Record<string, string | string[] | undefined>
+
+type HomeVisitsPageProps = {
+  searchParams?: Promise<SearchParams>
+}
+
+type VisitFilters = {
+  q: string
+  status: string
+}
+
+const emptySummary: HomeVisitSummary = {
+  total: 0,
+  followUpNeeded: 0,
+  urgent: 0,
+  familyProblems: 0,
+  travelDifficulty: 0,
+  latestVisitDate: null,
+}
+
+function getSearchParam(params: SearchParams, key: string) {
+  const value = params[key]
+
+  if (Array.isArray(value)) {
+    return value[0] ?? ""
   }
-]
 
-export default function HomeVisitsGallery() {
-  const [searchTerm, setSearchTerm] = React.useState("")
+  return value ?? ""
+}
 
-  const filteredVisits = mockVisits.filter((visit) =>
-    visit.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+function normalizeFilters(params: SearchParams): VisitFilters {
+  return {
+    q: getSearchParam(params, "q").trim(),
+    status: getSearchParam(params, "status"),
+  }
+}
+
+function getVisitStatusLabel(status: HomeVisitStatus) {
+  const labels: Record<HomeVisitStatus, string> = {
+    completed: "เยี่ยมแล้ว",
+    follow_up: "ต้องติดตาม",
+    urgent: "เร่งดูแล",
+  }
+
+  return labels[status]
+}
+
+function getVisitStatusTone(status: HomeVisitStatus): StudentRiskLevel {
+  if (status === "urgent") return "high"
+  if (status === "follow_up") return "watch"
+  return "normal"
+}
+
+function getHousingLabel(condition: HomeVisitRecord["housingCondition"]) {
+  const labels = {
+    good: "ดี",
+    moderate: "พอใช้",
+    poor: "ควรดูแล",
+    critical: "เร่งดูแล",
+  }
+
+  return condition ? labels[condition] : "-"
+}
+
+function filterVisits(records: HomeVisitRecord[], filters: VisitFilters) {
+  const query = filters.q.trim().toLowerCase()
+
+  return records.filter((record) => {
+    const matchesQuery =
+      !query ||
+      record.studentName.toLowerCase().includes(query) ||
+      record.studentCode.toLowerCase().includes(query) ||
+      record.visitorName.toLowerCase().includes(query) ||
+      (record.address?.toLowerCase().includes(query) ?? false)
+    const matchesStatus = !filters.status || record.status === filters.status
+
+    return matchesQuery && matchesStatus
+  })
+}
+
+function HomeVisitFilters({
+  filters,
+  visibleCount,
+  totalCount,
+}: {
+  filters: VisitFilters
+  visibleCount: number
+  totalCount: number
+}) {
+  return (
+    <Form action="/home-visits">
+      <FilterBar
+        title="ค้นหาและกรองบันทึก"
+        summary={`แสดง ${visibleCount.toLocaleString("th-TH")} จาก ${totalCount.toLocaleString("th-TH")} รายการ`}
+        search={
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              name="q"
+              defaultValue={filters.q}
+              placeholder="ค้นหานักเรียน ผู้เยี่ยม หรือที่อยู่..."
+              className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-3 focus:ring-ring/50"
+            />
+          </div>
+        }
+        filters={
+          <>
+            <label className="min-w-36 text-sm">
+              <span className="sr-only">สถานะ</span>
+              <select
+                name="status"
+                defaultValue={filters.status}
+                className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="urgent">เร่งดูแล</option>
+                <option value="follow_up">ต้องติดตาม</option>
+                <option value="completed">เยี่ยมแล้ว</option>
+              </select>
+            </label>
+            <Button type="submit" variant="secondary">
+              <Search /> ค้นหา
+            </Button>
+          </>
+        }
+        clearAction={
+          filters.q || filters.status ? (
+            <Link href="/home-visits" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+              ล้างตัวกรอง
+            </Link>
+          ) : null
+        }
+      />
+    </Form>
   )
+}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "bg-emerald-100 text-emerald-800 border-emerald-200"
-      case "Scheduled":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "Pending":
-        return "bg-amber-100 text-amber-800 border-amber-200"
-      default:
-        return "bg-slate-100 text-slate-800 border-slate-200"
-    }
-  }
+function HomeVisitCard({ visit }: { visit: HomeVisitRecord }) {
+  const statusTone = getVisitStatusTone(visit.status)
 
   return (
-    <div className="flex flex-col gap-8 p-6 md:p-8 max-w-7xl mx-auto w-full">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">บันทึกการเยี่ยมบ้าน</h1>
-          <p className="text-slate-500 mt-1">จัดการและติดตามข้อมูลการเยี่ยมบ้านนักเรียน</p>
-        </div>
-        <Link href="/home-visits/new">
-          <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="h-4 w-4" />
-            เพิ่มบันทึกเยี่ยมบ้าน
-          </Button>
-        </Link>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <div className="relative w-full sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="ค้นหาชื่อนักเรียน..."
-            className="pl-9 bg-slate-50 border-none"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+    <article className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+      <div className="relative aspect-[16/9] bg-muted">
+        {visit.imageUrl ? (
+          <img
+            src={visit.imageUrl}
+            alt={`ภาพเยี่ยมบ้าน ${visit.studentName}`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+            <Home aria-hidden="true" className="size-8" />
+            <span className="text-sm">ไม่มีภาพแนบ</span>
+          </div>
+        )}
+        <div className="absolute right-3 top-3">
+          <StatusBadge
+            status={statusTone}
+            label={getVisitStatusLabel(visit.status)}
+            size="sm"
           />
         </div>
-        <Button variant="outline" className="w-full sm:w-auto gap-2">
-          <Filter className="h-4 w-4" />
-          ตัวกรอง
-        </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredVisits.map((visit) => (
-          <Card key={visit.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-slate-200/60">
-            <div className="relative h-48 overflow-hidden bg-slate-100">
-              <img
-                src={visit.image}
-                alt={`เยี่ยมบ้าน ${visit.studentName}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-3 right-3">
-                <Badge variant="outline" className={`shadow-sm backdrop-blur-md bg-white/90 ${getStatusColor(visit.status)}`}>
-                  {visit.status === 'Completed' ? 'เสร็จสิ้น' : visit.status === 'Scheduled' ? 'นัดหมายแล้ว' : 'รอดำเนินการ'}
-                </Badge>
-              </div>
-            </div>
-            
-            <CardHeader className="p-5 pb-2">
-              <h3 className="font-semibold text-lg text-slate-900 line-clamp-1">{visit.studentName}</h3>
-              <p className="text-sm text-indigo-600 font-medium">{visit.purpose}</p>
-            </CardHeader>
-            
-            <CardContent className="p-5 pt-2 pb-4 space-y-3">
-              <div className="flex items-center text-slate-500 text-sm">
-                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span>{new Date(visit.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                <span className="mx-2">•</span>
-                <Clock className="h-4 w-4 mr-1 text-slate-400" />
-                <span>{visit.time}</span>
-              </div>
-              
-              <div className="flex items-start text-slate-500 text-sm">
-                <MapPin className="h-4 w-4 mr-2 mt-0.5 text-slate-400 shrink-0" />
-                <span className="line-clamp-2 leading-tight">{visit.location}</span>
-              </div>
-            </CardContent>
-            
-            <CardFooter className="p-5 pt-0 border-t border-slate-50 mt-2">
-              <Button variant="ghost" className="w-full text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
-                ดูรายละเอียด
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-      
-      {filteredVisits.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-xl border border-slate-200 border-dashed">
-          <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-            <Search className="h-8 w-8 text-slate-300" />
+      <div className="space-y-4 p-4">
+        <StudentIdentity
+          avatarUrl={visit.studentPhotoUrl ?? ""}
+          name={visit.studentName}
+          studentCode={visit.studentCode}
+          description={`ผู้เยี่ยม ${visit.visitorName}`}
+          size="sm"
+        />
+
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Calendar aria-hidden="true" className="size-4" />
+            <span>{formatThaiShortDate(visit.visitDate)}</span>
+            {visit.visitTime ? (
+              <>
+                <Clock aria-hidden="true" className="ml-2 size-4" />
+                <span>{visit.visitTime}</span>
+              </>
+            ) : null}
           </div>
-          <h3 className="text-lg font-semibold text-slate-900">ไม่พบข้อมูล</h3>
-          <p className="text-slate-500 max-w-sm mt-1">ไม่พบข้อมูลการเยี่ยมบ้านที่ตรงกับการค้นหาของคุณ</p>
+          <div className="flex items-start gap-2">
+            <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span className="line-clamp-2">{visit.address ?? "ไม่ระบุที่อยู่"}</span>
+          </div>
         </div>
+
+        <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-muted/30 p-3 text-xs">
+          <div>
+            <p className="text-muted-foreground">สภาพบ้าน</p>
+            <p className="mt-1 font-medium text-foreground">
+              {getHousingLabel(visit.housingCondition)}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">ครอบครัว</p>
+            <p className="mt-1 font-medium text-foreground">
+              {visit.hasFamilyProblem ? "มีประเด็น" : "ปกติ"}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">เดินทาง</p>
+            <p className="mt-1 font-medium text-foreground">
+              {visit.travelDifficulty ? "ลำบาก" : "ปกติ"}
+            </p>
+          </div>
+        </div>
+
+        {visit.overallAssessment ? (
+          <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
+            {visit.overallAssessment}
+          </p>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+          <Link
+            href={`/students/${visit.studentId}`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            ดูนักเรียน
+          </Link>
+          {visit.followUpNeeded ? (
+            <StatusBadge status="watch" label="มีงานติดตาม" size="sm" />
+          ) : null}
+        </div>
+      </div>
+    </article>
+  )
+}
+
+export default async function HomeVisitsPage({ searchParams }: HomeVisitsPageProps) {
+  const params = searchParams ? await searchParams : {}
+  const filters = normalizeFilters(params)
+  let records: HomeVisitRecord[] = []
+  let summary = emptySummary
+  let loadError: string | null = null
+
+  try {
+    const dashboard = await getHomeVisitDashboard()
+    records = dashboard.records
+    summary = dashboard.summary
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Unknown home visit data error"
+  }
+
+  const filteredVisits = filterVisits(records, filters)
+
+  return (
+    <PageShell size="wide" spacing="default">
+      <PageHeader
+        title="บันทึกการเยี่ยมบ้าน"
+        description="ติดตามสภาพแวดล้อม ครอบครัว และประเด็นที่ต้องดูแลต่อเนื่อง"
+        actions={
+          <Link href="/home-visits/new" className={cn(buttonVariants())}>
+            <Plus /> เพิ่มบันทึกเยี่ยมบ้าน
+          </Link>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          title="เยี่ยมบ้านทั้งหมด"
+          value={summary.total.toLocaleString("th-TH")}
+          description={`ล่าสุด ${formatThaiShortDate(summary.latestVisitDate)}`}
+          icon={Home}
+          status="primary"
+          size="compact"
+        />
+        <MetricCard
+          title="ต้องติดตาม"
+          value={summary.followUpNeeded.toLocaleString("th-TH")}
+          description="มีรายละเอียด follow-up"
+          icon={Calendar}
+          status="watch"
+          size="compact"
+        />
+        <MetricCard
+          title="เร่งดูแล"
+          value={summary.urgent.toLocaleString("th-TH")}
+          description={`ครอบครัว ${summary.familyProblems.toLocaleString("th-TH")} ราย`}
+          icon={AlertTriangle}
+          status="high-risk"
+          size="compact"
+        />
+        <MetricCard
+          title="เดินทางลำบาก"
+          value={summary.travelDifficulty.toLocaleString("th-TH")}
+          description="อาจต้องประสานการช่วยเหลือ"
+          icon={Route}
+          status="info"
+          size="compact"
+        />
+      </div>
+
+      {loadError ? (
+        <ErrorState
+          title="โหลดข้อมูลเยี่ยมบ้านไม่ได้"
+          description="ตรวจสอบสิทธิ์การเข้าถึงและตาราง home_visits ใน Supabase"
+          details={loadError}
+        />
+      ) : null}
+
+      <HomeVisitFilters
+        filters={filters}
+        visibleCount={filteredVisits.length}
+        totalCount={records.length}
+      />
+
+      {filteredVisits.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          {filteredVisits.map((visit) => (
+            <HomeVisitCard key={visit.id} visit={visit} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="ไม่พบบันทึกเยี่ยมบ้าน"
+          description="ลองล้างตัวกรอง หรือเพิ่มบันทึกเยี่ยมบ้านรายการแรกเพื่อเริ่มติดตามข้อมูลครอบครัว"
+          action={
+            <Link href="/home-visits/new" className={cn(buttonVariants())}>
+              <Plus /> เพิ่มบันทึกเยี่ยมบ้าน
+            </Link>
+          }
+        />
       )}
-    </div>
+    </PageShell>
   )
 }

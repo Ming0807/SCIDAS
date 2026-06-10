@@ -73,6 +73,8 @@ New files:
   - Resolves Supabase user, profile/student identity, school, role, and current semester.
 - `src/lib/server/student-care-read-models.ts`
   - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getActionQueue`, `getStudentTimeline`, and `updateActionItemStatus`.
+- `src/lib/server/home-visit-read-models.ts`
+  - Exposes `getHomeVisitDashboard` for `/home-visits`, joining visits with student, visitor, and visit image context.
 - `src/lib/server/action-result.ts`
   - Shared `ActionResult<T>` helpers for migrated server actions.
 - `src/app/actions/care.actions.ts`
@@ -85,18 +87,22 @@ Server Components should call the read-model functions directly. Client Componen
 1. Dashboard
    - Replace static summary/action/tracking widgets with `getStudentCareDashboard()`.
    - Show `priorityStudents` and `actionQueue` from the DAL.
+   - Current status: initial real-data integration is complete for summary cards, action queue, tracking table, and mobile dashboard.
 
 2. Students
    - Replace route-local `student-data.ts` with `getStudentWorklist()`.
    - Keep one shared DTO for desktop `DataTable` and mobile `MobileList`.
+   - Current status: initial real-data integration is complete with URL search params, server filtering, pagination, and real profile snapshot.
 
 3. Risk Analysis
    - Read top risk students from `v_student_worklist`.
    - Use `action_items` for follow-up ownership and due dates.
+   - Current status: overview metrics, top-risk table, and recommendations now read from `v_student_worklist`; matrix and charts still need real factor/matrix models.
 
 4. Support
    - Use `action_items`, `student_notes`, and `student_timeline_events`.
    - Stop duplicating notes/actions inside page-local static components.
+   - Current status: support workbench now reads `getStudentCareDashboard()` and `action_items`; notes and timeline panels are still pending.
 
 5. IDP
    - Use timeline events for plan creation/progress and action items for review tasks.
@@ -104,6 +110,7 @@ Server Components should call the read-model functions directly. Client Componen
 6. Home Visits
    - Replace mock visit cards with `home_visits` plus `student_attachments`.
    - Write visit creation so timeline and risk factors update automatically.
+   - Current status: list/gallery now reads real `home_visits` plus `home_visit_images`; generic `student_attachments` evidence flow remains pending.
 
 7. Reports
    - Use `report_jobs` for queued/running/completed/failed state.

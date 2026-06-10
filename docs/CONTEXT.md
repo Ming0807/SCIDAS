@@ -6,6 +6,8 @@
 
 > **Backend data foundation note (2026-06-10):** The current priority has shifted from page-by-page UI cleanup to the database and backend flow required for real frontend usage. Use [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md) together with migration `supabase/migrations/0008_ux_data_foundation.sql` and server DAL files under `src/lib/server/`.
 
+> **Real frontend integration note (2026-06-10):** Initial real-data integration is complete for `/`, `/students`, `/home-visits`, `/risk-analysis`, and `/support`. These pages read through `src/lib/server/student-care-read-models.ts`, `src/lib/server/home-visit-read-models.ts`, and shared UI primitives instead of page-local mock datasets. Migration `0008_ux_data_foundation.sql` still must be applied in Supabase before production/runtime verification.
+
 ## 1. ข้อมูลพื้นฐานของโปรเจกต์
 - **ชื่อโปรเจกต์:** Student Care and Individual Development Analytics System (SCIDAS)
 - **ระบบ:** ระบบสารสนเทศเพื่อวิเคราะห์และดูแลช่วยเหลือนักเรียนรายบุคคลสำหรับโรงเรียนขนาดเล็ก

@@ -1,10 +1,13 @@
+import Link from "next/link"
 import { ChevronRight, MoreVertical } from "lucide-react"
 
 import { StudentIdentity } from "@/components/dashboard"
 import { MobileList, Pagination } from "@/components/data"
-import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/feedback"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-import { studentRows, studentSummary, type StudentListItem } from "./student-data"
+import type { StudentListItem } from "./student-data"
 
 function MobileStudentRow({
   student,
@@ -31,16 +34,19 @@ function MobileStudentRow({
               statusLabel={student.statusLabel}
               className="min-w-0 flex-1"
             />
-            <Button aria-label="เมนูนักเรียน" size="icon-sm" variant="ghost">
+            <Button aria-label={`เมนูนักเรียน ${student.name}`} size="icon-sm" variant="ghost">
               <MoreVertical />
             </Button>
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <span className="truncate">{student.guardian}</span>
-            <Button size="sm" variant="outline">
+            <Link
+              href={`/students/${student.id}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
               ดูข้อมูล <ChevronRight />
-            </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -48,23 +54,43 @@ function MobileStudentRow({
   )
 }
 
-export function MobileStudents() {
+export function MobileStudents({
+  students,
+  totalFiltered,
+  page,
+  totalPages,
+  pageSize,
+  getPageHref,
+}: {
+  students: StudentListItem[]
+  totalFiltered: number
+  page: number
+  totalPages: number
+  pageSize: number
+  getPageHref: (page: number) => string
+}) {
   return (
     <MobileList
-      items={studentRows}
+      items={students}
       getItemKey={(student) => student.id}
       title="รายชื่อนักเรียน"
-      summary={`ทั้งหมด ${studentSummary.total} คน`}
-      renderItem={(student, index) => (
-        <MobileStudentRow student={student} index={index} />
-      )}
+      summary={`ทั้งหมด ${totalFiltered.toLocaleString("th-TH")} คน`}
+      renderItem={(student, index) => <MobileStudentRow student={student} index={index} />}
+      emptyState={
+        <EmptyState
+          size="compact"
+          title="ไม่พบนักเรียนตามตัวกรอง"
+          description="ลองล้างตัวกรองหรือค้นหาด้วยชื่อ รหัสนักเรียน หรือชื่อผู้ปกครอง"
+        />
+      }
       footer={
         <Pagination
-          page={1}
-          totalPages={13}
-          totalItems={studentSummary.total}
-          pageSize={10}
-          pageSizeLabel="10 ต่อหน้า"
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalFiltered}
+          pageSize={pageSize}
+          pageSizeLabel={`${pageSize} ต่อหน้า`}
+          getPageHref={getPageHref}
           className="pt-1"
         />
       }

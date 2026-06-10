@@ -1,55 +1,71 @@
-﻿import React from "react"
 import { Users } from "lucide-react"
 
-export function ClassSummary() {
+import { Section, StatusBadge } from "@/components/dashboard"
+import { EmptyState } from "@/components/feedback"
+import { cn } from "@/lib/utils"
+
+import type { ClassSummaryItem } from "./student-data"
+
+export function ClassSummary({
+  items,
+  total,
+  activeGrade,
+}: {
+  items: ClassSummaryItem[]
+  total: number
+  activeGrade?: string
+}) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-slate-800">จำนวนนักเรียนตามชั้นเรียน</h3>
+    <Section
+      variant="surface"
+      title="จำนวนนักเรียนตามชั้นเรียน"
+      description={`รวม ${total.toLocaleString("th-TH")} คนจากข้อมูลปัจจุบัน`}
+      actions={<Users aria-hidden="true" className="size-4 text-muted-foreground" />}
+      contentClassName="pt-1"
+    >
+      {items.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {items.map((item) => {
+            const isActive = activeGrade === item.gradeLevel
+
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  "flex min-h-24 flex-col justify-between rounded-lg border border-border bg-background p-3 transition-colors",
+                  isActive && "border-primary bg-primary/5 ring-1 ring-primary",
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {item.label}
+                  </span>
+                  {item.highRisk > 0 ? (
+                    <StatusBadge status="high-risk" label={item.highRisk} size="sm" />
+                  ) : item.watch > 0 ? (
+                    <StatusBadge status="watch" label={item.watch} size="sm" />
+                  ) : null}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xl font-semibold tabular-nums text-foreground">
+                    {item.count.toLocaleString("th-TH")}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">คน</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ติดตาม {(item.watch + item.highRisk).toLocaleString("th-TH")} คน
+                  </p>
+                </div>
+              </div>
+            )
+          })}
         </div>
-        <span className="text-xs font-medium text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200">
-          ทั้งหมด 128 คน
-        </span>
-      </div>
-
-      <div className="p-4 sm:p-5">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-
-          <div className="group cursor-pointer rounded-lg border border-slate-200 p-3 flex flex-col hover:border-slate-300 hover:bg-slate-50 transition-colors">
-            <span className="text-xs font-medium text-slate-500 mb-1">ป.1</span>
-            <span className="text-sm font-semibold text-slate-900">18 <span className="text-xs font-normal text-slate-500">คน</span></span>
-          </div>
-
-          <div className="group cursor-pointer rounded-lg border border-slate-200 p-3 flex flex-col hover:border-slate-300 hover:bg-slate-50 transition-colors">
-            <span className="text-xs font-medium text-slate-500 mb-1">ป.2</span>
-            <span className="text-sm font-semibold text-slate-900">17 <span className="text-xs font-normal text-slate-500">คน</span></span>
-          </div>
-
-          <div className="group cursor-pointer rounded-lg border border-slate-200 p-3 flex flex-col hover:border-slate-300 hover:bg-slate-50 transition-colors">
-            <span className="text-xs font-medium text-slate-500 mb-1">ป.3</span>
-            <span className="text-sm font-semibold text-slate-900">20 <span className="text-xs font-normal text-slate-500">คน</span></span>
-          </div>
-
-          <div className="group cursor-pointer rounded-lg border border-slate-200 p-3 flex flex-col hover:border-slate-300 hover:bg-slate-50 transition-colors">
-            <span className="text-xs font-medium text-slate-500 mb-1">ป.4</span>
-            <span className="text-sm font-semibold text-slate-900">21 <span className="text-xs font-normal text-slate-500">คน</span></span>
-          </div>
-
-          {/* Active State */}
-          <div className="cursor-pointer rounded-lg border border-blue-600 bg-blue-50 p-3 flex flex-col ring-1 ring-blue-600">
-            <span className="text-xs font-semibold text-blue-700 mb-1">ป.5</span>
-            <span className="text-sm font-bold text-blue-900">26 <span className="text-xs font-medium text-blue-700">คน</span></span>
-          </div>
-
-          <div className="group cursor-pointer rounded-lg border border-slate-200 p-3 flex flex-col hover:border-slate-300 hover:bg-slate-50 transition-colors">
-            <span className="text-xs font-medium text-slate-500 mb-1">ป.6</span>
-            <span className="text-sm font-semibold text-slate-900">26 <span className="text-xs font-normal text-slate-500">คน</span></span>
-          </div>
-
-        </div>
-      </div>
-    </div>
+      ) : (
+        <EmptyState
+          size="compact"
+          title="ยังไม่มีข้อมูลชั้นเรียน"
+          description="เมื่อนำเข้าข้อมูลนักเรียน ระบบจะแสดงจำนวนแยกตามชั้นเรียนอัตโนมัติ"
+        />
+      )}
+    </Section>
   )
 }

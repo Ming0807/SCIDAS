@@ -1,11 +1,14 @@
+import Link from "next/link"
 import { Edit2, Eye, MoreHorizontal, Printer, Settings, Trash2, Users } from "lucide-react"
 
 import { StudentIdentity } from "@/components/dashboard"
-import { DataTable, Pagination, type DataTableColumn } from "@/components/data"
 import { StatusBadge } from "@/components/dashboard/status-badge"
-import { Button } from "@/components/ui/button"
+import { DataTable, Pagination, type DataTableColumn } from "@/components/data"
+import { EmptyState } from "@/components/feedback"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-import { studentRows, studentSummary, type StudentListItem } from "./student-data"
+import type { StudentListItem, StudentSummary } from "./student-data"
 
 const columns: Array<DataTableColumn<StudentListItem>> = [
   {
@@ -16,8 +19,6 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
     cell: (_, index) => (
       <input
         aria-label={`เลือกนักเรียนลำดับ ${index + 1}`}
-        checked={index === 0}
-        readOnly
         type="checkbox"
         className="size-4 rounded border-input text-primary focus:ring-ring"
       />
@@ -51,11 +52,7 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
     id: "status",
     header: "สถานะ",
     cell: (student) => (
-      <StatusBadge
-        status={student.status}
-        label={student.statusLabel}
-        size="sm"
-      />
+      <StatusBadge status={student.status} label={student.statusLabel} size="sm" />
     ),
   },
   {
@@ -75,15 +72,19 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
     header: "จัดการ",
     align: "center",
     sticky: "right",
-    cell: () => (
+    cell: (student) => (
       <div className="flex items-center justify-center gap-1">
-        <Button aria-label="ดูข้อมูลนักเรียน" size="icon-sm" variant="ghost">
+        <Link
+          aria-label={`ดูข้อมูล ${student.name}`}
+          href={`/students/${student.id}`}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+        >
           <Eye />
-        </Button>
-        <Button aria-label="แก้ไขนักเรียน" size="icon-sm" variant="ghost">
+        </Link>
+        <Button aria-label={`แก้ไข ${student.name}`} size="icon-sm" variant="ghost">
           <Edit2 />
         </Button>
-        <Button aria-label="เมนูเพิ่มเติม" size="icon-sm" variant="ghost">
+        <Button aria-label={`เมนูเพิ่มเติม ${student.name}`} size="icon-sm" variant="ghost">
           <MoreHorizontal />
         </Button>
       </div>
@@ -91,23 +92,33 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
   },
 ]
 
-function StudentTableToolbar() {
+function StudentTableToolbar({
+  summary,
+  totalFiltered,
+}: {
+  summary: StudentSummary
+  totalFiltered: number
+}) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="secondary">
-          รายการทั้งหมด
+          รายการที่แสดง
           <span className="rounded-full bg-background px-1.5 py-0.5 text-xs">
-            {studentSummary.total}
+            {totalFiltered.toLocaleString("th-TH")}
           </span>
         </Button>
         <Button size="sm" variant="ghost">
-          รอตรวจสอบ
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">12</span>
+          ต้องติดตาม
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
+            {(summary.watch + summary.highRisk).toLocaleString("th-TH")}
+          </span>
         </Button>
         <Button size="sm" variant="ghost">
-          ติดตาม
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">18</span>
+          งานเปิด
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
+            {summary.openActions.toLocaleString("th-TH")}
+          </span>
         </Button>
       </div>
 
@@ -132,24 +143,48 @@ function StudentTableToolbar() {
   )
 }
 
-export function StudentTable() {
+export function StudentTable({
+  students,
+  summary,
+  totalFiltered,
+  page,
+  totalPages,
+  pageSize,
+  getPageHref,
+}: {
+  students: StudentListItem[]
+  summary: StudentSummary
+  totalFiltered: number
+  page: number
+  totalPages: number
+  pageSize: number
+  getPageHref: (page: number) => string
+}) {
   return (
     <DataTable
       className="h-full min-h-[420px]"
       columns={columns}
-      data={studentRows}
-      getRowKey={(student) => student.id}
-      rowClassName={(_, index) =>
-        index === 0 ? "bg-primary/5 hover:bg-primary/10" : undefined
+      data={students}
+      emptyState={
+        <EmptyState
+          size="compact"
+          title="ไม่พบนักเรียนตามตัวกรอง"
+          description="ลองล้างตัวกรองหรือค้นหาด้วยชื่อ รหัสนักเรียน หรือชื่อผู้ปกครอง"
+        />
       }
-      toolbar={<StudentTableToolbar />}
+      getRowKey={(student) => student.id}
+      rowClassName={(student) =>
+        student.riskLevel === "high" ? "bg-destructive/5 hover:bg-destructive/10" : undefined
+      }
+      toolbar={<StudentTableToolbar summary={summary} totalFiltered={totalFiltered} />}
       footer={
         <Pagination
-          page={1}
-          totalPages={13}
-          totalItems={studentSummary.total}
-          pageSize={10}
-          pageSizeLabel="10 ต่อหน้า"
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalFiltered}
+          pageSize={pageSize}
+          pageSizeLabel={`${pageSize} ต่อหน้า`}
+          getPageHref={getPageHref}
         />
       }
     />

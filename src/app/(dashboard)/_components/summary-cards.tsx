@@ -1,68 +1,50 @@
-import React from "react"
-import { Users, AlertTriangle, ClipboardCheck } from "lucide-react"
+import { AlertTriangle, ClipboardCheck, ListChecks, Users } from "lucide-react"
 
-export function SummaryCards() {
+import { MetricCard } from "@/components/dashboard"
+import { formatPercent } from "@/lib/student-care-formatters"
+import type { StudentCareDashboard } from "@/lib/server/student-care-read-models"
+
+type DashboardMetrics = StudentCareDashboard["metrics"]
+
+function getPercent(count: number, total: number) {
+  if (total <= 0) {
+    return "0.0%"
+  }
+
+  return formatPercent((count / total) * 100)
+}
+
+export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-      {/* Card 1: นักเรียนทั้งหมด */}
-      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
-        <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-          <Users className="h-7 w-7 text-blue-500" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[13px] font-semibold text-slate-600 mb-1">นักเรียนทั้งหมด</span>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold text-slate-800">128</span>
-            <span className="text-sm font-medium text-slate-800">คน</span>
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1">ชาย 65 คน • หญิง 63 คน</span>
-        </div>
-      </div>
-
-      {/* Card 2: กลุ่มเฝ้าระวัง */}
-      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
-        <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-          <Users className="h-7 w-7 text-amber-500" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[13px] font-semibold text-slate-600 mb-1">กลุ่มเฝ้าระวัง</span>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold text-slate-800">18</span>
-            <span className="text-sm font-medium text-slate-800">คน</span>
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1">14.1% ของนักเรียนทั้งหมด</span>
-        </div>
-      </div>
-
-      {/* Card 3: เสี่ยงสูง */}
-      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
-        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-          <AlertTriangle className="h-7 w-7 text-red-500" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[13px] font-semibold text-slate-600 mb-1">เสี่ยงสูง</span>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold text-slate-800">7</span>
-            <span className="text-sm font-medium text-slate-800">คน</span>
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1">5.5% ของนักเรียนทั้งหมด</span>
-        </div>
-      </div>
-
-      {/* Card 4: แผนพัฒนา */}
-      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
-        <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-          <ClipboardCheck className="h-7 w-7 text-emerald-500" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[13px] font-semibold text-slate-600 mb-1">แผนพัฒนาที่กำลังติดตาม</span>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold text-slate-800">23</span>
-            <span className="text-sm font-medium text-slate-800">คน</span>
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1">17.9% ของนักเรียนทั้งหมด</span>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <MetricCard
+        title="นักเรียนทั้งหมด"
+        value={metrics.totalStudents.toLocaleString("th-TH")}
+        description={`อัตรามาเรียน 30 วัน ${formatPercent(metrics.averageAttendance30d)}`}
+        icon={Users}
+        status="primary"
+      />
+      <MetricCard
+        title="กลุ่มเฝ้าระวัง"
+        value={metrics.watchStudents.toLocaleString("th-TH")}
+        description={`${getPercent(metrics.watchStudents, metrics.totalStudents)} ของนักเรียนทั้งหมด`}
+        icon={Users}
+        status="watch"
+      />
+      <MetricCard
+        title="เสี่ยงสูง"
+        value={metrics.highRiskStudents.toLocaleString("th-TH")}
+        description={`${getPercent(metrics.highRiskStudents, metrics.totalStudents)} ต้องมีผู้รับผิดชอบ`}
+        icon={AlertTriangle}
+        status="high-risk"
+      />
+      <MetricCard
+        title="งานดูแลที่เปิดอยู่"
+        value={(metrics.openSupportCases + metrics.openActionItems).toLocaleString("th-TH")}
+        description={`แผนกำลังติดตาม ${metrics.activePlans.toLocaleString("th-TH")} แผน`}
+        icon={metrics.openActionItems > 0 ? ListChecks : ClipboardCheck}
+        status={metrics.openActionItems > 0 ? "info" : "normal"}
+      />
     </div>
   )
 }

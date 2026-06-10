@@ -1,64 +1,109 @@
-import React from "react"
-import { ChevronRight, ShieldAlert, HeartPulse, BookOpen, Clock } from "lucide-react"
+import Link from "next/link"
+import {
+  BookOpen,
+  ChevronRight,
+  Clock,
+  HeartPulse,
+  ShieldAlert,
+  type LucideIcon,
+} from "lucide-react"
 
-export function RiskRecommendations() {
+import { Section, StatusBadge } from "@/components/dashboard"
+import { buttonVariants } from "@/components/ui/button"
+import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
+import { cn } from "@/lib/utils"
+
+function RecommendationItem({
+  icon: Icon,
+  title,
+  description,
+  count,
+  href,
+  tone,
+}: {
+  icon: LucideIcon
+  title: string
+  description: string
+  count: number
+  href: string
+  tone: string
+}) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full flex flex-col">
-      <h3 className="text-[14px] font-bold text-slate-800 mb-4">ข้อเสนอแนะ</h3>
-
-      <div className="flex flex-col gap-3 flex-1">
-        
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/50 hover:bg-red-50 transition-colors cursor-pointer group">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-5 h-5 text-red-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-[12px] font-bold text-slate-800">กลุ่มเสี่ยงสูง</h4>
-            <p className="text-[10px] text-slate-500 truncate">ควรดำเนินการช่วยเหลือเร่งด่วนและติดตามอย่างใกล้ชิด</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-red-500" />
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:bg-muted/40"
+    >
+      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <Icon aria-hidden="true" className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <h4 className="truncate text-sm font-semibold text-foreground">{title}</h4>
+          <StatusBadge status={tone} label={count.toLocaleString("th-TH")} size="sm" />
         </div>
-
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-yellow-100 bg-yellow-50/50 hover:bg-yellow-50 transition-colors cursor-pointer group">
-          <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-            <HeartPulse className="w-5 h-5 text-yellow-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-[12px] font-bold text-slate-800">กลุ่มเสี่ยงปานกลาง</h4>
-            <p className="text-[10px] text-slate-500 truncate">ควรวางแผนป้องกันและส่งเสริมอย่างต่อเนื่อง</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-yellow-600" />
-        </div>
-
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-green-100 bg-green-50/50 hover:bg-green-50 transition-colors cursor-pointer group">
-          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-            <BookOpen className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-[12px] font-bold text-slate-800">ปัจจัยเสี่ยงด้านการเรียน</h4>
-            <p className="text-[10px] text-slate-500 truncate">ควรจัดกิจกรรมเสริมการเรียนรู้และติวเข้ม</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-green-600" />
-        </div>
-
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-blue-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-[12px] font-bold text-slate-800">ติดตามผล</h4>
-            <p className="text-[10px] text-slate-500 truncate">ติดตามและประเมินซ้ำทุก 1 เดือน</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
-        </div>
-
+        <p className="mt-1 truncate text-xs text-muted-foreground">{description}</p>
       </div>
+      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
+  )
+}
 
-      <button className="w-full mt-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[13px] rounded-xl transition-colors shadow-md shadow-indigo-200 flex items-center justify-center gap-2">
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+export function RiskRecommendations({
+  students,
+}: {
+  students: StudentWorklistItem[]
+}) {
+  const highRisk = students.filter((student) => student.riskLevel === "high").length
+  const watch = students.filter((student) => student.riskLevel === "watch").length
+  const attendanceIssues = students.filter(
+    (student) => student.absentDays30d > 0 || student.lateDays30d > 2,
+  ).length
+  const openActions = students.reduce((total, student) => total + student.openActionCount, 0)
+
+  return (
+    <Section
+      variant="surface"
+      title="ข้อเสนอแนะ"
+      description="สร้างจากข้อมูลความเสี่ยง งานเปิด และการมาเรียนล่าสุด"
+      contentClassName="space-y-3"
+      className="h-full"
+    >
+      <RecommendationItem
+        icon={ShieldAlert}
+        title="กลุ่มเสี่ยงสูง"
+        description="ควรสร้างเคสดูแลและกำหนดผู้รับผิดชอบ"
+        count={highRisk}
+        href="/students?status=high"
+        tone="high-risk"
+      />
+      <RecommendationItem
+        icon={HeartPulse}
+        title="กลุ่มเฝ้าระวัง"
+        description="ติดตามแนวโน้มก่อนยกระดับเป็นเคส"
+        count={watch}
+        href="/students?status=watch"
+        tone="watch"
+      />
+      <RecommendationItem
+        icon={BookOpen}
+        title="ประเด็นการมาเรียน"
+        description="ตรวจสอบการขาด สาย และการติดต่อผู้ปกครอง"
+        count={attendanceIssues}
+        href="/attendance"
+        tone="info"
+      />
+      <RecommendationItem
+        icon={Clock}
+        title="งานที่ยังเปิด"
+        description="ปิดงานที่เสร็จแล้วและนัดติดตามรายการค้าง"
+        count={openActions}
+        href="/support"
+        tone={openActions > 0 ? "watch" : "normal"}
+      />
+
+      <Link href="/support/new" className={cn(buttonVariants(), "mt-1 w-full")}>
         สร้างแผนช่วยเหลือกลุ่มเสี่ยง
-      </button>
-
-    </div>
+      </Link>
+    </Section>
   )
 }

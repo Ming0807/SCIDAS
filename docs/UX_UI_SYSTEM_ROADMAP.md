@@ -12,6 +12,8 @@
 
 > Update 2026-06-10: Page-by-page UI migration is paused until the backend data foundation is applied and verified. Use `docs/BACKEND_DATA_ARCHITECTURE.md`, `supabase/migrations/0008_ux_data_foundation.sql`, and `src/lib/server/student-care-read-models.ts` as the required data source before replacing any remaining mock/static route data.
 
+> Update 2026-06-10 later pass: initial real-data frontend integration is now in place for `/`, `/students`, `/home-visits`, `/risk-analysis`, and `/support`. The remaining blocker for production verification is applying migration `0008_ux_data_foundation.sql` in Supabase and running authenticated visual checks.
+
 ## Evidence From Current Audit
 
 ### Technical Health Baseline
@@ -151,13 +153,18 @@ Route Server Component
 
 ### P2: Page Migration Waves
 
-- [ ] Wave 1: app shell, dashboard overview, students list
+- [x] Wave 1: app shell, dashboard overview, students list
 - [ ] Wave 2: attendance, academics, behavior
   - [x] attendance pilot migrated to shared shell/data/list patterns.
   - [x] academics migrated to shared shell/data/list patterns.
   - [ ] behavior remains.
 - [ ] Wave 3: risk-analysis, support, development-plans
+  - [x] risk-analysis overview/top-risk/recommendations now read from `v_student_worklist`.
+  - [x] support now uses a real action/support workbench backed by `getStudentCareDashboard()`.
+  - [ ] development-plans remains.
 - [ ] Wave 4: reports, notifications, settings, home-visits
+  - [x] home-visits now reads real `home_visits`/`home_visit_images`.
+  - [ ] reports, notifications, and settings remain.
 - [ ] Wave 5: student detail and behavior/detail pages
 
 ### P3: Quality Gates and Automation
@@ -178,7 +185,7 @@ Route Server Component
 
 ### `/students`
 
-- รวม desktop table และ mobile list ให้ใช้ data/view model เดียว: done for the current pilot mock dataset
+- รวม desktop table และ mobile list ให้ใช้ data/view model เดียว: done with `getStudentWorklist()` and URL search params
 - filter ควรอยู่ใน `FilterBar`: done
 - row action ต้องชัด: view, edit, support, risk
 - student profile panel ควรแยกเป็น reusable `StudentIdentity` และ `StudentSnapshot`
@@ -206,12 +213,14 @@ Route Server Component
 - รักษา focus ของ EWS: risk level, factors, suggested action, owner, due date
 - chart ควรลด decorative elements และเพิ่ม explainability
 - top risk students ต้องเชื่อม action ต่อไป: create support case, create IDP, schedule home visit
+- overview, top-risk list, and recommendations now read from `v_student_worklist`; matrix/chart data models still need backend source.
 
 ### `/support`
 
 - support case ควรมี lifecycle: open, in progress, resolved, monitoring
 - ทีมช่วยเหลือ, current plan, notes, records ควรใช้ shared case components
 - หน้า new support ต้องใช้ form contract กลางและ action result กลาง
+- main support page now reads the real action queue and priority students; notes/timeline panels still need `student_notes` and `student_timeline_events`.
 
 ### `/development-plans`
 
@@ -224,6 +233,7 @@ Route Server Component
 - ต้องมี visit status, next visit, attachment/image state, privacy warning
 - mobile ต้องเหมาะกับครูที่กรอกภาคสนาม
 - form ควรแยกเป็น steps หรือ sections ที่สั้นและตรวจง่าย
+- list/gallery now reads real `home_visits` and `home_visit_images`; generic `student_attachments` evidence flow remains.
 
 ### `/reports`
 
