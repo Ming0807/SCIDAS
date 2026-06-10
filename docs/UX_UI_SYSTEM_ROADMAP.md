@@ -10,6 +10,8 @@
 
 แนวทางที่ดีที่สุดคือทำ `System Reset แบบควบคุมความเสี่ยง`: สร้าง design system และ app shell กลางก่อน จากนั้นค่อย migrate แต่ละหน้าด้วย component contract เดียวกัน พร้อมตรวจ lint, type, test, build, responsive, accessibility และ visual regression ทุก wave
 
+> Update 2026-06-10: Page-by-page UI migration is paused until the backend data foundation is applied and verified. Use `docs/BACKEND_DATA_ARCHITECTURE.md`, `supabase/migrations/0008_ux_data_foundation.sql`, and `src/lib/server/student-care-read-models.ts` as the required data source before replacing any remaining mock/static route data.
+
 ## Evidence From Current Audit
 
 ### Technical Health Baseline

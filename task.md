@@ -1,5 +1,49 @@
 ﻿# Task Progress
 
+## 2026-06-10 Backend Data Foundation Pivot
+
+Status: active. The previous page-by-page UX/UI migration is paused temporarily while the database and backend flow are made reliable enough for real frontend usage.
+
+Source of truth:
+
+- `docs/BACKEND_DATA_ARCHITECTURE.md`
+- `supabase/migrations/0008_ux_data_foundation.sql`
+- `src/lib/server/student-care-read-models.ts`
+
+### Completed In This Backend Pass
+
+- [x] Audited the current Supabase schema, RLS policies, migrations, server actions, and route inventory.
+- [x] Designed the cross-module student care data layer for smoother UX across dashboard, students, risk, support, IDP, reports, home visits, and notifications.
+- [x] Added migration `0008_ux_data_foundation.sql` with school consistency triggers, UX orchestration tables, timeline automation, risk follow-up automation, read models, and RLS policies.
+- [x] Added server-side contracts in `src/lib/server/action-result.ts`, `src/lib/server/current-user.ts`, `src/lib/server/student-care-read-models.ts`, and `src/app/actions/care.actions.ts`.
+- [x] Updated `src/app/actions/dashboard.actions.ts` to read from the new student care dashboard service.
+- [x] Updated `src/types/database.types.ts` for the existing `students.user_id` migration.
+- [x] Documented the backend architecture and route integration order.
+
+### Current Backend Verification
+
+- [x] `npx tsc --noEmit`: passed after adding the DAL/service layer.
+- [ ] `supabase db reset` or `supabase db push`: not run locally because Supabase CLI is not installed in this environment.
+- [ ] SQL migration preview on Supabase: still required before production deploy.
+
+### P0 Next Tasks
+
+- [ ] Apply migration `0008_ux_data_foundation.sql` in a Supabase preview project and fix any SQL/RLS issues found there.
+- [ ] Replace dashboard static components with props from `getStudentCareDashboard()`.
+- [ ] Replace `/students` route-local `student-data.ts` with `getStudentWorklist()`.
+- [ ] Replace mock `/home-visits` cards with real `home_visits` + `student_attachments`.
+- [ ] Connect `/risk-analysis` top-risk and recommendations to `v_student_worklist`, `student_flags`, and `action_items`.
+- [ ] Connect `/support` notes/actions to `student_notes`, `action_items`, and `student_timeline_events`.
+- [ ] Convert migrated mutations to `ActionResult<T>` and verify auth/authorization inside every action.
+
+### P1 Next Tasks
+
+- [ ] Add a real report generation queue around `report_jobs`.
+- [ ] Add attachment upload actions that write `student_attachments`.
+- [ ] Add notification links to source records and action items.
+- [ ] Add authenticated browser visual checks after pages consume real read models.
+- [ ] Regenerate Supabase database types after migration `0008` is applied.
+
 ## 2026-06-10 System UX/UI & Architecture Roadmap
 
 Source of truth for the next UX/UI and frontend architecture work:

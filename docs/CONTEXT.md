@@ -4,6 +4,8 @@
 
 > **Current planning note (2026-06-10):** This context is partly stale. The current app uses Next.js 16.2.7, and frontend structure/UX decisions should follow [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md) until this file is fully updated.
 
+> **Backend data foundation note (2026-06-10):** The current priority has shifted from page-by-page UI cleanup to the database and backend flow required for real frontend usage. Use [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md) together with migration `supabase/migrations/0008_ux_data_foundation.sql` and server DAL files under `src/lib/server/`.
+
 ## 1. ข้อมูลพื้นฐานของโปรเจกต์
 - **ชื่อโปรเจกต์:** Student Care and Individual Development Analytics System (SCIDAS)
 - **ระบบ:** ระบบสารสนเทศเพื่อวิเคราะห์และดูแลช่วยเหลือนักเรียนรายบุคคลสำหรับโรงเรียนขนาดเล็ก
@@ -37,6 +39,10 @@
 - **Verification baseline:** ล่าสุด `lint`, `tsc --noEmit`, `vitest`, และ `build` ผ่านแล้ว แต่ authenticated visual verification และ `$impeccable` detector findings ยังต้องตามต่อ
 
 ### Backend (Supabase)
+- **Current backend foundation:** `0008_ux_data_foundation.sql` adds the shared UX data layer: `student_timeline_events`, `student_flags`, `action_items`, `student_notes`, `student_attachments`, `report_jobs`, `user_dashboard_preferences`, plus read models `v_current_student_directory`, `v_student_latest_risk`, `v_student_support_state`, and `v_student_worklist`.
+- **Data access rule:** Server Components should read through `src/lib/server/student-care-read-models.ts` or another server-only DAL module. Client Components should mutate through Server Actions that return `ActionResult<T>`.
+- **Preferred student list model:** use `v_student_worklist` / `getStudentWorklist()` before writing custom page-local student queries.
+- **Action queue model:** use `action_items` for every cross-module follow-up so dashboard, risk, support, and student detail show the same owner/due/status state.
 - **Row Level Security (RLS):** ตารางทุกตารางในฐานข้อมูลต้องมีการเปิด RLS
 - **Authentication:** ผูกผู้ใช้กับตาราง `auth.users` ของ Supabase โดยมีตาราง `public.profiles` เพื่อเก็บ Role
 - **Roles:** `admin`, `director` (ผู้บริหาร), `homeroom` (ครูประจำชั้น), `counselor` (ครูแนะแนว/ฝ่ายปกครอง), `teacher` (ครูผู้สอน)

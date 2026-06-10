@@ -13,6 +13,8 @@
 
 > **Current planning note (2026-06-10):** UX/UI, component architecture, route flow, and documentation cleanup are now tracked in [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md). Design-system rules live in [frontend.md](./frontend.md). Some architecture sections below still reflect older Next.js 15 assumptions and must be reconciled with the current Next.js 16.2.7 app before implementation.
 
+> **Backend data foundation note (2026-06-10):** Real frontend integration is now tracked in [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md). The required database migration is `supabase/migrations/0008_ux_data_foundation.sql`.
+
 ---
 
 ## 📋 สารบัญ

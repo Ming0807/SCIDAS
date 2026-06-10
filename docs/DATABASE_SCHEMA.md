@@ -3856,3 +3856,55 @@ VALUES
 > 4. `004_create_rls_policies.sql`
 > 5. `005_create_storage_and_realtime.sql`
 > 6. `006_seed_data.sql`
+
+---
+
+## 11. UX Data Foundation Addendum (2026-06-10)
+
+Migration file: `supabase/migrations/0008_ux_data_foundation.sql`
+
+This addendum records the new cross-module data layer used to make the frontend read one coherent student care state.
+
+### 11.1 School Consistency Triggers
+
+The migration adds triggers that set and validate `school_id` from the linked parent record. This fixes the risk of child records being saved under the seed school id when Server Actions omit `school_id`.
+
+Covered relationships:
+
+- Student-scoped: `attendance_records`, `academic_scores`, `basic_skills`, `behavior_records`, `assignment_submissions`, `home_visits`, `support_records`, `risk_assessments`, `development_plans`, `student_guardians`, `classroom_students`
+- Parent-scoped: `support_followups`, `risk_factors`, `development_goals`, `development_activities`, `development_evaluations`, `home_visit_images`, `classroom_subjects`, `semesters`, `notifications`
+
+### 11.2 New UX Orchestration Tables
+
+| Table | Relationship | Purpose |
+|---|---|---|
+| `student_timeline_events` | `students.id` plus source table/id | Unified event stream for attendance, behavior, support, risk, IDP, and home visits |
+| `student_flags` | `students.id`, optional owner/source | Active student attention flags used by dashboards and headers |
+| `action_items` | optional `students.id`, owner/source | Cross-module task queue for follow-up, review, and intervention work |
+| `student_notes` | `students.id`, author/source | Shared note stream with `team`, `private`, and `leadership` visibility |
+| `student_attachments` | `students.id`, optional reference table/id | Generic evidence/file registry for home visits, support, reports, and student detail |
+| `report_jobs` | `profiles.id`, school | Async report/export status queue |
+| `user_dashboard_preferences` | `profiles.id`, school | Per-user saved dashboard and table preferences |
+
+### 11.3 New Read Models
+
+| View | Columns summarized | Primary consumers |
+|---|---|---|
+| `v_current_student_directory` | active student, class, semester, primary guardian | `/students`, shared selectors, forms |
+| `v_student_latest_risk` | latest risk assessment per student | dashboard, `/risk-analysis`, support summary |
+| `v_student_support_state` | open support, active plans, active flags/actions, next due date | dashboard, `/support`, student detail |
+| `v_student_worklist` | student identity + risk + action/support state + 30-day attendance | dashboard priority list, `/students`, `/risk-analysis`, `/support` |
+
+### 11.4 Automation
+
+- `sync_student_timeline_from_source()` upserts timeline rows when source module records are inserted or updated.
+- `sync_risk_follow_up()` creates or updates a `student_flags` row and an `action_items` row when risk becomes `watch` or `high`.
+- If risk returns to `normal`, the active risk flag is resolved and open risk follow-up action items are cancelled.
+
+### 11.5 RLS
+
+All new tables enable RLS. Policies follow the existing `can_access_student(student_id)`, `get_user_school_id()`, and `get_user_role()` helpers. Notes and attachments include extra visibility/privacy checks.
+
+### 11.6 Verification Note
+
+The local environment currently does not include Supabase CLI or `psql`, so the SQL migration still needs preview-project validation before production deployment.

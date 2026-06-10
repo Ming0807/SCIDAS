@@ -155,6 +155,8 @@ Rules:
 
 - Pages and layouts are Server Components by default in Next.js 16. Keep them server-first.
 - Client Components should be limited to state, event handlers, browser APIs, charts that require the client, and form interaction.
+- Data-heavy dashboard routes should read through `src/lib/server/student-care-read-models.ts` or another server-only DAL module before adding new page-local queries or mock data.
+- Student list, risk, support, dashboard, and student detail routes should prefer `getStudentWorklist()`, `getStudentCareDashboard()`, `getActionQueue()`, and `getStudentTimeline()` where applicable.
 - Internal mutations should use Server Actions, not API routes, unless the endpoint is for webhooks or external integrations.
 - Mutated pages must surface pending, success, validation error, and unexpected error states.
 - Server Actions should return the shared `ActionResult<T>` contract documented in `docs/API_SPECIFICATION.md` when a module is migrated.

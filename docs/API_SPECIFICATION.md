@@ -6,12 +6,12 @@
 |---|---|
 | **Version** | `1.0.0` |
 | **Base URL** | `https://<domain>/api` |
-| **Tech Stack** | Next.js 15 App Router, Supabase (PostgreSQL + Auth + Storage + Realtime) |
+| **Tech Stack** | Next.js 16.2.7 App Router, Supabase (PostgreSQL + Auth + Storage + Realtime) |
 | **Architecture** | Server Actions (mutations) + API Routes (external/webhooks) |
 | **Auth** | Supabase Auth (JWT) — ส่ง `Authorization: Bearer <token>` สำหรับ API Routes |
 | **Date Format** | ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`) |
 | **Pagination** | Cursor-based & Offset-based (ดูรายละเอียดที่ [Common Patterns](#common-patterns)) |
-| **อัปเดตล่าสุด** | 2026-06-09 |
+| **อัปเดตล่าสุด** | 2026-06-10 |
 
 ---
 
@@ -198,6 +198,32 @@ Server Action rules:
 - Use bound parameters for stable resource IDs, then re-check ownership on the server.
 - Prefer `revalidatePath("/exact-route")` or redirect to the updated resource over broad refreshes.
 - API Routes remain for external integrations, webhooks, file endpoints, or public HTTP APIs; internal dashboard mutations should use Server Actions.
+
+### Backend Read Models And DAL Contract (2026-06-10)
+
+New or migrated dashboard routes must use the server data access layer before adding page-local queries:
+
+| Contract | File or DB object | Use |
+|---|---|---|
+| Current user context | `src/lib/server/current-user.ts` | Resolve Supabase user, role, school, profile/student id, and current semester |
+| Student care read models | `src/lib/server/student-care-read-models.ts` | Dashboard metrics, student worklist, action queue, and timeline |
+| Shared result envelope | `src/lib/server/action-result.ts` | `ActionResult<T>` helpers for migrated Server Actions |
+| Action queue mutation | `src/app/actions/care.actions.ts` | Update `action_items.status` with auth, RLS, and narrow revalidation |
+| Main student worklist view | `v_student_worklist` | Identity, class, guardian, risk, action, support, flags, and 30-day attendance |
+| Activity feed table | `student_timeline_events` | Unified timeline for student detail, support, risk, IDP, and home visits |
+| Cross-module task table | `action_items` | Owner, due date, priority, status, and source record for follow-up tasks |
+
+Frontend modules should prefer these functions:
+
+```typescript
+getStudentCareDashboard();
+getStudentWorklist({ limit: 500 });
+getActionQueue({ limit: 12 });
+getStudentTimeline(studentId);
+setActionItemStatus(actionItemId, "done");
+```
+
+The database foundation lives in `supabase/migrations/0008_ux_data_foundation.sql`. It must be applied in a Supabase preview environment before production deployment.
 
 ### Standard Error Codes
 

@@ -1798,6 +1798,7 @@ export type Database = {
           subdistrict: string | null
           travel_method: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -1832,6 +1833,7 @@ export type Database = {
           subdistrict?: string | null
           travel_method?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -1866,8 +1868,16 @@ export type Database = {
           subdistrict?: string | null
           travel_method?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "students_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "students_school_id_fkey"
             columns: ["school_id"]
