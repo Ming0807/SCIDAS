@@ -933,7 +933,6 @@ SELECT
     s.school_id,
     s.id AS student_id,
     s.student_code,
-    s.user_id,
     s.prefix,
     s.first_name,
     s.last_name,
