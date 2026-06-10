@@ -18,7 +18,7 @@ export function MobileAdminBasicSettings() {
       </div>
 
       {/* 1. System Info */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
             <Settings className="w-4 h-4 text-indigo-600" />
@@ -56,7 +56,7 @@ export function MobileAdminBasicSettings() {
       </div>
 
       {/* 2. General Settings */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
             <Settings className="w-4 h-4 text-indigo-600" />
@@ -99,7 +99,7 @@ export function MobileAdminBasicSettings() {
       </div>
 
       {/* 3. Date & Time Settings */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
             <Clock className="w-4 h-4 text-indigo-600" />
@@ -133,7 +133,7 @@ export function MobileAdminBasicSettings() {
       </div>
 
       {/* 4. Upload Settings */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
             <HardDrive className="w-4 h-4 text-indigo-600" />
@@ -170,7 +170,7 @@ export function MobileAdminBasicSettings() {
       </div>
 
       {/* 5. Contact Info */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mb-4">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-4">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
             <PhoneCall className="w-4 h-4 text-indigo-600" />

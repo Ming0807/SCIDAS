@@ -4,7 +4,7 @@ export function RiskCharts() {
   return (
     <>
       {/* Line Chart */}
-      <div className="col-span-1 lg:col-span-6 rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex flex-col">
+      <div className="col-span-1 lg:col-span-6 rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-bold text-slate-800">แนวโน้มความเสี่ยงรายเดือน</h3>
           <select className="text-[11px] border border-slate-200 rounded-md px-2 py-1 bg-slate-50 text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -64,7 +64,7 @@ export function RiskCharts() {
       </div>
 
       {/* Donut Chart */}
-      <div className="col-span-1 lg:col-span-3 rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex flex-col">
+      <div className="col-span-1 lg:col-span-3 rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col">
         <h3 className="text-sm font-bold text-slate-800 mb-6">สัดส่วนระดับความเสี่ยง</h3>
         <div className="flex-1 flex flex-col justify-center gap-6">
           <div className="relative w-32 h-32 mx-auto">

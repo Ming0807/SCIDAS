@@ -6,7 +6,7 @@ export function IdpSidebar() {
     <div className="flex flex-col gap-6 h-full">
       
       {/* Plan Status */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4 text-indigo-600">
           <Flag className="w-4 h-4" />
           <h3 className="text-[14px] font-bold">สถานะของแผน</h3>
@@ -44,7 +44,7 @@ export function IdpSidebar() {
       </div>
 
       {/* Upcoming Activities */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-4 text-indigo-600">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
@@ -107,7 +107,7 @@ export function IdpSidebar() {
       </div>
 
       {/* Team */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-4 text-indigo-600">
           <div className="flex items-center gap-2">
             <UserCircle className="w-4 h-4" />

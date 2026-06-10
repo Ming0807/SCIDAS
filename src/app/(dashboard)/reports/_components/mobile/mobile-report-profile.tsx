@@ -7,7 +7,7 @@ import { MobileDownloadReports } from "./mobile-download-reports"
 
 export function MobileReportProfile() {
   return (
-    <div className="bg-[#f8fafc] min-h-screen relative pb-6">
+    <div className="bg-slate-50 min-h-screen relative pb-6">
       <MobileReportHeader />
       
       <div className="max-w-md mx-auto pt-2">

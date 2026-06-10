@@ -6,7 +6,7 @@ export function StudentProfileHeader() {
     <div className="flex flex-col xl:flex-row xl:items-stretch justify-between gap-4 mb-6">
       
       {/* Profile Info */}
-      <div className="flex flex-col bg-white p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 xl:w-[320px] shrink-0 h-full">
+      <div className="flex flex-col bg-white p-5 rounded-xl border border-slate-200 shadow-sm xl:w-[320px] shrink-0 h-full">
         <div className="flex items-center gap-4 mb-4">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1" alt="Avatar" className="w-16 h-16 rounded-full bg-slate-100 shrink-0 border border-slate-200" />
           <div className="flex flex-col">
@@ -33,10 +33,10 @@ export function StudentProfileHeader() {
       </div>
 
       {/* Summary Cards Row */}
-      <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
+      <div className="flex-1 grid grid-cols-2 xl:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
         
         {/* Card 1: Overall */}
-        <div className="bg-white p-4 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="text-[11px] font-bold text-slate-500 mb-2">ภาพรวมพฤติกรรม</div>
           <div className="flex items-end justify-between">
             <div>
@@ -53,7 +53,7 @@ export function StudentProfileHeader() {
         </div>
 
         {/* Card 2: Total */}
-        <div className="bg-white p-4 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="text-[11px] font-bold text-slate-500 mb-2">บันทึกพฤติกรรมทั้งหมด</div>
           <div className="flex items-end justify-between">
             <div>
@@ -67,7 +67,7 @@ export function StudentProfileHeader() {
         </div>
 
         {/* Card 3: Positive */}
-        <div className="bg-white p-4 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="text-[11px] font-bold text-slate-500 mb-2">พฤติกรรมเชิงบวก</div>
           <div className="flex items-end justify-between">
             <div>
@@ -84,7 +84,7 @@ export function StudentProfileHeader() {
         </div>
 
         {/* Card 4: Negative */}
-        <div className="bg-rose-50 p-4 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-rose-100 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-rose-50 p-4 rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-rose-100 flex flex-col justify-between relative overflow-hidden">
           {/* Add Record Button positioned above this card in layout, but absolute inside here for design if needed? No, button is outside in layout. */}
           <div className="text-[11px] font-bold text-rose-800 mb-2 relative z-10">พฤติกรรมเชิงลบ</div>
           <div className="flex items-end justify-between relative z-10">

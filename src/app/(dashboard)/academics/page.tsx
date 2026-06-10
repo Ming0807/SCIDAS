@@ -17,12 +17,12 @@ export default function AcademicsPage() {
       </div>
 
       {/* Desktop Responsive View */}
-      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
+      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
         
         {/* Page Header */}
         <div className="mb-6 shrink-0 flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">ผลการเรียน</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 tracking-tight">ผลการเรียน</h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">ภาพรวมผลสัมฤทธิ์ทางการเรียน ปีการศึกษา 2567</p>
           </div>
 
@@ -33,18 +33,18 @@ export default function AcademicsPage() {
               <input 
                 type="text" 
                 placeholder="ค้นหานักเรียน, ห้องเรียน, รายวิชา..." 
-                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
               />
             </div>
             
             {/* Term Dropdown */}
-            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
+            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
               <Calendar className="w-4 h-4 text-slate-500" />
               ภาคเรียนที่ 1/2567
             </button>
 
             {/* Filter */}
-            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
+            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
               <Filter className="w-4 h-4 text-slate-500" />
               ตัวกรอง
             </button>

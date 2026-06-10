@@ -17,10 +17,10 @@ export function ClassroomComparison() {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-800">เปรียบเทียบผลการเรียนเฉลี่ยรายวิชา รายห้องเรียน</h3>
-        <button className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100 hover:bg-slate-100">
+        <h3 className="text-sm font-semibold text-slate-800">เปรียบเทียบผลการเรียนเฉลี่ยรายวิชา รายห้องเรียน</h3>
+        <button className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100 hover:bg-slate-100">
           ม.2
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -30,19 +30,19 @@ export function ClassroomComparison() {
         <table className="w-full text-left border-collapse min-w-[600px]">
           <thead>
             <tr>
-              <th className="px-3 py-2 text-[10px] font-bold text-slate-500 border-b border-slate-100 w-[10%]">ห้องเรียน</th>
+              <th className="px-3 py-2 text-xs font-semibold text-slate-500 border-b border-slate-100 w-[10%]">ห้องเรียน</th>
               {subjects.map((subject, idx) => (
-                <th key={idx} className="px-2 py-2 text-[10px] font-bold text-slate-500 border-b border-slate-100 text-center">{subject}</th>
+                <th key={idx} className="px-2 py-2 text-xs font-semibold text-slate-500 border-b border-slate-100 text-center">{subject}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {classes.map((cls, idx) => (
               <tr key={idx} className="border-b border-slate-50 last:border-none">
-                <td className="px-3 py-2.5 text-[11px] font-bold text-slate-700">{cls.name}</td>
+                <td className="px-3 py-2.5 text-xs font-semibold text-slate-700">{cls.name}</td>
                 {cls.scores.map((score, sIdx) => (
                   <td key={sIdx} className="px-1 py-1 text-center">
-                    <div className={`text-[10px] font-bold py-1 px-1.5 rounded-md w-full inline-block ${getColor(score)}`}>
+                    <div className={`text-xs font-semibold py-1 px-1.5 rounded-md w-full inline-block ${getColor(score)}`}>
                       {score.toFixed(2)}
                     </div>
                   </td>

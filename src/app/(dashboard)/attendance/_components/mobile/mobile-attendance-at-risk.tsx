@@ -20,7 +20,7 @@ export function MobileAttendanceAtRisk() {
 
       <div className="flex flex-col gap-3">
         {students.map((student) => (
-          <div key={student.id} className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center gap-3">
+          <div key={student.id} className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center gap-3">
             <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${student.avatar}`} alt="avatar" className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200" />
             
             <div className="flex-1 min-w-0">

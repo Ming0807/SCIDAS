@@ -22,7 +22,7 @@ export function MobileAttendanceRecent() {
 
       <div className="flex gap-3 px-4 overflow-x-auto no-scrollbar pb-2">
         {recentDays.map((item, index) => (
-          <div key={index} className={`shrink-0 w-24 rounded-2xl p-3 border ${item.bg} ${item.border} flex flex-col items-center text-center shadow-sm`}>
+          <div key={index} className={`shrink-0 w-24 rounded-xl p-3 border ${item.bg} ${item.border} flex flex-col items-center text-center shadow-sm`}>
             <div className={`text-[12px] font-bold ${index === 0 ? item.color : "text-slate-800"} mb-0.5`}>{item.day}</div>
             <div className="text-[10px] text-slate-600 mb-2">{item.date}</div>
             <div className={`w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 shadow-sm ${item.color}`}>

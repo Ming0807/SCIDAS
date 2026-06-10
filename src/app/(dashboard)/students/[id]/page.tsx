@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-export default async function StudentProfilePage({ params }: { params: { id: string } }) {
-  const student = await getStudentById(params.id)
+export default async function StudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const student = await getStudentById(id)
 
   if (!student) {
     notFound()

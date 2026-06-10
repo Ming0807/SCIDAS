@@ -4,14 +4,17 @@
 
 ### Student Care and Individual Development Analytics System for Small Schools
 
-> **Tech Stack**: Next.js 15 App Router · Tailwind CSS v4 · shadcn/ui · Recharts · Lucide Icons · Supabase  
+> **Tech Stack**: Next.js 16.2.7 App Router · React 19.2.4 · Tailwind CSS v4 · shadcn/ui · Recharts · Lucide Icons · Supabase
 > **เวอร์ชันเอกสาร**: 1.0.0  
-> **อัปเดตล่าสุด**: 9 มิถุนายน 2569
+> **อัปเดตล่าสุด**: 10 มิถุนายน 2569
+
+> **Current planning note (2026-06-10):** Section 0 below is the active migration architecture. Older sections remain for historical context and still contain stale Next.js 15 route/component examples that must not be used as implementation authority.
 
 ---
 
 ## สารบัญ
 
+0. [Active Migration Architecture](#0-active-migration-architecture)
 1. [App Router Structure](#1-app-router-structure)
 2. [Shared Components](#2-shared-components)
 3. [State Management](#3-state-management)
@@ -19,6 +22,128 @@
 5. [Design System](#5-design-system)
 6. [Responsive Design Strategy](#6-responsive-design-strategy)
 7. [Component Dependency Graph](#7-component-dependency-graph)
+
+---
+
+## 0. Active Migration Architecture
+
+This section supersedes the older architecture snapshot below for Phase 1 work.
+
+### 0.1 Next.js 16 Rules To Preserve
+
+The local Next.js 16 docs in `node_modules/next/dist/docs/` confirm these conventions:
+
+- The project uses the App Router under `src/app`.
+- Route groups such as `(dashboard)` organize files but do not appear in URLs.
+- A route is public only when a `page.tsx` or `route.ts` exists in that segment.
+- `_components` folders are safe private colocated implementation folders, but they should not become the long-term home for repeated product UI.
+- Pages and layouts are Server Components by default. Add `"use client"` only for state, event handlers, browser APIs, client-only charts, and form interaction.
+- Server Actions are asynchronous server functions and must verify auth/authorization internally because they can be invoked by direct POST requests.
+
+### 0.2 Current Route Shape
+
+The current app shape is:
+
+```text
+src/app/
+  layout.tsx
+  globals.css
+  login/page.tsx
+  auth/callback/route.ts
+  actions/*.actions.ts
+  (dashboard)/
+    layout.tsx
+    loading.tsx
+    error.tsx
+    page.tsx
+    students/page.tsx
+    students/[id]/page.tsx
+    attendance/page.tsx
+    academics/page.tsx
+    behavior/page.tsx
+    behavior/[id]/page.tsx
+    behavior/record/page.tsx
+    home-visits/page.tsx
+    home-visits/new/page.tsx
+    support/page.tsx
+    support/new/page.tsx
+    risk-analysis/page.tsx
+    development-plans/page.tsx
+    development-plans/[id]/page.tsx
+    reports/page.tsx
+    notifications/page.tsx
+    settings/page.tsx
+```
+
+There is no `/menu` route in this inventory. Mobile navigation must open a menu surface or route to existing pages only.
+
+### 0.3 Current Component Reality
+
+Current shared folders:
+
+```text
+src/components/ui/       base UI primitives
+src/components/layout/   app shell components owned by layout/navigation work
+src/lib/utils.ts         shared className/util helpers
+```
+
+Current debt:
+
+- Many modules keep duplicated UI under `src/app/(dashboard)/**/_components`.
+- Several modules split mobile and desktop rendering into separate components with repeated business logic.
+- Status color, card radius, tiny text, shadows, and chart treatments are still inconsistent across route-local components.
+
+### 0.4 Phase 1 Target Folders
+
+Create shared system pieces before broad page rewrites:
+
+```text
+src/lib/navigation.ts         route taxonomy and visibility rules
+src/lib/design/status.ts      status labels, badge variants, chart colors
+src/components/dashboard/     PageShell, PageHeader, PageToolbar, Section, MetricCard, StatusBadge
+src/components/data/          DataTable, MobileList, FilterBar, Pagination
+src/components/charts/        ChartCard, Legend, EmptyChartState
+src/components/forms/         FormSection, SubmitBar, ActionResultAlert
+src/components/feedback/      EmptyState, ErrorState, LoadingState, PermissionState
+```
+
+Keep route-local `_components` only for page-specific composition that is not reused elsewhere. When two modules need the same UI behavior, promote it to a shared folder before migrating more pages.
+
+### 0.5 Page Composition Contract
+
+Every migrated dashboard page should follow this shape:
+
+```text
+Route Server Component
+  -> authenticate/authorize
+  -> query/service function
+  -> typed DTO or view model
+  -> PageShell
+  -> PageHeader
+  -> PageToolbar if the page filters/searches/sorts
+  -> shared content components
+  -> Client Component only for interaction
+  -> Server Action for mutation
+  -> ActionResult<T>
+  -> revalidatePath/redirect/refresh as narrowly as possible
+```
+
+Required page states:
+
+- loading
+- empty
+- error
+- permission denied
+- pending mutation
+- success or validation result
+
+### 0.6 Migration Boundaries
+
+- Do not edit `src/components/layout/*` or `src/lib/navigation.ts` from docs/guardrails work unless that is the assigned task.
+- Do not change shared UI primitives opportunistically while documenting migration rules.
+- Do not add new page-local visual systems after a shared contract exists.
+- Do not migrate page visuals without updating the relevant checklist in `task.md`.
+- Design rules live in [frontend.md](./frontend.md); migration order lives in [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md).
 
 ---
 

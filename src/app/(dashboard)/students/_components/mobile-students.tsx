@@ -44,13 +44,13 @@ export function MobileStudents() {
       <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pt-5 pb-3 snap-x">
         
         {/* Main Card */}
-        <div className="bg-gradient-to-br from-[#818cf8] to-[#6366f1] text-white rounded-2xl p-4 min-w-[140px] snap-center shadow-lg shadow-indigo-200">
+        <div className="bg-gradient-to-br from-[#818cf8] to-[#6366f1] text-white rounded-xl p-4 min-w-[140px] snap-center shadow-lg shadow-indigo-200">
           <Users className="w-6 h-6 mb-2 opacity-90" />
           <div className="text-[11px] font-medium text-indigo-100 mb-0.5">นักเรียนทั้งหมด</div>
           <div className="text-2xl font-bold">642 <span className="text-[11px] font-medium">คน</span></div>
         </div>
 
-        <div className="bg-white border border-emerald-100 rounded-2xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
+        <div className="bg-white border border-emerald-100 rounded-xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
           <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center mb-1.5">
             <Smile className="w-4 h-4 text-emerald-600" />
           </div>
@@ -59,7 +59,7 @@ export function MobileStudents() {
           <span className="text-[9px] text-slate-500">62.0%</span>
         </div>
 
-        <div className="bg-white border border-amber-100 rounded-2xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
+        <div className="bg-white border border-amber-100 rounded-xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
           <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center mb-1.5">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
@@ -68,7 +68,7 @@ export function MobileStudents() {
           <span className="text-[9px] text-slate-500">24.3%</span>
         </div>
 
-        <div className="bg-white border border-red-100 rounded-2xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
+        <div className="bg-white border border-red-100 rounded-xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
           <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center mb-1.5">
             <AlertTriangle className="w-4 h-4 text-red-500" />
           </div>
@@ -77,7 +77,7 @@ export function MobileStudents() {
           <span className="text-[9px] text-slate-500">13.7%</span>
         </div>
 
-        <div className="bg-white border border-blue-100 rounded-2xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
+        <div className="bg-white border border-blue-100 rounded-xl p-4 min-w-[90px] snap-center flex flex-col items-center justify-center">
           <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center mb-1.5">
             <Heart className="w-4 h-4 text-blue-500 fill-blue-500" />
           </div>
@@ -125,7 +125,7 @@ export function MobileStudents() {
       <div className="px-4 space-y-3 mb-6">
         
         {/* Card 1 */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 p-4 relative flex items-start gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative flex items-start gap-3">
           <div className="text-[11px] font-bold text-indigo-400 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-1">1</div>
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1" className="w-12 h-12 rounded-full bg-slate-100 shrink-0" alt="Avatar"/>
           <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ export function MobileStudents() {
         </div>
 
         {/* Card 2 */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 p-4 relative flex items-start gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative flex items-start gap-3">
           <div className="text-[11px] font-bold text-indigo-400 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-1">2</div>
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=girl1" className="w-12 h-12 rounded-full bg-slate-100 shrink-0" alt="Avatar"/>
           <div className="flex-1 min-w-0">
@@ -175,7 +175,7 @@ export function MobileStudents() {
         </div>
 
         {/* Card 3 */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 p-4 relative flex items-start gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative flex items-start gap-3">
           <div className="text-[11px] font-bold text-indigo-400 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-1">3</div>
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy2" className="w-12 h-12 rounded-full bg-slate-100 shrink-0" alt="Avatar"/>
           <div className="flex-1 min-w-0">
@@ -200,7 +200,7 @@ export function MobileStudents() {
         </div>
 
         {/* Card 4 */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 p-4 relative flex items-start gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative flex items-start gap-3">
           <div className="text-[11px] font-bold text-indigo-400 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-1">4</div>
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=girl2" className="w-12 h-12 rounded-full bg-slate-100 shrink-0" alt="Avatar"/>
           <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export function MobileStudents() {
         </div>
 
         {/* Card 5 */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 p-4 relative flex items-start gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative flex items-start gap-3">
           <div className="text-[11px] font-bold text-indigo-400 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-1">5</div>
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy3" className="w-12 h-12 rounded-full bg-slate-100 shrink-0" alt="Avatar"/>
           <div className="flex-1 min-w-0">
@@ -250,7 +250,7 @@ export function MobileStudents() {
         </div>
 
         {/* Card 6 */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 p-4 relative flex items-start gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative flex items-start gap-3">
           <div className="text-[11px] font-bold text-indigo-400 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-1">6</div>
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=girl3" className="w-12 h-12 rounded-full bg-slate-100 shrink-0" alt="Avatar"/>
           <div className="flex-1 min-w-0">

@@ -9,7 +9,7 @@ export function MobileCategoryReports() {
       <div className="grid grid-cols-2 gap-3">
         
         {/* Attendance */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col hover:border-blue-200 transition-colors cursor-pointer group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col hover:border-blue-200 transition-colors cursor-pointer group">
           <div className="flex justify-between items-start mb-3">
             <h4 className="text-[12px] font-bold text-blue-600 leading-tight">รายงานการมาเรียน</h4>
             <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
@@ -20,7 +20,7 @@ export function MobileCategoryReports() {
         </div>
 
         {/* GPA */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col hover:border-orange-200 transition-colors cursor-pointer group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col hover:border-orange-200 transition-colors cursor-pointer group">
           <div className="flex justify-between items-start mb-3">
             <h4 className="text-[12px] font-bold text-orange-600 leading-tight">รายงานผลการเรียน</h4>
             <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
@@ -31,7 +31,7 @@ export function MobileCategoryReports() {
         </div>
 
         {/* Behavior */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col hover:border-green-200 transition-colors cursor-pointer group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col hover:border-green-200 transition-colors cursor-pointer group">
           <div className="flex justify-between items-start mb-3">
             <h4 className="text-[12px] font-bold text-green-600 leading-tight">รายงานพฤติกรรม</h4>
             <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0">
@@ -42,7 +42,7 @@ export function MobileCategoryReports() {
         </div>
 
         {/* Support */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col hover:border-purple-200 transition-colors cursor-pointer group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col hover:border-purple-200 transition-colors cursor-pointer group">
           <div className="flex justify-between items-start mb-3">
             <h4 className="text-[12px] font-bold text-purple-600 leading-tight">รายงานการดูแลช่วยเหลือ</h4>
             <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
@@ -53,7 +53,7 @@ export function MobileCategoryReports() {
         </div>
 
         {/* Overview Summary */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col hover:border-red-200 transition-colors cursor-pointer group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col hover:border-red-200 transition-colors cursor-pointer group">
           <div className="flex justify-between items-start mb-3">
             <h4 className="text-[12px] font-bold text-red-500 leading-tight">รายงานสรุปภาพรวม</h4>
             <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0">
@@ -64,7 +64,7 @@ export function MobileCategoryReports() {
         </div>
 
         {/* Others */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col hover:border-slate-300 transition-colors cursor-pointer group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col hover:border-slate-300 transition-colors cursor-pointer group">
           <div className="flex justify-between items-start mb-3">
             <h4 className="text-[12px] font-bold text-slate-600 leading-tight">รายงานอื่นๆ</h4>
             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">

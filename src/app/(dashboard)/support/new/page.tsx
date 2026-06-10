@@ -22,7 +22,7 @@ export default async function NewSupportCasePage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">เปิดเคสส่งต่อและช่วยเหลือ</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">เปิดเคสส่งต่อและช่วยเหลือ</h1>
           <p className="text-slate-500 mt-1">สร้างคำขอแจ้งเตือนส่งต่อและช่วยเหลือสำหรับนักเรียน</p>
         </div>
       </div>

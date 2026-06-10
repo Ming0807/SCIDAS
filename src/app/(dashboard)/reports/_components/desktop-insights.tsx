@@ -3,7 +3,7 @@ import { Lightbulb, TrendingUp, TrendingDown } from "lucide-react"
 
 export function DesktopInsights() {
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-indigo-100 h-full flex flex-col">
+    <div className="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-indigo-100 h-full flex flex-col">
       <h3 className="text-[14px] font-bold text-slate-800 mb-4 flex items-center gap-2">
         ข้อมูลเชิงลึก (Insight)
       </h3>

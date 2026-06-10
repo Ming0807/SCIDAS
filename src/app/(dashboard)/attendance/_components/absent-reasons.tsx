@@ -3,7 +3,7 @@ import { Thermometer, Home, Car, HelpCircle } from "lucide-react"
 
 export function AbsentReasons() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 h-full min-h-[300px]">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full min-h-[300px]">
       <div className="flex justify-between items-center mb-5">
         <h3 className="font-bold text-slate-800 text-sm">เหตุผลการขาดเรียนที่พบบ่อย</h3>
         <a href="#" className="text-xs text-blue-600 hover:underline">ดูทั้งหมด</a>

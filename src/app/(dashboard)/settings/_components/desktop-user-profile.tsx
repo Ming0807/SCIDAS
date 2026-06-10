@@ -3,7 +3,7 @@ import { Mail, Phone, Clock, Edit2 } from "lucide-react"
 
 export function DesktopUserProfile() {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mb-6 relative">
+    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-6 relative">
       <h3 className="text-[14px] font-bold text-slate-800 mb-6">ข้อมูลบัญชีผู้ใช้</h3>
       
       <button className="absolute top-6 right-6 p-1.5 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-colors">

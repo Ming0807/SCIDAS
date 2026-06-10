@@ -22,7 +22,7 @@ export function MobileDashboard() {
 
       {/* Hero Card */}
       <div className="px-4 mt-2">
-        <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#818cf8] to-[#6366f1] text-white shadow-[0_8px_20px_rgba(99,102,241,0.25)] relative">
+        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-[#818cf8] to-[#6366f1] text-white shadow-[0_8px_20px_rgba(99,102,241,0.25)] relative">
           
           {/* Decorative clouds / shapes (Mockup) */}
           <div className="absolute top-4 right-4 opacity-30">
@@ -114,7 +114,7 @@ export function MobileDashboard() {
           <span className="text-xs text-blue-600 flex items-center">ดูทั้งหมด <ChevronRight className="w-3 h-3 ml-0.5"/></span>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-1 border border-slate-100">
+        <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-1 border border-slate-100">
           
           <div className="flex gap-3 p-3 items-start relative">
             <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0">
@@ -188,7 +188,7 @@ export function MobileDashboard() {
           <span className="text-xs text-blue-600 flex items-center">ดูทั้งหมด <ChevronRight className="w-3 h-3 ml-0.5"/></span>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden divide-y divide-slate-50">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-50">
           
           <div className="flex items-center gap-3 p-3.5 relative hover:bg-slate-50 transition-colors">
             <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1" className="w-11 h-11 rounded-full bg-slate-100" alt="Avatar"/>

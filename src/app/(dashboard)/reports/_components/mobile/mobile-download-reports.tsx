@@ -15,7 +15,7 @@ export function MobileDownloadReports() {
       <div className="flex flex-col gap-3">
         
         {/* PDF 1 */}
-        <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center justify-between group">
+        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between group">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex flex-col items-center justify-center shrink-0 border border-red-100">
               <span className="text-[8px] font-bold text-red-600 uppercase">PDF</span>
@@ -34,7 +34,7 @@ export function MobileDownloadReports() {
         </div>
 
         {/* PDF 2 */}
-        <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center justify-between group">
+        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between group">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex flex-col items-center justify-center shrink-0 border border-red-100">
               <span className="text-[8px] font-bold text-red-600 uppercase">PDF</span>
@@ -53,7 +53,7 @@ export function MobileDownloadReports() {
         </div>
 
         {/* PDF 3 */}
-        <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center justify-between group">
+        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between group">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex flex-col items-center justify-center shrink-0 border border-red-100">
               <span className="text-[8px] font-bold text-red-600 uppercase">PDF</span>

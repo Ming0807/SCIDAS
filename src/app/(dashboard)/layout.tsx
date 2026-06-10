@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   const role = await getUserRole();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background md:bg-[#f8fafc]">
+    <div className="flex h-screen overflow-hidden bg-background md:bg-slate-50">
       <div className="hidden md:block">
         <Sidebar role={role} />
       </div>

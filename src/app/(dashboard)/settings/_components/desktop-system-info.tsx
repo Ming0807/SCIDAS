@@ -3,7 +3,7 @@ import { Info, RefreshCw } from "lucide-react"
 
 export function DesktopSystemInfo() {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <Info className="w-5 h-5 text-indigo-500" />
         <h3 className="text-[14px] font-bold text-slate-800">เกี่ยวกับระบบ</h3>

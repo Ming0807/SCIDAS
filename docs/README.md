@@ -4,10 +4,14 @@
 
 > **Student Care and Individual Development Analytics System for Small Schools (SCIDAS)**
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwindcss)](https://tailwindcss.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://typescriptlang.org)
+
+---
+
+> **Current planning note (2026-06-10):** UX/UI, component architecture, route flow, and documentation cleanup are now tracked in [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md). Design-system rules live in [frontend.md](./frontend.md). Some architecture sections below still reflect older Next.js 15 assumptions and must be reconciled with the current Next.js 16.2.7 app before implementation.
 
 ---
 
@@ -84,7 +88,7 @@
 
 | เทคโนโลยี | เวอร์ชัน | วัตถุประสงค์ |
 |-----------|---------|-------------|
-| **Next.js** | 15.x | Full-stack React Framework (App Router) |
+| **Next.js** | 16.2.7 | Full-stack React Framework (App Router) |
 | **React** | 19.x | UI Library |
 | **TypeScript** | 5.x | Type Safety |
 | **Tailwind CSS** | 4.x | Utility-First CSS Framework |
@@ -412,6 +416,8 @@ System Settings     │  ✅   │    ❌    │   ❌     │    ❌     │   
 | [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | แบบจำลองฐานข้อมูลและ ER Diagram |
 | [API_SPECIFICATION.md](./API_SPECIFICATION.md) | ข้อกำหนด API และ Server Actions |
 | [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) | สถาปัตยกรรม Component และ Design System |
+| [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md) | แผนปรับ UX/UI, component reuse, navigation, layout, flow และเอกสารให้เป็นระบบ |
+| [frontend.md](./frontend.md) | กฎ design system, token usage, component contracts, และ banned UI patterns สำหรับ migration |
 | [USER_GUIDE.md](./USER_GUIDE.md) | คู่มือการใช้งานระบบ |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | คู่มือการ Deploy ระบบ |
 

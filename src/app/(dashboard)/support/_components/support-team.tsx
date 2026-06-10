@@ -3,8 +3,8 @@ import { Phone, Mail } from "lucide-react"
 
 export function SupportTeam() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full">
-      <h3 className="text-[14px] font-bold text-slate-800 mb-5">ทีมงานที่เกี่ยวข้อง</h3>
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
+      <h3 className="text-sm font-semibold text-slate-800 mb-5">ทีมงานที่เกี่ยวข้อง</h3>
 
       <div className="flex flex-col gap-4 flex-1">
         
@@ -12,8 +12,8 @@ export function SupportTeam() {
         <div className="flex items-center justify-between gap-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher2" alt="Avatar" className="w-10 h-10 rounded-full bg-slate-100" />
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-bold text-slate-800 truncate">นางสาวจันทร์จิรา พรมดี</div>
-            <div className="text-[10px] text-slate-500">ครูที่ปรึกษา</div>
+            <div className="text-xs font-semibold text-slate-800 truncate">นางสาวจันทร์จิรา พรมดี</div>
+            <div className="text-xs text-slate-500">ครูที่ปรึกษา</div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors">
@@ -29,8 +29,8 @@ export function SupportTeam() {
         <div className="flex items-center justify-between gap-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher1" alt="Avatar" className="w-10 h-10 rounded-full bg-slate-100" />
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-bold text-slate-800 truncate">นางสาวศิริพร แก้วสนิท</div>
-            <div className="text-[10px] text-slate-500">ครูแนะแนว</div>
+            <div className="text-xs font-semibold text-slate-800 truncate">นางสาวศิริพร แก้วสนิท</div>
+            <div className="text-xs text-slate-500">ครูแนะแนว</div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors">
@@ -46,8 +46,8 @@ export function SupportTeam() {
         <div className="flex items-center justify-between gap-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=parent1" alt="Avatar" className="w-10 h-10 rounded-full bg-slate-100" />
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-bold text-slate-800 truncate">นายสมชาย ใจดี</div>
-            <div className="text-[10px] text-slate-500">ผู้ปกครอง</div>
+            <div className="text-xs font-semibold text-slate-800 truncate">นายสมชาย ใจดี</div>
+            <div className="text-xs text-slate-500">ผู้ปกครอง</div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors">
@@ -63,8 +63,8 @@ export function SupportTeam() {
         <div className="flex items-center justify-between gap-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=doctor1" alt="Avatar" className="w-10 h-10 rounded-full bg-slate-100" />
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-bold text-slate-800 truncate">นางพัชราภรณ์ สุขใจ</div>
-            <div className="text-[10px] text-slate-500">นักจิตวิทยาโรงเรียน</div>
+            <div className="text-xs font-semibold text-slate-800 truncate">นางพัชราภรณ์ สุขใจ</div>
+            <div className="text-xs text-slate-500">นักจิตวิทยาโรงเรียน</div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors">
@@ -78,7 +78,7 @@ export function SupportTeam() {
 
       </div>
 
-      <button className="w-full flex items-center justify-center py-2.5 text-[11px] font-bold text-slate-500 border border-slate-200 rounded-xl mt-5 hover:bg-slate-50 transition-colors">
+      <button className="w-full flex items-center justify-center py-2.5 text-xs font-semibold text-slate-500 border border-slate-200 rounded-xl mt-5 hover:bg-slate-50 transition-colors">
         เพิ่มผู้เกี่ยวข้อง
       </button>
 

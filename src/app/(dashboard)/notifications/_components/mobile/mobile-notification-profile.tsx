@@ -4,7 +4,7 @@ import { MobileNotificationList } from "./mobile-notification-list"
 
 export function MobileNotificationProfile() {
   return (
-    <div className="bg-[#f8fafc] min-h-screen relative">
+    <div className="bg-slate-50 min-h-screen relative">
       <MobileNotificationHeader />
       
       <div className="max-w-md mx-auto pt-2">

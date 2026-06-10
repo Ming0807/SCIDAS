@@ -2,7 +2,7 @@ import React from "react"
 
 export function DesktopStatsCategory() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 h-full flex flex-col">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full flex flex-col">
       <h3 className="text-[14px] font-bold text-slate-800 mb-6">สถิติจำแนกตามด้าน</h3>
       
       <div className="flex flex-col xl:flex-row gap-6 items-center justify-center flex-1">

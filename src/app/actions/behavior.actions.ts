@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 import { Database } from "@/types/database.types"
 
+type BehaviorType = Database["public"]["Enums"]["behavior_type"]
+
 export async function getBehaviorRecords() {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -25,7 +27,7 @@ export async function createBehaviorRecord(formData: FormData) {
   if (!user) throw new Error("Not authenticated")
 
   const student_id = formData.get('student_id') as string
-  const behavior_type = formData.get('behavior_type') as any
+  const behavior_type = formData.get('behavior_type') as BehaviorType
   const category = formData.get('category') as string
   const description = formData.get('description') as string
   const pointsStr = formData.get('points') as string

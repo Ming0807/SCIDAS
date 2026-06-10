@@ -3,7 +3,7 @@ import { Cloud } from "lucide-react"
 
 export function DesktopStorageInfo() {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mb-6">
+    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-6">
       <div className="flex items-center gap-2 mb-4">
         <Cloud className="w-5 h-5 text-indigo-500" />
         <h3 className="text-[14px] font-bold text-slate-800">พื้นที่จัดเก็บข้อมูล</h3>

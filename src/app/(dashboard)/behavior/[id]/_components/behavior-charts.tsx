@@ -6,7 +6,7 @@ export function BehaviorCharts() {
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 mb-6">
       
       {/* Chart 1: Monthly Trend */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col xl:col-span-1 h-full">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col xl:col-span-1 h-full">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[13px] font-bold text-slate-800">สรุปพฤติกรรมรายเดือน</h3>
           <button className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-1.5 rounded-md border border-slate-100 hover:bg-slate-100">
@@ -83,7 +83,7 @@ export function BehaviorCharts() {
       </div>
 
       {/* Chart 2: Behavior Types (Donut) */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col xl:col-span-1 h-full">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col xl:col-span-1 h-full">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[13px] font-bold text-slate-800">ประเภทพฤติกรรม</h3>
         </div>
@@ -156,7 +156,7 @@ export function BehaviorCharts() {
       </div>
 
       {/* Chart 3: Frequent Behaviors */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col xl:col-span-1 h-full">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col xl:col-span-1 h-full">
         <h3 className="text-[13px] font-bold text-slate-800 mb-4">พฤติกรรมที่พบบ่อย</h3>
 
         <div className="flex justify-between border-b border-slate-100 mb-4">

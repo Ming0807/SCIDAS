@@ -3,13 +3,13 @@ import { ChevronDown } from "lucide-react"
 
 export function AcademicCharts() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-6 mb-6">
+    <div className="grid grid-cols-1 xl:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-6 mb-6">
       
       {/* 1. Line Chart: GPA Trend */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-sm font-bold text-slate-800">แนวโน้มเกรดเฉลี่ยรวม (GPA)</h3>
-          <button className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100 hover:bg-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800">แนวโน้มเกรดเฉลี่ยรวม (GPA)</h3>
+          <button className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100 hover:bg-slate-100">
             5 ภาคเรียนล่าสุด
             <ChevronDown className="w-3 h-3" />
           </button>
@@ -76,8 +76,8 @@ export function AcademicCharts() {
       </div>
 
       {/* 2. Donut Chart: Grade Distribution */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center justify-center">
-        <h3 className="text-sm font-bold text-slate-800 self-start mb-4">การกระจายระดับผลการเรียน</h3>
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+        <h3 className="text-sm font-semibold text-slate-800 self-start mb-4">การกระจายระดับผลการเรียน</h3>
         <div className="flex flex-col sm:flex-row xl:flex-col 2xl:flex-row w-full items-center justify-center gap-6">
           {/* Donut SVG */}
           <div className="relative w-32 h-32 shrink-0">
@@ -96,42 +96,42 @@ export function AcademicCharts() {
               <circle cx="21" cy="21" r="15.915" fill="none" stroke="#ef4444" strokeWidth="4" strokeDasharray="2.6 97.4" strokeDashoffset="-97.3" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[10px] text-slate-500 font-medium">นักเรียนทั้งหมด</span>
-              <span className="text-xl font-bold text-slate-800">152 <span className="text-xs text-slate-500 font-normal">คน</span></span>
+              <span className="text-xs text-slate-500 font-medium">นักเรียนทั้งหมด</span>
+              <span className="text-xl font-semibold text-slate-800">152 <span className="text-xs text-slate-500 font-normal">คน</span></span>
             </div>
           </div>
           
           {/* Legend */}
           <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#10b981]"></div><span className="text-slate-600">4.00 - 3.51</span></div>
-              <div className="text-right"><span className="font-bold text-slate-800">28</span> <span className="text-slate-400 text-[10px]">(18.4%)</span></div>
+              <div className="text-right"><span className="font-semibold text-slate-800">28</span> <span className="text-slate-400 text-xs">(18.4%)</span></div>
             </div>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#3b82f6]"></div><span className="text-slate-600">3.50 - 2.51</span></div>
-              <div className="text-right"><span className="font-bold text-slate-800">62</span> <span className="text-slate-400 text-[10px]">(40.8%)</span></div>
+              <div className="text-right"><span className="font-semibold text-slate-800">62</span> <span className="text-slate-400 text-xs">(40.8%)</span></div>
             </div>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div><span className="text-slate-600">2.50 - 1.51</span></div>
-              <div className="text-right"><span className="font-bold text-slate-800">42</span> <span className="text-slate-400 text-[10px]">(27.6%)</span></div>
+              <div className="text-right"><span className="font-semibold text-slate-800">42</span> <span className="text-slate-400 text-xs">(27.6%)</span></div>
             </div>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f97316]"></div><span className="text-slate-600">1.50 - 1.01</span></div>
-              <div className="text-right"><span className="font-bold text-slate-800">16</span> <span className="text-slate-400 text-[10px]">(10.5%)</span></div>
+              <div className="text-right"><span className="font-semibold text-slate-800">16</span> <span className="text-slate-400 text-xs">(10.5%)</span></div>
             </div>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]"></div><span className="text-slate-600">1.00 - 0.00</span></div>
-              <div className="text-right"><span className="font-bold text-slate-800">4</span> <span className="text-slate-400 text-[10px]">(2.7%)</span></div>
+              <div className="text-right"><span className="font-semibold text-slate-800">4</span> <span className="text-slate-400 text-xs">(2.7%)</span></div>
             </div>
           </div>
         </div>
       </div>
 
       {/* 3. Bar Chart: Top Subjects */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col lg:col-span-1 xl:col-span-2 2xl:col-span-1">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col lg:col-span-1 xl:col-span-2 2xl:col-span-1">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-slate-800">คะแนนเฉลี่ยรายวิชา (Top 6)</h3>
-          <button className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800">
+          <h3 className="text-sm font-semibold text-slate-800">คะแนนเฉลี่ยรายวิชา (Top 6)</h3>
+          <button className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800">
             ทั้งหมด
             <ChevronDown className="w-3 h-3" />
           </button>
@@ -142,7 +142,7 @@ export function AcademicCharts() {
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="font-medium text-slate-700">ภาษาไทย</span>
-              <span className="font-bold text-slate-900">3.41</span>
+              <span className="font-semibold text-slate-900">3.41</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div className="h-full bg-blue-600 rounded-full" style={{ width: '85%' }}></div>
@@ -152,7 +152,7 @@ export function AcademicCharts() {
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="font-medium text-slate-700">คณิตศาสตร์</span>
-              <span className="font-bold text-slate-900">3.28</span>
+              <span className="font-semibold text-slate-900">3.28</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div className="h-full bg-emerald-500 rounded-full" style={{ width: '82%' }}></div>
@@ -162,7 +162,7 @@ export function AcademicCharts() {
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="font-medium text-slate-700">ภาษาอังกฤษ</span>
-              <span className="font-bold text-slate-900">3.07</span>
+              <span className="font-semibold text-slate-900">3.07</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div className="h-full bg-orange-500 rounded-full" style={{ width: '76%' }}></div>
@@ -172,7 +172,7 @@ export function AcademicCharts() {
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="font-medium text-slate-700">วิทยาศาสตร์</span>
-              <span className="font-bold text-slate-900">2.96</span>
+              <span className="font-semibold text-slate-900">2.96</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div className="h-full bg-purple-500 rounded-full" style={{ width: '74%' }}></div>
@@ -182,7 +182,7 @@ export function AcademicCharts() {
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="font-medium text-slate-700">สังคมศึกษา</span>
-              <span className="font-bold text-slate-900">2.82</span>
+              <span className="font-semibold text-slate-900">2.82</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div className="h-full bg-cyan-500 rounded-full" style={{ width: '70%' }}></div>
@@ -192,7 +192,7 @@ export function AcademicCharts() {
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="font-medium text-slate-700">สุขศึกษาและพลศึกษา</span>
-              <span className="font-bold text-slate-900">2.68</span>
+              <span className="font-semibold text-slate-900">2.68</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div className="h-full bg-rose-500 rounded-full" style={{ width: '67%' }}></div>
@@ -201,7 +201,7 @@ export function AcademicCharts() {
         </div>
 
         {/* X-axis scale */}
-        <div className="flex justify-between text-[10px] text-slate-400 mt-2 px-1">
+        <div className="flex justify-between text-xs text-slate-400 mt-2 px-1">
           <span>0.00</span>
           <span>1.00</span>
           <span>2.00</span>

@@ -3,11 +3,11 @@ import { ChevronDown, ThumbsUp } from "lucide-react"
 
 export function SupportTrackingChart() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
       
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[14px] font-bold text-slate-800">ติดตามผลการช่วยเหลือ</h3>
-        <button className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-1.5 rounded-md border border-slate-100 hover:bg-slate-100">
+        <h3 className="text-sm font-semibold text-slate-800">ติดตามผลการช่วยเหลือ</h3>
+        <button className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1.5 rounded-md border border-slate-100 hover:bg-slate-100">
           แสดงผล 6 เดือนล่าสุด
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -73,15 +73,15 @@ export function SupportTrackingChart() {
       <div className="flex items-center justify-center flex-wrap gap-6 mt-2 mb-6">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span className="text-[10px] text-slate-500 font-medium">ผลการเรียน</span>
+          <span className="text-xs text-slate-500 font-medium">ผลการเรียน</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-          <span className="text-[10px] text-slate-500 font-medium">พฤติกรรม</span>
+          <span className="text-xs text-slate-500 font-medium">พฤติกรรม</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-          <span className="text-[10px] text-slate-500 font-medium">ความเครียด</span>
+          <span className="text-xs text-slate-500 font-medium">ความเครียด</span>
         </div>
       </div>
 
@@ -90,11 +90,11 @@ export function SupportTrackingChart() {
           <ThumbsUp className="w-4 h-4 text-emerald-600" />
         </div>
         <div>
-          <div className="text-[12px] font-bold text-emerald-800 mb-0.5">แนวโน้มดีขึ้น</div>
-          <div className="text-[11px] text-emerald-600/80 mb-2 leading-relaxed">
+          <div className="text-xs font-semibold text-emerald-800 mb-0.5">แนวโน้มดีขึ้น</div>
+          <div className="text-xs text-emerald-600/80 mb-2 leading-relaxed">
             ผลการช่วยเหลือมีแนวโน้มที่ดีขึ้น ควรดำเนินการต่อเนื่องดูรายละเอียดการติดตาม
           </div>
-          <button className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 underline">
+          <button className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
             ดูรายละเอียดการติดตาม
           </button>
         </div>

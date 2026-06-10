@@ -9,7 +9,7 @@ import { MobileSupportHistory } from "./mobile-support-history"
 
 export function MobileRiskProfile() {
   return (
-    <div className="bg-[#f8fafc] min-h-screen relative pb-10">
+    <div className="bg-slate-50 min-h-screen relative pb-10">
       <MobileRiskHeader />
       
       <div className="max-w-md mx-auto">

@@ -11,7 +11,7 @@ export function MobileNotificationList() {
         <div className="flex flex-col gap-3">
           
           {/* Item 1 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 relative cursor-pointer">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 relative cursor-pointer">
             <div className="absolute top-4 left-3 w-1.5 h-1.5 rounded-full bg-red-500"></div>
             <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100 ml-2">
               <BookOpen className="w-5 h-5 text-indigo-500" />
@@ -30,7 +30,7 @@ export function MobileNotificationList() {
           </div>
 
           {/* Item 2 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 relative cursor-pointer">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 relative cursor-pointer">
             <div className="absolute top-4 left-3 w-1.5 h-1.5 rounded-full bg-red-500"></div>
             <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center shrink-0 border border-green-100 ml-2">
               <Smile className="w-6 h-6 text-green-500" />
@@ -49,7 +49,7 @@ export function MobileNotificationList() {
           </div>
 
           {/* Item 3 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 relative cursor-pointer">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 relative cursor-pointer">
             <div className="absolute top-4 left-3 w-1.5 h-1.5 rounded-full bg-red-500"></div>
             <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center shrink-0 border border-red-100 ml-2">
               <HeartPulse className="w-5 h-5 text-red-500" />
@@ -68,7 +68,7 @@ export function MobileNotificationList() {
           </div>
 
           {/* Item 4 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 relative cursor-pointer">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 relative cursor-pointer">
             <div className="absolute top-4 left-3 w-1.5 h-1.5 rounded-full bg-red-500"></div>
             <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center shrink-0 border border-orange-100 ml-2">
               <CalendarIcon className="w-5 h-5 text-orange-500" />
@@ -95,7 +95,7 @@ export function MobileNotificationList() {
         <div className="flex flex-col gap-3">
           
           {/* Item 5 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 cursor-pointer opacity-80">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 cursor-pointer opacity-80">
             <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100 ml-2">
               <Megaphone className="w-5 h-5 text-blue-500" />
             </div>
@@ -113,7 +113,7 @@ export function MobileNotificationList() {
           </div>
 
           {/* Item 6 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 cursor-pointer opacity-80">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 cursor-pointer opacity-80">
             <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100 ml-2">
               <ClipboardList className="w-5 h-5 text-purple-500" />
             </div>
@@ -139,7 +139,7 @@ export function MobileNotificationList() {
         <div className="flex flex-col gap-3">
           
           {/* Item 7 */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex gap-3 cursor-pointer opacity-80">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 cursor-pointer opacity-80">
             <div className="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center shrink-0 border border-yellow-100 ml-2">
               <FileText className="w-5 h-5 text-yellow-600" />
             </div>

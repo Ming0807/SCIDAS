@@ -6,7 +6,7 @@ export function IdpHeader() {
     <div className="flex flex-col xl:flex-row gap-4 mb-6">
       
       {/* Profile Card */}
-      <div className="bg-white p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 xl:w-[380px] shrink-0 flex flex-col justify-between">
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm xl:w-[380px] shrink-0 flex flex-col justify-between">
         <div className="flex items-start gap-4 mb-6">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1" alt="Avatar" className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200" />
           <div className="flex flex-col pt-1">
@@ -50,7 +50,7 @@ export function IdpHeader() {
       </div>
 
       {/* Roadmap Card */}
-      <div className="bg-white p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex-1 flex flex-col relative overflow-hidden">
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col relative overflow-hidden">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-[14px] font-bold text-slate-800">เส้นทางการพัฒนา (Development Roadmap)</h3>
         </div>

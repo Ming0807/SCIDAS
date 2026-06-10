@@ -109,9 +109,10 @@ export function AcademicForm({
 
         await upsertAcademicScores(currentSemesterId, records)
         toast.success("บันทึกผลการเรียนเรียบร้อยแล้ว")
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
         toast.error("เกิดข้อผิดพลาดในการบันทึก", {
-          description: error.message
+          description: message
         })
       }
     })
@@ -218,7 +219,7 @@ export function AcademicForm({
                         />
                       </TableCell>
                     ))}
-                    <TableCell className="text-center font-bold text-primary">
+                    <TableCell className="text-center font-semibold text-primary">
                       {gpa}
                     </TableCell>
                   </TableRow>

@@ -13,7 +13,7 @@ export function MobileNotificationHeader() {
       </div>
 
       {/* Profile Section */}
-      <div className="px-4 py-3 flex items-center justify-between bg-white border border-slate-100 rounded-2xl mx-4 shadow-sm mb-4">
+      <div className="px-4 py-3 flex items-center justify-between bg-white border border-slate-100 rounded-xl mx-4 shadow-sm mb-4">
         <div className="flex items-center gap-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1" alt="Avatar" className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200" />
           <div className="flex flex-col">

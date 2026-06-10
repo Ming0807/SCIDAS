@@ -2,7 +2,7 @@ import React from "react"
 
 export function ClassSummary() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
       <h3 className="font-bold text-slate-800 text-sm mb-4">สรุปตามห้องเรียน</h3>
       
       <table className="w-full text-left text-xs mb-4">

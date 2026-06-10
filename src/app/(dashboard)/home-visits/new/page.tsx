@@ -35,7 +35,7 @@ export default function RecordHomeVisit() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Record Home Visit</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Record Home Visit</h1>
           <p className="text-slate-500 mt-1">Log a new home visit and upload evidence.</p>
         </div>
       </div>

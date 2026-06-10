@@ -12,7 +12,7 @@ export function MobileSupportHistory() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-left min-w-[400px]">
             <thead>

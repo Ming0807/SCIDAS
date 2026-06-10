@@ -2,7 +2,7 @@ import React from "react"
 
 export function TrackingTable() {
   return (
-    <div className="col-span-1 lg:col-span-7 rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex flex-col">
+    <div className="col-span-1 lg:col-span-7 rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-sm font-bold text-slate-800">นักเรียนที่ควรติดตามวันนี้</h3>
         <button className="text-[11px] text-blue-600 font-medium hover:underline">ดูทั้งหมด</button>

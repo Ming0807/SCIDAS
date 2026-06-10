@@ -20,24 +20,24 @@ export function Header({ role }: { role?: string | null }) {
         </button>
       </div>
       
-      <div className="hidden lg:flex items-center">
-        <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">ภาพรวมระบบ</h1>
+      <div className="hidden lg:flex items-center min-w-0 shrink-0">
+        <h1 className="text-[22px] font-bold text-slate-900 tracking-tight truncate">ภาพรวมระบบ</h1>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="relative hidden sm:block">
+      <div className="flex items-center gap-4 shrink-0 min-w-0">
+        <div className="relative hidden md:block">
           <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="search"
             placeholder="ค้นหานักเรียน, เลขประจำตัว, หรืออื่นๆ"
-            className="h-9 w-[320px] rounded-full border border-slate-200 bg-slate-50/50 pl-10 pr-12 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className="h-9 w-[200px] lg:w-[240px] xl:w-[280px] rounded-full border border-slate-200 bg-slate-50/50 pl-10 pr-12 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
           />
           <div className="absolute right-2.5 top-2 flex items-center justify-center px-1.5 h-5 rounded-md bg-white border border-slate-200 text-[10px] font-medium text-slate-400 shadow-sm">
             ⌘K
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 h-9 px-4 rounded-full border border-slate-200 bg-white">
+        <div className="hidden 2xl:flex items-center gap-2 h-9 px-4 rounded-full border border-slate-200 bg-white shrink-0">
           <Calendar className="h-4 w-4 text-slate-400" />
           <span className="text-sm font-medium text-slate-600">ข้อมูล ณ วันที่ 20 พฤษภาคม 2567</span>
         </div>
@@ -54,9 +54,9 @@ export function Header({ role }: { role?: string | null }) {
           <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
             <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher" alt="Profile" className="h-full w-full object-cover" />
           </div>
-          <div className="flex flex-col items-start hidden sm:flex">
+          <div className="flex flex-col items-start hidden xl:flex shrink-0">
             <span className="text-sm font-bold text-slate-800 leading-none">ครูประจำชั้น</span>
-            <span className="text-xs text-slate-500 mt-1 leading-none">ครูโรงเรียนบ้านหนองแค</span>
+            <span className="text-[10px] text-slate-500 mt-1.5 leading-none">ครูโรงเรียนบ้านหนองแค</span>
           </div>
         </div>
       </div>

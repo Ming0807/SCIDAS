@@ -4,7 +4,7 @@ import { Flag, Calendar, UserCircle } from "lucide-react"
 export function MobileIdpPlanStatus() {
   return (
     <div className="px-4 py-5">
-      <div className="bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 relative overflow-hidden flex flex-col gap-3">
+      <div className="bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] rounded-xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 relative overflow-hidden flex flex-col gap-3">
         
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 shadow-sm border border-indigo-200">

@@ -3,7 +3,7 @@ import { Monitor, Check } from "lucide-react"
 
 export function DesktopDisplaySettings() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mb-6">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
       <div className="flex items-center gap-2 mb-6">
         <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
           <Monitor className="w-4 h-4 text-indigo-600" />

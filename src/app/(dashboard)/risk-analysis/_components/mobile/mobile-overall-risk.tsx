@@ -3,7 +3,7 @@ import { Info } from "lucide-react"
 
 export function MobileOverallRisk() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
       <div className="flex items-center gap-1.5 mb-6 justify-center">
         <h3 className="text-[14px] font-bold text-slate-800">ระดับความเสี่ยงโดยรวม</h3>
         <Info className="w-4 h-4 text-slate-400" />

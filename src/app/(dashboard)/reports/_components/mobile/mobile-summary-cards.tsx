@@ -9,7 +9,7 @@ export function MobileSummaryCards() {
       <div className="grid grid-cols-2 gap-3">
         
         {/* Attendance */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between items-center text-center">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
           <div className="flex items-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center shrink-0">
               <CalendarIcon className="w-3.5 h-3.5 text-blue-500" />
@@ -22,7 +22,7 @@ export function MobileSummaryCards() {
         </div>
 
         {/* GPA */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between items-center text-center">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
           <div className="flex items-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center shrink-0">
               <BookOpen className="w-3.5 h-3.5 text-orange-500" />
@@ -35,7 +35,7 @@ export function MobileSummaryCards() {
         </div>
 
         {/* Behavior */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between items-center text-center">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
           <div className="flex items-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-md bg-green-50 flex items-center justify-center shrink-0">
               <Smile className="w-3.5 h-3.5 text-green-500" />
@@ -48,7 +48,7 @@ export function MobileSummaryCards() {
         </div>
 
         {/* Support */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between items-center text-center">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
           <div className="flex items-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-md bg-purple-50 flex items-center justify-center shrink-0">
               <HeartPulse className="w-3.5 h-3.5 text-purple-500" />

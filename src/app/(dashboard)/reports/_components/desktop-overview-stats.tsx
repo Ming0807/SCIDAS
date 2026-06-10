@@ -3,7 +3,7 @@ import { Users, ShieldAlert, HeartPulse, CheckCircle2, ArrowDown, ArrowUp, Downl
 
 export function DesktopOverviewStats() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mb-6 relative">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6 relative">
       
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[14px] font-bold text-slate-800">ภาพรวมข้อมูลนักเรียน</h3>
@@ -14,10 +14,10 @@ export function DesktopOverviewStats() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         
         {/* Total Students */}
-        <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 relative overflow-hidden flex flex-col justify-between group">
+        <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 relative overflow-hidden flex flex-col justify-between group">
           <div className="flex items-start justify-between mb-4">
             <div className="flex flex-col">
               <h4 className="text-[13px] font-bold text-slate-800 mb-1">จำนวนนักเรียนทั้งหมด</h4>
@@ -42,7 +42,7 @@ export function DesktopOverviewStats() {
         </div>
 
         {/* Risk Group */}
-        <div className="bg-white rounded-2xl p-4 border border-green-100 relative overflow-hidden flex flex-col justify-between group shadow-sm">
+        <div className="bg-white rounded-xl p-4 border border-green-100 relative overflow-hidden flex flex-col justify-between group shadow-sm">
           <div className="flex items-start justify-between mb-2">
             <div className="flex flex-col">
               <h4 className="text-[13px] font-bold text-slate-800 mb-1">กลุ่มเสี่ยง</h4>
@@ -69,7 +69,7 @@ export function DesktopOverviewStats() {
         </div>
 
         {/* Under Care */}
-        <div className="bg-white rounded-2xl p-4 border border-yellow-100 relative overflow-hidden flex flex-col justify-between group shadow-sm">
+        <div className="bg-white rounded-xl p-4 border border-yellow-100 relative overflow-hidden flex flex-col justify-between group shadow-sm">
           <div className="flex items-start justify-between mb-2">
             <div className="flex flex-col">
               <h4 className="text-[13px] font-bold text-slate-800 mb-1">อยู่ระหว่างการดูแล</h4>
@@ -96,7 +96,7 @@ export function DesktopOverviewStats() {
         </div>
 
         {/* Successfully Helped */}
-        <div className="bg-white rounded-2xl p-4 border border-blue-100 relative overflow-hidden flex flex-col justify-between group shadow-sm">
+        <div className="bg-white rounded-xl p-4 border border-blue-100 relative overflow-hidden flex flex-col justify-between group shadow-sm">
           <div className="flex items-start justify-between mb-2">
             <div className="flex flex-col">
               <h4 className="text-[13px] font-bold text-slate-800 mb-1">ได้รับการช่วยเหลือสำเร็จ</h4>

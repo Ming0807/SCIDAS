@@ -3,7 +3,7 @@ import { Calendar as CalendarIcon, BookOpen, Smile, Home, Activity, FolderOpen }
 
 export function MobileRiskFactors() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 h-full">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full">
       <h3 className="text-[13px] font-bold text-slate-800 mb-5">ปัจจัยเสี่ยงที่ต้องเฝ้าระวัง</h3>
 
       <div className="flex flex-col gap-4">

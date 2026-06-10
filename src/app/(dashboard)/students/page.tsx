@@ -14,7 +14,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Desktop Responsive View */}
-      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] flex-col">
+      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col">
         
         {/* Page Header (Search & Actions) */}
         <div className="mb-2 shrink-0">

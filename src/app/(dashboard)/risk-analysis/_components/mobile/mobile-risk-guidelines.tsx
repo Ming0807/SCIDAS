@@ -8,7 +8,7 @@ export function MobileRiskGuidelines() {
 
       <div className="flex overflow-x-auto gap-3 pb-4 no-scrollbar -mx-4 px-4">
         
-        <div className="bg-red-50/80 rounded-2xl p-4 border border-red-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-red-100 transition-colors">
+        <div className="bg-red-50/80 rounded-xl p-4 border border-red-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-red-100 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center mb-3">
             <Users className="w-6 h-6 text-red-500" />
           </div>
@@ -19,7 +19,7 @@ export function MobileRiskGuidelines() {
           <ChevronRight className="w-4 h-4 text-red-400 mt-2 self-end group-hover:translate-x-1 transition-transform" />
         </div>
 
-        <div className="bg-orange-50/80 rounded-2xl p-4 border border-orange-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-orange-100 transition-colors">
+        <div className="bg-orange-50/80 rounded-xl p-4 border border-orange-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-orange-100 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center mb-3">
             <MessageCircle className="w-6 h-6 text-orange-500" />
           </div>
@@ -30,7 +30,7 @@ export function MobileRiskGuidelines() {
           <ChevronRight className="w-4 h-4 text-orange-400 mt-2 self-end group-hover:translate-x-1 transition-transform" />
         </div>
 
-        <div className="bg-green-50/80 rounded-2xl p-4 border border-green-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-green-100 transition-colors">
+        <div className="bg-green-50/80 rounded-xl p-4 border border-green-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-green-100 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-3">
             <BookOpen className="w-6 h-6 text-green-500" />
           </div>
@@ -41,7 +41,7 @@ export function MobileRiskGuidelines() {
           <ChevronRight className="w-4 h-4 text-green-400 mt-2 self-end group-hover:translate-x-1 transition-transform" />
         </div>
 
-        <div className="bg-blue-50/80 rounded-2xl p-4 border border-blue-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-blue-100 transition-colors">
+        <div className="bg-blue-50/80 rounded-xl p-4 border border-blue-100 shrink-0 w-[150px] flex flex-col justify-between group cursor-pointer hover:bg-blue-100 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-3">
             <BarChart className="w-6 h-6 text-blue-500" />
           </div>

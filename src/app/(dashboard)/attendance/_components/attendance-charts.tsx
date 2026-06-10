@@ -6,7 +6,7 @@ export function AttendanceCharts() {
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
       
       {/* Line Chart */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col h-full min-h-[300px]">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full min-h-[300px]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-slate-800 text-sm">แนวโน้มการมาเรียนรายเดือน</h3>
           <div className="relative">
@@ -21,10 +21,22 @@ export function AttendanceCharts() {
         </div>
 
         <div className="flex justify-center gap-4 text-[10px] sm:text-xs font-medium mb-6">
-          <div className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> มาเรียน</div>
-          <div className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-red-500"></span> ขาดเรียน</div>
-          <div className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-amber-500"></span> ลา</div>
-          <div className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-blue-500"></span> มาสาย</div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+            <span className="text-slate-700">มาเรียน</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true"></span>
+            <span className="text-slate-700">ขาดเรียน</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+            <span className="text-slate-700">ลา</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true"></span>
+            <span className="text-slate-700">มาสาย</span>
+          </div>
         </div>
 
         {/* Mock Line Chart with SVG */}
@@ -104,7 +116,7 @@ export function AttendanceCharts() {
       </div>
 
       {/* Donut Chart */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col h-full min-h-[300px]">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full min-h-[300px]">
         <h3 className="font-bold text-slate-800 text-sm mb-6">สัดส่วนสถานะการมาเรียนวันนี้</h3>
         
         <div className="flex flex-col sm:flex-row xl:flex-col 2xl:flex-row items-center justify-center gap-6 xl:gap-4 2xl:gap-8 flex-1 w-full">

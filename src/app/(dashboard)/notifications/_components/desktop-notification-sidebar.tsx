@@ -6,7 +6,7 @@ export function DesktopNotificationSidebar() {
     <div className="flex flex-col gap-6">
       
       {/* Unread Banner */}
-      <div className="bg-indigo-600 rounded-2xl p-5 text-white relative overflow-hidden shadow-lg shadow-indigo-200">
+      <div className="bg-indigo-600 rounded-xl p-5 text-white relative overflow-hidden shadow-lg shadow-indigo-200">
         <h3 className="text-[14px] font-bold mb-1 relative z-10">ภาพรวมการแจ้งเตือน</h3>
         <div className="flex items-baseline gap-2 relative z-10 mb-1">
           <span className="text-[36px] font-bold leading-none">8</span>
@@ -23,7 +23,7 @@ export function DesktopNotificationSidebar() {
       </div>
 
       {/* Menu Categories */}
-      <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
         <div className="flex flex-col gap-1">
           <button className="flex items-center justify-between p-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-3">
@@ -92,7 +92,7 @@ export function DesktopNotificationSidebar() {
       </div>
 
       {/* Calendar Mini */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <h3 className="text-[13px] font-bold text-slate-800 mb-4">ปฏิทินการแจ้งเตือน</h3>
         
         <div className="flex items-center justify-between mb-4">

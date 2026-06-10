@@ -50,7 +50,7 @@ export function MobileReportHeader() {
       
       {/* Hero Banner */}
       <div className="px-4 mt-2 mb-6">
-        <div className="bg-indigo-600 rounded-2xl p-5 relative overflow-hidden flex items-center justify-between">
+        <div className="bg-indigo-600 rounded-xl p-5 relative overflow-hidden flex items-center justify-between">
           <div className="relative z-10">
             <h3 className="text-[16px] font-bold mb-1 text-white">ภาพรวมรายงานนักเรียน</h3>
             <span className="text-[12px] text-indigo-100">ภาคเรียนที่ 1/2567</span>

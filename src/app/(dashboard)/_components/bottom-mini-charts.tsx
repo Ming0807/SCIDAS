@@ -6,7 +6,7 @@ export function BottomMiniCharts() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       
       {/* การมาเรียนวันนี้ */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <CalendarCheck className="h-4 w-4 text-emerald-500" />
           <h3 className="text-sm font-bold text-slate-800">การมาเรียนวันนี้</h3>
@@ -49,7 +49,7 @@ export function BottomMiniCharts() {
       </div>
 
       {/* ผลการเรียนเฉลี่ย */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="h-4 w-4 text-blue-500" />
           <h3 className="text-sm font-bold text-slate-800">ผลการเรียนเฉลี่ย</h3>
@@ -96,7 +96,7 @@ export function BottomMiniCharts() {
       </div>
 
       {/* กิจกรรมแผนพัฒนา */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <Target className="h-4 w-4 text-purple-500" />
           <h3 className="text-sm font-bold text-slate-800">กิจกรรมแผนพัฒนา</h3>

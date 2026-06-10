@@ -6,7 +6,7 @@ export function IdpTrendReflection() {
     <div className="flex flex-col gap-4 h-full">
       
       {/* Trend Chart */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex-1 flex flex-col relative">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex-1 flex flex-col relative">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[13px] font-bold text-slate-800">แนวโน้มความก้าวหน้า <span className="text-slate-400 font-normal">(คะแนนเฉลี่ยรวม)</span></h3>
           <button className="flex items-center gap-1 text-[10px] font-medium text-slate-500 border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50">
@@ -65,14 +65,14 @@ export function IdpTrendReflection() {
       </div>
 
       {/* Reflection */}
-      <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100 flex-1 flex flex-col relative overflow-hidden">
+      <div className="bg-blue-50/50 rounded-xl p-5 border border-blue-100 flex-1 flex flex-col relative overflow-hidden">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[14px] font-bold text-indigo-900 flex items-center gap-2">
-            <Edit3 className="w-4 h-4 text-indigo-500" />
+          <h3 className="text-[14px] font-bold text-blue-900 flex items-center gap-2">
+            <Edit3 className="w-4 h-4 text-blue-500" />
             บันทึกสะท้อนผล (Reflection)
           </h3>
         </div>
-        <p className="text-[12px] text-indigo-800/80 leading-relaxed font-medium">
+        <p className="text-[12px] text-blue-800/80 leading-relaxed font-medium">
           นักเรียนเริ่มมีการมาเรียนสม่ำเสมอมากขึ้น ผลการเรียนคณิตศาสตร์ดีขึ้นจากการเข้าร่วมติวเสริม 
           แต่ยังต้องเน้นการฝึกโจทย์ปัญหาเพิ่มเติม พฤติกรรมในชั้นเรียนดีขึ้น ควรให้กำลังใจและติดตาม
           อย่างต่อเนื่อง ส่วนทักษะการอ่านยังต้องฝึกฝนเป็นประจำ
@@ -80,7 +80,7 @@ export function IdpTrendReflection() {
 
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span className="text-[10px] text-slate-500">บันทึกล่าสุด: 17 พ.ค. 2567 โดย นางสาวจันทร์จิรา พรมดี</span>
-          <button className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700">ดูทั้งหมด</button>
+          <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700">ดูทั้งหมด</button>
         </div>
       </div>
 

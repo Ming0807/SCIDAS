@@ -10,7 +10,7 @@ import { ChevronRight } from "lucide-react"
 
 export default function DevelopmentPlansPage() {
   return (
-    <div className="w-full bg-[#f8fafc] min-h-screen">
+    <div className="w-full bg-background min-h-screen">
       
       {/* ---------------- MOBILE VIEW (< 768px) ---------------- */}
       <div className="block md:hidden">

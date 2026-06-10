@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, BookOpen, Users, CircleDot } from "lucide-re
 
 export function IdpTimeline() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
       
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[14px] font-bold text-slate-800">แผนการดำเนินกิจกรรม (พ.ค. 2567)</h3>

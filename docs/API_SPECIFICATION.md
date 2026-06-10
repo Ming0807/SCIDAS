@@ -140,6 +140,65 @@ interface CursorPaginationParams {
 }
 ```
 
+### ActionResult And Server Action Flow (Phase 1 Contract)
+
+This contract applies to new or migrated Server Actions. Older examples in this document still use `success`; treat those as legacy snapshots until each module is migrated.
+
+```typescript
+type ActionErrorCode =
+  | "VALIDATION_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "CONFLICT"
+  | "RATE_LIMITED"
+  | "INTERNAL_ERROR";
+
+type FieldErrors = Record<string, string[]>;
+
+type ActionResult<TData = unknown> =
+  | {
+      ok: true;
+      message: string;
+      data?: TData;
+      revalidated?: string[];
+      redirectTo?: string;
+    }
+  | {
+      ok: false;
+      message: string;
+      code: ActionErrorCode;
+      fieldErrors?: FieldErrors;
+      formErrors?: string[];
+    };
+```
+
+Required flow for migrated modules:
+
+```text
+Route Server Component
+  -> authenticate and authorize
+  -> query/service function
+  -> typed DTO or view model
+  -> Client Component only for interaction
+  -> Server Action for mutation
+  -> validate auth, ownership, and input again
+  -> mutate data
+  -> revalidatePath, redirect, or refresh narrowly
+  -> return ActionResult<TData>
+  -> show inline result and toast where appropriate
+```
+
+Server Action rules:
+
+- Every action must verify authentication and authorization internally. Server Actions can be invoked by direct POST requests, not only by the visible UI.
+- Return validation failures as `ok: false` with `code: "VALIDATION_ERROR"` and `fieldErrors`.
+- Throw only for unexpected failures that should be handled by an error boundary or logging path.
+- Use `useActionState` for form submissions that need pending and field-level feedback.
+- Use bound parameters for stable resource IDs, then re-check ownership on the server.
+- Prefer `revalidatePath("/exact-route")` or redirect to the updated resource over broad refreshes.
+- API Routes remain for external integrations, webhooks, file endpoints, or public HTTP APIs; internal dashboard mutations should use Server Actions.
+
 ### Standard Error Codes
 
 | HTTP Status | Error Code | คำอธิบาย |
@@ -3659,8 +3718,9 @@ import { useActionState } from "react";
 import { createStudent } from "@/app/actions/students";
 
 const initialState: ActionResult = {
-  success: false,
+  ok: false,
   message: "",
+  code: "VALIDATION_ERROR",
 };
 
 export function CreateStudentForm() {
@@ -3673,8 +3733,8 @@ export function CreateStudentForm() {
       <input name="last_name" required />
 
       {/* error display */}
-      {state.errors?.first_name && (
-        <span className="text-red-500">{state.errors.first_name[0]}</span>
+      {state.fieldErrors?.first_name && (
+        <span className="text-red-500">{state.fieldErrors.first_name[0]}</span>
       )}
 
       {/* submit button */}
@@ -3683,7 +3743,7 @@ export function CreateStudentForm() {
       </button>
 
       {/* success message */}
-      {state.success && (
+      {state.ok && (
         <div className="text-green-500">{state.message}</div>
       )}
     </form>
@@ -3705,7 +3765,7 @@ function handleSubmit(data: AttendanceData) {
 
   startTransition(async () => {
     const result = await recordAttendance(initialState, formData);
-    if (result.success) {
+    if (result.ok) {
       toast.success(result.message);
       router.refresh();
     } else {
@@ -3735,13 +3795,35 @@ export function EditStudentForm({ studentId }: { studentId: string }) {
 ### ActionResult Type Definition
 
 ```typescript
-interface ActionResult {
-  success: boolean;
-  message: string;
-  data?: Record<string, any>;
-  errors?: Record<string, string[]>;
-}
+type ActionErrorCode =
+  | "VALIDATION_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "CONFLICT"
+  | "RATE_LIMITED"
+  | "INTERNAL_ERROR";
+
+type FieldErrors = Record<string, string[]>;
+
+type ActionResult<TData = unknown> =
+  | {
+      ok: true;
+      message: string;
+      data?: TData;
+      revalidated?: string[];
+      redirectTo?: string;
+    }
+  | {
+      ok: false;
+      message: string;
+      code: ActionErrorCode;
+      fieldErrors?: FieldErrors;
+      formErrors?: string[];
+    };
 ```
+
+> Migration note: legacy actions may still return `{ success: boolean }` until the owning module is touched. Do not introduce new legacy shapes in migrated code.
 
 ---
 

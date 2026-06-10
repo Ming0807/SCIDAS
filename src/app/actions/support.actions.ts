@@ -4,6 +4,9 @@ import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 import { Database } from "@/types/database.types"
 
+type SeverityLevel = Database["public"]["Enums"]["severity_level"]
+type SupportType = Database["public"]["Enums"]["support_type"]
+
 export async function getSupportRecords() {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -39,8 +42,8 @@ export async function createSupportRecord(formData: FormData) {
   if (!user) throw new Error("Not authenticated")
 
   const student_id = formData.get('student_id') as string
-  const support_type = formData.get('support_type') as any
-  const priority = formData.get('priority') as any
+  const support_type = formData.get('support_type') as SupportType
+  const priority = formData.get('priority') as SeverityLevel
   const title = formData.get('title') as string
   const description = formData.get('description') as string
   const assigned_to = formData.get('assigned_to') as string

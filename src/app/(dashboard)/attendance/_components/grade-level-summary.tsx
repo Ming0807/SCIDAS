@@ -13,7 +13,7 @@ export function GradeLevelSummary() {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
       <div className="flex items-center gap-2 mb-6">
         <h3 className="font-bold text-slate-800 text-sm">สรุปการมาเรียนรายระดับชั้น</h3>
         <span className="text-xs text-slate-500">(เดือนพฤษภาคม 2567)</span>
@@ -40,15 +40,24 @@ export function GradeLevelSummary() {
                 {/* Legends */}
                 <div className="flex-1 space-y-1.5">
                   <div className="flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span className="text-slate-600">มาเรียน</span></div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                      <span className="text-slate-700">มาเรียน</span>
+                    </div>
                     <div className="font-bold text-slate-800">{grade.present.count} <span className="font-normal text-slate-400">({grade.present.pct.toFixed(1)}%)</span></div>
                   </div>
                   <div className="flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span><span className="text-slate-600">ขาด</span></div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
+                      <span className="text-slate-700">ขาด</span>
+                    </div>
                     <div className="font-bold text-slate-800">{grade.absent.count} <span className="font-normal text-slate-400">({grade.absent.pct.toFixed(1)}%)</span></div>
                   </div>
                   <div className="flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span><span className="text-slate-600">มาสาย</span></div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" aria-hidden="true"></span>
+                      <span className="text-slate-700">มาสาย</span>
+                    </div>
                     <div className="font-bold text-slate-800">{grade.late.count} <span className="font-normal text-slate-400">({grade.late.pct.toFixed(1)}%)</span></div>
                   </div>
                 </div>
@@ -77,15 +86,24 @@ export function GradeLevelSummary() {
             {/* Legends */}
             <div className="flex-1 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-slate-600 font-medium">มาเรียน</span></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                  <span className="text-slate-700 font-medium">มาเรียน</span>
+                </div>
                 <div className="font-bold text-slate-800">{total.present.count} <span className="text-[10px] font-normal text-slate-400">({total.present.pct.toFixed(1)}%)</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="text-slate-600 font-medium">ขาด</span></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true"></span>
+                  <span className="text-slate-700 font-medium">ขาด</span>
+                </div>
                 <div className="font-bold text-slate-800">{total.absent.count} <span className="text-[10px] font-normal text-slate-400">({total.absent.pct.toFixed(1)}%)</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-slate-600 font-medium">มาสาย</span></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true"></span>
+                  <span className="text-slate-700 font-medium">มาสาย</span>
+                </div>
                 <div className="font-bold text-slate-800">{total.late.count} <span className="text-[10px] font-normal text-slate-400">({total.late.pct.toFixed(1)}%)</span></div>
               </div>
             </div>

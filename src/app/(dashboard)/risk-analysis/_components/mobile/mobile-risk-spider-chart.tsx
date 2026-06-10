@@ -3,7 +3,7 @@ import { Calendar as CalendarIcon, BookOpen, Smile, Home, Activity } from "lucid
 
 export function MobileRiskSpiderChart() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
       <h3 className="text-[13px] font-bold text-slate-800 mb-6">ปัจจัยความเสี่ยง 5 ด้าน</h3>
 
       <div className="flex-1 flex items-center justify-center relative mb-6">

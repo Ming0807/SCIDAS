@@ -7,7 +7,7 @@ import { ChevronRight, Bell } from "lucide-react"
 
 export default function NotificationsPage() {
   return (
-    <div className="w-full bg-[#f8fafc] min-h-screen">
+    <div className="w-full bg-background min-h-screen">
       
       {/* ---------------- MOBILE VIEW (< 1024px) ---------------- */}
       <div className="block lg:hidden">

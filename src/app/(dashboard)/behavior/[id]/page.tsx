@@ -16,7 +16,7 @@ export default function BehaviorPage() {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
+      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
         
         {/* Breadcrumb & Header */}
         <div className="flex items-center justify-between mb-6">

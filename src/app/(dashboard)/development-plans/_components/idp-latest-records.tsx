@@ -3,7 +3,7 @@ import { ChevronRight, TrendingUp, PlusCircle } from "lucide-react"
 
 export function IdpLatestRecords() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mt-6">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mt-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[14px] font-bold text-slate-800">บันทึกการติดตามครั้งล่าสุด</h3>
         <button className="text-[11px] font-bold text-blue-600 hover:text-blue-700">ดูทั้งหมด</button>

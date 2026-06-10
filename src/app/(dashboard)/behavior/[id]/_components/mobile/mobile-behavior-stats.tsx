@@ -6,7 +6,7 @@ export function MobileBehaviorStats() {
     <div className="grid grid-cols-2 gap-3 px-4 mb-4">
       
       {/* สรุปพฤติกรรม (Summary Table) */}
-      <div className="bg-white rounded-3xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between">
+      <div className="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
         <h3 className="text-[12px] font-bold text-slate-800 mb-3">สรุปพฤติกรรม</h3>
         
         <div className="flex flex-col gap-2.5">
@@ -49,7 +49,7 @@ export function MobileBehaviorStats() {
       </div>
 
       {/* ระดับพฤติกรรม */}
-      <div className="bg-white rounded-3xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-center items-center relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex flex-col justify-center items-center relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute inset-0 bg-gradient-to-b from-yellow-50 to-white opacity-50"></div>
         

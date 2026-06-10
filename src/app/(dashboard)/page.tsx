@@ -16,7 +16,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden md:block p-8 space-y-6 bg-[#f8fafc] min-h-screen">
+      <div className="hidden md:block p-8 space-y-6 bg-slate-50 min-h-screen">
         {/* Top 4 Summary Cards */}
         <SummaryCards />
 

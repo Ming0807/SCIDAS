@@ -3,11 +3,11 @@ import { Search, ChevronDown, Plus, Upload, Download, Users } from "lucide-react
 
 export function StudentFilters() {
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-4 mb-4 sm:mb-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-4 sm:mb-6">
+      <div className="flex flex-row flex-wrap justify-between items-center gap-4">
         
         {/* Left side: Search & Filters */}
-        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full lg:w-auto">
+        <div className="flex flex-row flex-wrap items-center gap-3 w-full lg:w-auto flex-1 min-w-[300px]">
           {/* Search Box */}
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -68,7 +68,7 @@ export function StudentFilters() {
         </div>
 
         {/* Right side: Action Buttons */}
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
+        <div className="flex flex-row flex-wrap items-center gap-2 w-full lg:w-auto">
           <button className="flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors">
             <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="truncate">เพิ่มนักเรียน</span>

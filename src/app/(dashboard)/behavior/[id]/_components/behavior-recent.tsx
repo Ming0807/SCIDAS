@@ -11,7 +11,7 @@ export function BehaviorRecent() {
   ]
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
       <h3 className="text-[13px] font-bold text-slate-800 mb-4">บันทึกพฤติกรรมล่าสุด</h3>
 
       <div className="flex-1 overflow-x-auto no-scrollbar pb-2">

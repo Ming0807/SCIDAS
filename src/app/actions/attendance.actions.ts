@@ -3,6 +3,19 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+type StudentSummary = {
+  id: string
+  first_name: string
+  last_name: string
+  prefix: string | null
+}
+
+type ClassroomStudentJoin = {
+  students: StudentSummary | StudentSummary[] | null
+}
+
+const firstOrSelf = <T,>(value: T | T[] | null) => Array.isArray(value) ? value[0] : value
+
 export async function getClassroomStudents() {
   const supabase = await createClient()
 
@@ -51,9 +64,11 @@ export async function getClassroomStudents() {
 
   // Format the output
   const students = classroomStudents
-    .map((cs: any) => ({
-      id: cs.students.id,
-      name: `${cs.students.prefix || ''}${cs.students.first_name} ${cs.students.last_name}`
+    .map((cs) => firstOrSelf((cs as ClassroomStudentJoin).students))
+    .filter((student): student is StudentSummary => Boolean(student))
+    .map((student) => ({
+      id: student.id,
+      name: `${student.prefix || ''}${student.first_name} ${student.last_name}`
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'th'))
 

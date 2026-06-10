@@ -11,7 +11,7 @@ import { Bell, ChevronDown, Shield, Settings } from "lucide-react"
 
 export default function SettingsPage() {
   return (
-    <div className="w-full bg-[#f8fafc] min-h-screen">
+    <div className="w-full bg-background min-h-screen">
       
       {/* ---------------- MOBILE VIEW (Admin) (< 1024px) ---------------- */}
       <div className="block lg:hidden">
@@ -74,12 +74,7 @@ export default function SettingsPage() {
                 <Shield className="w-10 h-10 text-indigo-300" />
               </div>
               
-              {/* Decorative elements */}
-              <div className="absolute top-4 left-4 w-12 h-12 border-2 border-indigo-800/30 rounded-full"></div>
-              <div className="absolute bottom-4 left-1/3 w-16 h-16 border-2 border-indigo-800/30 rounded-full"></div>
-              <div className="absolute top-1/2 right-1/4 w-8 h-8 border-2 border-indigo-800/30 rounded-full"></div>
-              <Settings className="absolute top-8 right-12 w-6 h-6 text-indigo-800/40" />
-              <Settings className="absolute bottom-8 right-1/3 w-8 h-8 text-indigo-800/40" />
+              {/* Clean Security Banner without noisy decorations */}
             </div>
 
           </div>

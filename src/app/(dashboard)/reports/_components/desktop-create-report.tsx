@@ -3,7 +3,7 @@ import { FileText, ClipboardList, PenTool, UploadCloud } from "lucide-react"
 
 export function DesktopCreateReport() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 mb-6">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
       <h3 className="text-[14px] font-bold text-slate-800 mb-4">สร้างรายงานใหม่</h3>
 
       <div className="grid grid-cols-4 gap-3">

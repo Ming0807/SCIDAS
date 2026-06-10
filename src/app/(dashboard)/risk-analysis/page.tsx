@@ -10,7 +10,7 @@ import { ChevronRight, Filter, Bell } from "lucide-react"
 
 export default function RiskAnalysisPage() {
   return (
-    <div className="w-full bg-[#f8fafc] min-h-[calc(100vh-64px)] overflow-x-hidden">
+    <div className="w-full bg-slate-50 min-h-[calc(100vh-64px)] overflow-x-hidden">
       
       {/* ---------------- MOBILE VIEW (< 768px) ---------------- */}
       <div className="block md:hidden">
@@ -25,7 +25,7 @@ export default function RiskAnalysisPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-800 tracking-tight">วิเคราะห์ความเสี่ยง</h1>
             <div className="flex items-center gap-2 text-[13px] text-slate-500 mt-1">
-              <span className="cursor-pointer hover:text-indigo-600 transition-colors">หน้าหลัก</span>
+              <span className="cursor-pointer hover:text-blue-600 transition-colors">หน้าหลัก</span>
               <ChevronRight className="w-3.5 h-3.5" />
               <span className="font-bold text-slate-800">วิเคราะห์ความเสี่ยง</span>
             </div>
@@ -36,7 +36,7 @@ export default function RiskAnalysisPage() {
               <span className="text-[13px] font-medium text-slate-700">ภาคเรียนที่ 1/2567</span>
               <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </div>
-            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2 text-[13px] font-bold text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm">
+            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2 text-[13px] font-bold text-blue-600 hover:bg-blue-50 transition-colors shadow-sm">
               <Filter className="w-4 h-4" />
               ตัวกรอง
             </button>

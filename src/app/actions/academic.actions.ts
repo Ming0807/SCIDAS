@@ -3,6 +3,41 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+type AcademicYearSummary = {
+  year: number
+}
+
+type SemesterWithYear = {
+  id: string
+  semester: string
+  is_current: boolean
+  academic_years: AcademicYearSummary | AcademicYearSummary[] | null
+}
+
+type StudentSummary = {
+  id: string
+  first_name: string
+  last_name: string
+  prefix: string | null
+}
+
+type ClassroomStudentJoin = {
+  students: StudentSummary | StudentSummary[] | null
+}
+
+type SubjectSummary = {
+  id: string
+  name: string
+  subject_code: string
+}
+
+type ClassroomSubjectJoin = {
+  id: string
+  subjects: SubjectSummary | SubjectSummary[] | null
+}
+
+const firstOrSelf = <T,>(value: T | T[] | null) => Array.isArray(value) ? value[0] : value
+
 export async function getClassroomAcademicData(semesterId?: string) {
   const supabase = await createClient()
 
@@ -38,11 +73,15 @@ export async function getClassroomAcademicData(semesterId?: string) {
     `)
     .eq('academic_years.school_id', profile.school_id)
 
-  const semesters = (semestersRes || []).map((s: any) => ({
-    id: s.id,
-    name: `ภาคเรียนที่ ${s.semester === 'semester_1' ? '1' : '2'}/${s.academic_years.year}`,
-    is_current: s.is_current
-  }))
+  const semesters = ((semestersRes || []) as SemesterWithYear[]).map((s) => {
+    const academicYear = firstOrSelf(s.academic_years)
+
+    return {
+      id: s.id,
+      name: `ภาคเรียนที่ ${s.semester === 'semester_1' ? '1' : '2'}/${academicYear?.year ?? '-'}`,
+      is_current: s.is_current
+    }
+  })
 
   let currentSemesterId = semesterId
   if (!currentSemesterId && semesters.length > 0) {
@@ -69,9 +108,11 @@ export async function getClassroomAcademicData(semesterId?: string) {
     .eq('is_active', true)
 
   const students = (classroomStudents || [])
-    .map((cs: any) => ({
-      id: cs.students.id,
-      name: `${cs.students.prefix || ''}${cs.students.first_name} ${cs.students.last_name}`
+    .map((cs) => firstOrSelf((cs as ClassroomStudentJoin).students))
+    .filter((student): student is StudentSummary => Boolean(student))
+    .map((student) => ({
+      id: student.id,
+      name: `${student.prefix || ''}${student.first_name} ${student.last_name}`
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'th'))
 
@@ -89,12 +130,20 @@ export async function getClassroomAcademicData(semesterId?: string) {
     .eq('classroom_id', classroom.id)
     .eq('semester_id', currentSemesterId)
 
-  const subjects = (classroomSubjects || []).map((cs: any) => ({
-    id: cs.id, // classroom_subject_id
-    subject_id: cs.subjects.id,
-    name: cs.subjects.name,
-    code: cs.subjects.subject_code
-  }))
+  const subjects = ((classroomSubjects || []) as ClassroomSubjectJoin[])
+    .map((cs) => {
+      const subject = firstOrSelf(cs.subjects)
+
+      if (!subject) return null
+
+      return {
+        id: cs.id, // classroom_subject_id
+        subject_id: subject.id,
+        name: subject.name,
+        code: subject.subject_code
+      }
+    })
+    .filter((subject): subject is { id: string; subject_id: string; name: string; code: string } => Boolean(subject))
 
   // Get scores
   const { data: academicScores } = await supabase

@@ -51,11 +51,11 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
     const record = initialRecords.find(r => r.student_id === student.id)
     acc[student.id] = record?.status || "present" // Default to present
     return acc
-  }, {} as Record<string, string>)
+  }, {} as Record<string, AttendanceRecord["status"]>)
 
-  const [attendance, setAttendance] = useState<Record<string, string>>(initialState)
+  const [attendance, setAttendance] = useState<Record<string, AttendanceRecord["status"]>>(initialState)
 
-  const handleStatusChange = (studentId: string, value: string) => {
+  const handleStatusChange = (studentId: string, value: AttendanceRecord["status"]) => {
     setAttendance(prev => ({
       ...prev,
       [studentId]: value
@@ -67,7 +67,7 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
       try {
         const records = Object.entries(attendance).map(([studentId, status]) => ({
           student_id: studentId,
-          status: status as any
+          status
         }))
         
         // Format date to YYYY-MM-DD for PG
@@ -157,7 +157,7 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
                   <TableCell>
                     <Select 
                       value={attendance[student.id]} 
-                      onValueChange={(val) => handleStatusChange(student.id, val as any)}
+                      onValueChange={(val) => handleStatusChange(student.id, val as AttendanceRecord["status"])}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />

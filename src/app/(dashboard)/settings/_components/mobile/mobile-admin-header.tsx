@@ -28,7 +28,7 @@ export function MobileAdminHeader() {
       </div>
 
       {/* Admin Profile & Stats Banner */}
-      <div className="mx-4 bg-gradient-to-br from-indigo-50 to-[#e0e7ff] rounded-2xl p-4 border border-indigo-100 flex flex-col gap-4">
+      <div className="mx-4 bg-gradient-to-br from-indigo-50 to-[#e0e7ff] rounded-xl p-4 border border-indigo-100 flex flex-col gap-4">
         
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-white border-2 border-white shadow-sm overflow-hidden flex items-center justify-center relative">

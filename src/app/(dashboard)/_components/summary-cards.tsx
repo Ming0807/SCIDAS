@@ -3,9 +3,9 @@ import { Users, AlertTriangle, ClipboardCheck } from "lucide-react"
 
 export function SummaryCards() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
       {/* Card 1: นักเรียนทั้งหมด */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex items-center gap-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
         <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
           <Users className="h-7 w-7 text-blue-500" />
         </div>
@@ -20,7 +20,7 @@ export function SummaryCards() {
       </div>
 
       {/* Card 2: กลุ่มเฝ้าระวัง */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex items-center gap-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
         <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
           <Users className="h-7 w-7 text-amber-500" />
         </div>
@@ -35,7 +35,7 @@ export function SummaryCards() {
       </div>
 
       {/* Card 3: เสี่ยงสูง */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex items-center gap-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
         <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center shrink-0">
           <AlertTriangle className="h-7 w-7 text-red-500" />
         </div>
@@ -50,7 +50,7 @@ export function SummaryCards() {
       </div>
 
       {/* Card 4: แผนพัฒนา */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 p-6 flex items-center gap-5">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6 flex items-center gap-5">
         <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
           <ClipboardCheck className="h-7 w-7 text-emerald-500" />
         </div>

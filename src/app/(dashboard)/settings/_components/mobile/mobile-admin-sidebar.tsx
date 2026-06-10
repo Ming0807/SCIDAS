@@ -99,7 +99,7 @@ export function MobileAdminSidebar() {
       </div>
 
       {/* Help Center Card */}
-      <div className="mx-4 bg-indigo-50 rounded-2xl p-4 border border-indigo-100 flex flex-col relative overflow-hidden">
+      <div className="mx-4 bg-indigo-50 rounded-xl p-4 border border-indigo-100 flex flex-col relative overflow-hidden">
         <div className="relative z-10 w-2/3">
           <h4 className="text-[13px] font-bold text-indigo-900 mb-1">ศูนย์ช่วยเหลือแอดมิน</h4>
           <p className="text-[10px] text-indigo-700/80 mb-3 leading-snug">คู่มือการใช้งานสำหรับแอดมิน<br/>และวิดีโอสอนการใช้งาน</p>

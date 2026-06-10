@@ -4,7 +4,7 @@ import Link from "next/link"
 
 export default function BehaviorDashboardPage() {
   return (
-    <div className="flex p-4 sm:p-6 lg:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
+    <div className="flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
       
       {/* Breadcrumb & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
@@ -33,8 +33,8 @@ export default function BehaviorDashboardPage() {
       <div className="flex-1 flex flex-col min-h-0">
         
         {/* Top Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
             <div className="text-[12px] font-bold text-slate-500 mb-2">บันทึกพฤติกรรมทั้งหมด</div>
             <div className="flex items-end justify-between">
               <div>
@@ -50,7 +50,7 @@ export default function BehaviorDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
             <div className="text-[12px] font-bold text-emerald-600 mb-2">พฤติกรรมเชิงบวก</div>
             <div className="flex items-end justify-between">
               <div>
@@ -66,7 +66,7 @@ export default function BehaviorDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-rose-50 p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-rose-100 flex flex-col justify-between relative overflow-hidden">
+          <div className="bg-rose-50 p-5 rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-rose-100 flex flex-col justify-between relative overflow-hidden">
             <div className="text-[12px] font-bold text-rose-800 mb-2 relative z-10">พฤติกรรมเชิงลบ</div>
             <div className="flex items-end justify-between relative z-10">
               <div>
@@ -82,7 +82,7 @@ export default function BehaviorDashboardPage() {
             </div>
           </div>
           
-          <div className="bg-amber-50 p-5 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-amber-100 flex flex-col justify-between">
+          <div className="bg-amber-50 p-5 rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-amber-100 flex flex-col justify-between">
             <div className="text-[12px] font-bold text-amber-800 mb-2">นักเรียนที่ต้องติดตามพิเศษ</div>
             <div className="flex items-end justify-between">
               <div>
@@ -103,7 +103,7 @@ export default function BehaviorDashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           
           {/* Recent Behaviors List */}
-          <div className="xl:col-span-2 bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col min-h-0">
+          <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col min-h-0">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-[15px] font-bold text-slate-800">บันทึกพฤติกรรมล่าสุด</h2>
               <div className="relative">
@@ -179,7 +179,7 @@ export default function BehaviorDashboardPage() {
           </div>
 
           {/* Top Students / Leaderboard */}
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col p-5">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col p-5">
             <h2 className="text-[15px] font-bold text-slate-800 mb-4">นักเรียนที่ได้รับคำชมสูงสุด</h2>
             <div className="flex flex-col gap-4">
               {[

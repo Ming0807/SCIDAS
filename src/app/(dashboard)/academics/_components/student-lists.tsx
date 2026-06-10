@@ -11,10 +11,10 @@ export function AtRiskStudentsList() {
   ]
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-800">นักเรียนที่ต้องติดตามใกล้ชิด (Top 5)</h3>
-        <button className="text-[11px] font-medium text-blue-600 hover:text-blue-700">
+        <h3 className="text-sm font-semibold text-slate-800">นักเรียนที่ต้องติดตามใกล้ชิด (Top 5)</h3>
+        <button className="text-xs font-medium text-blue-600 hover:text-blue-700">
           ดูทั้งหมด
         </button>
       </div>
@@ -22,16 +22,16 @@ export function AtRiskStudentsList() {
       <div className="flex-1 flex flex-col gap-3">
         {students.map((student, index) => (
           <div key={student.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
-            <div className="w-6 text-[11px] font-bold text-slate-400 text-center">{index + 1}</div>
+            <div className="w-6 text-xs font-semibold text-slate-400 text-center">{index + 1}</div>
             <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${student.avatar}`} alt="avatar" className="w-8 h-8 rounded-full bg-slate-100" />
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-slate-800 line-clamp-1 break-all">{student.name}</div>
-              <div className="text-[10px] text-slate-500">{student.class}</div>
+              <div className="text-xs font-semibold text-slate-800 line-clamp-1 break-all">{student.name}</div>
+              <div className="text-xs text-slate-500">{student.class}</div>
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <div className="text-[10px] text-slate-400">GPA</div>
-                <div className="text-xs font-bold text-red-500">{student.gpa.toFixed(2)}</div>
+                <div className="text-xs text-slate-400">GPA</div>
+                <div className="text-xs font-semibold text-red-500">{student.gpa.toFixed(2)}</div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
@@ -52,10 +52,10 @@ export function TopStudentsList() {
   ]
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col h-full">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-800">นักเรียนผลการเรียนดีเด่น (Top 5)</h3>
-        <button className="text-[11px] font-medium text-blue-600 hover:text-blue-700">
+        <h3 className="text-sm font-semibold text-slate-800">นักเรียนผลการเรียนดีเด่น (Top 5)</h3>
+        <button className="text-xs font-medium text-blue-600 hover:text-blue-700">
           ดูทั้งหมด
         </button>
       </div>
@@ -65,24 +65,24 @@ export function TopStudentsList() {
           <div key={student.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
             <div className="w-6 flex justify-center">
               {index === 0 ? (
-                <div className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-[10px] font-bold">1</div>
+                <div className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-xs font-semibold">1</div>
               ) : index === 1 ? (
-                <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold">2</div>
+                <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-semibold">2</div>
               ) : index === 2 ? (
-                <div className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[10px] font-bold">3</div>
+                <div className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-semibold">3</div>
               ) : (
-                <div className="w-5 text-[11px] font-bold text-slate-400 text-center">{index + 1}</div>
+                <div className="w-5 text-xs font-semibold text-slate-400 text-center">{index + 1}</div>
               )}
             </div>
             <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${student.avatar}`} alt="avatar" className="w-8 h-8 rounded-full bg-slate-100" />
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-slate-800 truncate">{student.name}</div>
-              <div className="text-[10px] text-slate-500">{student.class}</div>
+              <div className="text-xs font-semibold text-slate-800 truncate">{student.name}</div>
+              <div className="text-xs text-slate-500">{student.class}</div>
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <div className="text-[10px] text-slate-400">GPA</div>
-                <div className="text-xs font-bold text-emerald-600">{student.gpa.toFixed(2)}</div>
+                <div className="text-xs text-slate-400">GPA</div>
+                <div className="text-xs font-semibold text-emerald-600">{student.gpa.toFixed(2)}</div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>

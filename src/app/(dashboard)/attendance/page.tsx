@@ -18,7 +18,7 @@ export default function AttendancePage() {
       </div>
 
       {/* Desktop Responsive View */}
-      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] flex-col">
+      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col">
         
         {/* Page Header */}
         <div className="mb-6 shrink-0 flex items-center justify-between">

@@ -12,7 +12,7 @@ export function MobileIdpRecord() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col gap-4">
+      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col gap-4">
         
         <div className="flex items-start gap-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher2" alt="Teacher" className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200" />

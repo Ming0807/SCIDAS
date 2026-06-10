@@ -15,7 +15,7 @@ export function MobileIdpGoals() {
       <div className="flex overflow-x-auto gap-3 pb-4 no-scrollbar -mx-4 px-4">
         
         {/* Goal 1 */}
-        <div className="bg-white rounded-2xl p-3.5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 shrink-0 w-[140px] flex flex-col items-center text-center">
+        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm shrink-0 w-[140px] flex flex-col items-center text-center">
           <div className="flex items-center gap-1.5 w-full bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md mb-3 justify-center">
             <CalendarIcon className="w-3 h-3" />
             <span className="text-[10px] font-bold">การมาเรียน</span>
@@ -35,7 +35,7 @@ export function MobileIdpGoals() {
         </div>
 
         {/* Goal 2 */}
-        <div className="bg-white rounded-2xl p-3.5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 shrink-0 w-[140px] flex flex-col items-center text-center">
+        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm shrink-0 w-[140px] flex flex-col items-center text-center">
           <div className="flex items-center gap-1.5 w-full bg-blue-50 text-blue-600 px-2 py-1 rounded-md mb-3 justify-center">
             <Calculator className="w-3 h-3" />
             <span className="text-[10px] font-bold">คณิตศาสตร์</span>
@@ -55,7 +55,7 @@ export function MobileIdpGoals() {
         </div>
 
         {/* Goal 3 */}
-        <div className="bg-white rounded-2xl p-3.5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 shrink-0 w-[140px] flex flex-col items-center text-center">
+        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm shrink-0 w-[140px] flex flex-col items-center text-center">
           <div className="flex items-center gap-1.5 w-full bg-orange-50 text-orange-600 px-2 py-1 rounded-md mb-3 justify-center">
             <Users className="w-3 h-3" />
             <span className="text-[10px] font-bold truncate">พฤติกรรมในชั้นเรียน</span>
@@ -75,7 +75,7 @@ export function MobileIdpGoals() {
         </div>
 
         {/* Goal 4 */}
-        <div className="bg-white rounded-2xl p-3.5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 shrink-0 w-[140px] flex flex-col items-center text-center">
+        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm shrink-0 w-[140px] flex flex-col items-center text-center">
           <div className="flex items-center gap-1.5 w-full bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md mb-3 justify-center">
             <BookOpen className="w-3 h-3" />
             <span className="text-[10px] font-bold">ทักษะการอ่าน</span>

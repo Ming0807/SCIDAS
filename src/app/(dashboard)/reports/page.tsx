@@ -11,7 +11,7 @@ import { ChevronRight, Filter, Bell } from "lucide-react"
 
 export default function ReportsPage() {
   return (
-    <div className="w-full bg-[#f8fafc] min-h-screen">
+    <div className="w-full bg-background min-h-screen">
       
       {/* ---------------- MOBILE VIEW (< 1024px) ---------------- */}
       <div className="block lg:hidden">
@@ -60,7 +60,7 @@ export default function ReportsPage() {
         <DesktopOverviewStats />
 
         {/* 2. Middle Row: Category, Trend, Popular */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-1 min-w-0">
             <DesktopStatsCategory />
           </div>

@@ -3,7 +3,7 @@ import { Edit2, Users, Printer, Trash2, Settings, Eye, MoreHorizontal, ChevronLe
 
 export function StudentTable() {
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col h-full overflow-hidden min-h-[400px]">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden min-h-[400px]">
       
       {/* Tabs Header - Swipeable on mobile */}
       <div className="flex border-b border-slate-100 px-2 overflow-x-auto no-scrollbar">
@@ -120,7 +120,7 @@ export function StudentTable() {
               <td className="px-4 py-3 text-slate-600">081-234-5678</td>
               <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] transition-colors">
                 <div className="flex items-center justify-center gap-2">
-                  <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
+                  <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><Edit2 className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><MoreHorizontal className="w-4 h-4" /></button>
                 </div>
@@ -147,7 +147,7 @@ export function StudentTable() {
               <td className="px-4 py-3 text-slate-600">087-345-6789</td>
               <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] transition-colors">
                 <div className="flex items-center justify-center gap-2">
-                  <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
+                  <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><Edit2 className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><MoreHorizontal className="w-4 h-4" /></button>
                 </div>
@@ -174,7 +174,7 @@ export function StudentTable() {
               <td className="px-4 py-3 text-slate-600">090-456-7890</td>
               <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] transition-colors">
                 <div className="flex items-center justify-center gap-2">
-                  <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
+                  <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><Edit2 className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><MoreHorizontal className="w-4 h-4" /></button>
                 </div>
@@ -201,7 +201,7 @@ export function StudentTable() {
               <td className="px-4 py-3 text-slate-600">093-567-8901</td>
               <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] transition-colors">
                 <div className="flex items-center justify-center gap-2">
-                  <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
+                  <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md"><Eye className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><Edit2 className="w-4 h-4" /></button>
                   <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"><MoreHorizontal className="w-4 h-4" /></button>
                 </div>
@@ -213,7 +213,7 @@ export function StudentTable() {
       </div>
 
       {/* Pagination Footer */}
-      <div className="px-4 py-3 sm:py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="px-4 py-3 sm:py-4 border-t border-slate-100 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4">
         <div className="text-xs sm:text-sm text-slate-600 flex items-center justify-between w-full sm:w-auto gap-4">
           <span className="whitespace-nowrap">แสดง 1 - 10 จาก 128</span>
           <div className="flex items-center gap-2">

@@ -21,7 +21,7 @@ export function MobileBehaviorRecent() {
 
       <div className="flex flex-col gap-3">
         {records.map((record, index) => (
-          <div key={index} className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center gap-3">
+          <div key={index} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full ${record.bg} flex items-center justify-center shrink-0`}>
               <record.icon className={`w-5 h-5 ${record.color} ${record.fill}`} />
             </div>

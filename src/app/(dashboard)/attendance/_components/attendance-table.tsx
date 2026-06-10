@@ -3,7 +3,7 @@ import { Eye, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
 
 export function AttendanceTable() {
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col h-full min-h-[400px] overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full min-h-[400px] overflow-hidden">
       
       <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center">
         <h3 className="font-bold text-slate-800 text-sm">รายการการมาเรียนวันนี้</h3>

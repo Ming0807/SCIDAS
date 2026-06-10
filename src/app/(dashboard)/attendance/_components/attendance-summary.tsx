@@ -3,10 +3,10 @@ import { UserCheck, XCircle, ClipboardList, Clock } from "lucide-react"
 
 export function AttendanceSummary() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
       
       {/* มาเรียน */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden group">
         <div className="absolute inset-y-0 left-0 w-1 bg-emerald-500 rounded-l-2xl"></div>
         <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
           <UserCheck className="w-6 h-6" />
@@ -22,7 +22,7 @@ export function AttendanceSummary() {
       </div>
 
       {/* ขาดเรียน */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden group">
         <div className="absolute inset-y-0 left-0 w-1 bg-red-500 rounded-l-2xl"></div>
         <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0">
           <XCircle className="w-6 h-6" />
@@ -38,7 +38,7 @@ export function AttendanceSummary() {
       </div>
 
       {/* ลา */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden group">
         <div className="absolute inset-y-0 left-0 w-1 bg-amber-500 rounded-l-2xl"></div>
         <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
           <ClipboardList className="w-6 h-6" />
@@ -54,7 +54,7 @@ export function AttendanceSummary() {
       </div>
 
       {/* มาสาย */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden group">
         <div className="absolute inset-y-0 left-0 w-1 bg-blue-500 rounded-l-2xl"></div>
         <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
           <Clock className="w-6 h-6" />

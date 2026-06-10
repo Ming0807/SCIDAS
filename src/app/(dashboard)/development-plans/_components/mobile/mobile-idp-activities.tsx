@@ -15,7 +15,7 @@ export function MobileIdpActivities() {
       <div className="flex flex-col gap-2.5">
         
         {/* Activity 1 */}
-        <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center justify-between gap-3">
+        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
               <Calculator className="w-5 h-5 text-purple-600" />
@@ -38,7 +38,7 @@ export function MobileIdpActivities() {
         </div>
 
         {/* Activity 2 */}
-        <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center justify-between gap-3">
+        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
               <Users className="w-5 h-5 text-orange-500" />
@@ -61,7 +61,7 @@ export function MobileIdpActivities() {
         </div>
 
         {/* Activity 3 */}
-        <div className="bg-white rounded-2xl p-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center justify-between gap-3">
+        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
               <BookOpen className="w-5 h-5 text-emerald-600" />

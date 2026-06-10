@@ -6,7 +6,7 @@ export function DesktopNotificationFilters() {
     <div className="flex flex-col gap-6">
       
       {/* Filters Form */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <h3 className="text-[13px] font-bold text-slate-800 mb-4">ตัวกรองการแจ้งเตือน</h3>
 
         <div className="flex flex-col gap-4">
@@ -66,7 +66,7 @@ export function DesktopNotificationFilters() {
       </div>
 
       {/* Today's Summary */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <h3 className="text-[13px] font-bold text-slate-800 mb-4">สรุปการแจ้งเตือนวันนี้</h3>
         <div className="flex items-center gap-6">
           <div className="relative w-20 h-20 shrink-0">
@@ -111,7 +111,7 @@ export function DesktopNotificationFilters() {
       </div>
 
       {/* Channels */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         <h3 className="text-[13px] font-bold text-slate-800 mb-4">ช่องทางการแจ้งเตือน</h3>
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50">

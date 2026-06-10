@@ -2,7 +2,7 @@ import React from "react"
 
 export function MobileRiskBenchmark() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
       <h3 className="text-[13px] font-bold text-slate-800 mb-5">เปรียบเทียบกับเกณฑ์</h3>
 
       <div className="flex flex-col gap-4">

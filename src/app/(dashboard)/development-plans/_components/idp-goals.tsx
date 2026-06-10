@@ -15,7 +15,7 @@ export function IdpGoals() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         
         {/* Goal 1 */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 relative overflow-hidden group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden group">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
               <CalendarIcon className="w-4 h-4 text-blue-500" />
@@ -56,7 +56,7 @@ export function IdpGoals() {
         </div>
 
         {/* Goal 2 */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 relative overflow-hidden group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden group">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
               <Calculator className="w-4 h-4 text-emerald-500" />
@@ -96,7 +96,7 @@ export function IdpGoals() {
         </div>
 
         {/* Goal 3 */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 relative overflow-hidden group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden group">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4 text-orange-500" />
@@ -136,7 +136,7 @@ export function IdpGoals() {
         </div>
 
         {/* Goal 4 */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 relative overflow-hidden group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden group">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
               <BookOpen className="w-4 h-4 text-indigo-500" />

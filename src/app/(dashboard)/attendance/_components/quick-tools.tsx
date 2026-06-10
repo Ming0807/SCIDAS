@@ -3,10 +3,10 @@ import { Phone, Bell, Printer, FileText } from "lucide-react"
 
 export function QuickTools() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
       <h3 className="font-bold text-slate-800 text-sm mb-4">เครื่องมือและทางลัด</h3>
       
-      <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         
         <button className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group text-center">
           <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">

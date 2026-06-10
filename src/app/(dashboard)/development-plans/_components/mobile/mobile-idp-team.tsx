@@ -12,7 +12,7 @@ export function MobileIdpTeam() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden divide-y divide-slate-100/60">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100/60">
         
         <div className="flex items-center gap-3 p-3">
           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher2" alt="Avatar" className="w-10 h-10 rounded-full bg-slate-100" />

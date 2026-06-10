@@ -1,4 +1,5 @@
 import { getDevelopmentPlanById, getDevelopmentGoals, getDevelopmentActivities } from "@/app/actions/idp.actions"
+import type { DevelopmentActivity } from "@/app/actions/idp.actions"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +14,13 @@ import { th } from "date-fns/locale"
 interface PageProps {
   params: Promise<{ id: string }>
 }
+
+type PlanPerson = {
+  first_name: string | null
+  last_name: string | null
+}
+
+const firstOrSelf = <T,>(value: T | T[] | null | undefined) => Array.isArray(value) ? value[0] : value
 
 export default async function DevelopmentPlanDetailsPage({ params }: PageProps) {
   const { id } = await params
@@ -37,7 +45,10 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
   const activitiesMap = activitiesByGoal.reduce((acc, curr) => {
     acc[curr.goalId] = curr.activities
     return acc
-  }, {} as Record<string, any[]>)
+  }, {} as Record<string, DevelopmentActivity[]>)
+
+  const student = firstOrSelf(plan.student as PlanPerson | PlanPerson[] | null | undefined)
+  const creator = firstOrSelf(plan.creator as PlanPerson | PlanPerson[] | null | undefined)
 
   return (
     <div className="space-y-6">
@@ -75,14 +86,13 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
       {/* Overview Card */}
       <Card className="rounded-xl shadow-sm border-slate-200">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             <div className="space-y-1">
               <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
                 <User className="h-4 w-4" /> นักเรียน
               </p>
               <p className="text-base font-medium text-slate-900">
-                {/* @ts-ignore */}
-                {plan.student?.first_name} {plan.student?.last_name}
+                {student?.first_name} {student?.last_name}
               </p>
             </div>
             
@@ -100,8 +110,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
                 <FileText className="h-4 w-4" /> ผู้จัดทำ
               </p>
               <p className="text-base font-medium text-slate-900">
-                {/* @ts-ignore */}
-                {plan.creator?.first_name} {plan.creator?.last_name}
+                {creator?.first_name} {creator?.last_name}
               </p>
             </div>
             
