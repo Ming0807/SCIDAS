@@ -1,212 +1,81 @@
-"use client";
-
-import React from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import { AlertTriangle, TrendingUp, Users, Activity, Eye } from "lucide-react";
-import Link from "next/link";
-
-const riskData = [
-  { name: "ปกติ (Normal)", value: 650, color: "#10b981" },
-  { name: "เฝ้าระวัง (Watch)", value: 120, color: "#f59e0b" },
-  { name: "เสี่ยง (Risk)", value: 45, color: "#ef4444" },
-];
-
-const trendData = [
-  { month: "พ.ค.", risk: 50, watch: 110 },
-  { month: "มิ.ย.", risk: 48, watch: 115 },
-  { month: "ก.ค.", risk: 45, watch: 120 },
-  { month: "ส.ค.", risk: 52, watch: 125 },
-  { month: "ก.ย.", risk: 45, watch: 120 },
-];
-
-const highRiskStudents = [
-  { id: "STU-001", name: "สมชาย ใจดี", grade: "ม.3/1", riskScore: 85, factors: ["การมาเรียน", "ผลการเรียน"] },
-  { id: "STU-002", name: "หญิงรัก เรียนเก่ง", grade: "ม.2/4", riskScore: 78, factors: ["พฤติกรรม"] },
-  { id: "STU-003", name: "วินัย ขยัน", grade: "ม.1/2", riskScore: 75, factors: ["การมาเรียน", "เศรษฐกิจ"] },
-  { id: "STU-004", name: "กล้าหาญ ชาญชัย", grade: "ม.5/1", riskScore: 72, factors: ["ผลการเรียน"] },
-];
+import React from "react"
+import { RiskOverviewCards } from "./_components/risk-overview-cards"
+import { RiskMatrix } from "./_components/risk-matrix"
+import { TopRiskStudents } from "./_components/top-risk-students"
+import { RiskFactorsChart } from "./_components/risk-factors-chart"
+import { RiskHistoryChart } from "./_components/risk-history-chart"
+import { RiskRecommendations } from "./_components/risk-recommendations"
+import { MobileRiskProfile } from "./_components/mobile/mobile-risk-profile"
+import { ChevronRight, Filter, Bell } from "lucide-react"
 
 export default function RiskAnalysisPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">ระบบเตือนภัยล่วงหน้า (Early Warning System)</h2>
-        <div className="flex items-center space-x-2">
-          <Button>คำนวณความเสี่ยงใหม่</Button>
+    <div className="w-full bg-slate-50 min-h-[calc(100vh-64px)] overflow-x-hidden">
+      
+      {/* ---------------- MOBILE VIEW (< 768px) ---------------- */}
+      <div className="block md:hidden">
+        <MobileRiskProfile />
+      </div>
+
+      {/* ---------------- DESKTOP VIEW (>= 768px) ---------------- */}
+      <div className="hidden md:block max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8">
+        
+        {/* Header Area */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">วิเคราะห์ความเสี่ยง</h1>
+            <div className="flex items-center gap-2 text-[13px] text-slate-500 mt-1">
+              <span className="cursor-pointer hover:text-blue-600 transition-colors">หน้าหลัก</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="font-bold text-slate-800">วิเคราะห์ความเสี่ยง</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm">
+              <span className="text-[13px] font-medium text-slate-700">ภาคเรียนที่ 1/2567</span>
+              <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2 text-[13px] font-bold text-blue-600 hover:bg-blue-50 transition-colors shadow-sm">
+              <Filter className="w-4 h-4" />
+              ตัวกรอง
+            </button>
+            <div className="w-px h-8 bg-slate-200"></div>
+            <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+            <div className="flex items-center gap-3 ml-2">
+              <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher" alt="Teacher" className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200" />
+              <div className="flex flex-col">
+                <span className="text-[13px] font-bold text-slate-800">นางสาวจันทร์จิรา พรดี</span>
+                <span className="text-[11px] text-slate-500">ครูที่ปรึกษา</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">นักเรียนทั้งหมด</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">815</div>
-            <p className="text-xs text-muted-foreground">คน ในระบบ</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">กลุ่มเสี่ยงสูง</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">45</div>
-            <p className="text-xs text-muted-foreground">-10% จากเดือนที่แล้ว</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">กลุ่มเฝ้าระวัง</CardTitle>
-            <Activity className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-500">120</div>
-            <p className="text-xs text-muted-foreground">+5% จากเดือนที่แล้ว</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">คะแนนความเสี่ยงเฉลี่ย</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">14.2</div>
-            <p className="text-xs text-muted-foreground">คะแนนเต็ม 100</p>
-          </CardContent>
-        </Card>
-      </div>
+        {/* 1. Overview Cards */}
+        <RiskOverviewCards />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>แนวโน้มจำนวนนักเรียนกลุ่มเสี่ยง</CardTitle>
-            <CardDescription>ข้อมูลย้อนหลัง 5 เดือน</CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="risk" name="กลุ่มเสี่ยง" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="watch" name="กลุ่มเฝ้าระวัง" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>สัดส่วนความเสี่ยงทั้งหมด</CardTitle>
-            <CardDescription>การจำแนกกลุ่มนักเรียนตามระดับความเสี่ยง</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={riskData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {riskData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        {/* 2. Matrix and Top Students */}
+        <div className="flex flex-col xl:flex-row gap-6 mb-6 min-w-0">
+          <div className="xl:w-[65%] shrink-0 flex min-w-0">
+            <RiskMatrix />
+          </div>
+          <div className="flex-1 flex min-w-0">
+            <TopRiskStudents />
+          </div>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>รายชื่อนักเรียนที่มีความเสี่ยงสูง</CardTitle>
-          <CardDescription>นักเรียนที่ต้องการความช่วยเหลือเร่งด่วน</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>รหัสนักเรียน</TableHead>
-                <TableHead>ชื่อ-สกุล</TableHead>
-                <TableHead>ชั้นเรียน</TableHead>
-                <TableHead>คะแนนความเสี่ยง</TableHead>
-                <TableHead>ปัจจัยเสี่ยงหลัก</TableHead>
-                <TableHead className="text-right">การจัดการ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {highRiskStudents.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.id}</TableCell>
-                  <TableCell>{student.name}</TableCell>
-                  <TableCell>{student.grade}</TableCell>
-                  <TableCell>
-                    <Badge variant="destructive">{student.riskScore}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 flex-wrap">
-                      {student.factors.map(factor => (
-                        <Badge key={factor} variant="outline" className="text-xs">{factor}</Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Link href={`/development-plans/create?studentId=${student.id}`}>
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        {/* 3. Bottom Row: Factors, Trend, Recommendations */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <RiskFactorsChart />
+          <RiskHistoryChart />
+          <RiskRecommendations />
+        </div>
+
+      </div>
     </div>
-  );
+  )
 }

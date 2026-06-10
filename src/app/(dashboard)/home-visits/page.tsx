@@ -76,7 +76,7 @@ export default function HomeVisitsGallery() {
     <div className="flex flex-col gap-8 p-6 md:p-8 max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">บันทึกการเยี่ยมบ้าน</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">บันทึกการเยี่ยมบ้าน</h1>
           <p className="text-slate-500 mt-1">จัดการและติดตามข้อมูลการเยี่ยมบ้านนักเรียน</p>
         </div>
         <Link href="/home-visits/new">
@@ -103,7 +103,7 @@ export default function HomeVisitsGallery() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredVisits.map((visit) => (
           <Card key={visit.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-slate-200/60">
             <div className="relative h-48 overflow-hidden bg-slate-100">

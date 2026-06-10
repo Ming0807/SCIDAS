@@ -1,136 +1,91 @@
 import React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, FileText, UserCircle, Clock, AlertCircle } from "lucide-react"
+import { MobileSupportProfile } from "./_components/mobile-support-profile"
+import { SupportHeader } from "./_components/support-header"
+import { SupportRiskSummary } from "./_components/support-risk-summary"
+import { SupportCurrentPlan } from "./_components/support-current-plan"
+import { SupportRecords } from "./_components/support-records"
+import { SupportTeam } from "./_components/support-team"
+import { SupportTrackingChart } from "./_components/support-tracking-chart"
+import { SupportNotesActions } from "./_components/support-notes-actions"
+import { Bell, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
-export default function SupportCasesPage() {
-  const supportCases = [
-    { id: "CAS-001", student: "สมชาย ใจดี", type: "สอนเสริมวิชาการ", status: "Active", priority: "High", date: "12 พ.ค. 2026", assignedTo: "ครูสมชาย" },
-    { id: "CAS-002", student: "สมศรี เรียนดี", type: "ให้คำปรึกษา", status: "Pending", priority: "Medium", date: "14 พ.ค. 2026", assignedTo: "รอผู้รับผิดชอบ" },
-    { id: "CAS-003", student: "ชูใจ น่ารัก", type: "ปรับพฤติกรรม", status: "Resolved", priority: "Low", date: "28 เม.ย. 2026", assignedTo: "ครูสมศรี" },
-    { id: "CAS-004", student: "มานะ ขยัน", type: "สนับสนุนครอบครัว", status: "Active", priority: "High", date: "15 พ.ค. 2026", assignedTo: "ผอ.โรงเรียน" },
-    { id: "CAS-005", student: "ปิติ ดีใจ", type: "สอนเสริมวิชาการ", status: "Pending", priority: "Low", date: "16 พ.ค. 2026", assignedTo: "รอผู้รับผิดชอบ" },
-  ]
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Active": return <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">กำลังช่วยเหลือ</Badge>
-      case "Pending": return <Badge className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20">รอดำเนินการ</Badge>
-      case "Resolved": return <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20">แก้ไขแล้ว</Badge>
-      default: return <Badge variant="outline">{status}</Badge>
-    }
-  }
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case "High": return <AlertCircle className="h-4 w-4 text-rose-500" />
-      case "Medium": return <Clock className="h-4 w-4 text-amber-500" />
-      case "Low": return <UserCircle className="h-4 w-4 text-slate-400" />
-      default: return null
-    }
-  }
-
+export default function SupportPage() {
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">ระบบส่งต่อและช่วยเหลือ</h1>
-          <p className="text-slate-500 mt-1">จัดการเคสส่งต่อนักเรียน, ให้คำปรึกษา และให้ความช่วยเหลือ</p>
-        </div>
-        <Link href="/support/new">
-          <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="h-4 w-4" />
-            เปิดเคสใหม่
-          </Button>
-        </Link>
+    <>
+      {/* Mobile View */}
+      <div className="md:hidden block">
+        <MobileSupportProfile />
       </div>
 
-      <Card className="hover:shadow-md transition-shadow border-slate-200">
-        <CardHeader className="pb-4">
-          <CardTitle>รายการเคสทั้งหมด</CardTitle>
-          <CardDescription>ดูและจัดการเคสทั้งหมดที่กำลังช่วยเหลือ, รอดำเนินการ, หรือแก้ไขแล้ว</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-              <Input placeholder="ค้นหาชื่อนักเรียน หรือรหัสเคส..." className="pl-9" />
-            </div>
-            <div className="flex gap-2">
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="สถานะ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">สถานะทั้งหมด</SelectItem>
-                  <SelectItem value="active">กำลังช่วยเหลือ</SelectItem>
-                  <SelectItem value="pending">รอดำเนินการ</SelectItem>
-                  <SelectItem value="resolved">แก้ไขแล้ว</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="ประเภท" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ประเภททั้งหมด</SelectItem>
-                  <SelectItem value="academic">วิชาการ</SelectItem>
-                  <SelectItem value="behavioral">พฤติกรรม</SelectItem>
-                  <SelectItem value="counseling">ให้คำปรึกษา</SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Desktop View */}
+      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
+        
+        {/* Breadcrumb & Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col">
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 tracking-tight">ดูแลช่วยเหลือ</h1>
+            <div className="flex items-center gap-2 mt-1 text-sm text-slate-500 font-medium">
+              <Link href="/" className="hover:text-blue-600">หน้าหลัก</Link>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="text-slate-800">ดูแลช่วยเหลือ</span>
             </div>
           </div>
 
-          <div className="rounded-md border border-slate-200">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead className="w-[100px]">รหัสเคส</TableHead>
-                  <TableHead>นักเรียน</TableHead>
-                  <TableHead>ประเภท</TableHead>
-                  <TableHead>ความเร่งด่วน</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                  <TableHead>วันที่</TableHead>
-                  <TableHead>ผู้รับผิดชอบ</TableHead>
-                  <TableHead className="text-right">จัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {supportCases.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium text-slate-900">{c.id}</TableCell>
-                    <TableCell className="font-semibold text-slate-700">{c.student}</TableCell>
-                    <TableCell className="text-slate-600">{c.type}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getPriorityIcon(c.priority)}
-                        <span className="text-sm text-slate-600">
-                          {c.priority === "High" ? "สูง" : c.priority === "Medium" ? "ปานกลาง" : "ต่ำ"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(c.status)}</TableCell>
-                    <TableCell className="text-slate-500 text-sm">{c.date}</TableCell>
-                    <TableCell className="text-slate-600 text-sm">{c.assignedTo}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-slate-500 hover:text-slate-900">
-                        <FileText className="h-3 w-3" />
-                        ดูรายละเอียด
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="flex items-center gap-4">
+            <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 shadow-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50">
+              ภาคเรียนที่ 1/2567
+              <ChevronRight className="w-3.5 h-3.5 rotate-90 text-slate-400" />
+            </div>
+
+            <div className="relative cursor-pointer">
+              <div className="w-9 h-9 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-white text-xs font-semibold flex items-center justify-center border-2 border-white">
+                3
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-semibold text-slate-800 leading-tight">นางสาวจันทร์จิรา พรมดี</span>
+                <span className="text-xs text-slate-500">ครูที่ปรึกษา</span>
+              </div>
+              <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher2" alt="Teacher" className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200" />
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        <div className="flex-1 flex flex-col min-h-0 gap-6">
+          <SupportHeader />
+          
+          <div className="grid grid-cols-1 xl:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+            <div className="lg:col-span-1 xl:col-span-1">
+              <SupportRiskSummary />
+            </div>
+            <div className="lg:col-span-1 xl:col-span-1">
+              <SupportCurrentPlan />
+            </div>
+            <div className="lg:col-span-1 xl:col-span-2">
+              <SupportRecords />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+            <div className="lg:col-span-1 xl:col-span-1">
+              <SupportTeam />
+            </div>
+            <div className="lg:col-span-1 xl:col-span-1">
+              <SupportTrackingChart />
+            </div>
+            <div className="lg:col-span-1 xl:col-span-2">
+              <SupportNotesActions />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </>
   )
 }

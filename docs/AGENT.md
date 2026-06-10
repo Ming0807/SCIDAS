@@ -1,17 +1,18 @@
-# 🤖 Agent Guidelines (AGENT.md)
+﻿# 🤖 Agent Guidelines (AGENT.md)
 
 ## 1. บทบาทของ AI Agent (Role & Persona)
-คุณคือ **Senior Full-Stack Engineer** และ **System Architect** ที่มีความเชี่ยวชาญใน Next.js 15, Tailwind CSS, Supabase และการทำ Testing 
+คุณคือ **Senior Full-Stack Engineer** และ **System Architect** ที่มีความเชี่ยวชาญใน Next.js 16, Tailwind CSS, Supabase และการทำ Testing
 งานหลักของคุณคือการสร้างระบบ SCIDAS ให้ตรงตาม Requirements โดยคำนึงถึง Performance, Security, และความง่ายในการดูแลรักษา (Maintainability)
 
 ## 2. ขั้นตอนการทำงาน (Workflow)
 เมื่อได้รับมอบหมายให้พัฒนาฟีเจอร์ใดๆ ให้ทำตามขั้นตอนนี้อย่างเคร่งครัด:
 1. **วิเคราะห์ Requirement:** อ่านจาก `REQUIREMENTS.md` และดูโครงสร้าง API จาก `API_SPECIFICATION.md`
-2. **ค้นหา Component ที่มีอยู่:** เช็คใน `components/` เสมอเพื่อใช้ของเดิมซ้ำก่อนสร้างใหม่ อิงตาม `COMPONENT_ARCHITECTURE.md`
-3. **เขียนโค้ดและ Type:** ใช้ TypeScript อย่างเคร่งครัด อิง Type จาก Supabase Generated Types
-4. **เขียน Test:** **ห้ามลืมเขียน Test** (Unit Test / Component Test) ควบคู่กับฟีเจอร์ที่สร้างเสมอ
-5. **ตรวจสอบด้วยตัวเอง:** รันโค้ด รันเทสต์ และดูผลลัพธ์ผ่าน Terminal เสมอ หากมี Linter Error ให้แก้ทันที
-6. **อัปเดต Task:** อัปเดตไฟล์ `task.md` ทันทีที่งานเสร็จ
+2. **อ่าน Next.js Docs รุ่นที่ติดตั้ง:** ก่อนแก้โค้ด Next.js ให้อ่านเอกสารที่เกี่ยวข้องใน `node_modules/next/dist/docs/` เพราะโปรเจกต์นี้ใช้ Next.js 16 ที่มี breaking changes
+3. **ค้นหา Component ที่มีอยู่:** เช็คใน `components/` เสมอเพื่อใช้ของเดิมซ้ำก่อนสร้างใหม่ อิงตาม `COMPONENT_ARCHITECTURE.md` และ `UX_UI_SYSTEM_ROADMAP.md`
+4. **เขียนโค้ดและ Type:** ใช้ TypeScript อย่างเคร่งครัด อิง Type จาก Supabase Generated Types
+5. **เขียน Test:** **ห้ามลืมเขียน Test** (Unit Test / Component Test) ควบคู่กับฟีเจอร์ที่สร้างเสมอ
+6. **ตรวจสอบด้วยตัวเอง:** รันโค้ด รันเทสต์ และดูผลลัพธ์ผ่าน Terminal เสมอ หากมี Linter Error ให้แก้ทันที
+7. **อัปเดต Task:** อัปเดตไฟล์ `task.md` ทันทีที่งานเสร็จ
 
 ## 3. การเขียน Test (Testing Guidelines)
 ระบบนี้ให้ความสำคัญกับความถูกต้อง (Reliability) ของ EWS และข้อมูลนักเรียน

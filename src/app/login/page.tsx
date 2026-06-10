@@ -21,7 +21,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight text-indigo-900">SCIDAS</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight text-blue-900">SCIDAS</CardTitle>
           <CardDescription>
             ระบบวิเคราะห์และดูแลช่วยเหลือนักเรียน
           </CardDescription>

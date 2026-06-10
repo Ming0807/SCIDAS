@@ -1,87 +1,75 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Users, 
-  CalendarCheck, 
-  GraduationCap, 
-  HeartHandshake, 
-  Home as HomeIcon, 
-  Activity, 
-  ShieldAlert, 
-  Target, 
-  Settings 
-} from "lucide-react";
+import { ArrowLeftRight, BookMarked, Home } from "lucide-react";
+import { getSidebarNavigation, isNavigationItemActive } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { title: "ภาพรวมระบบ", href: "/dashboard", icon: LayoutDashboard },
-  { title: "ข้อมูลนักเรียน", href: "/students", icon: Users },
-  { title: "การเข้าเรียน", href: "/attendance", icon: CalendarCheck },
-  { title: "ผลการเรียน", href: "/academics", icon: GraduationCap },
-  { title: "พฤติกรรม", href: "/behavior", icon: Activity },
-  { title: "เยี่ยมบ้าน", href: "/home-visits", icon: HomeIcon },
-  { title: "การช่วยเหลือ", href: "/support", icon: HeartHandshake },
-  { title: "วิเคราะห์ความเสี่ยง", href: "/risk-analysis", icon: ShieldAlert },
-  { title: "แผนพัฒนา", href: "/development-plans", icon: Target },
-  { title: "การตั้งค่า", href: "/settings", icon: Settings },
-];
-
-export function Sidebar() {
+export function Sidebar({ role }: { role?: string | null }) {
   const pathname = usePathname();
 
+  const currentNavItems = getSidebarNavigation(role);
+
   return (
-    <aside className="w-64 flex-shrink-0 border-r border-border bg-card hidden md:flex flex-col">
-      <div className="h-16 flex items-center px-6 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold">
-            S
-          </div>
-          <span className="font-bold text-lg tracking-tight">SCIDAS</span>
+    <aside className="w-[280px] flex-shrink-0 bg-brand-deep-blue text-slate-300 hidden md:flex flex-col">
+      <div className="py-6 px-6 border-b border-white/5 flex flex-row items-center gap-4">
+        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 border-[3px] border-amber-400">
+          <BookMarked className="h-6 w-6 text-brand-deep-blue" />
+        </div>
+        <div className="flex flex-col">
+          <span className="font-bold text-sm text-white leading-tight">ระบบวิเคราะห์และดูแล</span>
+          <span className="font-bold text-sm text-white leading-tight">ช่วยเหลือนักเรียนรายบุคคล</span>
+          <span className="text-micro text-slate-300 mt-1">สำหรับโรงเรียนขนาดเล็ก</span>
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <div className="text-xs font-medium text-muted-foreground mb-4 px-3 uppercase tracking-wider">
-          เมนูหลัก
-        </div>
+      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
         <nav className="space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          {currentNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isNavigationItemActive(pathname, item.href);
+
             return (
               <Link
-                key={item.href}
+                key={item.key}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 text-sm font-medium group",
+                  "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium group",
                   isActive 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-brand-bright-blue text-white shadow-sm"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <item.icon 
+                <Icon
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200", 
+                    "h-5 w-5 transition-transform duration-200", 
                     isActive ? "scale-110" : "group-hover:scale-110"
                   )} 
                 />
-                {item.title}
+                {item.label}
               </Link>
             );
           })}
         </nav>
       </div>
       
-      <div className="p-4 border-t border-border">
-        <div className="bg-muted/50 p-3 rounded-lg border border-border/50">
-          <p className="text-xs font-medium text-foreground">ระบบครูผู้สอน</p>
-          <p className="text-micro text-muted-foreground mt-1">เวอร์ชัน 1.0.0</p>
+      <div className="p-6 border-t border-white/5">
+        <div className="flex flex-row items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-md bg-white/10 flex items-center justify-center shrink-0">
+            <Home className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-white">โรงเรียนบ้านหนองแค</span>
+            <span className="text-xs text-slate-400">สพป.ชัยภูมิ เขต 1</span>
+          </div>
         </div>
+        <button className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-white/20 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          เปลี่ยนโรงเรียน
+        </button>
       </div>
     </aside>
   );
 }
-

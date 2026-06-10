@@ -11,12 +11,12 @@ vi.mock("next/navigation", () => ({
 describe("Header", () => {
   it("renders the search input", () => {
     render(<Header />);
-    expect(screen.getByPlaceholderText("Search students...")).toBeDefined();
+    expect(screen.getByPlaceholderText("ค้นหานักเรียน, เลขประจำตัว, หรืออื่นๆ")).toBeDefined();
   });
 
   it("renders the notifications button", () => {
     render(<Header />);
-    expect(screen.getByText("Notifications")).toBeDefined();
+    expect(screen.getByRole("button", { name: /การแจ้งเตือน/ })).toBeDefined();
   });
 });
 
