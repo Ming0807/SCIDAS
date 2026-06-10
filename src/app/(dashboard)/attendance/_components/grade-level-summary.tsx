@@ -26,34 +26,34 @@ export function GradeLevelSummary() {
           {grades.map((grade, idx) => (
             <div key={idx} className="flex-1 flex flex-col min-w-[140px]">
               <div className="text-sm font-bold text-slate-800">{grade.name}</div>
-              <div className="text-[10px] text-slate-500 mb-3">นักเรียน {grade.total} คน</div>
+              <div className="text-xs text-slate-500 mb-3">นักเรียน {grade.total} คน</div>
               
               <div className="flex items-center gap-3">
                 {/* SVG Donut */}
                 <div className="relative w-12 h-12 shrink-0">
                   <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 overflow-visible">
-                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" strokeWidth="6"></circle>
-                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#10b981" strokeWidth="6" strokeDasharray={`${grade.present.pct} ${100-grade.present.pct}`} strokeDashoffset="0"></circle>
+                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-slate-100)" strokeWidth="6"></circle>
+                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-emerald-500)" strokeWidth="6" strokeDasharray={`${grade.present.pct} ${100-grade.present.pct}`} strokeDashoffset="0"></circle>
                   </svg>
                 </div>
                 
                 {/* Legends */}
                 <div className="flex-1 space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
                       <span className="text-slate-700">มาเรียน</span>
                     </div>
                     <div className="font-bold text-slate-800">{grade.present.count} <span className="font-normal text-slate-400">({grade.present.pct.toFixed(1)}%)</span></div>
                   </div>
-                  <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
                       <span className="text-slate-700">ขาด</span>
                     </div>
                     <div className="font-bold text-slate-800">{grade.absent.count} <span className="font-normal text-slate-400">({grade.absent.pct.toFixed(1)}%)</span></div>
                   </div>
-                  <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" aria-hidden="true"></span>
                       <span className="text-slate-700">มาสาย</span>
@@ -72,14 +72,14 @@ export function GradeLevelSummary() {
         {/* Total School */}
         <div className="flex flex-col min-w-[200px] border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 w-full lg:w-auto">
           <div className="text-sm font-bold text-slate-800">{total.name}</div>
-          <div className="text-[10px] text-slate-500 mb-3">นักเรียน {total.total} คน</div>
+          <div className="text-xs text-slate-500 mb-3">นักเรียน {total.total} คน</div>
           
           <div className="flex items-center gap-4">
             {/* Larger Donut */}
             <div className="relative w-16 h-16 shrink-0">
               <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 overflow-visible">
-                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" strokeWidth="6"></circle>
-                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#10b981" strokeWidth="6" strokeDasharray={`${total.present.pct} ${100-total.present.pct}`} strokeDashoffset="0"></circle>
+                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-slate-100)" strokeWidth="6"></circle>
+                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-emerald-500)" strokeWidth="6" strokeDasharray={`${total.present.pct} ${100-total.present.pct}`} strokeDashoffset="0"></circle>
               </svg>
             </div>
             
@@ -90,21 +90,21 @@ export function GradeLevelSummary() {
                   <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
                   <span className="text-slate-700 font-medium">มาเรียน</span>
                 </div>
-                <div className="font-bold text-slate-800">{total.present.count} <span className="text-[10px] font-normal text-slate-400">({total.present.pct.toFixed(1)}%)</span></div>
+                <div className="font-bold text-slate-800">{total.present.count} <span className="text-xs font-normal text-slate-400">({total.present.pct.toFixed(1)}%)</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true"></span>
                   <span className="text-slate-700 font-medium">ขาด</span>
                 </div>
-                <div className="font-bold text-slate-800">{total.absent.count} <span className="text-[10px] font-normal text-slate-400">({total.absent.pct.toFixed(1)}%)</span></div>
+                <div className="font-bold text-slate-800">{total.absent.count} <span className="text-xs font-normal text-slate-400">({total.absent.pct.toFixed(1)}%)</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true"></span>
                   <span className="text-slate-700 font-medium">มาสาย</span>
                 </div>
-                <div className="font-bold text-slate-800">{total.late.count} <span className="text-[10px] font-normal text-slate-400">({total.late.pct.toFixed(1)}%)</span></div>
+                <div className="font-bold text-slate-800">{total.late.count} <span className="text-xs font-normal text-slate-400">({total.late.pct.toFixed(1)}%)</span></div>
               </div>
             </div>
           </div>

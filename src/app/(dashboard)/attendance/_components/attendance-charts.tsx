@@ -20,7 +20,7 @@ export function AttendanceCharts() {
           </div>
         </div>
 
-        <div className="flex justify-center gap-4 text-[10px] sm:text-xs font-medium mb-6">
+        <div className="flex justify-center gap-4 text-xs sm:text-xs font-medium mb-6">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
             <span className="text-slate-700">มาเรียน</span>
@@ -42,7 +42,7 @@ export function AttendanceCharts() {
         {/* Mock Line Chart with SVG */}
         <div className="flex-1 relative w-full mt-auto">
           {/* Y Axis Labels */}
-          <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] text-slate-400 font-medium z-10 w-6">
+          <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-xs text-slate-400 font-medium z-10 w-6">
             <span>100</span>
             <span>80</span>
             <span>60</span>
@@ -65,45 +65,45 @@ export function AttendanceCharts() {
             {/* SVG Chart */}
             <svg viewBox="0 0 400 150" className="w-full h-[calc(100%-24px)] overflow-visible relative z-10" preserveAspectRatio="none">
               {/* Green Line (มาเรียน) */}
-              <polyline fill="none" stroke="#10b981" strokeWidth="2" points="10,20 86,22 162,25 238,22 314,18 390,15" />
+              <polyline fill="none" stroke="var(--color-emerald-500)" strokeWidth="2" points="10,20 86,22 162,25 238,22 314,18 390,15" />
               {/* Data points */}
-              <circle cx="10" cy="20" r="3" fill="#10b981" />
-              <circle cx="86" cy="22" r="3" fill="#10b981" />
-              <circle cx="162" cy="25" r="3" fill="#10b981" />
-              <circle cx="238" cy="22" r="3" fill="#10b981" />
-              <circle cx="314" cy="18" r="3" fill="#10b981" />
-              <circle cx="390" cy="15" r="3" fill="#10b981" />
+              <circle cx="10" cy="20" r="3" fill="var(--color-emerald-500)" />
+              <circle cx="86" cy="22" r="3" fill="var(--color-emerald-500)" />
+              <circle cx="162" cy="25" r="3" fill="var(--color-emerald-500)" />
+              <circle cx="238" cy="22" r="3" fill="var(--color-emerald-500)" />
+              <circle cx="314" cy="18" r="3" fill="var(--color-emerald-500)" />
+              <circle cx="390" cy="15" r="3" fill="var(--color-emerald-500)" />
 
               {/* Red Line (ขาด) */}
-              <polyline fill="none" stroke="#ef4444" strokeWidth="2" points="10,130 86,128 162,132 238,125 314,128 390,122" />
-              <circle cx="10" cy="130" r="3" fill="#ef4444" />
-              <circle cx="86" cy="128" r="3" fill="#ef4444" />
-              <circle cx="162" cy="132" r="3" fill="#ef4444" />
-              <circle cx="238" cy="125" r="3" fill="#ef4444" />
-              <circle cx="314" cy="128" r="3" fill="#ef4444" />
-              <circle cx="390" cy="122" r="3" fill="#ef4444" />
+              <polyline fill="none" stroke="var(--color-red-500)" strokeWidth="2" points="10,130 86,128 162,132 238,125 314,128 390,122" />
+              <circle cx="10" cy="130" r="3" fill="var(--color-red-500)" />
+              <circle cx="86" cy="128" r="3" fill="var(--color-red-500)" />
+              <circle cx="162" cy="132" r="3" fill="var(--color-red-500)" />
+              <circle cx="238" cy="125" r="3" fill="var(--color-red-500)" />
+              <circle cx="314" cy="128" r="3" fill="var(--color-red-500)" />
+              <circle cx="390" cy="122" r="3" fill="var(--color-red-500)" />
 
               {/* Orange Line (ลา) */}
-              <polyline fill="none" stroke="#f59e0b" strokeWidth="2" points="10,140 86,138 162,142 238,138 314,140 390,135" />
-              <circle cx="10" cy="140" r="3" fill="#f59e0b" />
-              <circle cx="86" cy="138" r="3" fill="#f59e0b" />
-              <circle cx="162" cy="142" r="3" fill="#f59e0b" />
-              <circle cx="238" cy="138" r="3" fill="#f59e0b" />
-              <circle cx="314" cy="140" r="3" fill="#f59e0b" />
-              <circle cx="390" cy="135" r="3" fill="#f59e0b" />
+              <polyline fill="none" stroke="var(--color-amber-500)" strokeWidth="2" points="10,140 86,138 162,142 238,138 314,140 390,135" />
+              <circle cx="10" cy="140" r="3" fill="var(--color-amber-500)" />
+              <circle cx="86" cy="138" r="3" fill="var(--color-amber-500)" />
+              <circle cx="162" cy="142" r="3" fill="var(--color-amber-500)" />
+              <circle cx="238" cy="138" r="3" fill="var(--color-amber-500)" />
+              <circle cx="314" cy="140" r="3" fill="var(--color-amber-500)" />
+              <circle cx="390" cy="135" r="3" fill="var(--color-amber-500)" />
 
               {/* Blue Line (มาสาย) */}
-              <polyline fill="none" stroke="#3b82f6" strokeWidth="2" points="10,145 86,145 162,146 238,143 314,145 390,142" />
-              <circle cx="10" cy="145" r="3" fill="#3b82f6" />
-              <circle cx="86" cy="145" r="3" fill="#3b82f6" />
-              <circle cx="162" cy="146" r="3" fill="#3b82f6" />
-              <circle cx="238" cy="143" r="3" fill="#3b82f6" />
-              <circle cx="314" cy="145" r="3" fill="#3b82f6" />
-              <circle cx="390" cy="142" r="3" fill="#3b82f6" />
+              <polyline fill="none" stroke="var(--color-blue-500)" strokeWidth="2" points="10,145 86,145 162,146 238,143 314,145 390,142" />
+              <circle cx="10" cy="145" r="3" fill="var(--color-blue-500)" />
+              <circle cx="86" cy="145" r="3" fill="var(--color-blue-500)" />
+              <circle cx="162" cy="146" r="3" fill="var(--color-blue-500)" />
+              <circle cx="238" cy="143" r="3" fill="var(--color-blue-500)" />
+              <circle cx="314" cy="145" r="3" fill="var(--color-blue-500)" />
+              <circle cx="390" cy="142" r="3" fill="var(--color-blue-500)" />
             </svg>
 
             {/* X Axis Labels */}
-            <div className="absolute left-8 right-0 bottom-0 flex justify-between text-[10px] text-slate-400 font-medium">
+            <div className="absolute left-8 right-0 bottom-0 flex justify-between text-xs text-slate-400 font-medium">
               <span className="w-10 text-center -ml-5">ธ.ค. 66</span>
               <span className="w-10 text-center -ml-5">ม.ค. 67</span>
               <span className="w-10 text-center -ml-5">ก.พ. 67</span>
@@ -125,22 +125,22 @@ export function AttendanceCharts() {
             {/* SVG Donut Chart */}
             <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 overflow-visible">
               {/* Background circle */}
-              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" strokeWidth="6"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-slate-100)" strokeWidth="6"></circle>
               {/* Segments (Stroke dasharray is percentage, rest is 100-percentage) */}
               {/* Green (มาเรียน) - 87.5% */}
-              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#10b981" strokeWidth="6" strokeDasharray="87.5 12.5" strokeDashoffset="0"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-emerald-500)" strokeWidth="6" strokeDasharray="87.5 12.5" strokeDashoffset="0"></circle>
               {/* Red (ขาด) - 6.3% -> start at 87.5 -> offset = 100-87.5 = 12.5 */}
-              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" strokeWidth="6" strokeDasharray="6.3 93.7" strokeDashoffset="-87.5"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-red-500)" strokeWidth="6" strokeDasharray="6.3 93.7" strokeDashoffset="-87.5"></circle>
               {/* Orange (ลา) - 1.5% -> offset = -(87.5+6.3) = -93.8 */}
-              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f59e0b" strokeWidth="6" strokeDasharray="1.5 98.5" strokeDashoffset="-93.8"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-amber-500)" strokeWidth="6" strokeDasharray="1.5 98.5" strokeDashoffset="-93.8"></circle>
               {/* Blue (สาย) - 4.7% -> offset = -(87.5+6.3+1.5) = -95.3 */}
-              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" strokeWidth="6" strokeDasharray="4.7 95.3" strokeDashoffset="-95.3"></circle> 
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-blue-500)" strokeWidth="6" strokeDasharray="4.7 95.3" strokeDashoffset="-95.3"></circle>
             </svg>
             
             {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-xl sm:text-2xl font-bold text-slate-800">128</span>
-              <span className="text-[10px] sm:text-xs text-slate-500 font-medium">คน</span>
+              <span className="text-xs sm:text-xs text-slate-500 font-medium">คน</span>
             </div>
           </div>
 
@@ -154,7 +154,7 @@ export function AttendanceCharts() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-bold text-slate-800">118 คน</div>
-                <div className="text-[10px] text-slate-400">(92.2%)</div>
+                <div className="text-xs text-slate-400">(92.2%)</div>
               </div>
             </div>
 
@@ -165,7 +165,7 @@ export function AttendanceCharts() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-bold text-slate-800">8 คน</div>
-                <div className="text-[10px] text-slate-400">(6.3%)</div>
+                <div className="text-xs text-slate-400">(6.3%)</div>
               </div>
             </div>
 
@@ -176,7 +176,7 @@ export function AttendanceCharts() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-bold text-slate-800">2 คน</div>
-                <div className="text-[10px] text-slate-400">(1.5%)</div>
+                <div className="text-xs text-slate-400">(1.5%)</div>
               </div>
             </div>
 
@@ -187,7 +187,7 @@ export function AttendanceCharts() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-bold text-slate-800">6 คน</div>
-                <div className="text-[10px] text-slate-400">(4.7%)</div>
+                <div className="text-xs text-slate-400">(4.7%)</div>
               </div>
             </div>
 

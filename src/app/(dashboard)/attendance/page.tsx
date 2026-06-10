@@ -1,4 +1,9 @@
 import React from "react"
+import { Plus } from "lucide-react"
+
+import { PageHeader, PageShell } from "@/components/dashboard"
+import { Button } from "@/components/ui/button"
+
 import { AttendanceFilters } from "./_components/attendance-filters"
 import { AttendanceSummary } from "./_components/attendance-summary"
 import { AttendanceCharts } from "./_components/attendance-charts"
@@ -11,56 +16,44 @@ import { MobileAttendance } from "./_components/mobile-attendance"
 
 export default function AttendancePage() {
   return (
-    <>
-      {/* Mobile PWA View */}
-      <div className="md:hidden block">
-        <MobileAttendance />
+    <PageShell size="wide" spacing="default">
+      <PageHeader
+        title="การมาเรียน"
+        description="ติดตามการมาเรียน ขาด ลา มาสาย และสรุปสถิติการเข้าเรียนของนักเรียน"
+        actions={
+          <Button>
+            <Plus /> บันทึกการมาเรียน
+          </Button>
+        }
+      />
+
+      <AttendanceFilters />
+      <AttendanceSummary />
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <AttendanceCharts />
+        </div>
+        <AbsentReasons />
       </div>
 
-      {/* Desktop Responsive View */}
-      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col">
-        
-        {/* Page Header */}
-        <div className="mb-6 shrink-0 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">การมาเรียน</h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">ติดตามการมาเรียน ขาด ลา มาสาย และสรุปสถิติการเข้าเรียนของนักเรียน</p>
+      <div className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+        <div className="min-w-0">
+          <div className="hidden md:block">
+            <AttendanceTable />
+          </div>
+          <div className="md:hidden">
+            <MobileAttendance />
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          
-          <AttendanceFilters />
-          <AttendanceSummary />
-
-          {/* Main Grid: Charts and Reasons */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-            <div className="xl:col-span-2">
-              <AttendanceCharts />
-            </div>
-            <div className="xl:col-span-1">
-              <AbsentReasons />
-            </div>
-          </div>
-
-          {/* Master-Detail Layout for Table and Sidebars */}
-          <div className="flex flex-col xl:flex-row gap-6 mb-6">
-            <div className="xl:flex-[2] flex flex-col gap-6 min-w-0">
-              <AttendanceTable />
-            </div>
-            
-            <div className="xl:flex-[1] flex flex-col gap-6 min-w-0">
-              <ClassSummary />
-              <QuickTools />
-            </div>
-          </div>
-
-          {/* Bottom Summary */}
-          <GradeLevelSummary />
-
+        <div className="flex min-w-0 flex-col gap-6">
+          <ClassSummary />
+          <QuickTools />
         </div>
-
       </div>
-    </>
+
+      <GradeLevelSummary />
+    </PageShell>
   )
 }

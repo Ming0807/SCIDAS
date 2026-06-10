@@ -46,7 +46,7 @@ The older UX/UI sections below are historical progress notes. They should not be
 - [x] Add reusable form/feedback components: `FormSection`, `SubmitBar`, `EmptyState`, `ErrorState`, `LoadingState`, `PermissionState`.
 - [ ] Migrate `/students` and `/attendance` first as pilot pages.
   - [x] `/students`: migrated to `PageShell`, `PageHeader`, shared metrics, shared `FilterBar`, shared `DataTable`, shared `MobileList`, and shared `Pagination`.
-  - [ ] `/attendance`: next pilot page.
+  - [x] `/attendance`: migrated to `PageShell`, `PageHeader`, shared metrics, shared `FilterBar`, shared `DataTable`, shared `MobileList`, shared `Pagination`, and cleaned attendance-local banned UI patterns.
 - [x] Add guardrails for banned UI patterns: tiny arbitrary text, hard-coded hex colors, arbitrary decorative shadows, `rounded-3xl`, and non-token gradients.
 
 ### Documentation Queue

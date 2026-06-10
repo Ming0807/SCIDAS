@@ -111,6 +111,8 @@ const statusAliases: Record<string, StatusTone> = {
   high: "high-risk",
   high_risk: "high-risk",
   "high risk": "high-risk",
+  late: "info",
+  leave: "warning",
   low: "normal",
   medium: "watch",
   ok: "success",

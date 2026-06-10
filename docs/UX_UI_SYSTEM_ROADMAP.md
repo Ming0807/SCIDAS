@@ -180,9 +180,9 @@ Route Server Component
 
 ### `/attendance`
 
-- ใช้ status token เดียวสำหรับ มา/ขาด/ลา/สาย
-- chart ต้องมี legend และไม่ใช้สีเป็นสัญญาณเดียว
-- form บันทึกการมาเรียนควรใช้ `FormSection`, `SubmitBar`, validation message แบบเดียว
+- ใช้ status token เดียวสำหรับ มา/ขาด/ลา/สาย: done for current pilot data and table/list.
+- chart ต้องมี legend และไม่ใช้สีเป็นสัญญาณเดียว: current chart keeps labels with tokenized colors.
+- form บันทึกการมาเรียนควรใช้ `FormSection`, `SubmitBar`, validation message แบบเดียว: still pending for the dedicated attendance form flow.
 
 ### `/academics`
 

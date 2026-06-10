@@ -24,7 +24,7 @@ export function ClassSummary() {
                 <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: '94.1%' }}></div>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium w-8">94.1%</span>
+                <span className="text-xs text-slate-500 font-medium w-8">94.1%</span>
               </div>
             </td>
             <td className="py-2.5 text-center font-bold text-slate-700">2</td>
@@ -39,7 +39,7 @@ export function ClassSummary() {
                 <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: '91.7%' }}></div>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium w-8">91.7%</span>
+                <span className="text-xs text-slate-500 font-medium w-8">91.7%</span>
               </div>
             </td>
             <td className="py-2.5 text-center font-bold text-slate-700">3</td>
@@ -54,7 +54,7 @@ export function ClassSummary() {
                 <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: '90.2%' }}></div>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium w-8">90.2%</span>
+                <span className="text-xs text-slate-500 font-medium w-8">90.2%</span>
               </div>
             </td>
             <td className="py-2.5 text-center font-bold text-slate-700">2</td>
@@ -69,7 +69,7 @@ export function ClassSummary() {
                 <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: '92.3%' }}></div>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium w-8">92.3%</span>
+                <span className="text-xs text-slate-500 font-medium w-8">92.3%</span>
               </div>
             </td>
             <td className="py-2.5 text-center font-bold text-slate-700">1</td>

@@ -21,7 +21,7 @@ export function AbsentReasons() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-800">3 คน</span>
-            <span className="text-[11px] text-slate-400 w-12 text-right">(37.5%)</span>
+            <span className="text-xs text-slate-400 w-12 text-right">(37.5%)</span>
           </div>
         </div>
 
@@ -35,7 +35,7 @@ export function AbsentReasons() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-800">2 คน</span>
-            <span className="text-[11px] text-slate-400 w-12 text-right">(25.0%)</span>
+            <span className="text-xs text-slate-400 w-12 text-right">(25.0%)</span>
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export function AbsentReasons() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-800">2 คน</span>
-            <span className="text-[11px] text-slate-400 w-12 text-right">(25.0%)</span>
+            <span className="text-xs text-slate-400 w-12 text-right">(25.0%)</span>
           </div>
         </div>
 
@@ -63,7 +63,7 @@ export function AbsentReasons() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-800">1 คน</span>
-            <span className="text-[11px] text-slate-400 w-12 text-right">(12.5%)</span>
+            <span className="text-xs text-slate-400 w-12 text-right">(12.5%)</span>
           </div>
         </div>
 
