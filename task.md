@@ -42,9 +42,11 @@ The older UX/UI sections below are historical progress notes. They should not be
 ### P1 Next Tasks
 
 - [x] Add reusable dashboard components: `MetricCard`, `StatusBadge`, `StudentIdentity`, `ChartCard`.
-- [ ] Add reusable data components: `DataTable`, `MobileList`, `FilterBar`, `Pagination`.
+- [x] Add reusable data components: `DataTable`, `MobileList`, `FilterBar`, `Pagination`.
 - [x] Add reusable form/feedback components: `FormSection`, `SubmitBar`, `EmptyState`, `ErrorState`, `LoadingState`, `PermissionState`.
 - [ ] Migrate `/students` and `/attendance` first as pilot pages.
+  - [x] `/students`: migrated to `PageShell`, `PageHeader`, shared metrics, shared `FilterBar`, shared `DataTable`, shared `MobileList`, and shared `Pagination`.
+  - [ ] `/attendance`: next pilot page.
 - [x] Add guardrails for banned UI patterns: tiny arbitrary text, hard-coded hex colors, arbitrary decorative shadows, `rounded-3xl`, and non-token gradients.
 
 ### Documentation Queue

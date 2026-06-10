@@ -137,15 +137,15 @@ Route Server Component
 
 ### P1: Shared Product Components
 
-- [ ] `MetricCard`: metric, delta, icon, status, compact/regular variants
-- [ ] `StatusBadge`: normal/watch/high-risk/success/warning/danger/info
-- [ ] `StudentIdentity`: avatar, name, class, student code, risk/status
-- [ ] `DataTable`: desktop table with sticky action column, loading, empty, pagination
-- [ ] `MobileList`: mobile equivalent for data rows without duplicating business logic
-- [ ] `FilterBar`: search, grade, status, date range, clear filters
-- [ ] `ChartCard`: title, action, legend, empty state, fixed height rules
-- [ ] `FormSection` and `SubmitBar`: consistent forms across attendance, academics, support, IDP
-- [ ] `EmptyState`, `ErrorState`, `LoadingState`: consistent feedback
+- [x] `MetricCard`: metric, delta, icon, status, compact/regular variants
+- [x] `StatusBadge`: normal/watch/high-risk/success/warning/danger/info
+- [x] `StudentIdentity`: avatar, name, class, student code, risk/status
+- [x] `DataTable`: desktop table with sticky action column, loading, empty, pagination
+- [x] `MobileList`: mobile equivalent for data rows without duplicating business logic
+- [x] `FilterBar`: search, grade, status, date range, clear filters
+- [x] `ChartCard`: title, action, legend, empty state, fixed height rules
+- [x] `FormSection` and `SubmitBar`: consistent forms across attendance, academics, support, IDP
+- [x] `EmptyState`, `ErrorState`, `LoadingState`: consistent feedback
 
 ### P2: Page Migration Waves
 
@@ -173,8 +173,8 @@ Route Server Component
 
 ### `/students`
 
-- รวม desktop table และ mobile list ให้ใช้ data/view model เดียว
-- filter ควรอยู่ใน `FilterBar`
+- รวม desktop table และ mobile list ให้ใช้ data/view model เดียว: done for the current pilot mock dataset
+- filter ควรอยู่ใน `FilterBar`: done
 - row action ต้องชัด: view, edit, support, risk
 - student profile panel ควรแยกเป็น reusable `StudentIdentity` และ `StudentSnapshot`
 

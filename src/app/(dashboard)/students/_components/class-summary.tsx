@@ -38,7 +38,7 @@ export function ClassSummary() {
           </div>
 
           {/* Active State */}
-          <div className="cursor-pointer rounded-lg border border-blue-600 bg-blue-50 p-3 flex flex-col shadow-[0_0_0_1px_rgba(37,99,235,1)]">
+          <div className="cursor-pointer rounded-lg border border-blue-600 bg-blue-50 p-3 flex flex-col ring-1 ring-blue-600">
             <span className="text-xs font-semibold text-blue-700 mb-1">ป.5</span>
             <span className="text-sm font-bold text-blue-900">26 <span className="text-xs font-medium text-blue-700">คน</span></span>
           </div>

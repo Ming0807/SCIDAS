@@ -1,5 +1,7 @@
 ﻿import React from "react"
-import { BadgeCheck, Edit2, Clock, ShieldAlert, Printer, ChevronRight, FileText, Plus, MoreVertical, Download } from "lucide-react"
+import { BadgeCheck, Edit2, Clock, ShieldAlert, Printer, FileText, MoreVertical, Download } from "lucide-react"
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function StudentProfilePanel() {
   return (
@@ -26,7 +28,13 @@ export function StudentProfilePanel() {
         {/* Profile Identity */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-6 border-b border-slate-100">
           <div className="relative shrink-0">
-            <img src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1" className="w-20 h-20 rounded-full bg-slate-100 object-cover border border-slate-200" alt="เด็กชายกฤษฎา ใจดี"/>
+            <Avatar className="h-20 w-20 border border-slate-200 bg-slate-100">
+              <AvatarImage
+                src="https://api.dicebear.com/7.x/notionists/svg?seed=boy1"
+                alt="เด็กชายกฤษฎา ใจดี"
+              />
+              <AvatarFallback>กจ</AvatarFallback>
+            </Avatar>
             <span className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full ring-1 ring-slate-100"></span>
           </div>
 
@@ -86,7 +94,7 @@ export function StudentProfilePanel() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-xs font-semibold text-slate-800">การมาเรียน</h4>
-              <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">93%</span>
+              <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">93%</span>
             </div>
             <div className="flex justify-between text-xs mb-3">
               <div className="flex flex-col"><span className="text-slate-500 mb-1">มา</span><span className="font-semibold text-slate-900">28</span></div>
