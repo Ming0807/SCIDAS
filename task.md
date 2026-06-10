@@ -44,9 +44,10 @@ The older UX/UI sections below are historical progress notes. They should not be
 - [x] Add reusable dashboard components: `MetricCard`, `StatusBadge`, `StudentIdentity`, `ChartCard`.
 - [x] Add reusable data components: `DataTable`, `MobileList`, `FilterBar`, `Pagination`.
 - [x] Add reusable form/feedback components: `FormSection`, `SubmitBar`, `EmptyState`, `ErrorState`, `LoadingState`, `PermissionState`.
-- [ ] Migrate `/students` and `/attendance` first as pilot pages.
+- [x] Migrate `/students` and `/attendance` first as pilot pages.
   - [x] `/students`: migrated to `PageShell`, `PageHeader`, shared metrics, shared `FilterBar`, shared `DataTable`, shared `MobileList`, and shared `Pagination`.
   - [x] `/attendance`: migrated to `PageShell`, `PageHeader`, shared metrics, shared `FilterBar`, shared `DataTable`, shared `MobileList`, shared `Pagination`, and cleaned attendance-local banned UI patterns.
+- [x] Continue Wave 2 migration with `/academics`: migrated to shared page shell, filter bar, metrics, table/list, and shared academic data source.
 - [x] Add guardrails for banned UI patterns: tiny arbitrary text, hard-coded hex colors, arbitrary decorative shadows, `rounded-3xl`, and non-token gradients.
 
 ### Documentation Queue

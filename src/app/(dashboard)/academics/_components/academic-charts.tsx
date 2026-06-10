@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 import { ChevronDown } from "lucide-react"
 
 export function AcademicCharts() {
@@ -18,59 +18,59 @@ export function AcademicCharts() {
           {/* Custom SVG Line Chart */}
           <svg className="w-full h-[150px] overflow-visible" viewBox="0 0 100 60" preserveAspectRatio="none">
             {/* Grid lines */}
-            <line x1="0" y1="10" x2="100" y2="10" stroke="#f1f5f9" strokeWidth="0.5" />
-            <line x1="0" y1="25" x2="100" y2="25" stroke="#f1f5f9" strokeWidth="0.5" />
-            <line x1="0" y1="40" x2="100" y2="40" stroke="#f1f5f9" strokeWidth="0.5" />
-            <line x1="0" y1="55" x2="100" y2="55" stroke="#f1f5f9" strokeWidth="0.5" />
+            <line x1="0" y1="10" x2="100" y2="10" stroke="var(--color-slate-100)" strokeWidth="0.5" />
+            <line x1="0" y1="25" x2="100" y2="25" stroke="var(--color-slate-100)" strokeWidth="0.5" />
+            <line x1="0" y1="40" x2="100" y2="40" stroke="var(--color-slate-100)" strokeWidth="0.5" />
+            <line x1="0" y1="55" x2="100" y2="55" stroke="var(--color-slate-100)" strokeWidth="0.5" />
             
             {/* Y-axis labels */}
-            <text x="-2" y="10" fontSize="3" fill="#94a3b8" textAnchor="end" dominantBaseline="middle">4.00</text>
-            <text x="-2" y="25" fontSize="3" fill="#94a3b8" textAnchor="end" dominantBaseline="middle">3.50</text>
-            <text x="-2" y="40" fontSize="3" fill="#94a3b8" textAnchor="end" dominantBaseline="middle">2.00</text>
-            <text x="-2" y="55" fontSize="3" fill="#94a3b8" textAnchor="end" dominantBaseline="middle">1.00</text>
+            <text x="-2" y="10" fontSize="3" fill="var(--color-slate-400)" textAnchor="end" dominantBaseline="middle">4.00</text>
+            <text x="-2" y="25" fontSize="3" fill="var(--color-slate-400)" textAnchor="end" dominantBaseline="middle">3.50</text>
+            <text x="-2" y="40" fontSize="3" fill="var(--color-slate-400)" textAnchor="end" dominantBaseline="middle">2.00</text>
+            <text x="-2" y="55" fontSize="3" fill="var(--color-slate-400)" textAnchor="end" dominantBaseline="middle">1.00</text>
 
             {/* Area gradient */}
             <defs>
               <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--color-indigo-500)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="var(--color-indigo-500)" stopOpacity="0" />
               </linearGradient>
             </defs>
 
             {/* Line connecting points */}
-            <path d="M 5,50 L 25,35 L 45,32 L 65,18 L 85,12" fill="none" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M 5,50 L 25,35 L 45,32 L 65,18 L 85,12" fill="none" stroke="var(--color-indigo-500)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             
             {/* Area under line */}
             <path d="M 5,50 L 25,35 L 45,32 L 65,18 L 85,12 L 85,60 L 5,60 Z" fill="url(#gpaGradient)" />
 
             {/* Points and Value Tooltips */}
             {/* P1 */}
-            <circle cx="5" cy="50" r="1.5" fill="white" stroke="#6366f1" strokeWidth="0.5" />
-            <text x="5" y="47" fontSize="3.5" fill="#334155" textAnchor="middle" fontWeight="bold">2.45</text>
+            <circle cx="5" cy="50" r="1.5" fill="white" stroke="var(--color-indigo-500)" strokeWidth="0.5" />
+            <text x="5" y="47" fontSize="3.5" fill="var(--color-slate-700)" textAnchor="middle" fontWeight="bold">2.45</text>
             
             {/* P2 */}
-            <circle cx="25" cy="35" r="1.5" fill="white" stroke="#6366f1" strokeWidth="0.5" />
-            <text x="25" y="32" fontSize="3.5" fill="#334155" textAnchor="middle" fontWeight="bold">2.66</text>
+            <circle cx="25" cy="35" r="1.5" fill="white" stroke="var(--color-indigo-500)" strokeWidth="0.5" />
+            <text x="25" y="32" fontSize="3.5" fill="var(--color-slate-700)" textAnchor="middle" fontWeight="bold">2.66</text>
             
             {/* P3 */}
-            <circle cx="45" cy="32" r="1.5" fill="white" stroke="#6366f1" strokeWidth="0.5" />
-            <text x="45" y="29" fontSize="3.5" fill="#334155" textAnchor="middle" fontWeight="bold">2.72</text>
+            <circle cx="45" cy="32" r="1.5" fill="white" stroke="var(--color-indigo-500)" strokeWidth="0.5" />
+            <text x="45" y="29" fontSize="3.5" fill="var(--color-slate-700)" textAnchor="middle" fontWeight="bold">2.72</text>
             
             {/* P4 */}
-            <circle cx="65" cy="18" r="1.5" fill="white" stroke="#6366f1" strokeWidth="0.5" />
-            <text x="65" y="15" fontSize="3.5" fill="#334155" textAnchor="middle" fontWeight="bold">3.22</text>
+            <circle cx="65" cy="18" r="1.5" fill="white" stroke="var(--color-indigo-500)" strokeWidth="0.5" />
+            <text x="65" y="15" fontSize="3.5" fill="var(--color-slate-700)" textAnchor="middle" fontWeight="bold">3.22</text>
             
             {/* P5 (Current) */}
-            <circle cx="85" cy="12" r="2" fill="#6366f1" />
-            <circle cx="85" cy="12" r="4" fill="#6366f1" opacity="0.2" />
-            <text x="85" y="8" fontSize="4" fill="#6366f1" textAnchor="middle" fontWeight="bold">3.48</text>
+            <circle cx="85" cy="12" r="2" fill="var(--color-indigo-500)" />
+            <circle cx="85" cy="12" r="4" fill="var(--color-indigo-500)" opacity="0.2" />
+            <text x="85" y="8" fontSize="4" fill="var(--color-indigo-500)" textAnchor="middle" fontWeight="bold">3.48</text>
 
             {/* X-axis labels */}
-            <text x="5" y="65" fontSize="3.5" fill="#94a3b8" textAnchor="middle">1/2566</text>
-            <text x="25" y="65" fontSize="3.5" fill="#94a3b8" textAnchor="middle">2/2566</text>
-            <text x="45" y="65" fontSize="3.5" fill="#94a3b8" textAnchor="middle">1/2567</text>
-            <text x="65" y="65" fontSize="3.5" fill="#94a3b8" textAnchor="middle">2/2567</text>
-            <text x="85" y="65" fontSize="3.5" fill="#6366f1" textAnchor="middle" fontWeight="bold">1/2567</text>
+            <text x="5" y="65" fontSize="3.5" fill="var(--color-slate-400)" textAnchor="middle">1/2566</text>
+            <text x="25" y="65" fontSize="3.5" fill="var(--color-slate-400)" textAnchor="middle">2/2566</text>
+            <text x="45" y="65" fontSize="3.5" fill="var(--color-slate-400)" textAnchor="middle">1/2567</text>
+            <text x="65" y="65" fontSize="3.5" fill="var(--color-slate-400)" textAnchor="middle">2/2567</text>
+            <text x="85" y="65" fontSize="3.5" fill="var(--color-indigo-500)" textAnchor="middle" fontWeight="bold">1/2567</text>
           </svg>
         </div>
       </div>
@@ -82,18 +82,18 @@ export function AcademicCharts() {
           {/* Donut SVG */}
           <div className="relative w-32 h-32 shrink-0">
             <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 overflow-visible">
-              <circle cx="21" cy="21" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
+              <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-slate-100)" strokeWidth="4" />
               {/* Segments: total 152. Red (4) 2.6%, Orange (16) 10.5%, Yellow (42) 27.6%, Blue (62) 40.8%, Green (28) 18.4% */}
               {/* Green (Excellent) */}
-              <circle cx="21" cy="21" r="15.915" fill="none" stroke="#10b981" strokeWidth="4" strokeDasharray="18.4 81.6" strokeDashoffset="0" />
+              <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-emerald-500)" strokeWidth="4" strokeDasharray="18.4 81.6" strokeDashoffset="0" />
               {/* Blue (Good) */}
-              <circle cx="21" cy="21" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4" strokeDasharray="40.8 59.2" strokeDashoffset="-18.4" />
+              <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-blue-500)" strokeWidth="4" strokeDasharray="40.8 59.2" strokeDashoffset="-18.4" />
               {/* Yellow (Fair) */}
-              <circle cx="21" cy="21" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="4" strokeDasharray="27.6 72.4" strokeDashoffset="-59.2" />
+              <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-amber-500)" strokeWidth="4" strokeDasharray="27.6 72.4" strokeDashoffset="-59.2" />
               {/* Orange (Improve) */}
-              <circle cx="21" cy="21" r="15.915" fill="none" stroke="#f97316" strokeWidth="4" strokeDasharray="10.5 89.5" strokeDashoffset="-86.8" />
+              <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-orange-500)" strokeWidth="4" strokeDasharray="10.5 89.5" strokeDashoffset="-86.8" />
               {/* Red (Fail) */}
-              <circle cx="21" cy="21" r="15.915" fill="none" stroke="#ef4444" strokeWidth="4" strokeDasharray="2.6 97.4" strokeDashoffset="-97.3" />
+              <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-red-500)" strokeWidth="4" strokeDasharray="2.6 97.4" strokeDashoffset="-97.3" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-xs text-slate-500 font-medium">นักเรียนทั้งหมด</span>
@@ -104,23 +104,23 @@ export function AcademicCharts() {
           {/* Legend */}
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#10b981]"></div><span className="text-slate-600">4.00 - 3.51</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-foreground">4.00 - 3.51</span></div>
               <div className="text-right"><span className="font-semibold text-slate-800">28</span> <span className="text-slate-400 text-xs">(18.4%)</span></div>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#3b82f6]"></div><span className="text-slate-600">3.50 - 2.51</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-foreground">3.50 - 2.51</span></div>
               <div className="text-right"><span className="font-semibold text-slate-800">62</span> <span className="text-slate-400 text-xs">(40.8%)</span></div>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div><span className="text-slate-600">2.50 - 1.51</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-foreground">2.50 - 1.51</span></div>
               <div className="text-right"><span className="font-semibold text-slate-800">42</span> <span className="text-slate-400 text-xs">(27.6%)</span></div>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f97316]"></div><span className="text-slate-600">1.50 - 1.01</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500"></div><span className="text-foreground">1.50 - 1.01</span></div>
               <div className="text-right"><span className="font-semibold text-slate-800">16</span> <span className="text-slate-400 text-xs">(10.5%)</span></div>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]"></div><span className="text-slate-600">1.00 - 0.00</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-foreground">1.00 - 0.00</span></div>
               <div className="text-right"><span className="font-semibold text-slate-800">4</span> <span className="text-slate-400 text-xs">(2.7%)</span></div>
             </div>
           </div>

@@ -151,6 +151,9 @@ Route Server Component
 
 - [ ] Wave 1: app shell, dashboard overview, students list
 - [ ] Wave 2: attendance, academics, behavior
+  - [x] attendance pilot migrated to shared shell/data/list patterns.
+  - [x] academics migrated to shared shell/data/list patterns.
+  - [ ] behavior remains.
 - [ ] Wave 3: risk-analysis, support, development-plans
 - [ ] Wave 4: reports, notifications, settings, home-visits
 - [ ] Wave 5: student detail and behavior/detail pages
@@ -186,9 +189,9 @@ Route Server Component
 
 ### `/academics`
 
-- academic table และ student academic table ควรใช้ `DataTable`
-- สีผลการเรียนควรเป็น semantic ไม่ใช้ blue/indigo แบบ decorative
-- แยก academic score, skill status, and intervention suggestion ให้ชัด
+- academic table และ student academic table ควรใช้ `DataTable`: done for current risk-student academic table.
+- สีผลการเรียนควรเป็น semantic ไม่ใช้ blue/indigo แบบ decorative: current table/list uses status tones and tokenized chart colors.
+- แยก academic score, skill status, and intervention suggestion ให้ชัด: partially done; intervention suggestion flow remains for later form/action work.
 
 ### `/behavior`
 

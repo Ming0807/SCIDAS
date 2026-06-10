@@ -47,8 +47,8 @@ export function BottomInsights() {
         {/* Sparkline mock */}
         <div className="shrink-0 w-16 h-8 self-center">
           <svg viewBox="0 0 100 30" className="w-full h-full overflow-visible">
-            <path d="M0,5 L20,15 L40,10 L60,25 L80,20 L100,28" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="100" cy="28" r="3" fill="#ef4444" />
+            <path d="M0,5 L20,15 L40,10 L60,25 L80,20 L100,28" fill="none" stroke="var(--color-red-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="100" cy="28" r="3" fill="var(--color-red-500)" />
           </svg>
         </div>
       </div>
@@ -88,10 +88,10 @@ export function BottomInsights() {
           </div>
           <div className="text-xs font-semibold text-slate-500 mb-1">รายงานล่าสุด</div>
           <div className="text-xs font-semibold text-slate-800 mb-1 leading-snug">รายงานผลการเรียน ภาคเรียนที่ 1/2567</div>
-          <div className="text-[9px] text-slate-400 mb-4">สร้างเมื่อ 24 พ.ค. 2567 10:30 น.</div>
+          <div className="text-xs text-slate-400 mb-4">สร้างเมื่อ 24 พ.ค. 2567 10:30 น.</div>
         </div>
         
-        <button className="relative z-10 w-full flex items-center justify-center gap-1.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors">
+        <button className="relative z-10 w-full flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/80 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors">
           <Download className="w-3.5 h-3.5" />
           ดาวน์โหลดรายงาน
         </button>
