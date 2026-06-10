@@ -12,7 +12,7 @@ export function Sidebar({ role }: { role?: string | null }) {
   const currentNavItems = getSidebarNavigation(role);
 
   return (
-    <aside className="w-[280px] flex-shrink-0 bg-brand-deep-blue text-slate-300 hidden md:flex flex-col">
+    <aside className="w-[280px] h-full flex-shrink-0 bg-brand-deep-blue text-slate-300 flex flex-col">
       <div className="py-6 px-6 border-b border-white/5 flex flex-row items-center gap-4">
         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 border-[3px] border-amber-400">
           <BookMarked className="h-6 w-6 text-brand-deep-blue" />

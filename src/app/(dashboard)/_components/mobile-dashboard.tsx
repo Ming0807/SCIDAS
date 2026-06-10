@@ -1,15 +1,24 @@
 import React from "react"
 import { Menu, Bell, Search, BookOpen, Smile, AlertCircle, Heart, Clock, ChevronRight, Users } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { Sidebar } from "@/components/layout/sidebar"
 
-export function MobileDashboard() {
+export function MobileDashboard({ role }: { role?: string | null }) {
   return (
     <div className="flex flex-col bg-slate-50 min-h-screen font-sans pb-6">
       
       {/* Top Header */}
       <div className="flex items-center justify-between px-5 pt-6 pb-4 bg-white sticky top-0 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-        <button className="p-1">
-          <Menu className="w-6 h-6 text-slate-800" />
-        </button>
+        <Sheet>
+          <SheetTrigger render={<button className="p-1" />}>
+              <Menu className="w-6 h-6 text-slate-800" />
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-[280px]">
+            <SheetTitle className="sr-only">เมนูหลัก</SheetTitle>
+            <SheetDescription className="sr-only">เมนูนำทางหลักของระบบ</SheetDescription>
+            <Sidebar role={role} />
+          </SheetContent>
+        </Sheet>
         <div className="flex flex-col items-center">
           <span className="text-[17px] font-bold text-slate-900">สวัสดีตอนเช้า👋</span>
           <span className="text-xs text-slate-500 mt-0.5">ครูนันท์ จันทร์จิรา</span>

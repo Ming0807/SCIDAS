@@ -6,13 +6,15 @@ import { TrackingTable } from "./_components/tracking-table"
 import { RecentActivities } from "./_components/recent-activities"
 import { BottomMiniCharts } from "./_components/bottom-mini-charts"
 import { MobileDashboard } from "./_components/mobile-dashboard"
+import { getUserRole } from "@/utils/supabase/server"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const role = await getUserRole()
   return (
     <>
       {/* Mobile View */}
       <div className="md:hidden block">
-        <MobileDashboard />
+        <MobileDashboard role={role} />
       </div>
 
       {/* Desktop View */}

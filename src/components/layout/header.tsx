@@ -3,6 +3,8 @@
 import { Bell, Search, Menu, Calendar } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sidebar } from "@/components/layout/sidebar";
 
 export function Header({ role }: { role?: string | null }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -14,10 +16,17 @@ export function Header({ role }: { role?: string | null }) {
       isScrolled ? "shadow-sm" : ""
     )}>
       <div className="flex items-center gap-4 lg:hidden">
-        <button className="text-slate-500 hover:text-slate-900 transition-colors">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">เปิดปิดเมนูด้านข้าง</span>
-        </button>
+        <Sheet>
+          <SheetTrigger render={<button className="text-slate-500 hover:text-slate-900 transition-colors" />}>
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">เปิดปิดเมนูด้านข้าง</span>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-[280px]">
+            <SheetTitle className="sr-only">เมนูหลัก</SheetTitle>
+            <SheetDescription className="sr-only">เมนูนำทางหลักของระบบ</SheetDescription>
+            <Sidebar role={role} />
+          </SheetContent>
+        </Sheet>
       </div>
       
       <div className="hidden lg:flex items-center min-w-0 shrink-0">
