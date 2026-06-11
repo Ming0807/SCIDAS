@@ -14,7 +14,7 @@
 
 > Update 2026-06-10 later pass: initial real-data frontend integration is now in place for `/`, `/students`, `/home-visits`, `/risk-analysis`, and `/support`. The remaining blocker for production verification is applying migration `0008_ux_data_foundation.sql` in Supabase and running authenticated visual checks.
 
-> Update 2026-06-11: the user applied migration `0008_ux_data_foundation.sql`. `/support` now connects action status changes, student notes, and care timeline to the shared backend layer. Remaining verification blockers are Supabase type regeneration and authenticated visual/data smoke checks.
+> Update 2026-06-11: the user applied migration `0008_ux_data_foundation.sql`. Supabase CLI is now available as a project dev dependency, local Supabase start applies migrations `0001` through `0008`, and generated database types are refreshed. `/support` and `/students/[id]` now connect action status changes, student notes, and care timeline to the shared backend layer. Remaining verification blocker: authenticated visual/data smoke checks against a real session.
 
 ## Evidence From Current Audit
 
@@ -168,6 +168,8 @@ Route Server Component
   - [x] home-visits now reads real `home_visits`/`home_visit_images`.
   - [ ] reports, notifications, and settings remain.
 - [ ] Wave 5: student detail and behavior/detail pages
+  - [x] student detail now reads the real care profile, open action items, notes, and timeline.
+  - [ ] behavior/detail pages remain.
 
 ### P3: Quality Gates and Automation
 
@@ -191,6 +193,7 @@ Route Server Component
 - filter ควรอยู่ใน `FilterBar`: done
 - row action ต้องชัด: view, edit, support, risk
 - student profile panel ควรแยกเป็น reusable `StudentIdentity` และ `StudentSnapshot`
+- `/students/[id]` now uses shared care components for notes, timeline, and action status controls; remaining detail work should add evidence, academic/attendance drilldowns, and edit flows without reintroducing mock tabs.
 
 ### `/attendance`
 

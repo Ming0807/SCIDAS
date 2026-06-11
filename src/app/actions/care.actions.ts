@@ -31,10 +31,19 @@ export async function setActionItemStatus(
     revalidatePath("/students")
     revalidatePath("/support")
     revalidatePath("/risk-analysis")
+    if (item.studentId) {
+      revalidatePath(`/students/${item.studentId}`)
+    }
 
     return actionOk("Action item updated", {
       data: { id: item.id, status: item.status },
-      revalidated: ["/", "/students", "/support", "/risk-analysis"],
+      revalidated: [
+        "/",
+        "/students",
+        "/support",
+        "/risk-analysis",
+        ...(item.studentId ? [`/students/${item.studentId}`] : []),
+      ],
     })
   } catch (error) {
     if (error instanceof Error) {

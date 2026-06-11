@@ -24,8 +24,9 @@ Source of truth:
 
 - [x] `npx tsc --noEmit`: passed after adding the DAL/service layer.
 - [x] Migration `0008_ux_data_foundation.sql` was applied by the user on 2026-06-11.
-- [ ] `supabase db reset` or `supabase db push`: not run locally because Supabase CLI is not installed in this environment.
-- [ ] Regenerate Supabase database types after migration `0008` in an environment with Supabase CLI.
+- [x] Added Supabase CLI as a project dev dependency and verified `npm run db:types`.
+- [x] Fixed local Supabase `project_id` to `scidas-local`, then `npx supabase start` applied migrations `0001` through `0008` locally.
+- [x] Regenerated `src/types/database.types.ts` from the local database after migration `0008`.
 - [ ] Production/preview data smoke with an authenticated dashboard user is still required.
 
 ### 2026-06-10 Real Frontend Integration Pass
@@ -37,6 +38,8 @@ Source of truth:
 - [x] Connected `/risk-analysis` overview, top-risk table, and recommendations to `v_student_worklist`.
 - [x] Replaced `/support` static profile layout with a real support workbench backed by `getStudentCareDashboard()` and `action_items`.
 - [x] Connected `/support` notes and timeline panels to `student_notes` and `student_timeline_events`, including add-note and action-status Server Actions.
+- [x] Replaced `/students/[id]` placeholder tabs with a real student care profile backed by `v_current_student_directory`, `v_student_worklist`, `action_items`, `student_notes`, and `student_timeline_events`.
+- [x] Extracted reusable care UI components in `src/components/care` for action status controls, note forms, notes panels, and timeline panels.
 - [x] Updated the Students page test to await the async Server Component and mock the student worklist read model.
 
 ### P0 Next Tasks
@@ -48,6 +51,7 @@ Source of truth:
 - [x] Connect `/risk-analysis` top-risk and recommendations to `v_student_worklist`.
 - [x] Connect `/support` actions to `action_items`.
 - [x] Connect `/support` notes and timeline panels to `student_notes` and `student_timeline_events`.
+- [x] Connect `/students/[id]` to the shared care profile, notes, timeline, and action item read models.
 - [ ] Add generic evidence upload flow using `student_attachments` for support/home-visit/report evidence.
 - [ ] Convert migrated mutations to `ActionResult<T>` and verify auth/authorization inside every action.
 
@@ -57,7 +61,7 @@ Source of truth:
 - [ ] Add attachment upload actions that write `student_attachments`.
 - [ ] Add notification links to source records and action items.
 - [ ] Add authenticated browser visual checks after pages consume real read models.
-- [ ] Regenerate Supabase database types after migration `0008` is applied.
+- [x] Regenerate Supabase database types after migration `0008` is applied.
 
 ## 2026-06-10 System UX/UI & Architecture Roadmap
 

@@ -72,7 +72,7 @@ New files:
 - `src/lib/server/current-user.ts`
   - Resolves Supabase user, profile/student identity, school, role, and current semester.
 - `src/lib/server/student-care-read-models.ts`
-  - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getActionQueue`, `getStudentTimeline`, `getStudentNotes`, `createStudentNote`, and `updateActionItemStatus`.
+  - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getStudentCareProfile`, `getActionQueue`, `getStudentActionItems`, `getStudentTimeline`, `getStudentNotes`, `createStudentNote`, and `updateActionItemStatus`.
 - `src/lib/server/home-visit-read-models.ts`
   - Exposes `getHomeVisitDashboard` for `/home-visits`, joining visits with student, visitor, and visit image context.
 - `src/lib/server/action-result.ts`
@@ -92,7 +92,7 @@ Server Components should call the read-model functions directly. Client Componen
 2. Students
    - Replace route-local `student-data.ts` with `getStudentWorklist()`.
    - Keep one shared DTO for desktop `DataTable` and mobile `MobileList`.
-   - Current status: initial real-data integration is complete with URL search params, server filtering, pagination, and real profile snapshot.
+   - Current status: initial real-data integration is complete with URL search params, server filtering, pagination, real profile snapshot, and a real `/students/[id]` care profile that reads notes, timeline, and open action items.
 
 3. Risk Analysis
    - Read top risk students from `v_student_worklist`.
@@ -133,11 +133,11 @@ A route is backend-ready when:
 
 ## Known Verification Gap
 
-The user reported that `0008_ux_data_foundation.sql` was applied on 2026-06-11. `supabase` CLI and `psql` are still not installed in the current local environment, so this workspace cannot reset/push or regenerate generated database types directly. Technical validation currently covers TypeScript and app build checks. Before production deployment, run:
+The user reported that `0008_ux_data_foundation.sql` was applied on 2026-06-11. Supabase CLI is now installed as a project dev dependency. Local Supabase starts successfully after normalizing `supabase/config.toml` to `project_id = "scidas-local"`, migrations `0001` through `0008` apply locally, and `src/types/database.types.ts` has been regenerated with `npm run db:types`. Before production deployment, still run the same verification against the target Supabase project:
 
 ```bash
 supabase db reset
 supabase db push
 ```
 
-or apply the migrations in a Supabase preview project, inspect the new views/RLS policies, and regenerate `src/types/database.types.ts`.
+or apply the migrations in a Supabase preview project, inspect the new views/RLS policies, and regenerate `src/types/database.types.ts` from that target when the account has platform typegen privileges.

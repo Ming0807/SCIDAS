@@ -1,6 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js"
-
-import type { Database, Json } from "@/types/database.types"
+import type { Database } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
 import {
@@ -10,6 +8,8 @@ import {
 } from "./current-user"
 
 type PublicSchema = Database["public"]
+type PublicTables = PublicSchema["Tables"]
+type PublicViews = PublicSchema["Views"]
 type RiskLevel = PublicSchema["Enums"]["risk_level"]
 type SeverityLevel = PublicSchema["Enums"]["severity_level"]
 type GradeLevel = PublicSchema["Enums"]["grade_level"]
@@ -20,159 +20,15 @@ type UserRole = PublicSchema["Enums"]["user_role"]
 export type ActionItemStatus = "todo" | "in_progress" | "done" | "cancelled"
 export type StudentNoteVisibility = "team" | "private" | "leadership"
 
-type CareTable<TRow, TInsert = Partial<TRow>, TUpdate = Partial<TRow>> = {
-  Row: TRow
-  Insert: TInsert
-  Update: TUpdate
-  Relationships: []
-}
-
-type CareView<TRow> = {
-  Row: TRow
-  Relationships: []
-}
-
-type ActionItemRow = {
-  id: string
-  school_id: string
-  student_id: string | null
-  title: string
-  description: string | null
-  category: string
-  priority: SeverityLevel
-  status: ActionItemStatus
-  assigned_to: string | null
-  created_by: string | null
-  due_date: string | null
-  completed_at: string | null
-  completed_by: string | null
-  source_table: string
-  source_id: string
-  metadata: Json
-  created_at: string
-  updated_at: string
-}
-
-type StudentTimelineEventRow = {
-  id: string
-  school_id: string
-  student_id: string
-  event_at: string
-  event_type: string
-  title: string
-  description: string | null
-  severity: SeverityLevel | null
-  source_table: string
-  source_id: string
-  actor_id: string | null
-  metadata: Json
-  created_at: string
-  updated_at: string
-}
-
-type StudentNoteRow = {
-  id: string
-  school_id: string
-  student_id: string
-  author_id: string
-  category: string
-  body: string
-  visibility: StudentNoteVisibility
-  pinned: boolean
-  source_table: string | null
-  source_id: string | null
-  metadata: Json
-  created_at: string
-  updated_at: string
-}
-
-type StudentNoteInsert = {
-  school_id: string
-  student_id: string
-  author_id: string
-  category?: string
-  body: string
-  visibility?: StudentNoteVisibility
-  pinned?: boolean
-  source_table?: string | null
-  source_id?: string | null
-  metadata?: Json
-}
-
-type ProfileSummaryRow = {
-  id: string
-  first_name: string
-  last_name: string
-  role: UserRole
-}
-
-type StudentWorklistViewRow = {
-  school_id: string
-  student_id: string
-  student_code: string
-  full_name: string
-  photo_url: string | null
-  classroom_id: string | null
-  classroom_name: string | null
-  grade_level: GradeLevel | null
-  section: number | null
-  student_number: number | null
-  primary_guardian_name: string | null
-  primary_guardian_phone: string | null
-  risk_level: RiskLevel
-  risk_score: number
-  risk_trend: string | null
-  open_support_count: number
-  active_plan_count: number
-  open_action_count: number
-  active_flag_count: number
-  next_due_date: string | null
-  absent_days_30d: number
-  late_days_30d: number
-  recorded_days_30d: number
-  attendance_rate_30d: number | null
-  priority_score: number
-}
-
-type StudentDirectoryViewRow = {
-  school_id: string
-  student_id: string
-  student_code: string
-  user_id: string | null
-  prefix: string | null
-  first_name: string
-  last_name: string
-  full_name: string
-  nickname: string | null
-  gender: GenderType
-  photo_url: string | null
-  status: StudentStatus
-  distance_to_school_km: number | null
-  travel_method: string | null
-  classroom_id: string | null
-  classroom_name: string | null
-  grade_level: GradeLevel | null
-  section: number | null
-  student_number: number | null
-  semester_id: string | null
-  primary_guardian_id: string | null
-  primary_guardian_name: string | null
-  primary_guardian_phone: string | null
-}
-
-type CareDatabase = Omit<Database, "public"> & {
-  public: Omit<PublicSchema, "Tables" | "Views"> & {
-    Tables: PublicSchema["Tables"] & {
-      action_items: CareTable<ActionItemRow>
-      student_notes: CareTable<StudentNoteRow, StudentNoteInsert>
-      student_timeline_events: CareTable<StudentTimelineEventRow>
-    }
-    Views: PublicSchema["Views"] & {
-      v_current_student_directory: CareView<StudentDirectoryViewRow>
-      v_student_worklist: CareView<StudentWorklistViewRow>
-    }
-  }
-}
+type ActionItemRow = PublicTables["action_items"]["Row"]
+type StudentTimelineEventRow = PublicTables["student_timeline_events"]["Row"]
+type StudentNoteRow = PublicTables["student_notes"]["Row"]
+type ProfileSummaryRow = Pick<
+  PublicTables["profiles"]["Row"],
+  "id" | "first_name" | "last_name" | "role"
+>
+type StudentDirectoryViewRow = PublicViews["v_current_student_directory"]["Row"]
+type StudentWorklistViewRow = PublicViews["v_student_worklist"]["Row"]
 
 export type StudentWorklistItem = {
   studentId: string
@@ -259,6 +115,40 @@ export type StudentCareDashboard = {
   actionQueue: ActionQueueItem[]
 }
 
+export type StudentCareProfile = {
+  studentId: string
+  studentCode: string
+  fullName: string
+  firstName: string | null
+  lastName: string | null
+  prefix: string | null
+  nickname: string | null
+  gender: GenderType | null
+  photoUrl: string | null
+  status: StudentStatus | null
+  classroomName: string | null
+  gradeLevel: GradeLevel | null
+  section: number | null
+  studentNumber: number | null
+  primaryGuardianName: string | null
+  primaryGuardianPhone: string | null
+  travelMethod: string | null
+  distanceToSchoolKm: number | null
+  riskLevel: RiskLevel
+  riskScore: number
+  riskTrend: string | null
+  openSupportCount: number
+  activePlanCount: number
+  openActionCount: number
+  activeFlagCount: number
+  nextDueDate: string | null
+  absentDays30d: number
+  lateDays30d: number
+  recordedDays30d: number
+  attendanceRate30d: number | null
+  priorityScore: number
+}
+
 type StudentWorklistOptions = {
   limit?: number
 }
@@ -269,15 +159,30 @@ type ActionQueueOptions = {
   assignedToMe?: boolean
 }
 
-function getCareClient(client: Awaited<ReturnType<typeof createClient>>) {
-  return client as unknown as SupabaseClient<CareDatabase>
+const actionStatuses: ActionItemStatus[] = ["todo", "in_progress", "done", "cancelled"]
+const noteVisibilities: StudentNoteVisibility[] = ["team", "private", "leadership"]
+
+function toActionItemStatus(status: string | null): ActionItemStatus {
+  return actionStatuses.includes(status as ActionItemStatus)
+    ? (status as ActionItemStatus)
+    : "todo"
 }
 
-function mapWorklistRow(row: StudentWorklistViewRow): StudentWorklistItem {
+function toStudentNoteVisibility(visibility: string | null): StudentNoteVisibility {
+  return noteVisibilities.includes(visibility as StudentNoteVisibility)
+    ? (visibility as StudentNoteVisibility)
+    : "team"
+}
+
+function mapWorklistRow(row: StudentWorklistViewRow): StudentWorklistItem | null {
+  if (!row.student_id) {
+    return null
+  }
+
   return {
     studentId: row.student_id,
-    studentCode: row.student_code,
-    fullName: row.full_name,
+    studentCode: row.student_code ?? "-",
+    fullName: row.full_name ?? row.student_code ?? "ไม่ระบุชื่อนักเรียน",
     photoUrl: row.photo_url,
     classroomName: row.classroom_name,
     gradeLevel: row.grade_level,
@@ -285,19 +190,72 @@ function mapWorklistRow(row: StudentWorklistViewRow): StudentWorklistItem {
     studentNumber: row.student_number,
     primaryGuardianName: row.primary_guardian_name,
     primaryGuardianPhone: row.primary_guardian_phone,
-    riskLevel: row.risk_level,
-    riskScore: row.risk_score,
+    riskLevel: row.risk_level ?? "normal",
+    riskScore: row.risk_score ?? 0,
     riskTrend: row.risk_trend,
-    openSupportCount: row.open_support_count,
-    activePlanCount: row.active_plan_count,
-    openActionCount: row.open_action_count,
-    activeFlagCount: row.active_flag_count,
+    openSupportCount: row.open_support_count ?? 0,
+    activePlanCount: row.active_plan_count ?? 0,
+    openActionCount: row.open_action_count ?? 0,
+    activeFlagCount: row.active_flag_count ?? 0,
     nextDueDate: row.next_due_date,
-    absentDays30d: row.absent_days_30d,
-    lateDays30d: row.late_days_30d,
-    recordedDays30d: row.recorded_days_30d,
+    absentDays30d: row.absent_days_30d ?? 0,
+    lateDays30d: row.late_days_30d ?? 0,
+    recordedDays30d: row.recorded_days_30d ?? 0,
     attendanceRate30d: row.attendance_rate_30d,
-    priorityScore: row.priority_score,
+    priorityScore: row.priority_score ?? 0,
+  }
+}
+
+function mapProfileRows(
+  studentId: string,
+  directory: StudentDirectoryViewRow | null,
+  worklist: StudentWorklistItem | null,
+): StudentCareProfile | null {
+  if (!directory && !worklist) {
+    return null
+  }
+
+  const fullName =
+    directory?.full_name ??
+    worklist?.fullName ??
+    directory?.student_code ??
+    worklist?.studentCode ??
+    "ไม่ระบุชื่อนักเรียน"
+
+  return {
+    studentId,
+    studentCode: directory?.student_code ?? worklist?.studentCode ?? "-",
+    fullName,
+    firstName: directory?.first_name ?? null,
+    lastName: directory?.last_name ?? null,
+    prefix: directory?.prefix ?? null,
+    nickname: directory?.nickname ?? null,
+    gender: directory?.gender ?? null,
+    photoUrl: directory?.photo_url ?? worklist?.photoUrl ?? null,
+    status: directory?.status ?? null,
+    classroomName: directory?.classroom_name ?? worklist?.classroomName ?? null,
+    gradeLevel: directory?.grade_level ?? worklist?.gradeLevel ?? null,
+    section: directory?.section ?? worklist?.section ?? null,
+    studentNumber: directory?.student_number ?? worklist?.studentNumber ?? null,
+    primaryGuardianName:
+      directory?.primary_guardian_name ?? worklist?.primaryGuardianName ?? null,
+    primaryGuardianPhone:
+      directory?.primary_guardian_phone ?? worklist?.primaryGuardianPhone ?? null,
+    travelMethod: directory?.travel_method ?? null,
+    distanceToSchoolKm: directory?.distance_to_school_km ?? null,
+    riskLevel: worklist?.riskLevel ?? "normal",
+    riskScore: worklist?.riskScore ?? 0,
+    riskTrend: worklist?.riskTrend ?? null,
+    openSupportCount: worklist?.openSupportCount ?? 0,
+    activePlanCount: worklist?.activePlanCount ?? 0,
+    openActionCount: worklist?.openActionCount ?? 0,
+    activeFlagCount: worklist?.activeFlagCount ?? 0,
+    nextDueDate: worklist?.nextDueDate ?? null,
+    absentDays30d: worklist?.absentDays30d ?? 0,
+    lateDays30d: worklist?.lateDays30d ?? 0,
+    recordedDays30d: worklist?.recordedDays30d ?? 0,
+    attendanceRate30d: worklist?.attendanceRate30d ?? null,
+    priorityScore: worklist?.priorityScore ?? 0,
   }
 }
 
@@ -313,7 +271,7 @@ function mapActionRow(
     description: row.description,
     category: row.category,
     priority: row.priority,
-    status: row.status,
+    status: toActionItemStatus(row.status),
     dueDate: row.due_date,
     assignedTo: row.assigned_to,
     sourceTable: row.source_table,
@@ -352,7 +310,7 @@ function mapNoteRow(
     authorRole: author?.role ?? null,
     category: row.category,
     body: row.body,
-    visibility: row.visibility,
+    visibility: toStudentNoteVisibility(row.visibility),
     pinned: row.pinned,
     sourceTable: row.source_table,
     sourceId: row.source_id,
@@ -369,11 +327,17 @@ function assertStaffContext(
   }
 }
 
+function assertStudentAccess(context: CurrentUserContext, studentId: string) {
+  if (context.role === "student" && context.studentId !== studentId) {
+    throw new Error("FORBIDDEN")
+  }
+}
+
 export async function getStudentWorklist(
   options: StudentWorklistOptions = {},
 ): Promise<StudentWorklistItem[]> {
   const context = await getCurrentUserContext()
-  const client = getCareClient(await createClient())
+  const client = await createClient()
 
   let query = client
     .from("v_student_worklist")
@@ -396,14 +360,104 @@ export async function getStudentWorklist(
     throw new Error(error.message)
   }
 
-  return (data ?? []).map(mapWorklistRow)
+  return (data ?? [])
+    .map(mapWorklistRow)
+    .filter((student): student is StudentWorklistItem => student !== null)
+}
+
+export async function getStudentCareProfile(
+  studentId: string,
+): Promise<StudentCareProfile | null> {
+  const context = await getCurrentUserContext()
+  assertStudentAccess(context, studentId)
+
+  const client = await createClient()
+  const [directoryResult, worklistResult] = await Promise.all([
+    client
+      .from("v_current_student_directory")
+      .select("*")
+      .eq("school_id", context.schoolId)
+      .eq("student_id", studentId)
+      .maybeSingle(),
+    client
+      .from("v_student_worklist")
+      .select("*")
+      .eq("school_id", context.schoolId)
+      .eq("student_id", studentId)
+      .maybeSingle(),
+  ])
+
+  if (directoryResult.error) {
+    throw new Error(directoryResult.error.message)
+  }
+
+  if (worklistResult.error) {
+    throw new Error(worklistResult.error.message)
+  }
+
+  const worklist = worklistResult.data ? mapWorklistRow(worklistResult.data) : null
+
+  return mapProfileRows(studentId, directoryResult.data ?? null, worklist)
+}
+
+export async function getStudentActionItems(
+  studentId: string,
+  options: ActionQueueOptions = {},
+): Promise<ActionQueueItem[]> {
+  const context = await getCurrentUserContext()
+  assertStudentAccess(context, studentId)
+
+  const client = await createClient()
+  const statuses = options.statuses ?? ["todo", "in_progress"]
+
+  const { data: worklistRow, error: worklistError } = await client
+    .from("v_student_worklist")
+    .select("*")
+    .eq("school_id", context.schoolId)
+    .eq("student_id", studentId)
+    .maybeSingle()
+
+  if (worklistError) {
+    throw new Error(worklistError.message)
+  }
+
+  const worklist = worklistRow ? mapWorklistRow(worklistRow) : null
+  const studentsById = new Map<string, StudentWorklistItem>(
+    worklist ? [[worklist.studentId, worklist]] : [],
+  )
+
+  let query = client
+    .from("action_items")
+    .select("*")
+    .eq("school_id", context.schoolId)
+    .eq("student_id", studentId)
+    .in("status", statuses)
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+
+  if (options.assignedToMe) {
+    assertStaffContext(context)
+    query = query.eq("assigned_to", context.profileId)
+  }
+
+  if (options.limit) {
+    query = query.limit(options.limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data ?? []).map((row) => mapActionRow(row, studentsById))
 }
 
 export async function getActionQueue(
   options: ActionQueueOptions = {},
 ): Promise<ActionQueueItem[]> {
   const context = await getCurrentUserContext()
-  const client = getCareClient(await createClient())
+  const client = await createClient()
   const statuses = options.statuses ?? ["todo", "in_progress"]
   const studentRows = await getStudentWorklist({ limit: 500 })
   const studentsById = new Map(studentRows.map((student) => [student.studentId, student]))
@@ -443,12 +497,9 @@ export async function getStudentTimeline(
   limit = 30,
 ): Promise<StudentTimelineItem[]> {
   const context = await getCurrentUserContext()
+  assertStudentAccess(context, studentId)
 
-  if (context.role === "student" && context.studentId !== studentId) {
-    throw new Error("FORBIDDEN")
-  }
-
-  const client = getCareClient(await createClient())
+  const client = await createClient()
   const { data, error } = await client
     .from("student_timeline_events")
     .select("*")
@@ -469,12 +520,9 @@ export async function getStudentNotes(
   limit = 20,
 ): Promise<StudentNoteItem[]> {
   const context = await getCurrentUserContext()
+  assertStudentAccess(context, studentId)
 
-  if (context.role === "student" && context.studentId !== studentId) {
-    throw new Error("FORBIDDEN")
-  }
-
-  const client = getCareClient(await createClient())
+  const client = await createClient()
   const { data, error } = await client
     .from("student_notes")
     .select("*")
@@ -526,7 +574,7 @@ export async function createStudentNote(input: {
     throw new Error("VALIDATION_ERROR")
   }
 
-  const client = getCareClient(await createClient())
+  const client = await createClient()
   const { data, error } = await client
     .from("student_notes")
     .insert({
@@ -604,7 +652,7 @@ export async function updateActionItemStatus(
   const context = await getCurrentUserContext()
   assertStaffContext(context)
 
-  const client = getCareClient(await createClient())
+  const client = await createClient()
   const completedAt = status === "done" ? new Date().toISOString() : null
   const completedBy = status === "done" ? context.profileId : null
 

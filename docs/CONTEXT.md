@@ -6,7 +6,7 @@
 
 > **Backend data foundation note (2026-06-10):** The current priority has shifted from page-by-page UI cleanup to the database and backend flow required for real frontend usage. Use [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md) together with migration `supabase/migrations/0008_ux_data_foundation.sql` and server DAL files under `src/lib/server/`.
 
-> **Real frontend integration note (2026-06-11):** Initial real-data integration is complete for `/`, `/students`, `/home-visits`, `/risk-analysis`, and `/support`. `/support` now reads the shared action queue, student notes, and care timeline, and can mutate action status plus add notes through `src/app/actions/care.actions.ts`. The user reported migration `0008_ux_data_foundation.sql` was applied; Supabase type regeneration and authenticated visual/data smoke checks are still required.
+> **Real frontend integration note (2026-06-11):** Initial real-data integration is complete for `/`, `/students`, `/students/[id]`, `/home-visits`, `/risk-analysis`, and `/support`. `/support` and `/students/[id]` now read the shared action queue, student notes, and care timeline, and can mutate action status plus add notes through `src/app/actions/care.actions.ts`. The user reported migration `0008_ux_data_foundation.sql` was applied; Supabase CLI is now a project dev dependency and local generated types are refreshed. Authenticated visual/data smoke checks are still required.
 
 ## 1. ข้อมูลพื้นฐานของโปรเจกต์
 - **ชื่อโปรเจกต์:** Student Care and Individual Development Analytics System (SCIDAS)
@@ -43,6 +43,7 @@
 ### Backend (Supabase)
 - **Current backend foundation:** `0008_ux_data_foundation.sql` adds the shared UX data layer: `student_timeline_events`, `student_flags`, `action_items`, `student_notes`, `student_attachments`, `report_jobs`, `user_dashboard_preferences`, plus read models `v_current_student_directory`, `v_student_latest_risk`, `v_student_support_state`, and `v_student_worklist`.
 - **Data access rule:** Server Components should read through `src/lib/server/student-care-read-models.ts` or another server-only DAL module. Client Components should mutate through Server Actions that return `ActionResult<T>`.
+- **Supabase CLI workflow:** use `npm run db:start` for local Supabase and `npm run db:types` to regenerate `src/types/database.types.ts` after migrations.
 - **Preferred student list model:** use `v_student_worklist` / `getStudentWorklist()` before writing custom page-local student queries.
 - **Action queue model:** use `action_items` for every cross-module follow-up so dashboard, risk, support, and student detail show the same owner/due/status state.
 - **Row Level Security (RLS):** ตารางทุกตารางในฐานข้อมูลต้องมีการเปิด RLS

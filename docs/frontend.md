@@ -142,6 +142,7 @@ Target shared components:
 - `MobileList`: mobile representation of the same view model used by `DataTable`.
 - `FilterBar`: search, select filters, clear action, responsive wrapping.
 - `FormSection` and `SubmitBar`: consistent forms and submit/error state.
+- `src/components/care/*`: shared care workflow pieces such as action status controls, student note form, notes panel, and timeline panel. Use these before recreating note/timeline UI in route-local files.
 - `EmptyState`, `ErrorState`, `LoadingState`, `PermissionState`: consistent feedback states.
 
 Rules:
@@ -157,7 +158,7 @@ Rules:
 - Client Components should be limited to state, event handlers, browser APIs, charts that require the client, and form interaction.
 - Data-heavy dashboard routes should read through `src/lib/server/student-care-read-models.ts` or another server-only DAL module before adding new page-local queries or mock data.
 - Student list, risk, support, dashboard, and student detail routes should prefer `getStudentWorklist()`, `getStudentCareDashboard()`, `getActionQueue()`, `getStudentTimeline()`, and `getStudentNotes()` where applicable.
-- `/students`, `/`, `/risk-analysis`, and `/support` now have initial real-data integration through `v_student_worklist`, `getStudentCareDashboard()`, `action_items`, `student_notes`, and `student_timeline_events`. Do not reintroduce route-local mock datasets for these surfaces.
+- `/students`, `/students/[id]`, `/`, `/risk-analysis`, and `/support` now have initial real-data integration through `v_current_student_directory`, `v_student_worklist`, `getStudentCareDashboard()`, `action_items`, `student_notes`, and `student_timeline_events`. Do not reintroduce route-local mock datasets for these surfaces.
 - `/home-visits` now reads through `src/lib/server/home-visit-read-models.ts` and real `home_visits`/`home_visit_images`; use `student_attachments` next for generic evidence upload rather than adding another page-local image model.
 - Internal mutations should use Server Actions, not API routes, unless the endpoint is for webhooks or external integrations.
 - Mutated pages must surface pending, success, validation error, and unexpected error states.

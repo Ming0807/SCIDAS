@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -7,11 +7,6 @@
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       academic_scores: {
@@ -92,6 +87,27 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "academic_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "academic_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "academic_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
         ]
       }
       academic_years: {
@@ -132,6 +148,126 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "schools"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_items: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          metadata: Json
+          priority: Database["public"]["Enums"]["severity_level"]
+          school_id: string
+          source_id: string
+          source_table: string
+          status: string
+          student_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          metadata?: Json
+          priority?: Database["public"]["Enums"]["severity_level"]
+          school_id: string
+          source_id?: string
+          source_table?: string
+          status?: string
+          student_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          metadata?: Json
+          priority?: Database["public"]["Enums"]["severity_level"]
+          school_id?: string
+          source_id?: string
+          source_table?: string
+          status?: string
+          student_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_items_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_items_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_items_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_items_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_items_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "action_items_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "action_items_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -219,6 +355,27 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assignment_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "assignment_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "assignment_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
         ]
       }
       attendance_records: {
@@ -289,6 +446,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -439,6 +617,27 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "basic_skills_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "basic_skills_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "basic_skills_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
         ]
       }
       behavior_records: {
@@ -515,6 +714,27 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "behavior_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "behavior_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "behavior_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
         ]
       }
       classroom_students: {
@@ -579,6 +799,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "classroom_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "classroom_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -1029,6 +1270,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "development_plans_risk_assessment_id_fkey"
+            columns: ["risk_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_latest_risk"
+            referencedColumns: ["risk_assessment_id"]
+          },
+          {
             foreignKeyName: "development_plans_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
@@ -1048,6 +1296,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "development_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "development_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -1279,6 +1548,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "home_visits_guardian_met_id_fkey"
+            columns: ["guardian_met_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["primary_guardian_id"]
+          },
+          {
             foreignKeyName: "home_visits_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
@@ -1298,6 +1574,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_visits_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "home_visits_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "home_visits_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
           },
           {
             foreignKeyName: "home_visits_visitor_id_fkey"
@@ -1449,6 +1746,75 @@ export type Database = {
           },
         ]
       }
+      report_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          filters: Json
+          id: string
+          output_bucket: string | null
+          output_path: string | null
+          report_type: string
+          requested_at: string
+          requested_by: string
+          school_id: string
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          filters?: Json
+          id?: string
+          output_bucket?: string | null
+          output_path?: string | null
+          report_type: string
+          requested_at?: string
+          requested_by: string
+          school_id: string
+          started_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          filters?: Json
+          id?: string
+          output_bucket?: string | null
+          output_path?: string | null
+          report_type?: string
+          requested_at?: string
+          requested_by?: string
+          school_id?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_jobs_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_jobs_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       risk_assessments: {
         Row: {
           assessed_at: string
@@ -1536,6 +1902,27 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
         ]
       }
       risk_factors: {
@@ -1582,6 +1969,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "risk_assessments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_factors_risk_assessment_id_fkey"
+            columns: ["risk_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_latest_risk"
+            referencedColumns: ["risk_assessment_id"]
           },
           {
             foreignKeyName: "risk_factors_school_id_fkey"
@@ -1706,6 +2100,223 @@ export type Database = {
           },
         ]
       }
+      student_attachments: {
+        Row: {
+          bucket: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          id: string
+          is_private: boolean
+          metadata: Json
+          mime_type: string | null
+          reference_id: string | null
+          reference_table: string | null
+          school_id: string
+          storage_path: string
+          student_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bucket?: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          is_private?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          reference_id?: string | null
+          reference_table?: string | null
+          school_id: string
+          storage_path: string
+          student_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          is_private?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          reference_id?: string | null
+          reference_table?: string | null
+          school_id?: string
+          storage_path?: string
+          student_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_attachments_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attachments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attachments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_attachments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_attachments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_flags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          flag_key: string
+          id: string
+          label: string
+          metadata: Json
+          owner_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          school_id: string
+          severity: Database["public"]["Enums"]["severity_level"]
+          source_id: string | null
+          source_table: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          flag_key: string
+          id?: string
+          label: string
+          metadata?: Json
+          owner_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          school_id: string
+          severity?: Database["public"]["Enums"]["severity_level"]
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          flag_key?: string
+          id?: string
+          label?: string
+          metadata?: Json
+          owner_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          school_id?: string
+          severity?: Database["public"]["Enums"]["severity_level"]
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_flags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_flags_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_flags_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_flags_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_flags_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_flags_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_flags_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_flags_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
       student_guardians: {
         Row: {
           can_pickup: boolean
@@ -1749,6 +2360,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "student_guardians_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["primary_guardian_id"]
+          },
+          {
             foreignKeyName: "student_guardians_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
@@ -1761,6 +2379,212 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
+      student_notes: {
+        Row: {
+          author_id: string
+          body: string
+          category: string
+          created_at: string
+          id: string
+          metadata: Json
+          pinned: boolean
+          school_id: string
+          source_id: string | null
+          source_table: string | null
+          student_id: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          pinned?: boolean
+          school_id: string
+          source_id?: string | null
+          source_table?: string | null
+          student_id: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          pinned?: boolean
+          school_id?: string
+          source_id?: string | null
+          source_table?: string | null
+          student_id?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notes_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
+      student_timeline_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          description: string | null
+          event_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          school_id: string
+          severity: Database["public"]["Enums"]["severity_level"] | null
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          description?: string | null
+          event_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          school_id: string
+          severity?: Database["public"]["Enums"]["severity_level"] | null
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          description?: string | null
+          event_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          school_id?: string
+          severity?: Database["public"]["Enums"]["severity_level"] | null
+          source_id?: string
+          source_table?: string
+          student_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_timeline_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_timeline_events_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_timeline_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_timeline_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_timeline_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "student_timeline_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
           },
         ]
       }
@@ -1871,13 +2695,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "students_school_id_fkey"
             columns: ["school_id"]
@@ -2107,6 +2924,27 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "support_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "support_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "support_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
         ]
       }
       system_settings: {
@@ -2160,9 +2998,237 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          school_id: string
+          scope: string
+          updated_at: string
+          user_id: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          school_id: string
+          scope?: string
+          updated_at?: string
+          user_id: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          school_id?: string
+          scope?: string
+          updated_at?: string
+          user_id?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dashboard_preferences_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_dashboard_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      v_current_student_directory: {
+        Row: {
+          classroom_id: string | null
+          classroom_name: string | null
+          distance_to_school_km: number | null
+          first_name: string | null
+          full_name: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          grade_level: Database["public"]["Enums"]["grade_level"] | null
+          last_name: string | null
+          nickname: string | null
+          photo_url: string | null
+          prefix: string | null
+          primary_guardian_id: string | null
+          primary_guardian_name: string | null
+          primary_guardian_phone: string | null
+          school_id: string | null
+          section: number | null
+          semester_id: string | null
+          status: Database["public"]["Enums"]["student_status"] | null
+          student_code: string | null
+          student_id: string | null
+          student_number: number | null
+          travel_method: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_students_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_students_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_student_latest_risk: {
+        Row: {
+          assessed_at: string | null
+          assessed_by: string | null
+          recommendations: string | null
+          risk_assessment_id: string | null
+          risk_level: Database["public"]["Enums"]["risk_level"] | null
+          risk_score: number | null
+          school_id: string | null
+          semester_id: string | null
+          student_id: string | null
+          summary: string | null
+          trend: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_assessed_by_fkey"
+            columns: ["assessed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_current_student_directory"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_support_state"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_worklist"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
+      v_student_support_state: {
+        Row: {
+          active_flag_count: number | null
+          active_plan_count: number | null
+          latest_support_at: string | null
+          next_due_date: string | null
+          open_action_count: number | null
+          open_support_count: number | null
+          school_id: string | null
+          student_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_student_worklist: {
+        Row: {
+          absent_days_30d: number | null
+          active_flag_count: number | null
+          active_plan_count: number | null
+          attendance_rate_30d: number | null
+          classroom_id: string | null
+          classroom_name: string | null
+          full_name: string | null
+          grade_level: Database["public"]["Enums"]["grade_level"] | null
+          late_days_30d: number | null
+          next_due_date: string | null
+          open_action_count: number | null
+          open_support_count: number | null
+          photo_url: string | null
+          primary_guardian_name: string | null
+          primary_guardian_phone: string | null
+          priority_score: number | null
+          recorded_days_30d: number | null
+          risk_level: Database["public"]["Enums"]["risk_level"] | null
+          risk_score: number | null
+          risk_trend: string | null
+          school_id: string | null
+          section: number | null
+          student_code: string | null
+          student_id: string | null
+          student_number: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_students_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       batch_calculate_risk_scores: {

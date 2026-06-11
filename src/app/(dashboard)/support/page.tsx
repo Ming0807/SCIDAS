@@ -1,30 +1,30 @@
 import Link from "next/link"
 import {
   CalendarClock,
-  CheckCircle2,
   HeartHandshake,
   ListChecks,
-  MessageSquarePlus,
   Plus,
   ShieldAlert,
 } from "lucide-react"
 
-import { addStudentNoteFormAction, setActionItemStatusFormAction } from "@/app/actions/care.actions"
+import {
+  ActionStatusControls,
+  StudentNotesPanel,
+  StudentTimelinePanel,
+} from "@/components/care"
 import {
   MetricCard,
   PageHeader,
   PageShell,
-  Section,
   StatusBadge,
   StudentIdentity,
 } from "@/components/dashboard"
 import { DataTable, type DataTableColumn } from "@/components/data"
 import { EmptyState, ErrorState } from "@/components/feedback"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import {
   formatClassroomSection,
   formatGradeLevel,
-  formatThaiDateTime,
   formatThaiShortDate,
   getStudentRiskLabel,
   getStudentRiskTone,
@@ -107,61 +107,6 @@ function getActionStatusTone(status: ActionQueueItem["status"]) {
   if (status === "in_progress") return "info"
   if (status === "cancelled") return "neutral"
   return "watch"
-}
-
-function getTimelineTypeLabel(type: string) {
-  const labels: Record<string, string> = {
-    attendance: "การมาเรียน",
-    behavior: "พฤติกรรม",
-    support: "ดูแลช่วยเหลือ",
-    risk: "ความเสี่ยง",
-    idp: "แผนพัฒนา",
-    home_visit: "เยี่ยมบ้าน",
-  }
-
-  return labels[type] ?? type
-}
-
-function getSeverityTone(severity?: string | null) {
-  if (severity === "critical" || severity === "high") return "high-risk"
-  if (severity === "medium") return "watch"
-  if (severity === "low") return "normal"
-  return "neutral"
-}
-
-function getNoteVisibilityLabel(visibility: StudentNoteItem["visibility"]) {
-  const labels: Record<StudentNoteItem["visibility"], string> = {
-    team: "ทีมดูแล",
-    private: "ส่วนตัว",
-    leadership: "ผู้บริหาร",
-  }
-
-  return labels[visibility]
-}
-
-function ActionStatusControls({ item }: { item: ActionQueueItem }) {
-  return (
-    <div className="flex justify-end gap-1">
-      {item.status === "todo" ? (
-        <form action={setActionItemStatusFormAction}>
-          <input type="hidden" name="actionItemId" value={item.id} />
-          <input type="hidden" name="status" value="in_progress" />
-          <Button type="submit" size="sm" variant="outline">
-            เริ่มทำ
-          </Button>
-        </form>
-      ) : null}
-      {item.status !== "done" && item.status !== "cancelled" ? (
-        <form action={setActionItemStatusFormAction}>
-          <input type="hidden" name="actionItemId" value={item.id} />
-          <input type="hidden" name="status" value="done" />
-          <Button type="submit" size="sm" variant="secondary">
-            <CheckCircle2 /> ปิดงาน
-          </Button>
-        </form>
-      ) : null}
-    </div>
-  )
 }
 
 const actionColumns: Array<DataTableColumn<ActionQueueItem>> = [
@@ -262,178 +207,6 @@ function StudentCareCard({
         </div>
       </div>
     </Link>
-  )
-}
-
-function StudentNoteForm({ studentId }: { studentId: string }) {
-  return (
-    <form action={addStudentNoteFormAction} className="space-y-3">
-      <input type="hidden" name="studentId" value={studentId} />
-      <textarea
-        name="body"
-        required
-        rows={4}
-        placeholder="บันทึกสิ่งที่พบ การประสานงาน หรือขั้นตอนถัดไป..."
-        className="min-h-28 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-3 focus:ring-ring/50"
-      />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          <label className="text-sm">
-            <span className="sr-only">หมวดบันทึก</span>
-            <select
-              name="category"
-              defaultValue="support"
-              className="h-8 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
-            >
-              <option value="support">ดูแลช่วยเหลือ</option>
-              <option value="risk">ความเสี่ยง</option>
-              <option value="attendance">การมาเรียน</option>
-              <option value="family">ครอบครัว</option>
-              <option value="home_visit">เยี่ยมบ้าน</option>
-              <option value="idp">แผนพัฒนา</option>
-              <option value="general">ทั่วไป</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="sr-only">การมองเห็น</span>
-            <select
-              name="visibility"
-              defaultValue="team"
-              className="h-8 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
-            >
-              <option value="team">ทีมดูแล</option>
-              <option value="private">ส่วนตัว</option>
-              <option value="leadership">ผู้บริหาร</option>
-            </select>
-          </label>
-        </div>
-        <Button type="submit">
-          <MessageSquarePlus /> เพิ่มบันทึก
-        </Button>
-      </div>
-    </form>
-  )
-}
-
-function StudentNotesPanel({
-  selectedStudent,
-  notes,
-}: {
-  selectedStudent: StudentWorklistItem | null
-  notes: StudentNoteItem[]
-}) {
-  return (
-    <Section
-      title="บันทึกทีมดูแล"
-      description="เก็บบริบทล่าสุดของนักเรียน เพื่อให้ทีมเห็นภาพเดียวกันก่อนติดตามต่อ"
-      contentClassName="space-y-4"
-    >
-      {selectedStudent ? (
-        <>
-          <StudentNoteForm studentId={selectedStudent.studentId} />
-          {notes.length > 0 ? (
-            <div className="space-y-3">
-              {notes.map((note) => (
-                <article
-                  key={note.id}
-                  className="rounded-lg border border-border bg-card p-3 text-card-foreground"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{note.authorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatThaiDateTime(note.createdAt)}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <StatusBadge status="info" label={note.category} size="sm" />
-                      <StatusBadge
-                        status="neutral"
-                        label={getNoteVisibilityLabel(note.visibility)}
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
-                    {note.body}
-                  </p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              size="compact"
-              title="ยังไม่มีบันทึกของนักเรียนคนนี้"
-              description="เพิ่มบันทึกแรกเพื่อให้ทีมเห็นบริบทและขั้นตอนถัดไปตรงกัน"
-            />
-          )}
-        </>
-      ) : (
-        <EmptyState
-          title="เลือกนักเรียนเพื่อเพิ่มบันทึก"
-          description="เลือกรายชื่อด้านข้างเพื่อดูประวัติและเพิ่มบันทึกของทีมดูแล"
-        />
-      )}
-    </Section>
-  )
-}
-
-function StudentTimelinePanel({
-  selectedStudent,
-  timeline,
-}: {
-  selectedStudent: StudentWorklistItem | null
-  timeline: StudentTimelineItem[]
-}) {
-  return (
-    <Section
-      title="ไทม์ไลน์การดูแล"
-      description="รวมเหตุการณ์จากการมาเรียน พฤติกรรม ความเสี่ยง แผน และเยี่ยมบ้าน"
-      contentClassName="space-y-3"
-    >
-      {selectedStudent ? (
-        timeline.length > 0 ? (
-          timeline.map((item) => (
-            <article
-              key={item.id}
-              className="rounded-lg border border-border bg-card p-3 text-card-foreground"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatThaiDateTime(item.eventAt)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <StatusBadge
-                    status={getSeverityTone(item.severity)}
-                    label={getTimelineTypeLabel(item.eventType)}
-                    size="sm"
-                  />
-                </div>
-              </div>
-              {item.description ? (
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  {item.description}
-                </p>
-              ) : null}
-            </article>
-          ))
-        ) : (
-          <EmptyState
-            size="compact"
-            title="ยังไม่มีไทม์ไลน์"
-            description="เมื่อมีเหตุการณ์ใหม่ ระบบจะแสดงลำดับการดูแลของนักเรียนคนนี้"
-          />
-        )
-      ) : (
-        <EmptyState
-          title="เลือกนักเรียนเพื่อดูไทม์ไลน์"
-          description="ไทม์ไลน์ช่วยให้เห็นลำดับเหตุการณ์ก่อนตัดสินใจขั้นต่อไป"
-        />
-      )}
-    </Section>
   )
 }
 
@@ -584,8 +357,11 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
           />
 
           <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
-            <StudentNotesPanel selectedStudent={selectedStudent} notes={notes} />
-            <StudentTimelinePanel selectedStudent={selectedStudent} timeline={timeline} />
+            <StudentNotesPanel studentId={selectedStudent?.studentId ?? null} notes={notes} />
+            <StudentTimelinePanel
+              studentId={selectedStudent?.studentId ?? null}
+              timeline={timeline}
+            />
           </div>
         </div>
 

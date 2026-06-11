@@ -206,7 +206,7 @@ New or migrated dashboard routes must use the server data access layer before ad
 | Contract | File or DB object | Use |
 |---|---|---|
 | Current user context | `src/lib/server/current-user.ts` | Resolve Supabase user, role, school, profile/student id, and current semester |
-| Student care read models | `src/lib/server/student-care-read-models.ts` | Dashboard metrics, student worklist, action queue, notes, and timeline |
+| Student care read models | `src/lib/server/student-care-read-models.ts` | Dashboard metrics, student worklist, care profile, action queue, notes, and timeline |
 | Shared result envelope | `src/lib/server/action-result.ts` | `ActionResult<T>` helpers for migrated Server Actions |
 | Care workflow mutations | `src/app/actions/care.actions.ts` | Update `action_items.status` and add `student_notes` with auth, RLS, and narrow revalidation |
 | Main student worklist view | `v_student_worklist` | Identity, class, guardian, risk, action, support, flags, and 30-day attendance |
@@ -218,11 +218,20 @@ Frontend modules should prefer these functions:
 ```typescript
 getStudentCareDashboard();
 getStudentWorklist({ limit: 500 });
+getStudentCareProfile(studentId);
 getActionQueue({ limit: 12 });
+getStudentActionItems(studentId, { limit: 12 });
 getStudentTimeline(studentId);
 getStudentNotes(studentId);
 setActionItemStatus(actionItemId, "done");
 addStudentNote(formData);
+```
+
+Database type generation is now project-local:
+
+```bash
+npm run db:start
+npm run db:types
 ```
 
 The database foundation lives in `supabase/migrations/0008_ux_data_foundation.sql`. It must be applied in a Supabase preview environment before production deployment.

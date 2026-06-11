@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest"
+    "test": "vitest",
+    "supabase": "supabase",
+    "db:start": "supabase start",
+    "db:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -45,6 +48,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "jsdom": "^29.1.1",
+    "supabase": "^2.105.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.8"
