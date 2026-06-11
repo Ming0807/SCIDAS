@@ -171,7 +171,7 @@ Route Server Component
 - [ ] Wave 4: reports, notifications, settings, home-visits
   - [x] home-visits now reads real `home_visits`/`home_visit_images`.
   - [x] reports now reads `report_jobs` via `src/lib/server/report-read-models.ts` on the async Server Component.
-  - [ ] notifications remain.
+  - [x] notifications now reads real `notifications` table via `src/lib/server/notification-read-models.ts` with mark-all-read Server Action (listing + counts wired; fake filter/calendar affordances removed; filters, pagination, per-item toggle still pending).
   - [ ] settings remain.
 - [ ] Wave 5: student detail and behavior/detail pages
   - [x] student detail now reads the real care profile, open action items, notes, and timeline.

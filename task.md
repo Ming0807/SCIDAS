@@ -1,5 +1,20 @@
 ﻿# Task Progress
 
+## 2026-06-11 Notifications → Real notifications Table Data
+
+Status: done. The `/notifications` page now reads from the real `notifications` table via a shared server read model and supports marking all notifications as read through a Server Action.
+
+- [x] Added `src/lib/server/notification-read-models.ts` with `getNotifications()`, `getNotificationCounts()`, and `markAllNotificationsRead()` — queries `notifications` for the current recipient and school, returns typed `NotificationItem`/`NotificationCounts` DTOs, normalizes internal source links from `reference_type`/`reference_id`/`link` when available, and respects RLS.
+- [x] Added `src/app/actions/notifications.actions.ts` with `markAllAsReadAction()` (returns `ActionResult<{ count: number }>`) and `markAllAsReadFormAction()` (`<form action={…}>` compatible wrapper), revalidating `/notifications`.
+- [x] Converted `/notifications/page.tsx` to an async Server Component that loads real data via `getNotifications()` + `getNotificationCounts()`, shows `ErrorState` on load failure, and passes data as props to desktop/mobile components.
+- [x] Updated `DesktopNotificationList` to accept `notifications`/`totalCount` props, render real rows with type icons, Thai labels, relative time, read/unread states, empty state, and source links via `next/link`.
+- [x] Updated `DesktopNotificationSidebar` to accept `NotificationCounts`, render real type breakdown from `byType`, and use semantic tokens (`bg-primary`/`text-primary-foreground`).
+- [x] Reworked the desktop right rail from fake filter/date/calendar controls into real read-state, type breakdown, and channel status panels until URL filters/pagination are implemented.
+- [x] Fixed `text-[9px]`, `text-[10px]`, `text-[11px]`, `text-[12px]`, `text-[13px]`, `text-[14px]`, `text-[18px]`, `text-[36px]` → standard Tailwind tokens (`text-xs`, `text-sm`, `text-lg`, `text-3xl`) in all six notification components and the page header.
+- [x] Fixed `bg-[#f8fafc]` → `bg-background`, `shadow-[0_2px_10px_rgba(…)]` → `shadow-sm`, `bg-indigo-600` → `bg-primary` in touched components.
+- [x] Updated mobile notification components (`MobileNotificationProfile`, `MobileNotificationHeader`, `MobileNotificationList`) to accept real props, render real rows, and use standard typography tokens.
+- [ ] Full notification workflow (URL filters, pagination/load-more, per-item read toggle, push delivery) is not done — only listing, counts, source links, and mark-all-read are wired.
+
 ## 2026-06-11 Create Report Panel → Real report_jobs Insert
 
 Status: done. The `DesktopCreateReport` component, which displayed 4 static placeholder cards, now submits a form that inserts a real `report_jobs` row. No generation worker exists — jobs stay in `queued` status until a worker is built.
@@ -88,7 +103,7 @@ Source of truth:
 
 - [ ] Add a real report generation queue around `report_jobs` — the Create Report panel now inserts queued `report_jobs` rows via `requestReportJob()` and `reports.actions.ts`, but the generation worker, progress updates, and download artifact pipeline still need to be built.
 - [x] Add attachment upload actions that write `student_attachments`.
-- [ ] Add notification links to source records and action items.
+- [x] Add notification links to available source routes (internal source links built from `reference_type`/`reference_id`/`link` in `getNotificationSourceLink()`).
 - [ ] Add authenticated browser visual checks after pages consume real read models.
 - [x] Regenerate Supabase database types after migration `0008` is applied.
 

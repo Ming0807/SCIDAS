@@ -90,6 +90,8 @@ New files:
   - Exposes `getHomeVisitDashboard` for `/home-visits`, joining visits with student, visitor, and visit image context.
 - `src/lib/server/report-read-models.ts`
   - Exposes `getReportJobs` for `/reports`, reading `report_jobs` scoped to the current school, joining with `profiles` for requester name, generating signed download URLs for completed outputs, and returning typed `ReportJobItem` DTOs.
+- `src/lib/server/notification-read-models.ts`
+  - Exposes `getNotifications`, `getNotificationCounts`, and `markAllNotificationsRead` for `/notifications`. Queries `notifications` for the current recipient and school, joins sender profile, builds typed `NotificationItem`/`NotificationCounts` DTOs with Thai labels, and normalizes internal source links from `reference_type`/`reference_id`/`link`.
 - `src/lib/server/action-result.ts`
   - Shared `ActionResult<T>` helpers for migrated server actions.
 - `src/app/actions/care.actions.ts`
@@ -133,6 +135,7 @@ Server Components should call the read-model functions directly. Client Componen
 
 8. Notifications and Settings
    - Notifications should link to source records and student/action context.
+   - Current status: `/notifications` now reads real `notifications` table data via `src/lib/server/notification-read-models.ts` (listing, counts by type/read-state, internal source links, mark-all-read Server Action). The page is an async Server Component and no longer shows fake filter/date/calendar controls. Filters, pagination, per-item toggle, and push delivery are not yet wired.
    - Settings should use `user_dashboard_preferences` for per-user UI behavior.
 
 ## Acceptance Criteria
