@@ -72,13 +72,13 @@ New files:
 - `src/lib/server/current-user.ts`
   - Resolves Supabase user, profile/student identity, school, role, and current semester.
 - `src/lib/server/student-care-read-models.ts`
-  - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getActionQueue`, `getStudentTimeline`, and `updateActionItemStatus`.
+  - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getActionQueue`, `getStudentTimeline`, `getStudentNotes`, `createStudentNote`, and `updateActionItemStatus`.
 - `src/lib/server/home-visit-read-models.ts`
   - Exposes `getHomeVisitDashboard` for `/home-visits`, joining visits with student, visitor, and visit image context.
 - `src/lib/server/action-result.ts`
   - Shared `ActionResult<T>` helpers for migrated server actions.
 - `src/app/actions/care.actions.ts`
-  - Thin Server Action wrapper for updating action item status.
+  - Thin Server Action wrapper for updating action item status and adding student care notes.
 
 Server Components should call the read-model functions directly. Client Components should mutate through Server Actions and receive `ActionResult<T>`.
 
@@ -102,7 +102,7 @@ Server Components should call the read-model functions directly. Client Componen
 4. Support
    - Use `action_items`, `student_notes`, and `student_timeline_events`.
    - Stop duplicating notes/actions inside page-local static components.
-   - Current status: support workbench now reads `getStudentCareDashboard()` and `action_items`; notes and timeline panels are still pending.
+   - Current status: support workbench reads `getStudentCareDashboard()`, `getStudentWorklist()`, `getActionQueue()`, `getStudentNotes()`, and `getStudentTimeline()`. Users can move action items forward and add student notes from the support page. Remaining work: dedicated case creation/edit flows, evidence uploads, and richer pending/success feedback.
 
 5. IDP
    - Use timeline events for plan creation/progress and action items for review tasks.
@@ -133,11 +133,11 @@ A route is backend-ready when:
 
 ## Known Verification Gap
 
-`supabase` CLI and `psql` are not installed in the current local environment, so migration SQL cannot be applied locally from this workspace yet. Technical validation currently covers TypeScript and app build checks. Before production deployment, run:
+The user reported that `0008_ux_data_foundation.sql` was applied on 2026-06-11. `supabase` CLI and `psql` are still not installed in the current local environment, so this workspace cannot reset/push or regenerate generated database types directly. Technical validation currently covers TypeScript and app build checks. Before production deployment, run:
 
 ```bash
 supabase db reset
 supabase db push
 ```
 
-or apply the migrations in a Supabase preview project and inspect the new views and RLS policies.
+or apply the migrations in a Supabase preview project, inspect the new views/RLS policies, and regenerate `src/types/database.types.ts`.

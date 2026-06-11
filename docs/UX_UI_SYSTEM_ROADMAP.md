@@ -14,6 +14,8 @@
 
 > Update 2026-06-10 later pass: initial real-data frontend integration is now in place for `/`, `/students`, `/home-visits`, `/risk-analysis`, and `/support`. The remaining blocker for production verification is applying migration `0008_ux_data_foundation.sql` in Supabase and running authenticated visual checks.
 
+> Update 2026-06-11: the user applied migration `0008_ux_data_foundation.sql`. `/support` now connects action status changes, student notes, and care timeline to the shared backend layer. Remaining verification blockers are Supabase type regeneration and authenticated visual/data smoke checks.
+
 ## Evidence From Current Audit
 
 ### Technical Health Baseline
@@ -160,7 +162,7 @@ Route Server Component
   - [ ] behavior remains.
 - [ ] Wave 3: risk-analysis, support, development-plans
   - [x] risk-analysis overview/top-risk/recommendations now read from `v_student_worklist`.
-  - [x] support now uses a real action/support workbench backed by `getStudentCareDashboard()`.
+  - [x] support now uses a real action/support workbench backed by `getStudentCareDashboard()`, `getActionQueue()`, `getStudentNotes()`, and `getStudentTimeline()`.
   - [ ] development-plans remains.
 - [ ] Wave 4: reports, notifications, settings, home-visits
   - [x] home-visits now reads real `home_visits`/`home_visit_images`.
@@ -220,7 +222,7 @@ Route Server Component
 - support case ควรมี lifecycle: open, in progress, resolved, monitoring
 - ทีมช่วยเหลือ, current plan, notes, records ควรใช้ shared case components
 - หน้า new support ต้องใช้ form contract กลางและ action result กลาง
-- main support page now reads the real action queue and priority students; notes/timeline panels still need `student_notes` and `student_timeline_events`.
+- main support page now reads the real action queue, priority students, student notes, and care timeline. Remaining work is the dedicated case lifecycle UI, evidence upload, and richer form pending/success feedback.
 
 ### `/development-plans`
 

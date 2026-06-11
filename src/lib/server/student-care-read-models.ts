@@ -15,8 +15,10 @@ type SeverityLevel = PublicSchema["Enums"]["severity_level"]
 type GradeLevel = PublicSchema["Enums"]["grade_level"]
 type GenderType = PublicSchema["Enums"]["gender_type"]
 type StudentStatus = PublicSchema["Enums"]["student_status"]
+type UserRole = PublicSchema["Enums"]["user_role"]
 
 export type ActionItemStatus = "todo" | "in_progress" | "done" | "cancelled"
+export type StudentNoteVisibility = "team" | "private" | "leadership"
 
 type CareTable<TRow, TInsert = Partial<TRow>, TUpdate = Partial<TRow>> = {
   Row: TRow
@@ -66,6 +68,42 @@ type StudentTimelineEventRow = {
   metadata: Json
   created_at: string
   updated_at: string
+}
+
+type StudentNoteRow = {
+  id: string
+  school_id: string
+  student_id: string
+  author_id: string
+  category: string
+  body: string
+  visibility: StudentNoteVisibility
+  pinned: boolean
+  source_table: string | null
+  source_id: string | null
+  metadata: Json
+  created_at: string
+  updated_at: string
+}
+
+type StudentNoteInsert = {
+  school_id: string
+  student_id: string
+  author_id: string
+  category?: string
+  body: string
+  visibility?: StudentNoteVisibility
+  pinned?: boolean
+  source_table?: string | null
+  source_id?: string | null
+  metadata?: Json
+}
+
+type ProfileSummaryRow = {
+  id: string
+  first_name: string
+  last_name: string
+  role: UserRole
 }
 
 type StudentWorklistViewRow = {
@@ -126,6 +164,7 @@ type CareDatabase = Omit<Database, "public"> & {
   public: Omit<PublicSchema, "Tables" | "Views"> & {
     Tables: PublicSchema["Tables"] & {
       action_items: CareTable<ActionItemRow>
+      student_notes: CareTable<StudentNoteRow, StudentNoteInsert>
       student_timeline_events: CareTable<StudentTimelineEventRow>
     }
     Views: PublicSchema["Views"] & {
@@ -187,6 +226,22 @@ export type StudentTimelineItem = {
   sourceTable: string
   sourceId: string
   actorId: string | null
+}
+
+export type StudentNoteItem = {
+  id: string
+  studentId: string
+  authorId: string
+  authorName: string
+  authorRole: UserRole | null
+  category: string
+  body: string
+  visibility: StudentNoteVisibility
+  pinned: boolean
+  sourceTable: string | null
+  sourceId: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export type StudentCareDashboard = {
@@ -278,6 +333,31 @@ function mapTimelineRow(row: StudentTimelineEventRow): StudentTimelineItem {
     sourceTable: row.source_table,
     sourceId: row.source_id,
     actorId: row.actor_id,
+  }
+}
+
+function mapNoteRow(
+  row: StudentNoteRow,
+  authorsById: Map<string, ProfileSummaryRow>,
+): StudentNoteItem {
+  const author = authorsById.get(row.author_id)
+
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    authorId: row.author_id,
+    authorName: author
+      ? `${author.first_name} ${author.last_name}`.trim()
+      : "ไม่ระบุผู้บันทึก",
+    authorRole: author?.role ?? null,
+    category: row.category,
+    body: row.body,
+    visibility: row.visibility,
+    pinned: row.pinned,
+    sourceTable: row.source_table,
+    sourceId: row.source_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
 }
 
@@ -382,6 +462,100 @@ export async function getStudentTimeline(
   }
 
   return (data ?? []).map(mapTimelineRow)
+}
+
+export async function getStudentNotes(
+  studentId: string,
+  limit = 20,
+): Promise<StudentNoteItem[]> {
+  const context = await getCurrentUserContext()
+
+  if (context.role === "student" && context.studentId !== studentId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  const client = getCareClient(await createClient())
+  const { data, error } = await client
+    .from("student_notes")
+    .select("*")
+    .eq("school_id", context.schoolId)
+    .eq("student_id", studentId)
+    .order("pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const rows = data ?? []
+  const authorIds = Array.from(new Set(rows.map((row) => row.author_id)))
+  const authorsById = new Map<string, ProfileSummaryRow>()
+
+  if (authorIds.length > 0) {
+    const { data: authors, error: authorsError } = await client
+      .from("profiles")
+      .select("id, first_name, last_name, role")
+      .in("id", authorIds)
+
+    if (authorsError) {
+      throw new Error(authorsError.message)
+    }
+
+    for (const author of authors ?? []) {
+      authorsById.set(author.id, author)
+    }
+  }
+
+  return rows.map((row) => mapNoteRow(row, authorsById))
+}
+
+export async function createStudentNote(input: {
+  studentId: string
+  body: string
+  category?: string
+  visibility?: StudentNoteVisibility
+  pinned?: boolean
+}): Promise<StudentNoteItem> {
+  const context = await getCurrentUserContext()
+  assertStaffContext(context)
+
+  const body = input.body.trim()
+
+  if (!body) {
+    throw new Error("VALIDATION_ERROR")
+  }
+
+  const client = getCareClient(await createClient())
+  const { data, error } = await client
+    .from("student_notes")
+    .insert({
+      school_id: context.schoolId,
+      student_id: input.studentId,
+      author_id: context.profileId,
+      category: input.category || "general",
+      body,
+      visibility: input.visibility ?? "team",
+      pinned: input.pinned ?? false,
+    })
+    .select("*")
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const { data: author, error: authorError } = await client
+    .from("profiles")
+    .select("id, first_name, last_name, role")
+    .eq("id", context.profileId)
+    .single()
+
+  if (authorError) {
+    throw new Error(authorError.message)
+  }
+
+  return mapNoteRow(data, new Map([[author.id, author]]))
 }
 
 export async function getStudentCareDashboard(): Promise<StudentCareDashboard> {

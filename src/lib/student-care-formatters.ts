@@ -117,3 +117,23 @@ export function formatThaiShortDate(value?: string | null) {
     year: "2-digit",
   }).format(date)
 }
+
+export function formatThaiDateTime(value?: string | null) {
+  if (!value) {
+    return "-"
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return "-"
+  }
+
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date)
+}

@@ -206,9 +206,9 @@ New or migrated dashboard routes must use the server data access layer before ad
 | Contract | File or DB object | Use |
 |---|---|---|
 | Current user context | `src/lib/server/current-user.ts` | Resolve Supabase user, role, school, profile/student id, and current semester |
-| Student care read models | `src/lib/server/student-care-read-models.ts` | Dashboard metrics, student worklist, action queue, and timeline |
+| Student care read models | `src/lib/server/student-care-read-models.ts` | Dashboard metrics, student worklist, action queue, notes, and timeline |
 | Shared result envelope | `src/lib/server/action-result.ts` | `ActionResult<T>` helpers for migrated Server Actions |
-| Action queue mutation | `src/app/actions/care.actions.ts` | Update `action_items.status` with auth, RLS, and narrow revalidation |
+| Care workflow mutations | `src/app/actions/care.actions.ts` | Update `action_items.status` and add `student_notes` with auth, RLS, and narrow revalidation |
 | Main student worklist view | `v_student_worklist` | Identity, class, guardian, risk, action, support, flags, and 30-day attendance |
 | Activity feed table | `student_timeline_events` | Unified timeline for student detail, support, risk, IDP, and home visits |
 | Cross-module task table | `action_items` | Owner, due date, priority, status, and source record for follow-up tasks |
@@ -220,7 +220,9 @@ getStudentCareDashboard();
 getStudentWorklist({ limit: 500 });
 getActionQueue({ limit: 12 });
 getStudentTimeline(studentId);
+getStudentNotes(studentId);
 setActionItemStatus(actionItemId, "done");
+addStudentNote(formData);
 ```
 
 The database foundation lives in `supabase/migrations/0008_ux_data_foundation.sql`. It must be applied in a Supabase preview environment before production deployment.
