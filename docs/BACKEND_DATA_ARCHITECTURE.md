@@ -129,7 +129,7 @@ Server Components should call the read-model functions directly. Client Componen
 
 7. Reports
    - Use `report_jobs` for queued/running/completed/failed state.
-   - Current status: `src/lib/server/report-read-models.ts` provides `getReportJobs()` that reads `report_jobs` scoped to the current school, joins with `profiles` for the requester name, maps to a typed `ReportJobItem` DTO, and generates signed download URLs for completed jobs with `output_bucket`/`output_path` set. `/reports/page.tsx` is now an async Server Component that loads real job data and passes it to `DesktopLatestReports` (table with status badges, empty state, context-aware actions) and `MobileDownloadReports` (downloadable report cards with signed links and empty state).
+   - Current status: `src/lib/server/report-read-models.ts` provides `getReportJobs()` that reads `report_jobs` scoped to the current school, joins with `profiles` for the requester name, maps to a typed `ReportJobItem` DTO, and generates signed download URLs for completed jobs with `output_bucket`/`output_path` set. `/reports/page.tsx` is now an async Server Component that loads real job data and passes it to `DesktopLatestReports` (table with status badges, empty state, context-aware actions) and `MobileDownloadReports` (downloadable report cards with signed links and empty state). `DesktopCreateReport` now uses a `useActionState` Server Action to insert queued `report_jobs` rows, but a real generation worker and artifact pipeline are still pending.
 
 8. Notifications and Settings
    - Notifications should link to source records and student/action context.

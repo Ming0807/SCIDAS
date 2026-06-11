@@ -1,4 +1,4 @@
-import type { Database } from "@/types/database.types"
+import type { Database, Json } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
 import { getCurrentUserContext } from "./current-user"
@@ -49,8 +49,16 @@ const knownReportTypeLabels: Record<string, string> = {
   intervention_summary: "รายงานการช่วยเหลือ",
 }
 
+export type ReportJobType = keyof typeof knownReportTypeLabels
+
+export const reportJobTypes = Object.keys(knownReportTypeLabels) as ReportJobType[]
+
 function getReportTypeLabel(reportType: string): string {
   return knownReportTypeLabels[reportType] ?? reportType.replace(/_/g, " ")
+}
+
+function isReportJobType(reportType: string): reportType is ReportJobType {
+  return reportJobTypes.includes(reportType as ReportJobType)
 }
 
 const signedUrlSeconds = 10 * 60
@@ -67,6 +75,54 @@ function toReportJobStatus(status: string | null): ReportJobStatus {
   return validStatuses.includes(status as ReportJobStatus)
     ? (status as ReportJobStatus)
     : "queued"
+}
+
+export type RequestReportJobInput = {
+  reportType: string
+  title: string
+  filters?: Record<string, unknown>
+}
+
+export async function requestReportJob(
+  input: RequestReportJobInput,
+): Promise<{ id: string }> {
+  const { reportType, title, filters } = input
+  const normalizedReportType = reportType.trim()
+
+  if (!normalizedReportType || !isReportJobType(normalizedReportType)) {
+    throw new Error("VALIDATION_ERROR:reportType")
+  }
+
+  if (!title || !title.trim()) {
+    throw new Error("VALIDATION_ERROR:title")
+  }
+
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("UNAUTHORIZED")
+  }
+
+  const client = await createClient()
+
+  const { data, error } = await client
+    .from("report_jobs")
+    .insert({
+      school_id: context.schoolId,
+      requested_by: context.profileId,
+      report_type: normalizedReportType,
+      title: title.trim(),
+      filters: (filters as Json) ?? {},
+      status: "queued",
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return { id: data.id }
 }
 
 export async function getReportJobs(limit = 20): Promise<ReportJobItem[]> {

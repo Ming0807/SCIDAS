@@ -1,5 +1,14 @@
 ﻿# Task Progress
 
+## 2026-06-11 Create Report Panel → Real report_jobs Insert
+
+Status: done. The `DesktopCreateReport` component, which displayed 4 static placeholder cards, now submits a form that inserts a real `report_jobs` row. No generation worker exists — jobs stay in `queued` status until a worker is built.
+
+- [x] Added `requestReportJob()` mutation in `src/lib/server/report-read-models.ts` with `getCurrentUserContext()` auth, validation, and `report_jobs` insert.
+- [x] Created `src/app/actions/reports.actions.ts` with `requestReportJobActionState` — a `useActionState`-compatible Server Action returning `ActionResult<{ id: string }>`, revalidating `/reports`.
+- [x] Converted `DesktopCreateReport` to a `"use client"` component with radio-card report type selection (4 types), editable title input, submit button with pending/error/success states.
+- [x] Fixed `text-[14px]` → `text-sm`, `text-[11px]` → `text-xs` in the Create Report panel.
+
 ## 2026-06-10 Backend Data Foundation Pivot
 
 Status: active. The previous page-by-page UX/UI migration is paused temporarily while the database and backend flow are made reliable enough for real frontend usage.
@@ -77,7 +86,7 @@ Source of truth:
 
 ### P1 Next Tasks
 
-- [ ] Add a real report generation queue around `report_jobs`.
+- [ ] Add a real report generation queue around `report_jobs` — the Create Report panel now inserts queued `report_jobs` rows via `requestReportJob()` and `reports.actions.ts`, but the generation worker, progress updates, and download artifact pipeline still need to be built.
 - [x] Add attachment upload actions that write `student_attachments`.
 - [ ] Add notification links to source records and action items.
 - [ ] Add authenticated browser visual checks after pages consume real read models.
