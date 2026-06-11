@@ -88,6 +88,8 @@ New files:
   - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getStudentCareProfile`, `getActionQueue`, `getStudentActionItems`, `getStudentTimeline`, `getStudentNotes`, `getStudentAttachments`, `createStudentNote`, `uploadStudentAttachment`, and `updateActionItemStatus`.
 - `src/lib/server/home-visit-read-models.ts`
   - Exposes `getHomeVisitDashboard` for `/home-visits`, joining visits with student, visitor, and visit image context.
+- `src/lib/server/report-read-models.ts`
+  - Exposes `getReportJobs` for `/reports`, reading `report_jobs` scoped to the current school, joining with `profiles` for requester name, generating signed download URLs for completed outputs, and returning typed `ReportJobItem` DTOs.
 - `src/lib/server/action-result.ts`
   - Shared `ActionResult<T>` helpers for migrated server actions.
 - `src/app/actions/care.actions.ts`
@@ -127,6 +129,7 @@ Server Components should call the read-model functions directly. Client Componen
 
 7. Reports
    - Use `report_jobs` for queued/running/completed/failed state.
+   - Current status: `src/lib/server/report-read-models.ts` provides `getReportJobs()` that reads `report_jobs` scoped to the current school, joins with `profiles` for the requester name, maps to a typed `ReportJobItem` DTO, and generates signed download URLs for completed jobs with `output_bucket`/`output_path` set. `/reports/page.tsx` is now an async Server Component that loads real job data and passes it to `DesktopLatestReports` (table with status badges, empty state, context-aware actions) and `MobileDownloadReports` (downloadable report cards with signed links and empty state).
 
 8. Notifications and Settings
    - Notifications should link to source records and student/action context.

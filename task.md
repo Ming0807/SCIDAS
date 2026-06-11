@@ -60,6 +60,10 @@ Source of truth:
 ### P0 Next Tasks
 
 - [ ] Apply migration `0008_ux_data_foundation.sql` in a Supabase preview project and fix any SQL/RLS issues found there.
+- [x] Added `src/lib/server/report-read-models.ts` with `getReportJobs()` that reads `report_jobs` for the current school and returns typed `ReportJobItem` DTOs with signed download URLs for completed jobs.
+- [x] Updated `/reports/page.tsx` to async Server Component loading real `report_jobs` data.
+- [x] Updated `DesktopLatestReports` and `MobileDownloadReports` to render real job rows with status badges, empty state, and download links.
+- [x] Fixed typography (text-[10px]/text-[11px] → text-xs/text-sm) in touched components.
 - [x] Replace dashboard static components with props from `getStudentCareDashboard()`.
 - [x] Replace `/students` route-local mock data with `getStudentWorklist()`.
 - [x] Replace mock `/home-visits` cards with real `home_visits` + `home_visit_images`.

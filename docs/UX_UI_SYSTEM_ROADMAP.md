@@ -18,6 +18,8 @@
 
 > Update 2026-06-11 evidence pass: migration `0009_identity_evidence_flow.sql` hardens OAuth profile creation and adds storage policies for `documents/student-attachments/<student_id>/...`. `/support` and `/students/[id]` now share a reusable evidence attachment panel backed by `student_attachments`, including inline pending, success, and error feedback. Remaining UX work is wiring concrete home-visit/report detail flows.
 
+> Update 2026-06-11 reports pass: `/reports` now reads `report_jobs` through `src/lib/server/report-read-models.ts`. `DesktopLatestReports` and `MobileDownloadReports` render real job data with status badges, empty state, and signed download URLs for completed outputs. The page itself is now an async Server Component.
+
 ## Evidence From Current Audit
 
 ### Technical Health Baseline
@@ -168,7 +170,9 @@ Route Server Component
   - [ ] development-plans remains.
 - [ ] Wave 4: reports, notifications, settings, home-visits
   - [x] home-visits now reads real `home_visits`/`home_visit_images`.
-  - [ ] reports, notifications, and settings remain.
+  - [x] reports now reads `report_jobs` via `src/lib/server/report-read-models.ts` on the async Server Component.
+  - [ ] notifications remain.
+  - [ ] settings remain.
 - [ ] Wave 5: student detail and behavior/detail pages
   - [x] student detail now reads the real care profile, open action items, notes, and timeline.
   - [ ] behavior/detail pages remain.

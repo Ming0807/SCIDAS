@@ -1,11 +1,12 @@
 import React from "react"
+import type { ReportJobItem } from "@/lib/server/report-read-models"
 import { MobileReportHeader } from "./mobile-report-header"
 import { MobileSummaryCards } from "./mobile-summary-cards"
 import { MobileTrendChart } from "./mobile-trend-chart"
 import { MobileCategoryReports } from "./mobile-category-reports"
 import { MobileDownloadReports } from "./mobile-download-reports"
 
-export function MobileReportProfile() {
+export function MobileReportProfile({ jobs }: { jobs: ReportJobItem[] }) {
   return (
     <div className="bg-slate-50 min-h-screen relative pb-6">
       <MobileReportHeader />
@@ -14,7 +15,7 @@ export function MobileReportProfile() {
         <MobileSummaryCards />
         <MobileTrendChart />
         <MobileCategoryReports />
-        <MobileDownloadReports />
+        <MobileDownloadReports jobs={jobs} />
       </div>
 
     </div>
