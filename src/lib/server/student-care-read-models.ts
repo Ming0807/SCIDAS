@@ -21,6 +21,7 @@ export type ActionItemStatus = "todo" | "in_progress" | "done" | "cancelled"
 export type StudentNoteVisibility = "team" | "private" | "leadership"
 
 type ActionItemRow = PublicTables["action_items"]["Row"]
+type StudentAttachmentRow = PublicTables["student_attachments"]["Row"]
 type StudentTimelineEventRow = PublicTables["student_timeline_events"]["Row"]
 type StudentNoteRow = PublicTables["student_notes"]["Row"]
 type ProfileSummaryRow = Pick<
@@ -100,6 +101,23 @@ export type StudentNoteItem = {
   updatedAt: string
 }
 
+export type StudentAttachmentItem = {
+  id: string
+  studentId: string
+  uploadedBy: string | null
+  bucket: string
+  storagePath: string
+  fileName: string
+  mimeType: string | null
+  fileSize: number | null
+  referenceTable: string | null
+  referenceId: string | null
+  isPrivate: boolean
+  downloadUrl: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export type StudentCareDashboard = {
   currentSemesterId: string | null
   metrics: {
@@ -161,6 +179,15 @@ type ActionQueueOptions = {
 
 const actionStatuses: ActionItemStatus[] = ["todo", "in_progress", "done", "cancelled"]
 const noteVisibilities: StudentNoteVisibility[] = ["team", "private", "leadership"]
+const attachmentWriterRoles: UserRole[] = [
+  "admin",
+  "homeroom_teacher",
+  "subject_teacher",
+  "counselor",
+]
+const maxStudentAttachmentSizeBytes = 10 * 1024 * 1024
+const studentAttachmentBucket = "documents"
+const studentAttachmentSignedUrlSeconds = 10 * 60
 
 function toActionItemStatus(status: string | null): ActionItemStatus {
   return actionStatuses.includes(status as ActionItemStatus)
@@ -319,6 +346,28 @@ function mapNoteRow(
   }
 }
 
+function mapAttachmentRow(
+  row: StudentAttachmentRow,
+  downloadUrl: string | null,
+): StudentAttachmentItem {
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    uploadedBy: row.uploaded_by,
+    bucket: row.bucket,
+    storagePath: row.storage_path,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    fileSize: row.file_size,
+    referenceTable: row.reference_table,
+    referenceId: row.reference_id,
+    isPrivate: row.is_private,
+    downloadUrl,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
 function assertStaffContext(
   context: CurrentUserContext,
 ): asserts context is CurrentUserContext & { profileId: string; studentId: null } {
@@ -327,10 +376,67 @@ function assertStaffContext(
   }
 }
 
+function assertAttachmentWriterContext(
+  context: CurrentUserContext,
+): asserts context is CurrentUserContext & { profileId: string; studentId: null; role: UserRole } {
+  assertStaffContext(context)
+
+  if (!attachmentWriterRoles.includes(context.role as UserRole)) {
+    throw new Error("FORBIDDEN")
+  }
+}
+
 function assertStudentAccess(context: CurrentUserContext, studentId: string) {
   if (context.role === "student" && context.studentId !== studentId) {
     throw new Error("FORBIDDEN")
   }
+}
+
+function sanitizeAttachmentFileName(fileName: string) {
+  const normalized = fileName
+    .normalize("NFKC")
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  const fallback = normalized || "attachment"
+
+  if (fallback.length <= 140) {
+    return fallback
+  }
+
+  const extensionIndex = fallback.lastIndexOf(".")
+
+  if (extensionIndex > 0 && extensionIndex >= fallback.length - 12) {
+    const extension = fallback.slice(extensionIndex)
+    return `${fallback.slice(0, 140 - extension.length)}${extension}`
+  }
+
+  return fallback.slice(0, 140)
+}
+
+function normalizeReferenceTable(value?: string | null) {
+  const normalized = value?.trim()
+
+  if (!normalized) {
+    return null
+  }
+
+  return normalized.replace(/[^a-zA-Z0-9_:-]/g, "_").slice(0, 80)
+}
+
+function normalizeReferenceId(value?: string | null) {
+  const normalized = value?.trim()
+
+  if (!normalized) {
+    return null
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    normalized,
+  )
+    ? normalized
+    : null
 }
 
 export async function getStudentWorklist(
@@ -556,6 +662,125 @@ export async function getStudentNotes(
   }
 
   return rows.map((row) => mapNoteRow(row, authorsById))
+}
+
+export async function getStudentAttachments(
+  studentId: string,
+  limit = 12,
+): Promise<StudentAttachmentItem[]> {
+  const context = await getCurrentUserContext()
+  assertStudentAccess(context, studentId)
+
+  const client = await createClient()
+  const { data, error } = await client
+    .from("student_attachments")
+    .select("*")
+    .eq("school_id", context.schoolId)
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return Promise.all(
+    (data ?? []).map(async (row) => {
+      const { data: signedData } = await client.storage
+        .from(row.bucket)
+        .createSignedUrl(row.storage_path, studentAttachmentSignedUrlSeconds)
+
+      return mapAttachmentRow(row, signedData?.signedUrl ?? null)
+    }),
+  )
+}
+
+export async function uploadStudentAttachment(input: {
+  studentId: string
+  file: File
+  referenceTable?: string | null
+  referenceId?: string | null
+  isPrivate?: boolean
+}): Promise<StudentAttachmentItem> {
+  const context = await getCurrentUserContext()
+  assertAttachmentWriterContext(context)
+
+  if (!input.studentId) {
+    throw new Error("VALIDATION_ERROR")
+  }
+
+  if (!input.file || input.file.size <= 0) {
+    throw new Error("ATTACHMENT_FILE_REQUIRED")
+  }
+
+  if (input.file.size > maxStudentAttachmentSizeBytes) {
+    throw new Error("ATTACHMENT_FILE_TOO_LARGE")
+  }
+
+  const client = await createClient()
+  const { data: student, error: studentError } = await client
+    .from("students")
+    .select("id")
+    .eq("school_id", context.schoolId)
+    .eq("id", input.studentId)
+    .maybeSingle()
+
+  if (studentError) {
+    throw new Error(studentError.message)
+  }
+
+  if (!student) {
+    throw new Error("NOT_FOUND")
+  }
+
+  const fileName = sanitizeAttachmentFileName(input.file.name)
+  const mimeType = input.file.type || "application/octet-stream"
+  const storagePath = `student-attachments/${input.studentId}/${globalThis.crypto.randomUUID()}-${fileName}`
+  const fileBuffer = await input.file.arrayBuffer()
+  const { error: uploadError } = await client.storage
+    .from(studentAttachmentBucket)
+    .upload(storagePath, fileBuffer, {
+      cacheControl: "3600",
+      contentType: mimeType,
+      upsert: false,
+    })
+
+  if (uploadError) {
+    throw new Error(uploadError.message)
+  }
+
+  const { data, error } = await client
+    .from("student_attachments")
+    .insert({
+      school_id: context.schoolId,
+      student_id: input.studentId,
+      uploaded_by: context.profileId,
+      bucket: studentAttachmentBucket,
+      storage_path: storagePath,
+      file_name: fileName,
+      mime_type: mimeType,
+      file_size: input.file.size,
+      reference_table: normalizeReferenceTable(input.referenceTable),
+      reference_id: normalizeReferenceId(input.referenceId),
+      is_private: input.isPrivate ?? true,
+      metadata: {
+        original_name: input.file.name,
+        uploaded_via: "student_care_panel",
+      },
+    })
+    .select("*")
+    .single()
+
+  if (error) {
+    await client.storage.from(studentAttachmentBucket).remove([storagePath])
+    throw new Error(error.message)
+  }
+
+  const { data: signedData } = await client.storage
+    .from(data.bucket)
+    .createSignedUrl(data.storage_path, studentAttachmentSignedUrlSeconds)
+
+  return mapAttachmentRow(data, signedData?.signedUrl ?? null)
 }
 
 export async function createStudentNote(input: {

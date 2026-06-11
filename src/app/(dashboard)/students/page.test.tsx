@@ -63,6 +63,7 @@ vi.mock("@/lib/server/student-care-read-models", () => ({
       sourceId: "SR001",
     },
   ]),
+  getStudentAttachments: vi.fn(async () => []),
   getStudentNotes: vi.fn(async () => []),
   getStudentTimeline: vi.fn(async () => []),
   getStudentWorklist: vi.fn(async () => [
@@ -116,6 +117,7 @@ describe("Students Module", () => {
       expect(screen.getByRole("heading", { name: "งานดูแลของนักเรียน" })).toBeDefined()
       expect(screen.getByRole("heading", { name: "บันทึกทีมดูแล" })).toBeDefined()
       expect(screen.getByRole("heading", { name: "ไทม์ไลน์การดูแล" })).toBeDefined()
+      expect(screen.getByRole("heading", { name: "หลักฐานและไฟล์แนบ" })).toBeDefined()
       expect(screen.getByText("ติดตามผลการดูแล")).toBeDefined()
     })
   })

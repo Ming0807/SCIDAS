@@ -13,7 +13,9 @@
 
 > **Current planning note (2026-06-10):** UX/UI, component architecture, route flow, and documentation cleanup are now tracked in [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md). Design-system rules live in [frontend.md](./frontend.md). Some architecture sections below still reflect older Next.js 15 assumptions and must be reconciled with the current Next.js 16.2.7 app before implementation.
 
-> **Backend data foundation note (2026-06-10):** Real frontend integration is now tracked in [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md). The required database migration is `supabase/migrations/0008_ux_data_foundation.sql`.
+> **Backend data foundation note (2026-06-11):** Real frontend integration is now tracked in [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md). The active database migrations for this phase are `supabase/migrations/0008_ux_data_foundation.sql` and `supabase/migrations/0009_identity_evidence_flow.sql`.
+
+> **AI handoff note:** Follow-up agents should read [AI_HANDOFF.md](./AI_HANDOFF.md) first and must not commit or push.
 
 ---
 
@@ -418,6 +420,7 @@ System Settings     │  ✅   │    ❌    │   ❌     │    ❌     │   
 | [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | แบบจำลองฐานข้อมูลและ ER Diagram |
 | [API_SPECIFICATION.md](./API_SPECIFICATION.md) | ข้อกำหนด API และ Server Actions |
 | [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) | สถาปัตยกรรม Component และ Design System |
+| [AI_HANDOFF.md](./AI_HANDOFF.md) | Guardrails, required reading, verification checklist, and starter prompt for follow-up AI agents |
 | [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md) | แผนปรับ UX/UI, component reuse, navigation, layout, flow และเอกสารให้เป็นระบบ |
 | [frontend.md](./frontend.md) | กฎ design system, token usage, component contracts, และ banned UI patterns สำหรับ migration |
 | [USER_GUIDE.md](./USER_GUIDE.md) | คู่มือการใช้งานระบบ |

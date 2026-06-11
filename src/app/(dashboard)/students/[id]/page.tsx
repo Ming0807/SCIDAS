@@ -14,6 +14,7 @@ import {
 
 import {
   ActionStatusControls,
+  StudentAttachmentsPanel,
   StudentNotesPanel,
   StudentTimelinePanel,
 } from "@/components/care"
@@ -37,10 +38,12 @@ import {
 } from "@/lib/student-care-formatters"
 import {
   getStudentActionItems,
+  getStudentAttachments,
   getStudentCareProfile,
   getStudentNotes,
   getStudentTimeline,
   type ActionQueueItem,
+  type StudentAttachmentItem,
   type StudentCareProfile,
   type StudentNoteItem,
   type StudentTimelineItem,
@@ -181,20 +184,23 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
   let actionItems: ActionQueueItem[] = []
   let notes: StudentNoteItem[] = []
   let timeline: StudentTimelineItem[] = []
+  let attachments: StudentAttachmentItem[] = []
   let loadError: string | null = null
 
   try {
-    const [profileData, actionData, notesData, timelineData] = await Promise.all([
+    const [profileData, actionData, notesData, timelineData, attachmentData] = await Promise.all([
       getStudentCareProfile(id),
       getStudentActionItems(id, { limit: 12 }),
       getStudentNotes(id, 8),
       getStudentTimeline(id, 12),
+      getStudentAttachments(id, 10),
     ])
 
     profile = profileData
     actionItems = actionData
     notes = notesData
     timeline = timelineData
+    attachments = attachmentData
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown student profile error"
   }
@@ -384,6 +390,13 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
 
         <div className="flex min-w-0 flex-col gap-6">
           <StudentTimelinePanel studentId={profile.studentId} timeline={timeline} />
+
+          <StudentAttachmentsPanel
+            studentId={profile.studentId}
+            attachments={attachments}
+            referenceTable="students"
+            referenceId={profile.studentId}
+          />
 
           <Section
             variant="surface"

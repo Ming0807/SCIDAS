@@ -16,6 +16,8 @@
 
 > Update 2026-06-11: the user applied migration `0008_ux_data_foundation.sql`. Supabase CLI is now available as a project dev dependency, local Supabase start applies migrations `0001` through `0008`, and generated database types are refreshed. `/support` and `/students/[id]` now connect action status changes, student notes, and care timeline to the shared backend layer. Remaining verification blocker: authenticated visual/data smoke checks against a real session.
 
+> Update 2026-06-11 evidence pass: migration `0009_identity_evidence_flow.sql` hardens OAuth profile creation and adds storage policies for `documents/student-attachments/<student_id>/...`. `/support` and `/students/[id]` now share a reusable evidence attachment panel backed by `student_attachments`, including inline pending, success, and error feedback. Remaining UX work is wiring concrete home-visit/report detail flows.
+
 ## Evidence From Current Audit
 
 ### Technical Health Baseline
@@ -193,7 +195,7 @@ Route Server Component
 - filter ควรอยู่ใน `FilterBar`: done
 - row action ต้องชัด: view, edit, support, risk
 - student profile panel ควรแยกเป็น reusable `StudentIdentity` และ `StudentSnapshot`
-- `/students/[id]` now uses shared care components for notes, timeline, and action status controls; remaining detail work should add evidence, academic/attendance drilldowns, and edit flows without reintroducing mock tabs.
+- `/students/[id]` now also includes the shared evidence attachment panel; remaining detail work should add academic/attendance drilldowns and edit flows without reintroducing mock tabs.
 
 ### `/attendance`
 
@@ -225,7 +227,7 @@ Route Server Component
 - support case ควรมี lifecycle: open, in progress, resolved, monitoring
 - ทีมช่วยเหลือ, current plan, notes, records ควรใช้ shared case components
 - หน้า new support ต้องใช้ form contract กลางและ action result กลาง
-- main support page now reads the real action queue, priority students, student notes, and care timeline. Remaining work is the dedicated case lifecycle UI, evidence upload, and richer form pending/success feedback.
+- main support page now reads the real action queue, priority students, student notes, care timeline, and evidence attachments. Remaining work is the dedicated case lifecycle UI and richer form pending/success feedback.
 
 ### `/development-plans`
 
@@ -238,7 +240,7 @@ Route Server Component
 - ต้องมี visit status, next visit, attachment/image state, privacy warning
 - mobile ต้องเหมาะกับครูที่กรอกภาคสนาม
 - form ควรแยกเป็น steps หรือ sections ที่สั้นและตรวจง่าย
-- list/gallery now reads real `home_visits` and `home_visit_images`; generic `student_attachments` evidence flow remains.
+- list/gallery now reads real `home_visits` and `home_visit_images`; the generic `student_attachments` upload flow is available and should be wired into concrete visit detail/edit screens next.
 
 ### `/reports`
 

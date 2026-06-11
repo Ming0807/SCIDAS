@@ -27,6 +27,8 @@ Source of truth:
 - [x] Added Supabase CLI as a project dev dependency and verified `npm run db:types`.
 - [x] Fixed local Supabase `project_id` to `scidas-local`, then `npx supabase start` applied migrations `0001` through `0008` locally.
 - [x] Regenerated `src/types/database.types.ts` from the local database after migration `0008`.
+- [x] Validate migration `0009_identity_evidence_flow.sql` with local Supabase reset.
+- [ ] Validate migration `0009_identity_evidence_flow.sql` with preview/project push.
 - [ ] Production/preview data smoke with an authenticated dashboard user is still required.
 
 ### 2026-06-10 Real Frontend Integration Pass
@@ -40,7 +42,20 @@ Source of truth:
 - [x] Connected `/support` notes and timeline panels to `student_notes` and `student_timeline_events`, including add-note and action-status Server Actions.
 - [x] Replaced `/students/[id]` placeholder tabs with a real student care profile backed by `v_current_student_directory`, `v_student_worklist`, `action_items`, `student_notes`, and `student_timeline_events`.
 - [x] Extracted reusable care UI components in `src/components/care` for action status controls, note forms, notes panels, and timeline panels.
+- [x] Added the initial evidence upload/read flow using Supabase Storage `documents` plus `student_attachments`, with reusable care attachment components on `/students/[id]` and `/support`.
 - [x] Updated the Students page test to await the async Server Component and mock the student worklist read model.
+
+### 2026-06-11 Identity And Evidence Flow Pass
+
+- [x] Added migration `0009_identity_evidence_flow.sql` to harden OAuth profile creation without editing the already-applied `0003` migration.
+- [x] Added `documents` bucket storage policies for `student-attachments/<student_id>/...` paths and tightened `student_attachments` table policies.
+- [x] Added `getStudentAttachments()` and `uploadStudentAttachment()` to the student care DAL with file validation, storage cleanup on registry failure, and signed download URLs.
+- [x] Added care Server Action wrappers for attachment uploads and revalidation of support, student, home-visit, and report surfaces.
+- [x] Added reusable `StudentAttachmentForm` and `StudentAttachmentsPanel` components.
+- [x] Increased the Next.js Server Action body limit to `12mb` while the app validates student evidence files at 10 MB.
+- [x] Add upload pending/success/error client feedback around the attachment form.
+- [x] Added `docs/AI_HANDOFF.md` with required reading, guardrails, verification checklist, and a starter prompt for follow-up AI agents that must not commit or push.
+- [ ] Wire the same attachment panel into concrete home-visit/report detail flows when those detail routes exist.
 
 ### P0 Next Tasks
 
@@ -52,13 +67,14 @@ Source of truth:
 - [x] Connect `/support` actions to `action_items`.
 - [x] Connect `/support` notes and timeline panels to `student_notes` and `student_timeline_events`.
 - [x] Connect `/students/[id]` to the shared care profile, notes, timeline, and action item read models.
-- [ ] Add generic evidence upload flow using `student_attachments` for support/home-visit/report evidence.
+- [x] Add generic evidence upload flow using `student_attachments` for support/student detail evidence.
+- [ ] Extend evidence upload to concrete home-visit/report detail records when those flows are migrated.
 - [ ] Convert migrated mutations to `ActionResult<T>` and verify auth/authorization inside every action.
 
 ### P1 Next Tasks
 
 - [ ] Add a real report generation queue around `report_jobs`.
-- [ ] Add attachment upload actions that write `student_attachments`.
+- [x] Add attachment upload actions that write `student_attachments`.
 - [ ] Add notification links to source records and action items.
 - [ ] Add authenticated browser visual checks after pages consume real read models.
 - [x] Regenerate Supabase database types after migration `0008` is applied.

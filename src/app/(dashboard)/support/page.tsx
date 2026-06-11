@@ -9,6 +9,7 @@ import {
 
 import {
   ActionStatusControls,
+  StudentAttachmentsPanel,
   StudentNotesPanel,
   StudentTimelinePanel,
 } from "@/components/care"
@@ -31,12 +32,14 @@ import {
 } from "@/lib/student-care-formatters"
 import {
   getActionQueue,
+  getStudentAttachments,
   getStudentCareDashboard,
   getStudentNotes,
   getStudentTimeline,
   getStudentWorklist,
   type ActionQueueItem,
   type StudentCareDashboard,
+  type StudentAttachmentItem,
   type StudentNoteItem,
   type StudentTimelineItem,
   type StudentWorklistItem,
@@ -249,13 +252,15 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
     null
   let notes: StudentNoteItem[] = []
   let timeline: StudentTimelineItem[] = []
+  let attachments: StudentAttachmentItem[] = []
   let detailError: string | null = null
 
   if (selectedStudent) {
     try {
-      ;[notes, timeline] = await Promise.all([
+      ;[notes, timeline, attachments] = await Promise.all([
         getStudentNotes(selectedStudent.studentId, 8),
         getStudentTimeline(selectedStudent.studentId, 8),
+        getStudentAttachments(selectedStudent.studentId, 8),
       ])
     } catch (error) {
       detailError = error instanceof Error ? error.message : "Unknown student care detail error"
@@ -363,6 +368,12 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
               timeline={timeline}
             />
           </div>
+
+          <StudentAttachmentsPanel
+            studentId={selectedStudent?.studentId ?? null}
+            attachments={attachments}
+            referenceTable="support_workbench"
+          />
         </div>
 
         <section className="flex min-w-0 flex-col gap-3">

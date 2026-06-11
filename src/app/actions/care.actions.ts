@@ -6,6 +6,7 @@ import {
   type ActionItemStatus,
   createStudentNote,
   type StudentNoteVisibility,
+  uploadStudentAttachment,
   updateActionItemStatus,
 } from "@/lib/server/student-care-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
@@ -134,4 +135,91 @@ export async function addStudentNote(
 
 export async function addStudentNoteFormAction(formData: FormData): Promise<void> {
   await addStudentNote(formData)
+}
+
+export async function addStudentAttachment(
+  formData: FormData,
+): Promise<ActionResult<{ id: string; studentId: string }>> {
+  const studentId = String(formData.get("studentId") ?? "")
+  const referenceTable = String(formData.get("referenceTable") ?? "")
+  const referenceId = String(formData.get("referenceId") ?? "")
+  const fileValue = formData.get("file")
+
+  if (!studentId) {
+    return actionFail("VALIDATION_ERROR", "Missing student id")
+  }
+
+  if (!(fileValue instanceof File) || fileValue.size <= 0) {
+    return actionFail("VALIDATION_ERROR", "Attachment file is required", {
+      fieldErrors: { file: ["กรุณาเลือกไฟล์หลักฐาน"] },
+    })
+  }
+
+  try {
+    const attachment = await uploadStudentAttachment({
+      studentId,
+      file: fileValue,
+      referenceTable,
+      referenceId,
+      isPrivate: formData.getAll("isPrivate").includes("on"),
+    })
+
+    revalidatePath("/support")
+    revalidatePath("/students")
+    revalidatePath(`/students/${studentId}`)
+    revalidatePath("/home-visits")
+    revalidatePath("/reports")
+
+    return actionOk("Attachment uploaded", {
+      data: { id: attachment.id, studentId: attachment.studentId },
+      revalidated: [
+        "/support",
+        "/students",
+        `/students/${studentId}`,
+        "/home-visits",
+        "/reports",
+      ],
+    })
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "UNAUTHORIZED") {
+        return actionFail("UNAUTHORIZED", "Please sign in again")
+      }
+
+      if (error.message === "FORBIDDEN") {
+        return actionFail("FORBIDDEN", "You do not have permission to upload attachments")
+      }
+
+      if (error.message === "NOT_FOUND") {
+        return actionFail("NOT_FOUND", "Student was not found")
+      }
+
+      if (error.message === "ATTACHMENT_FILE_REQUIRED") {
+        return actionFail("VALIDATION_ERROR", "Attachment file is required", {
+          fieldErrors: { file: ["กรุณาเลือกไฟล์หลักฐาน"] },
+        })
+      }
+
+      if (error.message === "ATTACHMENT_FILE_TOO_LARGE") {
+        return actionFail("VALIDATION_ERROR", "Attachment file is too large", {
+          fieldErrors: { file: ["ไฟล์ต้องมีขนาดไม่เกิน 10 MB"] },
+        })
+      }
+
+      return actionFail("INTERNAL_ERROR", error.message)
+    }
+
+    return actionFail("INTERNAL_ERROR", "Unexpected attachment upload error")
+  }
+}
+
+export async function addStudentAttachmentActionState(
+  _previousState: ActionResult<{ id: string; studentId: string }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ id: string; studentId: string }>> {
+  return addStudentAttachment(formData)
+}
+
+export async function addStudentAttachmentFormAction(formData: FormData): Promise<void> {
+  await addStudentAttachment(formData)
 }

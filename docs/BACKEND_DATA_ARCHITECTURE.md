@@ -54,6 +54,19 @@ These views are intended for Server Components and server-only data access:
 
 `v_student_worklist` is the preferred first read model for `/students`, `/risk-analysis`, `/support`, dashboard priority students, and any route that needs a student list with actionable state.
 
+### 4. Identity And Evidence Hardening
+
+Migration `supabase/migrations/0009_identity_evidence_flow.sql` adds the next production hardening layer:
+
+- Replaces `handle_new_user()` safely for OAuth signups without rewriting old applied migrations.
+- Accepts Google/OAuth metadata such as `full_name`, `name`, `avatar_url`, and `picture`.
+- Falls back to the first active school only when metadata does not contain a valid active `school_id`.
+- Normalizes role aliases such as `teacher` and `homeroom` into the existing `user_role` enum.
+- Splits generic attachment access into explicit select/insert/update/delete policies.
+- Adds Supabase Storage policies for private `documents/student-attachments/<student_id>/...` objects.
+
+The application validates evidence uploads at 10 MB while `next.config.ts` allows Server Action bodies up to `12mb`, giving the app room to return controlled validation errors before Next.js rejects the request.
+
 ## Automation
 
 Migration `0008` adds these database automations:
@@ -72,13 +85,13 @@ New files:
 - `src/lib/server/current-user.ts`
   - Resolves Supabase user, profile/student identity, school, role, and current semester.
 - `src/lib/server/student-care-read-models.ts`
-  - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getStudentCareProfile`, `getActionQueue`, `getStudentActionItems`, `getStudentTimeline`, `getStudentNotes`, `createStudentNote`, and `updateActionItemStatus`.
+  - Exposes `getStudentCareDashboard`, `getStudentWorklist`, `getStudentCareProfile`, `getActionQueue`, `getStudentActionItems`, `getStudentTimeline`, `getStudentNotes`, `getStudentAttachments`, `createStudentNote`, `uploadStudentAttachment`, and `updateActionItemStatus`.
 - `src/lib/server/home-visit-read-models.ts`
   - Exposes `getHomeVisitDashboard` for `/home-visits`, joining visits with student, visitor, and visit image context.
 - `src/lib/server/action-result.ts`
   - Shared `ActionResult<T>` helpers for migrated server actions.
 - `src/app/actions/care.actions.ts`
-  - Thin Server Action wrapper for updating action item status and adding student care notes.
+  - Thin Server Action wrapper for updating action item status, adding student care notes, and uploading student evidence attachments.
 
 Server Components should call the read-model functions directly. Client Components should mutate through Server Actions and receive `ActionResult<T>`.
 
@@ -92,7 +105,7 @@ Server Components should call the read-model functions directly. Client Componen
 2. Students
    - Replace route-local `student-data.ts` with `getStudentWorklist()`.
    - Keep one shared DTO for desktop `DataTable` and mobile `MobileList`.
-   - Current status: initial real-data integration is complete with URL search params, server filtering, pagination, real profile snapshot, and a real `/students/[id]` care profile that reads notes, timeline, and open action items.
+   - Current status: initial real-data integration is complete with URL search params, server filtering, pagination, real profile snapshot, and a real `/students/[id]` care profile that reads notes, timeline, open action items, and evidence attachments.
 
 3. Risk Analysis
    - Read top risk students from `v_student_worklist`.
@@ -102,7 +115,7 @@ Server Components should call the read-model functions directly. Client Componen
 4. Support
    - Use `action_items`, `student_notes`, and `student_timeline_events`.
    - Stop duplicating notes/actions inside page-local static components.
-   - Current status: support workbench reads `getStudentCareDashboard()`, `getStudentWorklist()`, `getActionQueue()`, `getStudentNotes()`, and `getStudentTimeline()`. Users can move action items forward and add student notes from the support page. Remaining work: dedicated case creation/edit flows, evidence uploads, and richer pending/success feedback.
+   - Current status: support workbench reads `getStudentCareDashboard()`, `getStudentWorklist()`, `getActionQueue()`, `getStudentNotes()`, `getStudentTimeline()`, and `getStudentAttachments()`. Users can move action items forward, add student notes, and upload evidence files from the support page. Remaining work: dedicated case creation/edit flows and richer pending/success feedback.
 
 5. IDP
    - Use timeline events for plan creation/progress and action items for review tasks.
@@ -110,7 +123,7 @@ Server Components should call the read-model functions directly. Client Componen
 6. Home Visits
    - Replace mock visit cards with `home_visits` plus `student_attachments`.
    - Write visit creation so timeline and risk factors update automatically.
-   - Current status: list/gallery now reads real `home_visits` plus `home_visit_images`; generic `student_attachments` evidence flow remains pending.
+   - Current status: list/gallery now reads real `home_visits` plus `home_visit_images`; the generic `student_attachments` upload service exists and should be attached to concrete visit detail/edit flows next.
 
 7. Reports
    - Use `report_jobs` for queued/running/completed/failed state.
@@ -133,7 +146,7 @@ A route is backend-ready when:
 
 ## Known Verification Gap
 
-The user reported that `0008_ux_data_foundation.sql` was applied on 2026-06-11. Supabase CLI is now installed as a project dev dependency. Local Supabase starts successfully after normalizing `supabase/config.toml` to `project_id = "scidas-local"`, migrations `0001` through `0008` apply locally, and `src/types/database.types.ts` has been regenerated with `npm run db:types`. Before production deployment, still run the same verification against the target Supabase project:
+The user reported that `0008_ux_data_foundation.sql` was applied on 2026-06-11. Supabase CLI is now installed as a project dev dependency. Local Supabase starts successfully after normalizing `supabase/config.toml` to `project_id = "scidas-local"`, migrations `0001` through `0008` apply locally, and `src/types/database.types.ts` has been regenerated with `npm run db:types`. Migration `0009_identity_evidence_flow.sql` now needs the same local reset and preview/project verification. Before production deployment, still run the same verification against the target Supabase project:
 
 ```bash
 supabase db reset
