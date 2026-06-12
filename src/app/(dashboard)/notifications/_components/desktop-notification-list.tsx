@@ -1,14 +1,22 @@
 import React from "react"
 import Link from "next/link"
-import { ChevronDown, AlertCircle, TrendingDown, Calendar as CalendarIcon, MessageSquare, ClipboardList, Bell, Settings, BookOpen } from "lucide-react"
-import type { NotificationItem, NotificationType } from "@/lib/server/notification-read-models"
+import { ChevronLeft, ChevronRight, AlertCircle, TrendingDown, Calendar as CalendarIcon, MessageSquare, ClipboardList, Bell, Settings, BookOpen } from "lucide-react"
+import type { NotificationItem, NotificationType, NotificationStatusFilter } from "@/lib/server/notification-read-models"
 import { getNotificationTypeLabel, formatRelativeTime } from "@/lib/server/notification-read-models"
 import { EmptyState } from "@/components/feedback"
 import { cn } from "@/lib/utils"
+import { NotificationReadToggle } from "./notification-read-toggle"
+import { buildNotificationHref } from "./notification-link-helpers"
 
 export interface DesktopNotificationListProps {
   notifications: NotificationItem[]
   totalCount: number
+  page: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  currentStatus: NotificationStatusFilter
+  currentType?: NotificationType
 }
 
 type NotificationVisual = {
@@ -74,20 +82,12 @@ function NotificationRow({ item }: { item: NotificationItem }) {
   const Icon = visual.icon
   const hasLink = Boolean(item.link)
 
-  const content = (
-    <div
-      className={cn(
-        "flex items-start gap-4 p-4 rounded-xl border transition-colors group",
-        hasLink && "cursor-pointer hover:bg-slate-50",
-        item.isRead ? "border-slate-100 bg-slate-50/70" : `${visual.borderClass} bg-white`,
-      )}
-    >
-      <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${visual.bgClass}`}
-      >
-        <Icon className={`w-5 h-5 ${visual.textClass}`} />
+  const body = (
+    <>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${visual.bgClass}`}>
+        <Icon className={`w-5 h-5 ${visual.textClass}`} aria-hidden="true" />
       </div>
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-sm font-semibold text-slate-800 truncate">{item.title}</h4>
           <span className="text-xs text-slate-500 shrink-0 ml-2">
@@ -101,22 +101,41 @@ function NotificationRow({ item }: { item: NotificationItem }) {
           </span>
         </div>
       </div>
-      {!item.isRead && (
-        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-2"></div>
-      )}
-    </div>
+    </>
   )
 
-  if (item.link) {
-    return <Link href={item.link}>{content}</Link>
-  }
-
-  return content
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-4 p-4 rounded-xl border transition-colors group",
+        item.isRead ? "border-slate-100 bg-slate-50/70" : `${visual.borderClass} bg-white`,
+      )}
+    >
+      {hasLink && item.link ? (
+        <Link href={item.link} className="flex min-w-0 flex-1 items-start gap-4 hover:bg-slate-50">
+          {body}
+        </Link>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-start gap-4">{body}</div>
+      )}
+      <NotificationReadToggle
+        key={item.isRead ? "read" : "unread"}
+        notificationId={item.id}
+        isRead={item.isRead}
+      />
+    </div>
+  )
 }
 
 export function DesktopNotificationList({
   notifications,
   totalCount,
+  page,
+  totalPages,
+  hasNextPage,
+  hasPreviousPage,
+  currentStatus,
+  currentType,
 }: DesktopNotificationListProps) {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
@@ -124,10 +143,9 @@ export function DesktopNotificationList({
         <h3 className="text-sm font-bold text-slate-800">ทั้งหมด {totalCount} รายการ</h3>
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">จัดเรียงตาม</span>
-          <button className="flex items-center gap-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
             ล่าสุด
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
+          </span>
         </div>
       </div>
 
@@ -148,13 +166,52 @@ export function DesktopNotificationList({
         </div>
       )}
 
-      {totalCount > notifications.length ? (
-        <div className="mt-6 flex justify-center border-t border-slate-100 pt-6">
-          <p className="text-xs font-medium text-slate-500">
-            แสดงล่าสุด {notifications.length} จาก {totalCount} รายการ
-          </p>
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+          <div className="text-xs font-medium text-slate-500">
+            หน้า {page} จาก {totalPages} ({totalCount} รายการ)
+          </div>
+          <div className="flex items-center gap-2">
+            {hasPreviousPage ? (
+              <Link
+                href={buildNotificationHref({
+                  status: currentStatus,
+                  type: currentType,
+                  page: page - 1,
+                })}
+                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                ก่อนหน้า
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 rounded-lg border border-slate-100 px-3 py-1.5 text-xs font-medium text-slate-300 cursor-not-allowed">
+                <ChevronLeft className="h-3.5 w-3.5" />
+                ก่อนหน้า
+              </span>
+            )}
+
+            {hasNextPage ? (
+              <Link
+                href={buildNotificationHref({
+                  status: currentStatus,
+                  type: currentType,
+                  page: page + 1,
+                })}
+                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                ถัดไป
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 rounded-lg border border-slate-100 px-3 py-1.5 text-xs font-medium text-slate-300 cursor-not-allowed">
+                ถัดไป
+                <ChevronRight className="h-3.5 w-3.5" />
+              </span>
+            )}
+          </div>
         </div>
-      ) : null}
+      )}
     </div>
   )
 }

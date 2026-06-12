@@ -7,16 +7,56 @@ import { MobileNotificationProfile } from "./_components/mobile/mobile-notificat
 import { ChevronRight, Bell } from "lucide-react"
 import { ErrorState } from "@/components/feedback"
 import { getNotifications, getNotificationCounts } from "@/lib/server/notification-read-models"
+import type { NotificationStatusFilter, NotificationType } from "@/lib/server/notification-read-models"
 import { markAllAsReadFormAction } from "@/app/actions/notifications.actions"
 
-export default async function NotificationsPage() {
+type SearchParams = Record<string, string | string[] | undefined>
+
+type NotificationsPageProps = {
+  searchParams?: Promise<SearchParams>
+}
+
+function getSearchParam(params: SearchParams, key: string): string {
+  const value = params[key]
+  if (typeof value === "string") return value
+  if (Array.isArray(value)) return value[0] ?? ""
+  return ""
+}
+
+function resolveStatus(raw: string): NotificationStatusFilter {
+  if (raw === "unread" || raw === "read") return raw
+  return "all"
+}
+
+function resolveNotificationType(raw: string): NotificationType | undefined {
+  const allowed: NotificationType[] = [
+    "risk_alert",
+    "attendance_alert",
+    "assignment_alert",
+    "behavior_alert",
+    "home_visit_reminder",
+    "plan_review",
+    "system",
+    "general",
+  ]
+  return allowed.includes(raw as NotificationType) ? (raw as NotificationType) : undefined
+}
+
+export default async function NotificationsPage({ searchParams }: NotificationsPageProps) {
+  const params = searchParams ? await searchParams : {}
+
+  const status = resolveStatus(getSearchParam(params, "status"))
+  const type = resolveNotificationType(getSearchParam(params, "type"))
+  const page = Number.parseInt(getSearchParam(params, "page"), 10) || 1
+  const limit = Number.parseInt(getSearchParam(params, "limit"), 10) || 20
+
   let notifications: Awaited<ReturnType<typeof getNotifications>>
   let counts: Awaited<ReturnType<typeof getNotificationCounts>>
   let loadError: string | null = null
 
   try {
     ;[notifications, counts] = await Promise.all([
-      getNotifications({ limit: 20 }),
+      getNotifications({ status, type, page, limit }),
       getNotificationCounts(),
     ])
   } catch (error) {
@@ -54,8 +94,14 @@ export default async function NotificationsPage() {
       {/* ---------------- MOBILE VIEW (< 1024px) ---------------- */}
       <div className="block lg:hidden">
         <MobileNotificationProfile
-          notifications={safeNotifications}
+          notifications={safeNotifications.items}
           counts={safeCounts}
+          page={safeNotifications.page}
+          totalPages={safeNotifications.totalPages}
+          hasNextPage={safeNotifications.hasNextPage}
+          hasPreviousPage={safeNotifications.hasPreviousPage}
+          currentStatus={status}
+          currentType={type}
         />
       </div>
 
@@ -119,20 +165,34 @@ export default async function NotificationsPage() {
           
           {/* Left Column (Sidebar) */}
           <div className="xl:w-[280px] shrink-0 min-w-0">
-            <DesktopNotificationSidebar counts={safeCounts} />
+            <DesktopNotificationSidebar
+              counts={safeCounts}
+              currentStatus={status}
+              currentType={type}
+            />
           </div>
 
           {/* Middle Column (List) */}
           <div className="flex-1 min-w-0">
             <DesktopNotificationList
-              notifications={safeNotifications}
-              totalCount={safeCounts.total}
+              notifications={safeNotifications.items}
+              totalCount={safeNotifications.totalCount}
+              page={safeNotifications.page}
+              totalPages={safeNotifications.totalPages}
+              hasNextPage={safeNotifications.hasNextPage}
+              hasPreviousPage={safeNotifications.hasPreviousPage}
+              currentStatus={status}
+              currentType={type}
             />
           </div>
 
           {/* Right Column (Filters) */}
           <div className="xl:w-[320px] shrink-0 min-w-0">
-            <DesktopNotificationFilters counts={safeCounts} />
+            <DesktopNotificationFilters
+              counts={safeCounts}
+              currentStatus={status}
+              currentType={type}
+            />
           </div>
 
         </div>

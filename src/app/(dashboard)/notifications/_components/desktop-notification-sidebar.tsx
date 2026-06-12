@@ -1,4 +1,5 @@
 import React from "react"
+import Link from "next/link"
 import {
   AlertCircle,
   Bell,
@@ -12,11 +13,18 @@ import {
   TrendingDown,
 } from "lucide-react"
 
-import type { NotificationCounts, NotificationType } from "@/lib/server/notification-read-models"
+import type {
+  NotificationCounts,
+  NotificationStatusFilter,
+  NotificationType,
+} from "@/lib/server/notification-read-models"
 import { getNotificationTypeLabel } from "@/lib/server/notification-read-models"
+import { buildNotificationHref } from "./notification-link-helpers"
 
 export interface DesktopNotificationSidebarProps {
   counts: NotificationCounts
+  currentStatus: NotificationStatusFilter
+  currentType?: NotificationType
 }
 
 const typeIcons: Record<NotificationType, React.ComponentType<{ className?: string }>> = {
@@ -41,7 +49,11 @@ const typeIconColors: Record<NotificationType, string> = {
   general: "bg-blue-100 text-blue-600",
 }
 
-export function DesktopNotificationSidebar({ counts }: DesktopNotificationSidebarProps) {
+export function DesktopNotificationSidebar({
+  counts,
+  currentStatus,
+  currentType,
+}: DesktopNotificationSidebarProps) {
   const typeRows = (Object.entries(counts.byType) as [NotificationType, number][])
     .filter(([, count]) => count > 0)
     .sort(([, a], [, b]) => b - a)
@@ -68,30 +80,42 @@ export function DesktopNotificationSidebar({ counts }: DesktopNotificationSideba
 
       <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between rounded-xl p-2.5 text-slate-700">
+          <Link
+            href={buildNotificationHref({ status: currentStatus })}
+            className={`flex items-center justify-between rounded-xl p-2.5 ${
+              !currentType ? "bg-slate-100" : "text-slate-700 hover:bg-slate-50"
+            }`}
+          >
             <div className="flex items-center gap-3">
               <LayoutGrid className="h-4 w-4 text-slate-400" />
               <span className="text-sm font-medium">ทั้งหมด</span>
             </div>
             <span className="text-xs font-bold text-slate-500">{counts.total}</span>
-          </div>
+          </Link>
 
-          <div className="flex items-center justify-between rounded-xl bg-indigo-50 p-2.5 text-indigo-700">
+          <Link
+            href={buildNotificationHref({ status: "unread", type: currentType })}
+            className="flex items-center justify-between rounded-xl bg-indigo-50 p-2.5 text-indigo-700 hover:bg-indigo-100"
+          >
             <div className="flex items-center gap-3">
               <MessageSquare className="h-4 w-4 text-indigo-500" />
               <span className="text-sm font-semibold">ยังไม่ได้อ่าน</span>
             </div>
             <span className="text-xs font-bold text-indigo-600">{counts.unread}</span>
-          </div>
+          </Link>
 
           {typeRows.map(([type, count]) => {
             const Icon = typeIcons[type] ?? Bell
             const colorClass = typeIconColors[type] ?? "bg-slate-100 text-slate-600"
+            const isActive = currentType === type
 
             return (
-              <div
+              <Link
                 key={type}
-                className="flex items-center justify-between rounded-xl p-2.5 text-slate-700"
+                href={buildNotificationHref({ status: currentStatus, type })}
+                className={`flex items-center justify-between rounded-xl p-2.5 ${
+                  isActive ? "bg-slate-100" : "text-slate-700 hover:bg-slate-50"
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex h-4 w-4 items-center justify-center rounded-sm ${colorClass}`}>
@@ -100,7 +124,7 @@ export function DesktopNotificationSidebar({ counts }: DesktopNotificationSideba
                   <span className="text-sm font-medium">{getNotificationTypeLabel(type)}</span>
                 </div>
                 <span className="text-xs font-bold text-slate-500">{count}</span>
-              </div>
+              </Link>
             )
           })}
         </div>

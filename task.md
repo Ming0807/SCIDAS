@@ -13,7 +13,18 @@ Status: done. The `/notifications` page now reads from the real `notifications` 
 - [x] Fixed `text-[9px]`, `text-[10px]`, `text-[11px]`, `text-[12px]`, `text-[13px]`, `text-[14px]`, `text-[18px]`, `text-[36px]` → standard Tailwind tokens (`text-xs`, `text-sm`, `text-lg`, `text-3xl`) in all six notification components and the page header.
 - [x] Fixed `bg-[#f8fafc]` → `bg-background`, `shadow-[0_2px_10px_rgba(…)]` → `shadow-sm`, `bg-indigo-600` → `bg-primary` in touched components.
 - [x] Updated mobile notification components (`MobileNotificationProfile`, `MobileNotificationHeader`, `MobileNotificationList`) to accept real props, render real rows, and use standard typography tokens.
-- [ ] Full notification workflow (URL filters, pagination/load-more, per-item read toggle, push delivery) is not done — only listing, counts, source links, and mark-all-read are wired.
+- [x] Added `toggleNotificationRead()` to the read model with auth scope, per-item read/unread toggle with optimistic state.
+- [x] Added `toggleNotificationReadAction` in `notifications.actions.ts` with UUID validation, `ActionResult<{ isRead: boolean }>`, and `/notifications` revalidation.
+- [x] Created `notification-read-toggle.tsx` (`"use client"`) with `useTransition` optimistic toggle and revert-on-failure pattern.
+- [x] Updated `/notifications/page.tsx` to read `searchParams` for `status`, `type`, `page`, `limit` and pass them to `getNotifications()` returning `NotificationPage` with `.items` + pagination metadata.
+- [x] Updated `DesktopNotificationSidebar` — type rows are now real `<Link>` with `?type=...` searchParams, active state highlighting, and "ทั้งหมด" clears the type filter while preserving read status.
+- [x] Updated `DesktopNotificationFilters` — status cards (`?status=all|unread|read`) and type rows are now real `<Link>`, active state with ring highlight.
+- [x] Updated `DesktopNotificationList` — per-item `NotificationReadToggle`, pagination prev/next `<Link>` with both status and type preserved in URL.
+- [x] Updated `MobileNotificationList` — per-item `NotificationReadToggle`, pagination prev/next `<Link>`.
+- [x] Updated `MobileNotificationHeader` — status pills (`ทั้งหมด` / `ยังไม่ได้อ่าน` / `อ่านแล้ว`) are now real `<Link>` with active highlight.
+- [x] Updated `MobileNotificationProfile` to pass pagination/status/type props through to child components.
+- [x] Renamed `safePage` → `parsePageNumber` in `notification-read-models.ts` to resolve const shadowing TS error.
+- [ ] Push delivery (real-time/realtime channel) is not done — only listing, filtering, pagination, per-item toggle, and mark-all-read are wired.
 
 ## 2026-06-11 Create Report Panel → Real report_jobs Insert
 

@@ -1,20 +1,38 @@
 import React from "react"
+import Link from "next/link"
 import { Settings, Bell } from "lucide-react"
-import type { NotificationCounts } from "@/lib/server/notification-read-models"
+import type {
+  NotificationCounts,
+  NotificationStatusFilter,
+  NotificationType,
+} from "@/lib/server/notification-read-models"
+import { buildNotificationHref } from "../notification-link-helpers"
 
 export interface MobileNotificationHeaderProps {
   counts: NotificationCounts
+  currentStatus: NotificationStatusFilter
+  currentType?: NotificationType
 }
 
-export function MobileNotificationHeader({ counts }: MobileNotificationHeaderProps) {
+export function MobileNotificationHeader({
+  counts,
+  currentStatus,
+  currentType,
+}: MobileNotificationHeaderProps) {
+  const readCount = Math.max(counts.total - counts.unread, 0)
+
   return (
     <div className="bg-white sticky top-0 z-20 shadow-sm pt-6 pb-0 px-1">
       <div className="flex items-center justify-between px-3 pb-3">
         <div className="w-8"></div>
         <span className="text-base font-semibold text-slate-900">การแจ้งเตือน</span>
-        <button className="p-2 -mr-2 text-indigo-600">
+        <Link
+          href="/settings"
+          aria-label="Notification settings"
+          className="p-2 -mr-2 text-indigo-600"
+        >
           <Settings className="w-5 h-5" />
-        </button>
+        </Link>
       </div>
 
       {/* Summary Banner */}
@@ -51,17 +69,41 @@ export function MobileNotificationHeader({ counts }: MobileNotificationHeaderPro
       </div>
 
       <div className="flex gap-2 border-b border-slate-100 px-4 pb-3 overflow-x-auto no-scrollbar">
-        <span className="flex-shrink-0 bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+        <Link
+          href={buildNotificationHref({ status: "all", type: currentType })}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            currentStatus === "all"
+              ? "bg-indigo-100 text-indigo-700"
+              : "bg-slate-100 text-slate-600"
+          }`}
+        >
           ทั้งหมด {counts.total}
-        </span>
-        {counts.unread > 0 && (
-          <span className="flex-shrink-0 flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600">
-            ยังไม่ได้อ่าน
+        </Link>
+        <Link
+          href={buildNotificationHref({ status: "unread", type: currentType })}
+          className={`flex-shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+            currentStatus === "unread"
+              ? "bg-red-100 text-red-700"
+              : "bg-red-50 text-red-600"
+          }`}
+        >
+          ยังไม่ได้อ่าน
+          {counts.unread > 0 && (
             <span className="bg-red-500 text-white text-xs font-semibold px-1.5 rounded-full">
               {counts.unread}
             </span>
-          </span>
-        )}
+          )}
+        </Link>
+        <Link
+          href={buildNotificationHref({ status: "read", type: currentType })}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            currentStatus === "read"
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-slate-100 text-slate-600"
+          }`}
+        >
+          อ่านแล้ว {readCount}
+        </Link>
       </div>
 
     </div>

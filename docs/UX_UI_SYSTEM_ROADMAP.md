@@ -171,7 +171,7 @@ Route Server Component
 - [ ] Wave 4: reports, notifications, settings, home-visits
   - [x] home-visits now reads real `home_visits`/`home_visit_images`.
   - [x] reports now reads `report_jobs` via `src/lib/server/report-read-models.ts` on the async Server Component.
-  - [x] notifications now reads real `notifications` table via `src/lib/server/notification-read-models.ts` with mark-all-read Server Action (listing + counts wired; fake filter/calendar affordances removed; filters, pagination, per-item toggle still pending).
+  - [x] notifications now reads real `notifications` table via `src/lib/server/notification-read-models.ts` with mark-all-read + per-item toggle Server Actions, URL search params for status/type/page/limit filters, real `<Link>` pagination, and `NotificationReadToggle` client component with optimistic UI. No fake buttons. Push delivery still pending.
   - [ ] settings remain.
 - [ ] Wave 5: student detail and behavior/detail pages
   - [x] student detail now reads the real care profile, open action items, notes, and timeline.
@@ -254,9 +254,14 @@ Route Server Component
 
 ### `/notifications`
 
-- ต้องมี read/unread, priority, category, related student/case
-- mobile list ใช้ common notification row
-- notification ควร link ไป action page จริง ไม่ใช่แค่ข้อความ
+- [x] read/unread toggle per item with optimistic UI
+- [x] status filters (all/unread/read) via real `<Link>` URL search params
+- [x] type filters (8 notification types) via real `<Link>` in sidebar + filter panel
+- [x] pagination via URL `?page=N` with prev/next `<Link>` on desktop + mobile
+- [x] mark-all-read Server Action
+- [x] source links from `reference_type`/`reference_id`/`link` to action pages
+- [x] mobile list uses shared `NotificationReadToggle` component
+- [ ] push delivery (realtime channel) not yet wired
 
 ### `/settings`
 

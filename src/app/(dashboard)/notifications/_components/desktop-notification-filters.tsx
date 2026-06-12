@@ -1,11 +1,15 @@
 import React from "react"
+import Link from "next/link"
 import { Bell, CheckCircle2, Mail, MessageCircle, Monitor } from "lucide-react"
 
-import type { NotificationCounts, NotificationType } from "@/lib/server/notification-read-models"
+import type { NotificationCounts, NotificationType, NotificationStatusFilter } from "@/lib/server/notification-read-models"
 import { getNotificationTypeLabel } from "@/lib/server/notification-read-models"
+import { buildNotificationHref } from "./notification-link-helpers"
 
 export interface DesktopNotificationFiltersProps {
   counts: NotificationCounts
+  currentStatus: NotificationStatusFilter
+  currentType?: NotificationType
 }
 
 const typeDotClasses: Record<NotificationType, string> = {
@@ -19,7 +23,7 @@ const typeDotClasses: Record<NotificationType, string> = {
   general: "bg-blue-500",
 }
 
-export function DesktopNotificationFilters({ counts }: DesktopNotificationFiltersProps) {
+export function DesktopNotificationFilters({ counts, currentStatus, currentType }: DesktopNotificationFiltersProps) {
   const readCount = Math.max(counts.total - counts.unread, 0)
   const typeRows = (Object.entries(counts.byType) as [NotificationType, number][])
     .filter(([, count]) => count > 0)
@@ -30,18 +34,33 @@ export function DesktopNotificationFilters({ counts }: DesktopNotificationFilter
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="mb-4 text-sm font-semibold text-slate-800">สถานะการอ่าน</h3>
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-lg bg-slate-50 p-3">
+          <Link
+            href={buildNotificationHref({ status: "all", type: currentType })}
+            className={`rounded-lg p-3 transition-colors ${
+              currentStatus === "all" ? "ring-2 ring-indigo-400 bg-slate-50" : "bg-slate-50 hover:bg-slate-100"
+            }`}
+          >
             <div className="text-xs text-slate-500">ทั้งหมด</div>
             <div className="mt-1 text-lg font-bold text-slate-800">{counts.total}</div>
-          </div>
-          <div className="rounded-lg bg-red-50 p-3">
+          </Link>
+          <Link
+            href={buildNotificationHref({ status: "unread", type: currentType })}
+            className={`rounded-lg p-3 transition-colors ${
+              currentStatus === "unread" ? "ring-2 ring-indigo-400 bg-red-50" : "bg-red-50 hover:bg-red-100"
+            }`}
+          >
             <div className="text-xs text-red-600">ยังไม่ได้อ่าน</div>
             <div className="mt-1 text-lg font-bold text-red-700">{counts.unread}</div>
-          </div>
-          <div className="rounded-lg bg-green-50 p-3">
+          </Link>
+          <Link
+            href={buildNotificationHref({ status: "read", type: currentType })}
+            className={`rounded-lg p-3 transition-colors ${
+              currentStatus === "read" ? "ring-2 ring-indigo-400 bg-green-50" : "bg-green-50 hover:bg-green-100"
+            }`}
+          >
             <div className="text-xs text-green-600">อ่านแล้ว</div>
             <div className="mt-1 text-lg font-bold text-green-700">{readCount}</div>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -54,17 +73,26 @@ export function DesktopNotificationFilters({ counts }: DesktopNotificationFilter
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {typeRows.map(([type, count]) => (
-              <div key={type} className="flex items-center justify-between rounded-lg p-2">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${typeDotClasses[type]}`} />
-                  <span className="text-xs font-medium text-slate-700">
-                    {getNotificationTypeLabel(type)}
-                  </span>
-                </div>
-                <span className="text-xs font-semibold text-slate-800">{count}</span>
-              </div>
-            ))}
+            {typeRows.map(([type, count]) => {
+              const isActive = currentType === type
+              return (
+                <Link
+                  key={type}
+                  href={buildNotificationHref({ status: currentStatus, type })}
+                  className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
+                    isActive ? "bg-slate-100" : "hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${typeDotClasses[type]}`} />
+                    <span className="text-xs font-medium text-slate-700">
+                      {getNotificationTypeLabel(type)}
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-800">{count}</span>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>

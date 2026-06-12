@@ -52,10 +52,25 @@ export type NotificationCounts = {
   byType: Record<NotificationType, number>
 }
 
+export type NotificationStatusFilter = "all" | "unread" | "read"
+
 export type NotificationFilter = {
+  /** @deprecated Use `status` instead */
   unreadOnly?: boolean
+  status?: NotificationStatusFilter
   type?: NotificationType
+  page?: number
   limit?: number
+}
+
+export type NotificationPage = {
+  items: NotificationItem[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
 }
 
 const notificationTypeLabels: Record<NotificationType, string> = {
@@ -142,9 +157,30 @@ function toNotificationItem(
   }
 }
 
+function resolveStatusFilter(filter: NotificationFilter): NotificationStatusFilter {
+  if (filter.status && filter.status !== "all") return filter.status
+  // backward compat: unreadOnly takes precedence
+  if (filter.unreadOnly) return "unread"
+  return filter.status ?? "all"
+}
+
+const MAX_NOTIFICATION_LIMIT = 50
+const DEFAULT_NOTIFICATION_LIMIT = 20
+
+function parsePageNumber(raw: unknown): number {
+  const p = Number.parseInt(String(raw ?? ""), 10)
+  return Number.isFinite(p) && p > 0 ? p : 1
+}
+
+function safeLimit(raw: unknown): number {
+  const l = Number.parseInt(String(raw ?? ""), 10)
+  if (!Number.isFinite(l) || l < 1) return DEFAULT_NOTIFICATION_LIMIT
+  return Math.min(l, MAX_NOTIFICATION_LIMIT)
+}
+
 export async function getNotifications(
   filter: NotificationFilter = {},
-): Promise<NotificationItem[]> {
+): Promise<NotificationPage> {
   const context = await getCurrentUserContext()
 
   if (!context.profileId) {
@@ -152,8 +188,40 @@ export async function getNotifications(
   }
 
   const client = await createClient()
+  const status = resolveStatusFilter(filter)
+  const pageSize = safeLimit(filter.limit)
+  const page = parsePageNumber(filter.page)
 
-  let query = client
+  // Build the base query for counting and data
+  let baseQuery = client
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("recipient_id", context.profileId)
+    .eq("school_id", context.schoolId)
+
+  if (status === "unread") {
+    baseQuery = baseQuery.eq("is_read", false)
+  } else if (status === "read") {
+    baseQuery = baseQuery.eq("is_read", true)
+  }
+
+  if (filter.type) {
+    baseQuery = baseQuery.eq("type", filter.type)
+  }
+
+  const { count, error: countError } = await baseQuery
+
+  if (countError) {
+    throw new Error(countError.message)
+  }
+
+  const totalCount = count ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const offset = (safePage - 1) * pageSize
+
+  // Fetch the page of data
+  let dataQuery = client
     .from("notifications")
     .select(
       `
@@ -176,19 +244,19 @@ export async function getNotifications(
     .eq("recipient_id", context.profileId)
     .eq("school_id", context.schoolId)
     .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1)
 
-  if (filter.unreadOnly) {
-    query = query.eq("is_read", false)
+  if (status === "unread") {
+    dataQuery = dataQuery.eq("is_read", false)
+  } else if (status === "read") {
+    dataQuery = dataQuery.eq("is_read", true)
   }
 
   if (filter.type) {
-    query = query.eq("type", filter.type)
+    dataQuery = dataQuery.eq("type", filter.type)
   }
 
-  const limit = filter.limit ?? 20
-  query = query.limit(limit)
-
-  const { data, error } = await query
+  const { data, error } = await dataQuery
 
   if (error) {
     throw new Error(error.message)
@@ -198,7 +266,15 @@ export async function getNotifications(
     sender: { first_name: string | null; last_name: string | null } | null
   })[]
 
-  return rows.map(toNotificationItem)
+  return {
+    items: rows.map(toNotificationItem),
+    totalCount,
+    page: safePage,
+    pageSize,
+    totalPages,
+    hasNextPage: safePage < totalPages,
+    hasPreviousPage: safePage > 1,
+  }
 }
 
 export async function getNotificationCounts(): Promise<NotificationCounts> {
@@ -269,4 +345,56 @@ export async function markAllNotificationsRead(): Promise<{ count: number }> {
   }
 
   return { count: (data ?? []).length }
+}
+
+export async function toggleNotificationRead(
+  notificationId: string,
+): Promise<{ isRead: boolean }> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  if (!notificationId || typeof notificationId !== "string") {
+    throw new Error("VALIDATION_ERROR")
+  }
+
+  const client = await createClient()
+
+  // Fetch current state scoped to recipient + school
+  const { data: existing, error: fetchError } = await client
+    .from("notifications")
+    .select("id, is_read")
+    .eq("id", notificationId)
+    .eq("recipient_id", context.profileId)
+    .eq("school_id", context.schoolId)
+    .maybeSingle()
+
+  if (fetchError) {
+    throw new Error(fetchError.message)
+  }
+
+  if (!existing) {
+    throw new Error("NOT_FOUND")
+  }
+
+  const newIsRead = !existing.is_read
+  const now = new Date().toISOString()
+
+  const { error: updateError } = await client
+    .from("notifications")
+    .update({
+      is_read: newIsRead,
+      read_at: newIsRead ? now : null,
+    })
+    .eq("id", notificationId)
+    .eq("recipient_id", context.profileId)
+    .eq("school_id", context.schoolId)
+
+  if (updateError) {
+    throw new Error(updateError.message)
+  }
+
+  return { isRead: newIsRead }
 }
