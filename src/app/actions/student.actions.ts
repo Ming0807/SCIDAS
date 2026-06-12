@@ -11,10 +11,17 @@ import { Database } from "@/types/database.types"
 export type StudentRow = Database["public"]["Tables"]["students"]["Row"]
 
 export async function getStudents() {
+  const context = await getCurrentUserContext()
   const supabase = await createClient()
+
+  if (!context.schoolId) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from("students")
-    .select("*")
+    .select("id, student_code, prefix, first_name, last_name, nickname, gender, date_of_birth, status, photo_url")
+    .eq("school_id", context.schoolId)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -26,11 +33,18 @@ export async function getStudents() {
 }
 
 export async function getStudentById(id: string) {
+  const context = await getCurrentUserContext()
   const supabase = await createClient()
+
+  if (!context.schoolId) {
+    return null
+  }
+
   const { data, error } = await supabase
     .from("students")
     .select("*")
     .eq("id", id)
+    .eq("school_id", context.schoolId)
     .single()
 
   if (error) {

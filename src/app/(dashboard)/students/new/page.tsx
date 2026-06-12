@@ -1,8 +1,9 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Loader2, Save } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, CheckCircle2, Loader2, Save } from "lucide-react"
 
 import { createStudentAction } from "@/app/actions/student.actions"
 import { Button } from "@/components/ui/button"
@@ -11,10 +12,18 @@ import { Input } from "@/components/ui/input"
 import type { ActionResult } from "@/lib/server/action-result"
 
 export default function NewStudentPage() {
+  const router = useRouter()
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
     FormData
   >(createStudentAction, null)
+
+  // Redirect on success
+  useEffect(() => {
+    if (state?.ok && state.redirectTo) {
+      router.push(state.redirectTo)
+    }
+  }, [state, router])
 
   const fieldErrors = state?.ok === false ? state.fieldErrors : undefined
 
@@ -168,7 +177,15 @@ export default function NewStudentPage() {
               />
             </div>
 
-            {state && !state.ok ? (
+            {state && state.ok ? (
+              <div
+                aria-live="polite"
+                className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 flex items-center gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                {state.message} กำลังนำทาง...
+              </div>
+            ) : state && !state.ok ? (
               <div
                 aria-live="polite"
                 className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"

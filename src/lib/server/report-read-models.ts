@@ -280,9 +280,9 @@ export async function processNextReportJob(): Promise<{
     throw new Error(runningError.message)
   }
 
-  // Simulate report generation (placeholder — real generation not yet built)
+  // Placeholder report generation — real PDF/Excel generation not yet built.
+  // Mark completed without output file so UI does not show fake download readiness.
   try {
-    // In production, this would query data, build PDF/Excel, upload to storage
     const now = new Date().toISOString()
 
     const { error: completeError } = await client
@@ -290,8 +290,6 @@ export async function processNextReportJob(): Promise<{
       .update({
         status: "completed",
         completed_at: now,
-        output_bucket: "documents",
-        output_path: `reports/${jobId}/report.txt`,
         error_message: null,
       })
       .eq("id", jobId)

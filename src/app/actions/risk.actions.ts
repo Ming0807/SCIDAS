@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/utils/supabase/server"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 
 export async function calculateRiskScore(studentId: string) {
   const supabase = await createClient()
@@ -131,8 +132,18 @@ export async function calculateRiskScore(studentId: string) {
 }
 
 export async function recalculateAllRiskScores() {
+  const context = await getCurrentUserContext()
   const supabase = await createClient()
-  const { data: students } = await supabase.from('students').select('id')
+
+  if (!context.schoolId) {
+    return { success: false, error: "No school assigned" }
+  }
+
+  const { data: students } = await supabase
+    .from("students")
+    .select("id")
+    .eq("school_id", context.schoolId)
+
   if (!students) return { success: false }
 
   for (const s of students) {
@@ -142,9 +153,15 @@ export async function recalculateAllRiskScores() {
 }
 
 export async function getRiskAssessments() {
+  const context = await getCurrentUserContext()
   const supabase = await createClient()
+
+  if (!context.schoolId) {
+    return []
+  }
+
   const { data, error } = await supabase
-    .from('risk_assessments')
+    .from("risk_assessments")
     .select(`
       id,
       risk_score,
@@ -157,7 +174,8 @@ export async function getRiskAssessments() {
         student_code
       )
     `)
-    .order('risk_score', { ascending: false })
+    .eq("school_id", context.schoolId)
+    .order("risk_score", { ascending: false })
 
   if (error) {
     console.error(error)
