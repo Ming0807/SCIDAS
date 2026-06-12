@@ -234,3 +234,88 @@ export async function getPopularReportTypes(
     count,
   }))
 }
+
+/**
+ * Process the next queued report job for the current school.
+ * Transitions: queued → running → completed (with output placeholder) or failed.
+ * Returns the updated job status or null if no queued jobs.
+ */
+export async function processNextReportJob(): Promise<{
+  id: string
+  status: ReportJobStatus
+  errorMessage: string | null
+} | null> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("UNAUTHORIZED")
+  }
+
+  const client = await createClient()
+
+  // Pick the oldest queued job
+  const { data: queued, error: fetchError } = await client
+    .from("report_jobs")
+    .select("id")
+    .eq("school_id", context.schoolId)
+    .eq("status", "queued")
+    .order("requested_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (fetchError || !queued) {
+    return null
+  }
+
+  const jobId = (queued as { id: string }).id
+
+  // Mark as running
+  const { error: runningError } = await client
+    .from("report_jobs")
+    .update({ status: "running" })
+    .eq("id", jobId)
+    .eq("school_id", context.schoolId)
+
+  if (runningError) {
+    throw new Error(runningError.message)
+  }
+
+  // Simulate report generation (placeholder — real generation not yet built)
+  try {
+    // In production, this would query data, build PDF/Excel, upload to storage
+    const now = new Date().toISOString()
+
+    const { error: completeError } = await client
+      .from("report_jobs")
+      .update({
+        status: "completed",
+        completed_at: now,
+        output_bucket: "documents",
+        output_path: `reports/${jobId}/report.txt`,
+        error_message: null,
+      })
+      .eq("id", jobId)
+      .eq("school_id", context.schoolId)
+
+    if (completeError) {
+      throw new Error(completeError.message)
+    }
+
+    return { id: jobId, status: "completed", errorMessage: null }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown generation error"
+
+    await client
+      .from("report_jobs")
+      .update({
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        error_message: message,
+      })
+      .eq("id", jobId)
+      .eq("school_id", context.schoolId)
+
+    return { id: jobId, status: "failed", errorMessage: message }
+  }
+}
+

@@ -12,6 +12,7 @@ import { DesktopPopularReports } from "./_components/desktop-popular-reports"
 import { DesktopLatestReports } from "./_components/desktop-latest-reports"
 import { DesktopCreateReport } from "./_components/desktop-create-report"
 import { DesktopInsights } from "./_components/desktop-insights"
+import { ProcessReportButton } from "./_components/process-report-button"
 import { MobileReportProfile } from "./_components/mobile/mobile-report-profile"
 import { ChevronRight, Bell } from "lucide-react"
 
@@ -119,6 +120,7 @@ export default async function ReportsPage() {
           </div>
           <div className="flex-1 flex flex-col gap-6 min-w-0">
             <DesktopCreateReport />
+            <ProcessReportButton />
             <DesktopInsights metrics={dashboardMetrics} />
           </div>
         </div>

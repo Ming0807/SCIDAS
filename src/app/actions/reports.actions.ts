@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { reportJobTypes, requestReportJob } from "@/lib/server/report-read-models"
+import { processNextReportJob, reportJobTypes, requestReportJob } from "@/lib/server/report-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
 
 export async function requestReportJobActionState(
@@ -71,5 +71,36 @@ export async function requestReportJobActionState(
     }
 
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการสร้างรายงาน")
+  }
+}
+
+/**
+ * Process the next queued report job. Simulates report generation.
+ * In production this would be triggered by a queue worker.
+ */
+export async function processReportJobAction(): Promise<
+  ActionResult<{ id: string; status: string } | null>
+> {
+  try {
+    const result = await processNextReportJob()
+
+    if (!result) {
+      return actionOk("ไม่มีรายงานที่รอดำเนินการ", { data: null })
+    }
+
+    revalidatePath("/reports")
+
+    if (result.status === "completed") {
+      return actionOk("สร้างรายงานสำเร็จ", {
+        data: { id: result.id, status: result.status },
+      })
+    }
+
+    return actionFail("INTERNAL_ERROR", result.errorMessage ?? "การสร้างรายงานล้มเหลว")
+  } catch (err) {
+    return actionFail(
+      "INTERNAL_ERROR",
+      err instanceof Error ? err.message : "เกิดข้อผิดพลาด",
+    )
   }
 }
