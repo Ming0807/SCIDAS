@@ -1,94 +1,192 @@
 import React from "react"
-import { DesktopSettingsTabs } from "./_components/desktop-settings-tabs"
-import { DesktopGeneralSettings } from "./_components/desktop-general-settings"
-import { DesktopDisplaySettings } from "./_components/desktop-display-settings"
-import { DesktopDefaultDataSettings } from "./_components/desktop-default-data-settings"
-import { DesktopUserProfile } from "./_components/desktop-user-profile"
-import { DesktopStorageInfo } from "./_components/desktop-storage-info"
-import { DesktopSystemInfo } from "./_components/desktop-system-info"
-import { MobileSettingsProfile } from "./_components/mobile/mobile-settings-profile"
-import { Bell, ChevronDown, Shield, Settings } from "lucide-react"
+import { Clock, Mail, Phone, Shield } from "lucide-react"
 
-export default function SettingsPage() {
+import { PageShell } from "@/components/dashboard/page-shell"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { ErrorState } from "@/components/feedback/error-state"
+import { getUserProfile } from "@/lib/server/settings-read-models"
+import { formatThaiDateTime } from "@/lib/student-care-formatters"
+
+export default async function SettingsPage() {
+  let profile: Awaited<ReturnType<typeof getUserProfile>>
+
+  try {
+    profile = await getUserProfile()
+  } catch {
+    return (
+      <PageShell>
+        <ErrorState
+          title="ไม่สามารถโหลดข้อมูลผู้ใช้ได้"
+          description="กรุณาลองใหม่อีกครั้ง หรือตรวจสอบการเชื่อมต่อ"
+        />
+      </PageShell>
+    )
+  }
+
   return (
-    <div className="w-full bg-background min-h-screen">
-      
-      {/* ---------------- MOBILE VIEW (Admin) (< 1024px) ---------------- */}
-      <div className="block lg:hidden">
-        <MobileSettingsProfile />
-      </div>
+    <PageShell>
+      <PageHeader
+        title="ตั้งค่า"
+        description="จัดการการตั้งค่าระบบ และข้อมูลส่วนตัว"
+      />
 
-      {/* ---------------- DESKTOP VIEW (Teacher) (>= 1024px) ---------------- */}
-      <div className="hidden lg:block max-w-[1200px] mx-auto p-6 xl:p-8 pb-12">
-        
-        {/* Header Area */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">ตั้งค่า</h1>
-            <p className="text-[13px] text-slate-500 mt-1">จัดการการตั้งค่าระบบ และข้อมูลส่วนตัว</p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors">
-              <span className="text-[13px] font-medium text-slate-700">ภาคเรียนที่ 1/2567</span>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
-            </div>
-            
-            <div className="w-px h-8 bg-slate-200"></div>
-            
-            <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-[#f8fafc]"></span>
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">3</span>
-            </button>
-
-            <div className="flex items-center gap-3 ml-2">
-              <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher" alt="Teacher" className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200" />
-              <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-slate-800">นางสาวจันทร์จิรา พรมดี</span>
-                <span className="text-[11px] text-slate-500">ครูที่ปรึกษา</span>
+      {/* Main Grid Layout */}
+      <div className="flex flex-col xl:flex-row gap-6">
+        {/* Left Column — Settings Sections */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* General Settings */}
+          <section className="bg-card rounded-xl border border-border shadow-sm p-6">
+            <h2 className="text-base font-semibold text-foreground mb-4">
+              ข้อมูลทั่วไป
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  ชื่อ
+                </label>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {profile.firstName}
+                </p>
               </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  นามสกุล
+                </label>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {profile.lastName}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  บทบาท
+                </label>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {profile.roleLabel}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  โรงเรียน
+                </label>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {profile.schoolName ?? "-"}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Contact Section */}
+          <section className="bg-card rounded-xl border border-border shadow-sm p-6">
+            <h2 className="text-base font-semibold text-foreground mb-4">
+              ข้อมูลติดต่อ
+            </h2>
+            <div className="flex flex-col gap-4 text-sm">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground w-24">อีเมล</span>
+                <span className="text-foreground font-medium">
+                  {profile.email ?? "-"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground w-24">เบอร์โทรศัพท์</span>
+                <span className="text-foreground font-medium">
+                  {profile.phone ?? "-"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground w-24">
+                  เข้าสู่ระบบล่าสุด
+                </span>
+                <span className="text-foreground font-medium">
+                  {profile.lastSignIn
+                    ? formatThaiDateTime(profile.lastSignIn)
+                    : "-"}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Security Banner */}
+          <div className="bg-primary/90 rounded-xl p-8 text-primary-foreground relative overflow-hidden flex items-center justify-between">
+            <div className="relative z-10 max-w-sm">
+              <h3 className="text-xl font-bold mb-2">
+                ระบบปลอดภัย มั่นใจได้
+              </h3>
+              <p className="text-primary-foreground/80 text-sm">
+                ข้อมูลได้รับการปกป้องตามมาตรฐานความปลอดภัย
+              </p>
+            </div>
+            <div className="w-24 h-24 rounded-full border-4 border-primary-foreground/20 flex items-center justify-center relative z-10 shrink-0">
+              <Shield className="w-10 h-10 text-primary-foreground/60" />
             </div>
           </div>
         </div>
 
-        {/* Desktop Tabs */}
-        <DesktopSettingsTabs />
+        {/* Right Column — Profile Card */}
+        <div className="xl:w-[320px] shrink-0">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-6">
+              ข้อมูลบัญชีผู้ใช้
+            </h3>
 
-        {/* Main Grid Layout */}
-        <div className="flex flex-col xl:flex-row gap-6">
-          
-          {/* Left Column (Main Settings Forms) */}
-          <div className="flex-1 min-w-0">
-            <DesktopGeneralSettings />
-            <DesktopDisplaySettings />
-            <DesktopDefaultDataSettings />
-            
-            {/* Security Bottom Left Banner inside Desktop View */}
-            <div className="mt-8 bg-indigo-900 rounded-3xl p-8 text-white relative overflow-hidden flex items-center justify-between">
-              <div className="relative z-10 max-w-sm">
-                <h3 className="text-xl font-bold mb-2">ระบบปลอดภัย มั่นใจได้</h3>
-                <p className="text-indigo-200 text-sm">ข้อมูลได้รับการปกป้องตามมาตรฐานความปลอดภัย</p>
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-muted border-4 border-background shadow-sm overflow-hidden mb-4 flex items-center justify-center">
+                {profile.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.fullName}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-muted-foreground">
+                    {profile.firstName.charAt(0)}
+                    {profile.lastName.charAt(0)}
+                  </span>
+                )}
               </div>
-              <div className="w-24 h-24 rounded-full border-4 border-indigo-700 flex items-center justify-center relative z-10 shrink-0">
-                <Shield className="w-10 h-10 text-indigo-300" />
-              </div>
-              
-              {/* Clean Security Banner without noisy decorations */}
+              <h4 className="text-base font-semibold text-foreground">
+                {profile.fullName}
+              </h4>
+              <span className="text-sm text-muted-foreground">
+                {profile.roleLabel}
+              </span>
+              {profile.schoolName ? (
+                <span className="text-xs text-muted-foreground">
+                  {profile.schoolName}
+                </span>
+              ) : null}
             </div>
 
+            <div className="flex flex-col gap-4 text-sm">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground truncate">
+                  {profile.email ?? "-"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">
+                  {profile.phone ?? "-"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground text-xs">
+                  {profile.lastSignIn
+                    ? formatThaiDateTime(profile.lastSignIn)
+                    : "-"}
+                </span>
+              </div>
+            </div>
           </div>
-
-          {/* Right Column (Sidebar Widgets) */}
-          <div className="xl:w-[320px] shrink-0">
-            <DesktopUserProfile />
-            <DesktopStorageInfo />
-            <DesktopSystemInfo />
-          </div>
-
         </div>
-
       </div>
-    </div>
+    </PageShell>
   )
 }

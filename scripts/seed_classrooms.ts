@@ -19,7 +19,7 @@ async function seedClassrooms() {
   if (!profile) return console.error('No teacher profile found');
 
   // 3. Create Academic Year
-  const { data: academicYear, error: yrErr } = await supabase.from('academic_years')
+  const { error: yrErr } = await supabase.from('academic_years')
     .insert({ 
       school_id: school.id, 
       year: '2567', 
@@ -37,7 +37,7 @@ async function seedClassrooms() {
   const yearId = currentYear!.id;
 
   // 4. Create Semester
-  const { data: semester, error: semErr } = await supabase.from('semesters')
+  const { error: semErr } = await supabase.from('semesters')
     .insert({ academic_year_id: yearId, semester: 'semester_1', start_date: '2024-05-16', end_date: '2024-10-15', is_current: true })
     .select().single();
     
@@ -49,7 +49,7 @@ async function seedClassrooms() {
   const semId = currentSem!.id;
 
   // 5. Create Classroom
-  const { data: classroom, error: clsErr } = await supabase.from('classrooms')
+  const { error: clsErr } = await supabase.from('classrooms')
     .insert({
       school_id: school.id,
       name: 'ม.4/1',

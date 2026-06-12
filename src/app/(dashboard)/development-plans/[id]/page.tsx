@@ -152,7 +152,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
         <TabsContent value="goals" className="mt-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-slate-800">เป้าหมายการพัฒนา</h3>
-            <Button size="sm" className="bg-slate-900 hover:bg-blue-600">เพิ่มเป้าหมาย</Button>
+            <Button size="sm" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มเป้าหมาย</Button>
           </div>
           
           {goals.length > 0 ? (
@@ -231,7 +231,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
                 </div>
                 <h3 className="text-lg font-medium text-slate-800">ยังไม่มีเป้าหมาย</h3>
                 <p className="text-sm text-slate-500 mt-1 mb-4">เพิ่มเป้าหมายเพื่อเริ่มติดตามการพัฒนา</p>
-                <Button size="sm">เพิ่มเป้าหมายแรก</Button>
+                <Button size="sm" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มเป้าหมายแรก</Button>
               </CardContent>
             </Card>
           )}
@@ -241,7 +241,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
         <TabsContent value="activities" className="mt-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-slate-800">กิจกรรมที่เกี่ยวข้อง</h3>
-            <Button size="sm" variant="outline">เพิ่มกิจกรรม</Button>
+            <Button size="sm" variant="outline" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มกิจกรรม</Button>
           </div>
           
           <Card className="rounded-xl shadow-sm border-slate-200 overflow-hidden">
@@ -321,7 +321,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
               </div>
               <h3 className="text-lg font-medium text-slate-800">ยังไม่มีการประเมิน</h3>
               <p className="text-sm text-slate-500 mt-1 mb-4">การประเมินจะสามารถทำได้เมื่อดำเนินกิจกรรมแล้วเสร็จ</p>
-              <Button size="sm" variant="outline">เพิ่มบันทึกการประเมิน</Button>
+              <Button size="sm" variant="outline" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มบันทึกการประเมิน</Button>
             </CardContent>
           </Card>
         </TabsContent>

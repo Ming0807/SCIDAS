@@ -18,7 +18,7 @@ async function seed() {
   console.log('🌱 Starting database seed...');
 
   // 1. Create a dummy school
-  const { data: school, error: schoolErr } = await supabase
+  const { error: schoolErr } = await supabase
     .from('schools')
     .insert({
       name: 'โรงเรียนตัวอย่าง',

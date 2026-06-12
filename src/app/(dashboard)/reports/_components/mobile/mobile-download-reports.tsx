@@ -1,4 +1,5 @@
 import React from "react"
+import Link from "next/link"
 import { ChevronRight, Download, FileText } from "lucide-react"
 import type { ReportJobItem } from "@/lib/server/report-read-models"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
@@ -12,10 +13,10 @@ export function MobileDownloadReports({ jobs }: { jobs: ReportJobItem[] }) {
     <div className="px-4 mb-8">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-slate-800">ดาวน์โหลดรายงาน</h3>
-        <button className="flex items-center gap-0.5 text-xs font-semibold text-indigo-600">
+        <Link href="/reports" className="flex items-center gap-0.5 text-xs font-semibold text-primary">
           ดูทั้งหมด
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Link>
       </div>
 
       {downloadable.length === 0 ? (
@@ -33,7 +34,7 @@ export function MobileDownloadReports({ jobs }: { jobs: ReportJobItem[] }) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-lg bg-red-50 flex flex-col items-center justify-center shrink-0 border border-red-100">
-                  <span className="text-[8px] font-semibold text-red-600 uppercase">
+                  <span className="text-[10px] font-semibold text-red-600 uppercase">
                     PDF
                   </span>
                 </div>

@@ -1,90 +1,76 @@
 import React from "react"
-import { FileText, ShieldAlert, HeartPulse, LineChart, Users } from "lucide-react"
+import {
+  FileText,
+  ShieldAlert,
+  HeartPulse,
+  LineChart,
+  Users,
+} from "lucide-react"
+import Link from "next/link"
 
-export function DesktopPopularReports() {
+import type { PopularReportType } from "@/lib/server/report-read-models"
+import { reportJobTypes } from "@/lib/server/report-read-models"
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  student_summary: FileText,
+  risk_report: ShieldAlert,
+  support_report: HeartPulse,
+  academic_report: LineChart,
+  admin_summary: Users,
+}
+
+export function DesktopPopularReports({
+  popularTypes,
+}: {
+  popularTypes: PopularReportType[]
+}) {
+  const items =
+    popularTypes.length > 0
+      ? popularTypes
+      : reportJobTypes.slice(0, 5).map((t) => ({
+          reportType: t,
+          label: t,
+          count: 0,
+        }))
+
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full flex flex-col">
-      <h3 className="text-[14px] font-bold text-slate-800 mb-4">รายงานยอดนิยม</h3>
+    <div className="bg-card rounded-xl border border-border shadow-sm p-5 flex flex-col h-full">
+      <h3 className="text-sm font-semibold text-foreground mb-4">
+        รายงานยอดนิยม
+      </h3>
 
-      <div className="flex flex-col gap-3 flex-1">
-        
-        <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-[12px] font-bold text-slate-800">รายงานสรุปภาพรวม</h4>
-              <p className="text-[10px] text-slate-500">สรุปข้อมูลนักเรียนทั้งหมด</p>
-            </div>
-          </div>
-          <button className="text-[11px] font-bold text-indigo-600 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
-            ดูรายงาน
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-orange-100 hover:bg-orange-50/30 transition-colors group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 text-orange-600">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-[12px] font-bold text-slate-800">รายงานกลุ่มเสี่ยง</h4>
-              <p className="text-[10px] text-slate-500">วิเคราะห์นักเรียนกลุ่มเสี่ยง</p>
-            </div>
-          </div>
-          <button className="text-[11px] font-bold text-indigo-600 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
-            ดูรายงาน
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-green-100 hover:bg-green-50/30 transition-colors group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0 text-green-600">
-              <HeartPulse className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-[12px] font-bold text-slate-800">รายงานการดูแลช่วยเหลือ</h4>
-              <p className="text-[10px] text-slate-500">ติดตามการช่วยเหลือรายกรณี</p>
-            </div>
-          </div>
-          <button className="text-[11px] font-bold text-indigo-600 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
-            ดูรายงาน
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-colors group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
-              <LineChart className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-[12px] font-bold text-slate-800">รายงานผลการพัฒนา</h4>
-              <p className="text-[10px] text-slate-500">ผลลัพธ์การพัฒนานักเรียน</p>
-            </div>
-          </div>
-          <button className="text-[11px] font-bold text-indigo-600 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
-            ดูรายงาน
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-purple-100 hover:bg-purple-50/30 transition-colors group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 text-purple-600">
-              <Users className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-[12px] font-bold text-slate-800">รายงานสำหรับผู้บริหาร</h4>
-              <p className="text-[10px] text-slate-500">ข้อมูลสรุปสำหรับการตัดสินใจ</p>
-            </div>
-          </div>
-          <button className="text-[11px] font-bold text-indigo-600 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
-            ดูรายงาน
-          </button>
-        </div>
-
+      <div className="flex-1 flex flex-col gap-3">
+        {items.map((item) => {
+          const Icon = iconMap[item.reportType] ?? FileText
+          return (
+            <Link
+              key={item.reportType}
+              href={`/reports`}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-foreground truncate">
+                  {item.label}
+                </div>
+              </div>
+              {item.count > 0 ? (
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {item.count} ครั้ง
+                </span>
+              ) : null}
+            </Link>
+          )
+        })}
       </div>
 
+      {popularTypes.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          ยังไม่มีรายงานที่ถูกสร้าง
+        </p>
+      ) : null}
     </div>
   )
 }

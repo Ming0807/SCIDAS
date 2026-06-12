@@ -172,6 +172,7 @@ function HomeVisitCard({ visit }: { visit: HomeVisitRecord }) {
     <article className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
       <div className="relative aspect-[16/9] bg-muted">
         {visit.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={visit.imageUrl}
             alt={`ภาพเยี่ยมบ้าน ${visit.studentName}`}

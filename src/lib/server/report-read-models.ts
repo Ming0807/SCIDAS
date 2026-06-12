@@ -194,3 +194,43 @@ export async function getReportJobs(limit = 20): Promise<ReportJobItem[]> {
     }),
   )
 }
+
+export type PopularReportType = {
+  reportType: string
+  label: string
+  count: number
+}
+
+export async function getPopularReportTypes(
+  limit = 5,
+): Promise<PopularReportType[]> {
+  const context = await getCurrentUserContext()
+  const client = await createClient()
+
+  const { data, error } = await client
+    .from("report_jobs")
+    .select("report_type")
+    .eq("school_id", context.schoolId)
+
+  if (error || !data) {
+    return []
+  }
+
+  // Aggregate counts manually
+  const counts: Record<string, number> = {}
+  for (const row of data) {
+    const rt = (row as { report_type: string }).report_type
+    counts[rt] = (counts[rt] ?? 0) + 1
+  }
+
+  // Sort by count descending
+  const sorted = Object.entries(counts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limit)
+
+  return sorted.map(([reportType, count]) => ({
+    reportType,
+    label: getReportTypeLabel(reportType),
+    count,
+  }))
+}

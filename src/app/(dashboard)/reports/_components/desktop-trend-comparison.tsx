@@ -5,8 +5,8 @@ export function DesktopTrendComparison() {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[14px] font-bold text-slate-800">แนวโน้มเปรียบเทียบ</h3>
-        <button className="flex items-center gap-1 text-[11px] font-bold text-slate-700 border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50">
+        <h3 className="text-sm font-bold text-slate-800">แนวโน้มเปรียบเทียบ</h3>
+        <button className="flex items-center gap-1 text-xs font-bold text-slate-700 border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50">
           เปรียบเทียบ 2 ภาคเรียน
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -15,26 +15,26 @@ export function DesktopTrendComparison() {
       <div className="flex items-center justify-center gap-6 mb-6">
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-red-500 rounded-full"></div>
-          <span className="text-[11px] font-medium text-slate-600">กลุ่มเสี่ยง</span>
+          <span className="text-xs font-medium text-slate-600">กลุ่มเสี่ยง</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-yellow-400 rounded-full"></div>
-          <span className="text-[11px] font-medium text-slate-600">อยู่ระหว่างการดูแล</span>
+          <span className="text-xs font-medium text-slate-600">อยู่ระหว่างการดูแล</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-green-500 rounded-full"></div>
-          <span className="text-[11px] font-medium text-slate-600">ช่วยเหลือสำเร็จ</span>
+          <span className="text-xs font-medium text-slate-600">ช่วยเหลือสำเร็จ</span>
         </div>
       </div>
 
       <div className="flex-1 relative min-h-[160px] pb-6 ml-6 mt-2">
         <div className="absolute -left-8 top-0 bottom-6 flex flex-col justify-between py-0 w-8 items-end pr-2">
-          <span className="text-[10px] text-slate-400 font-medium">250</span>
-          <span className="text-[10px] text-slate-400 font-medium">200</span>
-          <span className="text-[10px] text-slate-400 font-medium">150</span>
-          <span className="text-[10px] text-slate-400 font-medium">100</span>
-          <span className="text-[10px] text-slate-400 font-medium">50</span>
-          <span className="text-[10px] text-slate-400 font-medium">0</span>
+          <span className="text-xs text-slate-400 font-medium">250</span>
+          <span className="text-xs text-slate-400 font-medium">200</span>
+          <span className="text-xs text-slate-400 font-medium">150</span>
+          <span className="text-xs text-slate-400 font-medium">100</span>
+          <span className="text-xs text-slate-400 font-medium">50</span>
+          <span className="text-xs text-slate-400 font-medium">0</span>
         </div>
 
         <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">

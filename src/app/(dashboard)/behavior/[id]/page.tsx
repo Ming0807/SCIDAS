@@ -1,80 +1,240 @@
 import React from "react"
-import { MobileBehaviorProfile } from "./_components/mobile-behavior-profile"
-import { StudentProfileHeader } from "./_components/student-profile-header"
-import { BehaviorCharts } from "./_components/behavior-charts"
-import { BehaviorRecent } from "./_components/behavior-recent"
-import { BehaviorComments } from "./_components/behavior-comments"
-import { Bell, ChevronRight, Plus } from "lucide-react"
 import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ArrowLeft, Calendar, User } from "lucide-react"
 
-export default function BehaviorPage() {
+import { PageShell } from "@/components/dashboard/page-shell"
+import { StatusBadge } from "@/components/dashboard/status-badge"
+import { ErrorState } from "@/components/feedback/error-state"
+import {
+  getBehaviorRecordById,
+  getBehaviorRecordsByStudentId,
+  getBehaviorTypeLabel,
+  type BehaviorRecordItem,
+} from "@/lib/server/behavior-read-models"
+import { formatGradeLevel, getStudentInitials } from "@/lib/student-care-formatters"
+import { cn } from "@/lib/utils"
+
+interface PageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function BehaviorDetailPage({ params }: PageProps) {
+  const { id } = await params
+
+  let studentRecords: BehaviorRecordItem[] = []
+
+  let record: BehaviorRecordItem | null
+  try {
+    record = await getBehaviorRecordById(id)
+  } catch {
+    return (
+      <PageShell>
+        <ErrorState
+          title="ไม่สามารถโหลดข้อมูลพฤติกรรมได้"
+          description="กรุณาลองใหม่อีกครั้ง"
+        />
+      </PageShell>
+    )
+  }
+
+  if (!record) notFound()
+
+  try {
+    studentRecords = await getBehaviorRecordsByStudentId(record.studentId, 10)
+  } catch {
+    // non-critical — continue without related records
+  }
+
+  const isPositive = record.behaviorType === "positive"
+  const isNegative = record.behaviorType === "negative"
+  const statusTone = isPositive ? "success" : isNegative ? "danger" : "neutral"
+  const initials = getStudentInitials(record.studentName)
+
   return (
-    <>
-      {/* Mobile View */}
-      <div className="md:hidden block">
-        <MobileBehaviorProfile />
-      </div>
+    <PageShell>
+      {/* Back link */}
+      <Link
+        href="/behavior"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        กลับไปภาพรวมพฤติกรรม
+      </Link>
 
-      {/* Desktop View */}
-      <div className="hidden md:flex p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-[calc(100vh-64px)] flex-col overflow-x-hidden">
-        
-        {/* Breadcrumb & Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex flex-col">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">พฤติกรรม</h1>
-            <div className="flex items-center gap-2 mt-1 text-[13px] text-slate-500 font-medium">
-              <Link href="/" className="hover:text-blue-600">หน้าหลัก</Link>
-              <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-slate-800">พฤติกรรม</span>
-            </div>
-          </div>
-
+      {/* Record detail card */}
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6 mb-6">
+        <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            {/* Action Button */}
-            <button className="hidden sm:flex items-center justify-center gap-1.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-[13px] font-bold py-2 px-4 rounded-lg transition-colors shadow-sm">
-              <Plus className="w-4 h-4" />
-              บันทึกพฤติกรรม
-            </button>
-
-            <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-700 shadow-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50">
-              ภาคเรียนที่ 1/2567
-              <ChevronRight className="w-3.5 h-3.5 rotate-90 text-slate-400" />
+            <span
+              className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                isPositive
+                  ? "bg-emerald-100 text-emerald-700"
+                  : isNegative
+                    ? "bg-red-100 text-red-700"
+                    : "bg-muted text-muted-foreground",
+              )}
+              aria-hidden="true"
+            >
+              {initials}
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">
+                {record.studentName}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {record.studentClass
+                  ? `ชั้น ${record.studentClass}`
+                  : formatGradeLevel("ไม่ระบุ")}
+              </p>
             </div>
+          </div>
+          <StatusBadge
+            status={statusTone}
+            label={getBehaviorTypeLabel(record.behaviorType)}
+            size="default"
+          />
+        </div>
 
-            <div className="relative cursor-pointer">
-              <div className="w-9 h-9 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm">
-                <Bell className="w-4 h-4" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
-                3
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">วันที่:</span>
+            <span className="font-medium text-foreground">{record.date}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">คะแนน:</span>
+            <span
+              className={cn(
+                "font-semibold",
+                record.points > 0
+                  ? "text-emerald-600"
+                  : record.points < 0
+                    ? "text-red-600"
+                    : "text-muted-foreground",
+              )}
+            >
+              {record.points > 0 ? "+" : ""}
+              {record.points}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <User className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">ผู้บันทึก:</span>
+            <span className="font-medium text-foreground">
+              {record.reportedByName ?? "-"}
+            </span>
+          </div>
+          {record.category ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">หมวดหมู่:</span>
+              <span className="font-medium text-foreground">
+                {record.category}
+              </span>
             </div>
-
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <div className="flex flex-col items-end">
-                <span className="text-[13px] font-bold text-slate-800 leading-tight">นางสาวจันทร์จิรา พรมดี</span>
-                <span className="text-[11px] text-slate-500">ครูที่ปรึกษา</span>
-              </div>
-              <img src="https://api.dicebear.com/7.x/notionists/svg?seed=teacher2" alt="Teacher" className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200" />
+          ) : null}
+          {record.severity ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">ระดับความรุนแรง:</span>
+              <span className="font-medium text-foreground">
+                {record.severity}
+              </span>
             </div>
+          ) : null}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">แจ้งผู้ปกครอง:</span>
+            <span className="font-medium text-foreground">
+              {record.parentNotified ? "แจ้งแล้ว" : "ยังไม่ได้แจ้ง"}
+            </span>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <StudentProfileHeader />
-          <BehaviorCharts />
-          
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-            <div className="xl:col-span-2">
-              <BehaviorRecent />
-            </div>
-            <div className="xl:col-span-1">
-              <BehaviorComments />
-            </div>
-          </div>
+        <div className="border-t border-border pt-4">
+          <h2 className="text-sm font-semibold text-foreground mb-2">
+            รายละเอียด
+          </h2>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {record.description || "ไม่มีรายละเอียด"}
+          </p>
         </div>
 
+        {record.actionTaken ? (
+          <div className="border-t border-border pt-4 mt-4">
+            <h2 className="text-sm font-semibold text-foreground mb-2">
+              การดำเนินการ
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {record.actionTaken}
+            </p>
+          </div>
+        ) : null}
       </div>
-    </>
+
+      {/* Student's other records */}
+      {studentRecords.length > 0 ? (
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+          <h2 className="text-base font-semibold text-foreground mb-4">
+            บันทึกพฤติกรรมอื่นของนักเรียนนี้
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[500px]">
+              <thead>
+                <tr className="border-b border-border text-xs font-semibold text-muted-foreground">
+                  <th className="py-2 px-3">วันที่</th>
+                  <th className="py-2 px-3">ประเภท</th>
+                  <th className="py-2 px-3">รายละเอียด</th>
+                  <th className="py-2 px-3 text-right">คะแนน</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                {studentRecords.map((r) => (
+                  <tr
+                    key={r.id}
+                    className={cn(
+                      "border-b border-border hover:bg-muted/30 transition-colors",
+                      r.id === record.id && "bg-muted/20",
+                    )}
+                  >
+                    <td className="py-2 px-3 text-muted-foreground whitespace-nowrap">
+                      {r.date}
+                    </td>
+                    <td className="py-2 px-3 whitespace-nowrap">
+                      <StatusBadge
+                        status={
+                          r.behaviorType === "positive"
+                            ? "success"
+                            : r.behaviorType === "negative"
+                              ? "danger"
+                              : "neutral"
+                        }
+                        label={getBehaviorTypeLabel(r.behaviorType)}
+                        size="sm"
+                      />
+                    </td>
+                    <td className="py-2 px-3 text-foreground max-w-xs truncate">
+                      {r.description}
+                    </td>
+                    <td
+                      className={cn(
+                        "py-2 px-3 text-right font-semibold whitespace-nowrap",
+                        r.points > 0
+                          ? "text-emerald-600"
+                          : r.points < 0
+                            ? "text-red-600"
+                            : "text-muted-foreground",
+                      )}
+                    >
+                      {r.points > 0 ? "+" : ""}
+                      {r.points}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+    </PageShell>
   )
 }

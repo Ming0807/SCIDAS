@@ -1,9 +1,8 @@
 import React from "react"
-import { AlertTriangle, Heart, Plus, Smile, Users } from "lucide-react"
+import { AlertTriangle, Heart, Smile, Users } from "lucide-react"
 
 import { MetricCard, PageHeader, PageShell } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
-import { Button } from "@/components/ui/button"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
 
 import { ClassSummary } from "./_components/class-summary"
@@ -99,11 +98,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
       <PageHeader
         title="ข้อมูลนักเรียนและการจัดการ"
         description="จัดการข้อมูลนักเรียน บันทึก แก้ไข และติดตามข้อมูลรายบุคคล"
-        actions={
-          <Button>
-            <Plus /> เพิ่มนักเรียน
-          </Button>
-        }
+        actions={null}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

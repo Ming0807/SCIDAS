@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Send } from "lucide-react"
 import Link from "next/link"
 import { getStudents } from "@/app/actions/student.actions"
-import { getProfiles, createSupportRecord } from "@/app/actions/support.actions"
+import { getProfiles, createSupportRecordFormAction } from "@/app/actions/support.actions"
 
 export default async function NewSupportCasePage() {
   const students = await getStudents()
@@ -27,7 +27,7 @@ export default async function NewSupportCasePage() {
         </div>
       </div>
 
-      <form action={createSupportRecord}>
+      <form action={createSupportRecordFormAction}>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2">
             <Card className="hover:shadow-md transition-shadow">
@@ -139,27 +139,7 @@ export default async function NewSupportCasePage() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
-                <CardTitle className="text-lg">การแจ้งเตือน</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                <div className="flex items-start space-x-3">
-                  <input type="checkbox" id="notify-parents" className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
-                  <label htmlFor="notify-parents" className="text-sm text-slate-700">
-                    <span className="font-medium block">แจ้งผู้ปกครอง</span>
-                    <span className="text-slate-500 text-xs">ส่งข้อความแจ้งผู้ปกครองเกี่ยวกับการเปิดเคสนี้</span>
-                  </label>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <input type="checkbox" id="notify-teachers" defaultChecked className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
-                  <label htmlFor="notify-teachers" className="text-sm text-slate-700">
-                    <span className="font-medium block">แจ้งครูประจำชั้น</span>
-                    <span className="text-slate-500 text-xs">แจ้งเตือนให้ครูประจำชั้นรับทราบถึงเคสนี้</span>
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
+
           </div>
         </div>
       </form>

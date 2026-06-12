@@ -1,5 +1,6 @@
 import React from "react"
-import { Eye, Download, MoreVertical, FileText, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { Eye, Download, FileText, Loader2 } from "lucide-react"
 import type { ReportJobItem } from "@/lib/server/report-read-models"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
 
@@ -100,9 +101,7 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                                 : "กำลังดำเนินการ"}
                           </span>
                         )}
-                        <button className="text-slate-400 hover:text-slate-600">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
+
                       </div>
                     </td>
                   </tr>
@@ -114,9 +113,9 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
       )}
 
       <div className="mt-auto pt-4 flex justify-center">
-        <button className="px-6 py-2 border border-indigo-100 text-indigo-600 font-semibold text-xs rounded-lg hover:bg-indigo-50 transition-colors">
+        <Link href="/reports" className="px-6 py-2 border border-primary/20 text-primary font-semibold text-xs rounded-lg hover:bg-primary/5 transition-colors">
           ดูรายงานทั้งหมด
-        </button>
+        </Link>
       </div>
     </div>
   )

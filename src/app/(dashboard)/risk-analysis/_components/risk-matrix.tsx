@@ -6,7 +6,7 @@ export function RiskMatrix() {
     <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex-1 flex flex-col xl:flex-row gap-6 xl:items-stretch min-w-0">
       
       <div className="flex-1 flex flex-col min-w-0">
-        <h3 className="text-[14px] font-bold text-slate-800 mb-6">แผนภาพความเสี่ยง (Risk Matrix)</h3>
+        <h3 className="text-sm font-bold text-slate-800 mb-6">แผนภาพความเสี่ยง (Risk Matrix)</h3>
         
         <div className="flex relative mt-4 ml-10">
           
@@ -24,39 +24,39 @@ export function RiskMatrix() {
             {/* Grid 5x5 */}
             <div className="grid grid-cols-5 grid-rows-5 h-[240px] gap-0.5">
               {/* Row 5 */}
-              <div className="bg-[#bbf7d0] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">2</div>
-              <div className="bg-[#fef08a] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">3</div>
-              <div className="bg-[#facc15] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">5</div>
-              <div className="bg-[#f87171] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">7</div>
-              <div className="bg-[#ef4444] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">12</div>
+              <div className="bg-green-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">2</div>
+              <div className="bg-yellow-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">3</div>
+              <div className="bg-yellow-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">5</div>
+              <div className="bg-red-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">7</div>
+              <div className="bg-red-500 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">12</div>
               
               {/* Row 4 */}
-              <div className="bg-[#86efac] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">1</div>
-              <div className="bg-[#fef08a] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">4</div>
-              <div className="bg-[#facc15] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">7</div>
-              <div className="bg-[#fb923c] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">9</div>
-              <div className="bg-[#ef4444] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">16</div>
+              <div className="bg-green-300 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">1</div>
+              <div className="bg-yellow-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">4</div>
+              <div className="bg-yellow-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">7</div>
+              <div className="bg-orange-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">9</div>
+              <div className="bg-red-500 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">16</div>
 
               {/* Row 3 */}
-              <div className="bg-[#86efac] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">6</div>
-              <div className="bg-[#fef08a] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">9</div>
-              <div className="bg-[#facc15] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">13</div>
-              <div className="bg-[#fb923c] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">16</div>
-              <div className="bg-[#ef4444] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">21</div>
+              <div className="bg-green-300 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">6</div>
+              <div className="bg-yellow-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">9</div>
+              <div className="bg-yellow-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">13</div>
+              <div className="bg-orange-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">16</div>
+              <div className="bg-red-500 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">21</div>
 
               {/* Row 2 */}
-              <div className="bg-[#4ade80] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">12</div>
-              <div className="bg-[#86efac] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">15</div>
-              <div className="bg-[#fef08a] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">18</div>
-              <div className="bg-[#facc15] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">9</div>
-              <div className="bg-[#fb923c] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">11</div>
+              <div className="bg-green-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">12</div>
+              <div className="bg-green-300 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">15</div>
+              <div className="bg-yellow-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">18</div>
+              <div className="bg-yellow-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">9</div>
+              <div className="bg-orange-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">11</div>
 
               {/* Row 1 */}
-              <div className="bg-[#22c55e] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-white">20</div>
-              <div className="bg-[#4ade80] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">18</div>
-              <div className="bg-[#86efac] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">16</div>
-              <div className="bg-[#d9f99d] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">7</div>
-              <div className="bg-[#fef08a] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-[13px] text-slate-700">3</div>
+              <div className="bg-green-500 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-white">20</div>
+              <div className="bg-green-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">18</div>
+              <div className="bg-green-300 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">16</div>
+              <div className="bg-lime-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">7</div>
+              <div className="bg-yellow-200 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center font-bold text-sm text-slate-700">3</div>
             </div>
 
             {/* X Axis Label */}

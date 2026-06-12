@@ -4,6 +4,10 @@ import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 import { Database } from "@/types/database.types"
 
+import type { ActionResult } from "@/lib/server/action-result"
+import { actionFail, actionOk } from "@/lib/server/action-result"
+import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/current-user"
+
 type SeverityLevel = Database["public"]["Enums"]["severity_level"]
 type SupportType = Database["public"]["Enums"]["support_type"]
 
@@ -35,49 +39,76 @@ export async function getProfiles() {
   return data
 }
 
-export async function createSupportRecord(formData: FormData) {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
+export async function createSupportRecord(
+  _prev: ActionResult<{ id: string }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId) {
+      return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนสร้างบันทึกการช่วยเหลือ")
+    }
 
-  const student_id = formData.get('student_id') as string
-  const support_type = formData.get('support_type') as SupportType
-  const priority = formData.get('priority') as SeverityLevel
-  const title = formData.get('title') as string
-  const description = formData.get('description') as string
-  const assigned_to = formData.get('assigned_to') as string
-  const provided_by = assigned_to || user.id
-  
-  const { data: semData } = await supabase.from('semesters').select('id').eq('is_current', true).single()
-  
-  // If no semester found, fall back to first one or error
-  let semester_id = semData?.id
-  if (!semester_id) {
-     const { data: fallbackSem } = await supabase.from('semesters').select('id').limit(1).single()
-     semester_id = fallbackSem?.id
+    const studentId = formData.get("student_id") as string
+    const supportType = formData.get("support_type") as SupportType
+    const priority = formData.get("priority") as SeverityLevel
+    const title = formData.get("title") as string
+    const description = formData.get("description") as string
+    const assignedTo = formData.get("assigned_to") as string
+
+    if (!studentId) {
+      return actionFail("VALIDATION_ERROR", "กรุณาเลือกนักเรียน", {
+        fieldErrors: { student_id: ["กรุณาเลือกนักเรียน"] },
+      })
+    }
+    if (!title || !title.trim()) {
+      return actionFail("VALIDATION_ERROR", "กรุณากรอกหัวข้อ", {
+        fieldErrors: { title: ["กรุณากรอกหัวข้อ"] },
+      })
+    }
+
+    const client = await createClient()
+    const providedBy = assignedTo || context.profileId
+
+    const semesterId = await getCurrentSemesterId(context.schoolId)
+
+    if (!semesterId) {
+      return actionFail("INTERNAL_ERROR", "ไม่พบภาคการศึกษาในระบบ")
+    }
+
+    const { data, error } = await client
+      .from("support_records")
+      .insert({
+        student_id: studentId,
+        semester_id: semesterId,
+        school_id: context.schoolId,
+        support_type: supportType || "other",
+        priority: priority || "medium",
+        title: title.trim(),
+        description: description?.trim() || "",
+        provided_by: providedBy,
+        status: "pending",
+      })
+      .select("id")
+      .single()
+
+    if (error) {
+      return actionFail("INTERNAL_ERROR", error.message)
+    }
+
+    revalidatePath("/support")
+    revalidatePath("/support/new")
+
+    return actionOk("สร้างบันทึกการช่วยเหลือสำเร็จ", { data: { id: data.id } })
+  } catch (err) {
+    return actionFail("INTERNAL_ERROR", err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ")
   }
-  
-  if (!semester_id) throw new Error("No semester found")
+}
 
-  const { error } = await supabase
-    .from('support_records')
-    .insert({
-      student_id,
-      semester_id,
-      support_type,
-      priority,
-      title,
-      description,
-      provided_by,
-      status: 'pending'
-    })
-
-  if (error) {
-    console.error("Error creating support record:", error)
-    throw new Error(error.message)
-  }
-
-  revalidatePath('/support')
-  revalidatePath('/support/new')
+/**
+ * Form-action compatible wrapper for `<form action={createSupportRecordFormAction}>`.
+ */
+export async function createSupportRecordFormAction(formData: FormData): Promise<void> {
+  const result = await createSupportRecord(null, formData)
+  if (!result.ok) throw new Error(result.message)
 }

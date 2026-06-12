@@ -7,8 +7,8 @@ export function MobileTrendChart() {
       <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
         
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[13px] font-bold text-slate-800">แนวโน้ม 6 เดือนล่าสุด</h3>
-          <button className="flex items-center gap-1 text-[10px] font-bold text-slate-600 border border-slate-200 px-2 py-1 rounded-md">
+          <h3 className="text-sm font-bold text-slate-800">แนวโน้ม 6 เดือนล่าสุด</h3>
+          <button className="flex items-center gap-1 text-xs font-bold text-slate-600 border border-slate-200 px-2 py-1 rounded-md">
             6 เดือนล่าสุด
             <ChevronDown className="w-3 h-3" />
           </button>
@@ -17,25 +17,25 @@ export function MobileTrendChart() {
         <div className="flex items-center gap-4 mb-6 flex-wrap">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-            <span className="text-[10px] text-slate-500">การมาเรียน</span>
+            <span className="text-xs text-slate-500">การมาเรียน</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-orange-400"></div>
-            <span className="text-[10px] text-slate-500">ผลการเรียน</span>
+            <span className="text-xs text-slate-500">ผลการเรียน</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-            <span className="text-[10px] text-slate-500">พฤติกรรม</span>
+            <span className="text-xs text-slate-500">พฤติกรรม</span>
           </div>
         </div>
 
         <div className="relative h-[150px] pb-6 ml-6">
           <div className="absolute -left-6 top-0 bottom-6 flex flex-col justify-between py-0 w-5 items-end pr-1">
-            <span className="text-[9px] text-slate-400">100</span>
-            <span className="text-[9px] text-slate-400">75</span>
-            <span className="text-[9px] text-slate-400">50</span>
-            <span className="text-[9px] text-slate-400">25</span>
-            <span className="text-[9px] text-slate-400">0</span>
+            <span className="text-xs text-slate-400">100</span>
+            <span className="text-xs text-slate-400">75</span>
+            <span className="text-xs text-slate-400">50</span>
+            <span className="text-xs text-slate-400">25</span>
+            <span className="text-xs text-slate-400">0</span>
           </div>
 
           <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">

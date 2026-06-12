@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Edit2, Eye, MoreHorizontal, Printer, Settings, Trash2, Users } from "lucide-react"
+import { Edit2, Eye, Printer, Settings, Trash2, Users } from "lucide-react"
 
 import { StudentIdentity } from "@/components/dashboard"
 import { StatusBadge } from "@/components/dashboard/status-badge"
@@ -81,12 +81,7 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
         >
           <Eye />
         </Link>
-        <Button aria-label={`แก้ไข ${student.name}`} size="icon-sm" variant="ghost">
-          <Edit2 />
-        </Button>
-        <Button aria-label={`เมนูเพิ่มเติม ${student.name}`} size="icon-sm" variant="ghost">
-          <MoreHorizontal />
-        </Button>
+
       </div>
     ),
   },

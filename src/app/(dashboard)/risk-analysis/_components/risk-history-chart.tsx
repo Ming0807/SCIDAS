@@ -5,10 +5,10 @@ export function RiskHistoryChart() {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[14px] font-bold text-slate-800">แนวโน้มความเสี่ยงย้อนหลัง</h3>
+        <h3 className="text-sm font-bold text-slate-800">แนวโน้มความเสี่ยงย้อนหลัง</h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-500">ช่วงเวลา</span>
-          <button className="flex items-center gap-1 text-[11px] font-bold text-slate-700 border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50">
+          <span className="text-xs text-slate-500">ช่วงเวลา</span>
+          <button className="flex items-center gap-1 text-xs font-bold text-slate-700 border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50">
             6 เดือน
             <ChevronDown className="w-3 h-3" />
           </button>
@@ -18,26 +18,26 @@ export function RiskHistoryChart() {
       <div className="flex items-center justify-center gap-6 mb-6">
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-red-500 rounded-full"></div>
-          <span className="text-[11px] font-medium text-slate-600">เสี่ยงสูง</span>
+          <span className="text-xs font-medium text-slate-600">เสี่ยงสูง</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-yellow-400 rounded-full"></div>
-          <span className="text-[11px] font-medium text-slate-600">เสี่ยงปานกลาง</span>
+          <span className="text-xs font-medium text-slate-600">เสี่ยงปานกลาง</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-green-500 rounded-full"></div>
-          <span className="text-[11px] font-medium text-slate-600">เสี่ยงต่ำ</span>
+          <span className="text-xs font-medium text-slate-600">เสี่ยงต่ำ</span>
         </div>
       </div>
 
       <div className="flex-1 relative min-h-[180px] pb-6 ml-6 mt-2">
         <div className="absolute -left-8 top-0 bottom-6 flex flex-col justify-between py-0 w-8 items-end pr-2">
-          <span className="text-[9px] text-slate-500">จำนวน (คน)</span>
-          <span className="text-[10px] text-slate-400 font-medium">600</span>
-          <span className="text-[10px] text-slate-400 font-medium">450</span>
-          <span className="text-[10px] text-slate-400 font-medium">300</span>
-          <span className="text-[10px] text-slate-400 font-medium">150</span>
-          <span className="text-[10px] text-slate-400 font-medium">0</span>
+          <span className="text-xs text-slate-500">จำนวน (คน)</span>
+          <span className="text-xs text-slate-400 font-medium">600</span>
+          <span className="text-xs text-slate-400 font-medium">450</span>
+          <span className="text-xs text-slate-400 font-medium">300</span>
+          <span className="text-xs text-slate-400 font-medium">150</span>
+          <span className="text-xs text-slate-400 font-medium">0</span>
         </div>
 
         <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">

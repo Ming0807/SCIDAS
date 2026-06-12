@@ -39,7 +39,6 @@ type AcademicFormProps = {
 }
 
 export function AcademicForm({ 
-  classroom, 
   students, 
   subjects, 
   initialScores, 
@@ -181,7 +180,6 @@ export function AcademicForm({
             ) : (
               filteredStudents.map((student, index) => {
                 const studentScores = scoreData[student.id] || {}
-                const totalScore = Object.values(studentScores).reduce((a, b) => a + b, 0)
                 
                 // Calculate pseudo GPA based on score values for display
                 const calculateGrade = (score: number) => {

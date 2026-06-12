@@ -1,10 +1,10 @@
 import Link from "next/link"
-import { ChevronRight, MoreVertical } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 import { StudentIdentity } from "@/components/dashboard"
 import { MobileList, Pagination } from "@/components/data"
 import { EmptyState } from "@/components/feedback"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import type { StudentListItem } from "./student-data"
@@ -34,9 +34,7 @@ function MobileStudentRow({
               statusLabel={student.statusLabel}
               className="min-w-0 flex-1"
             />
-            <Button aria-label={`เมนูนักเรียน ${student.name}`} size="icon-sm" variant="ghost">
-              <MoreVertical />
-            </Button>
+
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">

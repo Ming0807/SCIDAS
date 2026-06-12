@@ -1,15 +1,16 @@
 import React from "react"
+import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
 export function MobileSupportHistory() {
   return (
     <div className="px-4 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-bold text-slate-800">ประวัติการช่วยเหลือ</h3>
-        <button className="flex items-center gap-0.5 text-[11px] font-bold text-indigo-600">
+        <h3 className="text-sm font-bold text-slate-800">ประวัติการช่วยเหลือ</h3>
+        <Link href="/support" className="flex items-center gap-0.5 text-xs font-semibold text-primary">
           ดูทั้งหมด
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Link>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -17,14 +18,14 @@ export function MobileSupportHistory() {
           <table className="w-full text-left min-w-[400px]">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="py-2.5 px-3 text-[10px] font-medium text-slate-500">วันที่</th>
-                <th className="py-2.5 px-3 text-[10px] font-medium text-slate-500">การดำเนินการ</th>
-                <th className="py-2.5 px-3 text-[10px] font-medium text-slate-500">ผู้ดำเนินการ</th>
-                <th className="py-2.5 px-3 text-[10px] font-medium text-slate-500">ผลการติดตาม</th>
+                <th className="py-2.5 px-3 text-xs font-medium text-slate-500">วันที่</th>
+                <th className="py-2.5 px-3 text-xs font-medium text-slate-500">การดำเนินการ</th>
+                <th className="py-2.5 px-3 text-xs font-medium text-slate-500">ผู้ดำเนินการ</th>
+                <th className="py-2.5 px-3 text-xs font-medium text-slate-500">ผลการติดตาม</th>
                 <th className="py-2.5 w-8"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50 text-[11px]">
+            <tbody className="divide-y divide-slate-50 text-xs">
               <tr className="hover:bg-slate-50 transition-colors">
                 <td className="py-3 px-3 text-slate-600 whitespace-nowrap">15 เม.ย. 2567</td>
                 <td className="py-3 px-3 font-medium text-slate-800">พูดคุยนักเรียนรายบุคคล</td>

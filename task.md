@@ -257,3 +257,163 @@ Audited the UI components across the batch 3 pages for AI slop and anti-patterns
 1. **Background Theming Anti-Pattern**: Identified hard-coded bg-[#f8fafc] (AI default cream/slate color) and replaced it with bg-background to integrate correctly with the theming system across all four pages.
 2. **Decorative Elements Ban**: Addressed the 'Decorative noise' anti-pattern in /settings by removing arbitrary absolute positioned SVG blobs (border-2 border-indigo-800/30 rounded-full) from the security banner, adhering to the 'no glassmorphism/useless decoration' principle.
 3. **Identical Card Grid Pattern Identified**: Recognized the hero-metric identical card grid pattern in reports/_components/desktop-overview-stats.tsx and development-plans/_components/idp-goals.tsx.
+
+## 2026-06-12 Final Mock → Real Data Migration Batch
+
+Status: done. The last three pages still depending on mock/static data are now wired to real read models.
+
+### /behavior → Real behavior_records
+
+- [x] Created `src/lib/server/behavior-read-models.ts` with `getBehaviorDashboard()` (summary metrics, recent records, leaderboard) and `getBehaviorRecords()` — Queries `behavior_records` scoped to `school_id`, joins `students` and `profiles`, returns typed `BehaviorRecordItem` / `BehaviorSummary` / `BehaviorLeaderboardItem` / `BehaviorDashboard` DTOs.
+- [x] Migrated `/behavior/page.tsx` to async Server Component using `PageShell`, `PageHeader`, `MetricCard`, `StatusBadge`, `EmptyState`, and `ErrorState` — all real data, no mock.
+- [x] Cleared all banned UI patterns: no more `text-[9px]`/`text-[10px]`/`text-[11px]`/`text-[12px]`/`text-[13px]`, no `bg-[#4f46e5]`, no `shadow-[...]`, no dicebear avatars, no hardcoded hex, no `bg-slate-50` wrapper.
+- [x] Replaced dicebear avatars with computed initials via `getStudentInitials()` in `src/lib/student-care-formatters.ts`.
+- [x] Converted `src/app/actions/behavior.actions.ts` to `ActionResult<T>` — `createBehaviorRecordAction()` returns `ActionResult<{ id: string }>`, with a `createBehaviorRecord()` form-action-compatible wrapper for the `/behavior/record` page.
+- [x] Added proper auth scoping via `getCurrentUserContext()`, `school_id`, and validation.
+
+### /development-plans → Real development_plans
+
+- [x] Created `src/lib/server/idp-read-models.ts` with `getDevelopmentPlanList()` and `getPlanSummary()` — Queries `development_plans` scoped to `school_id`, joins `students`/`profiles`, batches goal counts, returns typed `DevelopmentPlanListItem`/`PlanSummary` DTOs with status labels/tones.
+- [x] Migrated `/development-plans/page.tsx` to async Server Component using `PageShell`, `PageHeader`, `MetricCard`, `StatusBadge`, `EmptyState`, `ErrorState` — real plan list table with status badges, progress bars, goal counts.
+- [x] Removed all mock sub-component composition (idp-header, idp-goals, idp-timeline, idp-trend-reflection, idp-latest-records, idp-sidebar, mobile-idp-profile) — page now self-contained with inline rendering.
+- [x] The `[id]/page.tsx` detail page was already wired to real data via `idp.actions.ts` and was left untouched.
+
+### /settings → Real profiles + school data
+
+- [x] Created `src/lib/server/settings-read-models.ts` with `getUserProfile()` — Reads current user's profile + school + auth metadata, returns typed `UserProfileInfo` with role labels.
+- [x] Migrated `/settings/page.tsx` to async Server Component using `PageShell`, `PageHeader`, `ErrorState` — loads real profile data, displays name/role/school/email/phone/last-sign-in with semantic tokens.
+- [x] Cleared all banned UI patterns: no dicebear, no hardcoded names/phones/emails, no `text-[10px]`/`text-[11px]`/`text-[12px]`/`text-[13px]`, no `bg-[#f8fafc]`, no `bg-indigo-900`.
+- [x] Security banner uses `bg-primary/90` with semantic tokens, no decorative blobs.
+
+### Verification
+
+- [x] `npx tsc --noEmit`: passed.
+- [x] `npm run lint`: passed (61 pre-existing warnings, 0 new).
+- [x] `npm run build`: passed.
+
+### /behavior/[id] → Real behavior record detail
+
+- [x] Added `getBehaviorRecordById()` + `getBehaviorRecordsByStudentId()` to behavior read model — single-record lookup + student-scoped list, both scoped to `school_id`.
+- [x] Migrated `/behavior/[id]/page.tsx` to async Server Component — loads real behavior record, shows detail card with type/points/date/category/severity/parent-notified, plus related records table for same student.
+- [x] Removed all mock sub-components from the page composition (StudentProfileHeader, BehaviorCharts, BehaviorRecent, BehaviorComments, MobileBehaviorProfile — these files still exist on disk but are no longer imported by the page).
+- [x] Uses `PageShell`, `StatusBadge`, `ErrorState`, `getStudentInitials`.
+
+### /home-visits/new → Real form + StudentAttachmentForm
+
+- [x] Added `createHomeVisit()` mutation to `src/lib/server/home-visit-read-models.ts` — inserts into `home_visits` with `visitor_id`, `semester_id` (current), `school_id`, and all optional fields.
+- [x] Created `src/app/actions/home-visit.actions.ts` — `createHomeVisitAction()` returns `ActionResult<{ id: string }>` with validation.
+- [x] Converted `/home-visits/new/page.tsx` from mock client component to async Server Component loading real student list via `getStudentWorklist()`.
+- [x] Created `_components/home-visit-form.tsx` ("use client") — student selector dropdown, visit date/time/address/assessment fields, checkboxes (follow-up, family problem, travel difficulty), submit with `useActionState`, inline success/error feedback.
+- [x] Embedded `StudentAttachmentForm` from `@/components/care` — appears after student is selected, uploads to `student-attachments/<studentId>/...` with `referenceTable="home_visits"`.
+
+## 2026-06-12 Batch 2: Attendance + Reports + ActionResult<T> Conversion
+
+### /attendance → real attendance_records
+
+- [x] Created `src/lib/server/attendance-read-models.ts` — `getAttendanceDashboard()` queries `attendance_records` scoped to `school_id` for a target date (default today), joins `students` + `profiles`, returns `AttendanceSummary` (total/present/absent/late/leave/sick/rate) + `AttendanceRecordItem[]`.
+- [x] Migrated `/attendance/page.tsx` to async Server Component using `PageShell`, `PageHeader`, `MetricCard`, `StatusBadge`, `EmptyState`, `ErrorState` — real summary cards + real student table with status badges and initials.
+- [x] Removed all mock sub-component imports (AttendanceFilters, AttendanceCharts, AbsentReasons, ClassSummary, QuickTools, GradeLevelSummary, MobileAttendance, attendance-data.ts).
+- [x] Cleared banned UI patterns — no dicebear, no `text-[10-13px]`, no hardcoded hex.
+
+### /reports header → remove hardcoded teacher identity
+
+- [x] Replaced hardcoded dicebear avatar + "นางสาวจันทร์จิรา พรมดี" with real profile data from `getUserProfile()` — shows real initials avatar, full name, and role label.
+
+### idp.actions.ts → ActionResult<T> wrappers
+
+- [x] Added `createDevelopmentPlanAction()`, `updateDevelopmentPlanAction()`, `createDevelopmentGoalAction()` — all return `ActionResult<{ id: string }>` with validation + revalidation.
+- [x] Existing read functions (getDevelopmentPlans, getDevelopmentPlanById, etc.) kept as-is for Server Component use.
+
+### support.actions.ts → ActionResult<T>
+
+- [x] Converted `createSupportRecord()` to `ActionResult<{ id: string }>` with `useActionState` signature, auth via `getCurrentUserContext()`, school_id scoping.
+- [x] Added `createSupportRecordFormAction()` wrapper for `<form action={...}>` compatibility.
+- [x] Updated `/support/new/page.tsx` to use the form-action wrapper.
+
+### Verification
+
+- [x] `npx tsc --noEmit`: passed.
+- [x] `npm run lint`: passed (57 pre-existing warnings, 0 new).
+
+## 2026-06-12 Batch 3: Layout + Academics + Orphan Cleanup
+
+### Dashboard layout → real profile in Header + Sidebar
+
+- [x] Updated `src/app/(dashboard)/layout.tsx` to load `getUserProfile()` server-side and pass `profile` as props to Header and `schoolName` to Sidebar.
+- [x] Updated `src/components/layout/header.tsx` — replaced hardcoded dicebear avatar + fake name "ครูประจำชั้น" / "ครูโรงเรียนบ้านหนองแค" with real profile data: initials avatar, full name, role label, school name. Real date via `Intl.DateTimeFormat`. Bell icon now links to `/notifications`.
+- [x] Updated `src/components/layout/sidebar.tsx` — replaced hardcoded school name "โรงเรียนบ้านหนองแค" / "สพป.ชัยภูมิ เขต 1" with real `schoolName` prop. Removed dead "เปลี่ยนโรงเรียน" button.
+
+### /academics → real academic_scores
+
+- [x] Created `src/lib/server/academic-read-models.ts` — `getAcademicDashboard()` queries `academic_scores` for current semester, joins `students` + `classroom_subjects` → `subjects` + `classrooms`, returns `AcademicSummary` (total, avg GPA, above 3.0, below 2.0, top/weakest subject) + `AcademicScoreItem[]` with per-score breakdown.
+- [x] Migrated `/academics/page.tsx` to async Server Component using `PageShell`, `PageHeader`, `MetricCard`, `StatusBadge`, `EmptyState` — real summary cards, subject highlights, full scores table with grade badges.
+- [x] All mock sub-components (`academic-data.ts`, `academic-summary-cards.tsx`, `academic-charts.tsx`, `student-lists.tsx`, `student-academic-table.tsx`, `classroom-comparison.tsx`, `bottom-insights.tsx`, `mobile-academic-profile.tsx`) are now orphaned — they remain on disk but the page no longer imports them.
+
+### Orphaned settings components → deleted
+
+- [x] Deleted 7 desktop sub-components: `desktop-user-profile`, `desktop-general-settings`, `desktop-display-settings`, `desktop-settings-tabs`, `desktop-storage-info`, `desktop-system-info`, `desktop-default-data-settings`.
+- [x] Deleted 4 mobile sub-components: `mobile-admin-header`, `mobile-admin-sidebar`, `mobile-admin-basic-settings`, `mobile-settings-profile`.
+- [x] None of these were imported by the current `settings/page.tsx` — verified safe to delete.
+
+### Verification
+
+- [x] `npx tsc --noEmit`: passed.
+- [x] `npm run lint`: passed (53 warnings, 2 fewer than before due to orphan deletions).
+- [x] `npm run build`: passed (all 20 routes compiled).
+
+## 2026-06-12 Batch 4: Dashboard Home + Massive Orphan Cleanup + Tests
+
+### Dashboard home → removed 3 mock components, replaced with real inline data
+
+- [x] Replaced `RiskCharts` (hardcoded SVG line chart) with real risk breakdown cards using `dashboard.metrics` — normal/watch/high-risk counts with percentages.
+- [x] Replaced `RecentActivities` (4 hardcoded activity items) with real action queue items from `dashboard.actionQueue` — shows title, student name, due date, status badge.
+- [x] Replaced `BottomMiniCharts` (hardcoded attendance/academic/donut charts) with real `MetricCard`-based summary cards — attendance rate, support cases, active plans, open actions, student count.
+- [x] Deleted `risk-charts.tsx`, `recent-activities.tsx`, `bottom-mini-charts.tsx` from `src/app/(dashboard)/_components/`.
+
+### Orphaned mock files → mass cleanup
+
+Deleted 47 orphaned files across 4 modules (all verified zero-import before deletion):
+
+| Module | Files deleted |
+|---|---|
+| **attendance** `_components/` | 10 files: attendance-data.ts, attendance-charts.tsx, attendance-summary.tsx, attendance-table.tsx, attendance-filters.tsx, absent-reasons.tsx, class-summary.tsx, grade-level-summary.tsx, quick-tools.tsx, mobile-attendance.tsx |
+| **academics** `_components/` | 7 files: academic-data.ts, academic-charts.tsx, academic-summary-cards.tsx, bottom-insights.tsx, classroom-comparison.tsx, mobile-academic-profile.tsx, student-academic-table.tsx, student-lists.tsx |
+| **behavior `[id]`** `_components/` | 7 files: behavior-charts.tsx, behavior-comments.tsx, behavior-recent.tsx, student-profile-header.tsx, mobile-behavior-profile.tsx + 5 mobile/ sub-files |
+| **development-plans** `_components/` | 13 files: idp-header.tsx, idp-goals.tsx, idp-timeline.tsx, idp-trend-reflection.tsx, idp-latest-records.tsx, idp-sidebar.tsx + 7 mobile/ sub-files |
+| **settings** `_components/` | 11 files (deleted in batch 3) |
+
+### Test fix
+
+- [x] Updated `header.test.tsx` — bell icon changed from `<button>` to `<Link>` → test now uses `getByRole("link")`.
+
+### Verification
+
+- [x] `npx tsc --noEmit`: passed.
+- [x] `npm run lint`: passed (22 warnings, down from 57 — 35 fewer due to orphan deletions).
+- [x] `npm test -- --run`: passed (6 files, 16 tests).
+- [x] `npm run build`: passed (all 20 routes).
+
+## 2026-06-12 Batch 5: Support Orphans + Dicebear Fixes + Reports Metrics
+
+### Support orphaned components → deleted 15 files
+
+- [x] Deleted 7 desktop support mock components: support-header, support-team, support-tracking-chart, support-notes-actions, support-current-plan, support-risk-summary, support-records.
+- [x] Deleted 8 mobile support mock components: mobile-support-profile, mobile-support-header, mobile-support-team, mobile-support-issues, mobile-support-records, mobile-support-summary, mobile-support-plan.
+- [x] All verified zero imports outside their own directory before deletion. `support/page.tsx` uses only shared components (DataTable, StudentNotesPanel, etc.) — none of these were imported.
+
+### Active dicebear images → replaced with clean headers
+
+- [x] `mobile-report-header.tsx` — removed entire fake student profile (dicebear boy1, "เด็กชายธนวัฒน์ ใจดี", fake tabs, fake hero banner, fake semester). Replaced with clean header: back link + title.
+- [x] `mobile-risk-header.tsx` — same treatment: removed fake student profile, dicebear, fake tabs. Replaced with clean header.
+
+### Reports overview stats → real metrics
+
+- [x] Updated `/reports/page.tsx` to load `getStudentCareDashboard()` metrics alongside existing `getReportJobs()` and `getUserProfile()`.
+- [x] Rewrote `DesktopOverviewStats` to accept `metrics` prop and render real `MetricCard` components — total students, risk count, open support cases, active plans — all from real data. Falls back to "-" when metrics unavailable.
+- [x] Removed hardcoded SVG sparklines, fake gender split (316/326), fake deltas (-1.2%, +2.7%, +8.3%).
+
+### Verification
+
+- [x] `npx tsc --noEmit`: passed.
+- [x] `npm run lint`: passed (11 warnings, down from 53 — 42 fewer).
+- [x] `npm run build`: passed (all 20 routes).

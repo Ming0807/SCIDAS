@@ -31,7 +31,6 @@ export function StudentAttachmentForm({
   return (
     <form
       action={formAction}
-      encType="multipart/form-data"
       className={cn("space-y-3", className)}
     >
       <input type="hidden" name="studentId" value={studentId} />

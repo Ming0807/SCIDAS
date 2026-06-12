@@ -188,3 +188,74 @@ export async function getHomeVisitDashboard(limit = 120): Promise<HomeVisitDashb
     summary: summarizeHomeVisits(records),
   }
 }
+
+export type CreateHomeVisitInput = {
+  studentId: string
+  visitDate: string
+  visitTime?: string
+  addressVisited?: string
+  housingCondition?: HousingCondition
+  followUpNeeded?: boolean
+  hasFamilyProblem?: boolean
+  travelDifficulty?: boolean
+  overallAssessment?: string
+  familyProblemDetail?: string
+  suggestions?: string
+}
+
+export async function createHomeVisit(
+  input: CreateHomeVisitInput,
+): Promise<{ id: string }> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("UNAUTHORIZED")
+  }
+
+  if (!input.studentId || !input.visitDate) {
+    throw new Error("VALIDATION_ERROR")
+  }
+
+  const client = await createClient()
+
+  // Get current semester for the school
+  const { data: semester } = await client
+    .from("semesters")
+    .select("id")
+    .eq("school_id", context.schoolId)
+    .eq("is_current", true)
+    .maybeSingle()
+
+  const semesterId = semester?.id
+
+  if (!semesterId) {
+    throw new Error("NO_ACTIVE_SEMESTER")
+  }
+
+  const { data, error } = await client
+    .from("home_visits")
+    .insert({
+      student_id: input.studentId,
+      school_id: context.schoolId,
+      semester_id: semesterId,
+      visit_date: input.visitDate,
+      visit_time: input.visitTime ?? null,
+      visitor_id: context.profileId,
+      address_visited: input.addressVisited ?? null,
+      housing_condition: input.housingCondition ?? null,
+      follow_up_needed: input.followUpNeeded ?? false,
+      has_family_problem: input.hasFamilyProblem ?? false,
+      travel_difficulty: input.travelDifficulty ?? false,
+      overall_assessment: input.overallAssessment ?? null,
+      family_problem_detail: input.familyProblemDetail ?? null,
+      suggestions: input.suggestions ?? null,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return { id: data.id }
+}

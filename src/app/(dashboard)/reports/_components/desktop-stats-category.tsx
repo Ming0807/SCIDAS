@@ -3,7 +3,7 @@ import React from "react"
 export function DesktopStatsCategory() {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full flex flex-col">
-      <h3 className="text-[14px] font-bold text-slate-800 mb-6">สถิติจำแนกตามด้าน</h3>
+      <h3 className="text-sm font-bold text-slate-800 mb-6">สถิติจำแนกตามด้าน</h3>
       
       <div className="flex flex-col xl:flex-row gap-6 items-center justify-center flex-1">
         
@@ -25,13 +25,13 @@ export function DesktopStatsCategory() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <svg className="w-6 h-6 text-slate-400 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-            <span className="text-[11px] font-bold text-slate-700">รวม 642 คน</span>
+            <span className="text-xs font-bold text-slate-700">รวม 642 คน</span>
           </div>
         </div>
 
         {/* Legend */}
         <div className="flex-1 w-full max-w-[200px]">
-          <table className="w-full text-left text-[11px]">
+          <table className="w-full text-left text-xs">
             <tbody className="divide-y divide-slate-50">
               <tr>
                 <td className="py-2.5">

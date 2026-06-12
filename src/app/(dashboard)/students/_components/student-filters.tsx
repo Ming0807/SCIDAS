@@ -1,6 +1,6 @@
 import Form from "next/form"
 import Link from "next/link"
-import { Download, Plus, Search, Upload, Users } from "lucide-react"
+import { Search } from "lucide-react"
 
 import { FilterBar } from "@/components/data"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -153,22 +153,7 @@ export function StudentFilters({
             </Link>
           ) : null
         }
-        actions={
-          <>
-            <Button type="button">
-              <Plus /> เพิ่มนักเรียน
-            </Button>
-            <Button type="button" variant="outline">
-              <Upload /> นำเข้า
-            </Button>
-            <Button type="button" variant="outline">
-              <Download /> ส่งออก
-            </Button>
-            <Button type="button" variant="secondary">
-              <Users /> จัดการกลุ่ม
-            </Button>
-          </>
-        }
+        actions={null}
       />
     </Form>
   )
