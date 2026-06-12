@@ -31,24 +31,22 @@ export default async function DashboardLayout({
         <Sidebar role={role} schoolName={profile?.schoolName ?? null} />
       </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="hidden md:block">
-          <Header
-            role={role}
-            unreadCount={unreadCount}
-            profile={
-              profile
-                ? {
-                    fullName: profile.fullName,
-                    firstName: profile.firstName,
-                    lastName: profile.lastName,
-                    roleLabel: profile.roleLabel,
-                    schoolName: profile.schoolName,
-                    avatarUrl: profile.avatarUrl,
-                  }
-                : null
-            }
-          />
-        </div>
+        <Header
+          role={role}
+          unreadCount={unreadCount}
+          profile={
+            profile
+              ? {
+                  fullName: profile.fullName,
+                  firstName: profile.firstName,
+                  lastName: profile.lastName,
+                  roleLabel: profile.roleLabel,
+                  schoolName: profile.schoolName,
+                  avatarUrl: profile.avatarUrl,
+                }
+              : null
+          }
+        />
         <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <div className="h-full animate-fade-in w-full max-w-full">
             {children}

@@ -23,12 +23,13 @@ export function Header({
   profile?: ProfileProps | null
   unreadCount?: number
 }) {
+  const schoolName = profile?.schoolName ?? null
   const initials = profile
     ? (profile.firstName.charAt(0) + profile.lastName.charAt(0)).toUpperCase()
     : "?"
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between px-8 bg-white border-b border-slate-100">
+    <header className="sticky top-0 z-30 flex h-14 md:h-20 w-full items-center justify-between px-4 md:px-8 bg-white border-b border-slate-100">
       <div className="flex items-center gap-4 lg:hidden">
         <Sheet>
           <SheetTrigger
@@ -42,7 +43,7 @@ export function Header({
           <SheetContent side="left" className="p-0 w-[280px]">
             <SheetTitle className="sr-only">เมนูหลัก</SheetTitle>
             <SheetDescription className="sr-only">เมนูนำทางหลักของระบบ</SheetDescription>
-            <Sidebar role={role} />
+            <Sidebar role={role} schoolName={schoolName} />
           </SheetContent>
         </Sheet>
       </div>
