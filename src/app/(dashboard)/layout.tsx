@@ -3,6 +3,7 @@ import { Header } from "@/components/layout/header"
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav"
 import { getUserRole } from "@/utils/supabase/server"
 import { getUserProfile } from "@/lib/server/settings-read-models"
+import { getNotificationCounts } from "@/lib/server/notification-read-models"
 
 export default async function DashboardLayout({
   children,
@@ -12,10 +13,16 @@ export default async function DashboardLayout({
   const role = await getUserRole()
 
   let profile: Awaited<ReturnType<typeof getUserProfile>> | null = null
+  let unreadCount = 0
   try {
-    profile = await getUserProfile()
+    const [p, n] = await Promise.all([
+      getUserProfile(),
+      getNotificationCounts().catch(() => ({ total: 0, unread: 0, byType: {} as Record<string, number> })),
+    ])
+    profile = p
+    unreadCount = n.unread
   } catch {
-    // fallback — header shows minimal UI
+    // fallback
   }
 
   return (
@@ -27,6 +34,7 @@ export default async function DashboardLayout({
         <div className="hidden md:block">
           <Header
             role={role}
+            unreadCount={unreadCount}
             profile={
               profile
                 ? {

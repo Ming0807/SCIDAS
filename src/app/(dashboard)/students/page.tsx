@@ -1,5 +1,6 @@
 import React from "react"
-import { AlertTriangle, Heart, Smile, Users } from "lucide-react"
+import Link from "next/link"
+import { AlertTriangle, Heart, Plus, Smile, Users } from "lucide-react"
 
 import { MetricCard, PageHeader, PageShell } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
@@ -98,7 +99,15 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
       <PageHeader
         title="ข้อมูลนักเรียนและการจัดการ"
         description="จัดการข้อมูลนักเรียน บันทึก แก้ไข และติดตามข้อมูลรายบุคคล"
-        actions={null}
+        actions={
+          <Link
+            href="/students/new"
+            className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            เพิ่มนักเรียน
+          </Link>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

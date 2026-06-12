@@ -17,9 +17,11 @@ type ProfileProps = {
 export function Header({
   role,
   profile,
+  unreadCount = 0,
 }: {
   role?: string | null
   profile?: ProfileProps | null
+  unreadCount?: number
 }) {
   const initials = profile
     ? (profile.firstName.charAt(0) + profile.lastName.charAt(0)).toUpperCase()
@@ -70,6 +72,11 @@ export function Header({
           className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors group"
         >
           <Bell className="h-5 w-5" />
+          {unreadCount > 0 ? (
+            <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          ) : null}
           <span className="sr-only">การแจ้งเตือน</span>
         </Link>
 
