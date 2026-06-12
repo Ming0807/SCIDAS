@@ -7,14 +7,20 @@ import { MobileRiskFactors } from "./mobile-risk-factors"
 import { MobileRiskGuidelines } from "./mobile-risk-guidelines"
 import { MobileSupportHistory } from "./mobile-support-history"
 
-export function MobileRiskProfile() {
+export function MobileRiskProfile({
+  riskScore,
+  riskLevel,
+}: {
+  riskScore?: number | null
+  riskLevel?: string | null
+}) {
   return (
     <div className="bg-slate-50 min-h-screen relative pb-10">
       <MobileRiskHeader />
       
       <div className="max-w-md mx-auto">
         <div className="px-4 py-5">
-          <MobileOverallRisk />
+          <MobileOverallRisk riskScore={riskScore} riskLevel={riskLevel} />
         </div>
         
         <div className="px-4 mb-6">

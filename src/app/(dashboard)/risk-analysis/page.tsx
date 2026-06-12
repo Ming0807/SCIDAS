@@ -6,6 +6,7 @@ import {
   getStudentWorklist,
   type StudentWorklistItem,
 } from "@/lib/server/student-care-read-models"
+import { getRiskFactorDistribution } from "@/lib/server/risk-read-models"
 
 import { RecalculateButton } from "./RecalculateButton"
 import { RiskFactorsChart } from "./_components/risk-factors-chart"
@@ -19,11 +20,28 @@ import { MobileRiskProfile } from "./_components/mobile/mobile-risk-profile"
 export default async function RiskAnalysisPage() {
   let students: StudentWorklistItem[] = []
   let loadError: string | null = null
+  let factorDistribution: Awaited<ReturnType<typeof getRiskFactorDistribution>> = {
+    factors: [],
+    totalStudents: 0,
+  }
 
   try {
-    students = await getStudentWorklist({ limit: 500 })
+    const [worklistResult, factorResult] = await Promise.all([
+      getStudentWorklist({ limit: 500 }),
+      getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
+    ])
+    students = worklistResult
+    factorDistribution = factorResult
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown risk data error"
+  }
+
+  // Compute risk level counts from worklist
+  const riskLevelCounts = {
+    high: students.filter((s) => s.riskLevel === "high").length,
+    watch: students.filter((s) => s.riskLevel === "watch").length,
+    normal: students.filter((s) => s.riskLevel === "normal").length,
+    total: students.length,
   }
 
   const priorityStudents = students
@@ -39,7 +57,10 @@ export default async function RiskAnalysisPage() {
   return (
     <div className="w-full overflow-x-hidden bg-background">
       <div className="block md:hidden">
-        <MobileRiskProfile />
+        <MobileRiskProfile
+          riskScore={priorityStudents[0]?.riskScore ?? null}
+          riskLevel={priorityStudents[0]?.riskLevel ?? null}
+        />
       </div>
 
       <div className="hidden md:block">
@@ -62,7 +83,7 @@ export default async function RiskAnalysisPage() {
 
           <div className="flex min-w-0 flex-col gap-6 xl:flex-row">
             <div className="flex min-w-0 shrink-0 xl:w-[65%]">
-              <RiskMatrix />
+              <RiskMatrix riskCounts={riskLevelCounts} />
             </div>
             <div className="flex min-w-0 flex-1">
               <TopRiskStudents students={priorityStudents} />
@@ -70,7 +91,7 @@ export default async function RiskAnalysisPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <RiskFactorsChart />
+            <RiskFactorsChart factorDistribution={factorDistribution} />
             <RiskHistoryChart />
             <RiskRecommendations students={students} />
           </div>

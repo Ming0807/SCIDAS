@@ -1,7 +1,14 @@
 import React from "react"
 import { Info } from "lucide-react"
 
-export function RiskMatrix() {
+type RiskCounts = {
+  high: number
+  watch: number
+  normal: number
+  total: number
+}
+
+export function RiskMatrix({ riskCounts }: { riskCounts?: RiskCounts | null }) {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex-1 flex flex-col xl:flex-row gap-6 xl:items-stretch min-w-0">
       
@@ -86,7 +93,7 @@ export function RiskMatrix() {
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
                 <span className="text-xs font-semibold text-slate-900">เสี่ยงสูง (16-25)</span>
               </div>
-              <span className="text-xs font-semibold text-slate-900">38 คน</span>
+              <span className="text-xs font-semibold text-slate-900">{riskCounts?.high ?? "-"} คน</span>
             </div>
 
             <div className="flex items-center justify-between">
@@ -94,7 +101,7 @@ export function RiskMatrix() {
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
                 <span className="text-xs font-medium text-slate-700">เสี่ยงปานกลาง (8-14)</span>
               </div>
-              <span className="text-xs font-semibold text-slate-900">112 คน</span>
+              <span className="text-xs font-semibold text-slate-900">{riskCounts?.watch ?? "-"} คน</span>
             </div>
 
             <div className="flex items-center justify-between">
@@ -102,7 +109,7 @@ export function RiskMatrix() {
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
                 <span className="text-xs font-medium text-slate-700">เสี่ยงต่ำ (1-7)</span>
               </div>
-              <span className="text-xs font-semibold text-slate-900">492 คน</span>
+              <span className="text-xs font-semibold text-slate-900">{riskCounts?.normal ?? "-"} คน</span>
             </div>
           </div>
 
