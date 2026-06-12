@@ -92,6 +92,10 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                               <Download className="w-4 h-4" />
                             </a>
                           </>
+                        ) : job.status === "completed" ? (
+                          <span className="text-muted-foreground text-xs">
+                            เสร็จแล้ว (ยังไม่มีไฟล์)
+                          </span>
                         ) : (
                           <span className="text-slate-300 text-xs">
                             {job.status === "failed"
