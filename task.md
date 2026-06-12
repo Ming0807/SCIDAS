@@ -412,8 +412,34 @@ Deleted 47 orphaned files across 4 modules (all verified zero-import before dele
 - [x] Rewrote `DesktopOverviewStats` to accept `metrics` prop and render real `MetricCard` components — total students, risk count, open support cases, active plans — all from real data. Falls back to "-" when metrics unavailable.
 - [x] Removed hardcoded SVG sparklines, fake gender split (316/326), fake deltas (-1.2%, +2.7%, +8.3%).
 
-### Verification
+### Verification (Batch 5)
+
+- [x] tsc · lint (11w) · build (20 routes)
+
+## 2026-06-12 Batch 1: Risk Real Aggregation (4aa820a + previous fixups)
+
+- [x] Created `src/lib/server/risk-read-models.ts` — `getRiskLevelCounts()`, `getRiskFactorDistribution()`.
+- [x] `risk-matrix.tsx`: legend counts real from `riskLevelCounts`.
+- [x] `risk-factors-chart.tsx`: hardcoded SVG → real bar chart with empty state.
+- [x] `mobile-overall-risk.tsx`: accepts real `riskScore`/`riskLevel` props.
+- [x] Schema fixes: `students.grade_level`→`classrooms/v_current_student_directory`, `subjects.name_th`→`subjects.name`.
+
+## 2026-06-12 Batch 2: Report Worker (e6b6b98)
+
+- [x] `processNextReportJob()`: queued→running→completed/failed lifecycle.
+- [x] `processReportJobAction()`: Server Action.
+- [x] `ProcessReportButton`: client trigger with `useTransition`.
+
+## 2026-06-12 Batch 3+4: Notifications + Students/New (0bb8a06)
+
+- [x] Header bell: real `unreadCount` badge from `getNotificationCounts()`.
+- [x] `createStudentAction()`: validates required fields, handles duplicate code.
+- [x] `/students/new`: real form with `useActionState`, inline errors.
+- [x] `/students` page: restored "เพิ่มนักเรียน" button as `<Link>`.
+
+### Final Verification
 
 - [x] `npx tsc --noEmit`: passed.
-- [x] `npm run lint`: passed (11 warnings, down from 53 — 42 fewer).
-- [x] `npm run build`: passed (all 20 routes).
+- [x] `npm run lint`: passed (0 warnings).
+- [x] `npm test -- --run`: passed (6/6 files, 16/16 tests).
+- [x] `npm run build`: passed (21 routes).
