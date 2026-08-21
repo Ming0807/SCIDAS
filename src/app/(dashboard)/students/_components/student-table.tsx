@@ -1,29 +1,16 @@
 import Link from "next/link"
-import { Edit2, Eye, Printer, Settings, Trash2, Users } from "lucide-react"
+import { Edit2, Eye } from "lucide-react"
 
 import { StudentIdentity } from "@/components/dashboard"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { DataTable, Pagination, type DataTableColumn } from "@/components/data"
 import { EmptyState } from "@/components/feedback"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import type { StudentListItem, StudentSummary } from "./student-data"
 
 const columns: Array<DataTableColumn<StudentListItem>> = [
-  {
-    id: "select",
-    header: <span className="sr-only">เลือก</span>,
-    align: "center",
-    className: "w-12",
-    cell: (_, index) => (
-      <input
-        aria-label={`เลือกนักเรียนลำดับ ${index + 1}`}
-        type="checkbox"
-        className="size-4 rounded border-input text-primary focus:ring-ring"
-      />
-    ),
-  },
   {
     id: "student",
     header: "นักเรียน",
@@ -76,12 +63,20 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
       <div className="flex items-center justify-center gap-1">
         <Link
           aria-label={`ดูข้อมูล ${student.name}`}
+          title="ดูข้อมูลนักเรียน"
           href={`/students/${student.id}`}
           className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
         >
           <Eye />
         </Link>
-
+        <Link
+          aria-label={`แก้ไขข้อมูล ${student.name}`}
+          title="แก้ไขข้อมูลนักเรียน"
+          href={`/students/${student.id}/edit`}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+        >
+          <Edit2 />
+        </Link>
       </div>
     ),
   },
@@ -95,44 +90,26 @@ function StudentTableToolbar({
   totalFiltered: number
 }) {
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="secondary">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-secondary px-2.5 text-[0.8rem] font-medium text-secondary-foreground">
           รายการที่แสดง
           <span className="rounded-full bg-background px-1.5 py-0.5 text-xs">
             {totalFiltered.toLocaleString("th-TH")}
           </span>
-        </Button>
-        <Button size="sm" variant="ghost">
+        </span>
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground">
           ต้องติดตาม
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
             {(summary.watch + summary.highRisk).toLocaleString("th-TH")}
           </span>
-        </Button>
-        <Button size="sm" variant="ghost">
+        </span>
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground">
           งานเปิด
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
             {summary.openActions.toLocaleString("th-TH")}
           </span>
-        </Button>
-      </div>
-
-      <div className="flex min-w-0 flex-wrap items-center gap-1">
-        <Button disabled size="sm" variant="ghost">
-          <Edit2 /> แก้ไข
-        </Button>
-        <Button disabled size="sm" variant="ghost">
-          <Users /> กำหนดครู
-        </Button>
-        <Button disabled size="sm" variant="ghost">
-          <Printer /> พิมพ์บัตร
-        </Button>
-        <Button disabled size="sm" variant="destructive">
-          <Trash2 /> ลบ
-        </Button>
-        <Button aria-label="ตั้งค่าตาราง" size="icon-sm" variant="ghost">
-          <Settings />
-        </Button>
+        </span>
       </div>
     </div>
   )
@@ -146,6 +123,7 @@ export function StudentTable({
   totalPages,
   pageSize,
   getPageHref,
+  canEdit,
 }: {
   students: StudentListItem[]
   summary: StudentSummary
@@ -154,11 +132,12 @@ export function StudentTable({
   totalPages: number
   pageSize: number
   getPageHref: (page: number) => string
+  canEdit: boolean
 }) {
   return (
     <DataTable
       className="h-full min-h-[420px]"
-      columns={columns}
+      columns={canEdit ? columns : columns.filter((column) => column.id !== "actions")}
       data={students}
       emptyState={
         <EmptyState

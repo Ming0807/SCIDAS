@@ -31,6 +31,10 @@ import {
   getStudentRiskTone,
 } from "@/lib/student-care-formatters"
 import {
+  getSupportRecords,
+  type SupportRecordListItem,
+} from "@/app/actions/support.actions"
+import {
   getActionQueue,
   getStudentAttachments,
   getStudentCareDashboard,
@@ -111,6 +115,88 @@ function getActionStatusTone(status: ActionQueueItem["status"]) {
   if (status === "cancelled") return "neutral"
   return "watch"
 }
+
+const supportStatusLabels: Record<SupportRecordListItem["status"], string> = {
+  pending: "รอดำเนินการ",
+  in_progress: "กำลังดำเนินการ",
+  completed: "เสร็จสิ้น",
+  cancelled: "ยกเลิก",
+  referred: "ส่งต่อ",
+}
+
+const supportTypeLabels: Record<SupportRecordListItem["support_type"], string> = {
+  academic: "วิชาการ",
+  behavioral: "พฤติกรรม",
+  emotional: "อารมณ์",
+  financial: "เศรษฐกิจ",
+  health: "สุขภาพ",
+  family: "ครอบครัว",
+  social: "สังคม",
+  other: "อื่น ๆ",
+}
+
+const supportPriorityLabels: Record<NonNullable<SupportRecordListItem["priority"]>, string> = {
+  low: "ต่ำ",
+  medium: "ปานกลาง",
+  high: "สูง",
+  critical: "วิกฤต",
+}
+
+function getSupportStatusTone(status: SupportRecordListItem["status"]) {
+  if (status === "completed") return "normal"
+  if (status === "cancelled") return "neutral"
+  if (status === "in_progress") return "info"
+  if (status === "referred") return "primary"
+  return "watch"
+}
+
+const supportCaseColumns: Array<DataTableColumn<SupportRecordListItem>> = [
+  {
+    id: "case",
+    header: "เคสช่วยเหลือ",
+    className: "min-w-64",
+    cell: (item) => (
+      <Link href={`/support/${item.id}`} className="block min-w-0 hover:text-primary">
+        <p className="truncate font-medium text-foreground">{item.title}</p>
+        <p className="truncate text-sm text-muted-foreground">
+          {item.student ? `${item.student.first_name} ${item.student.last_name}` : "ไม่พบข้อมูลนักเรียน"}
+        </p>
+      </Link>
+    ),
+  },
+  {
+    id: "type",
+    header: "หมวดหมู่",
+    cell: (item) => <span className="text-muted-foreground">{supportTypeLabels[item.support_type]}</span>,
+  },
+  {
+    id: "priority",
+    header: "ความเร่งด่วน",
+    cell: (item) => (
+      <StatusBadge
+        status={item.priority ?? "neutral"}
+        label={item.priority ? supportPriorityLabels[item.priority] : "ไม่ระบุ"}
+        size="sm"
+      />
+    ),
+  },
+  {
+    id: "status",
+    header: "สถานะ",
+    cell: (item) => <StatusBadge status={getSupportStatusTone(item.status)} label={supportStatusLabels[item.status]} size="sm" />,
+  },
+  {
+    id: "actions",
+    header: "เปิดดู",
+    align: "right",
+    sticky: "right",
+    cell: (item) => (
+      <Link href={`/support/${item.id}`} className="text-sm font-medium text-primary hover:underline">
+        ดูรายละเอียด
+      </Link>
+    ),
+  },
+]
 
 const actionColumns: Array<DataTableColumn<ActionQueueItem>> = [
   {
@@ -218,18 +304,23 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
   let dashboard = emptyDashboard
   let worklist: StudentWorklistItem[] = []
   let actionQueue: ActionQueueItem[] = []
+  let supportCases: SupportRecordListItem[] = []
+  let supportCaseError: string | null = null
   let loadError: string | null = null
 
   try {
-    const [dashboardData, worklistData, actionData] = await Promise.all([
+    const [dashboardData, worklistData, actionData, supportResult] = await Promise.all([
       getStudentCareDashboard(),
       getStudentWorklist({ limit: 500 }),
       getActionQueue({ limit: 24 }),
+      getSupportRecords(),
     ])
 
     dashboard = dashboardData
     worklist = worklistData
     actionQueue = actionData
+    if (supportResult.ok) supportCases = supportResult.data ?? []
+    else supportCaseError = supportResult.message
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown support data error"
   }
@@ -329,6 +420,35 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
           details={detailError}
         />
       ) : null}
+
+      {supportCaseError ? (
+        <ErrorState
+          title="โหลดรายการเคสไม่ได้"
+          description="ตรวจสอบสิทธิ์ผู้ใช้และการตั้งค่าฐานข้อมูลล่าสุด"
+          details={supportCaseError}
+        />
+      ) : null}
+
+      <DataTable
+        columns={supportCaseColumns}
+        data={supportCases}
+        emptyState={
+          <EmptyState
+            title="ยังไม่มีเคสช่วยเหลือ"
+            description="สร้างเคสใหม่เพื่อเริ่มติดตามการช่วยเหลือของนักเรียน"
+          />
+        }
+        getRowKey={(item) => item.id}
+        toolbar={
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">เคสช่วยเหลือทั้งหมด</h2>
+              <p className="text-sm text-muted-foreground">เปิดดูรายละเอียด แก้ไขข้อมูล หรืออัปเดตสถานะของแต่ละเคส</p>
+            </div>
+            <span className="text-xs text-muted-foreground">{supportCases.length.toLocaleString("th-TH")} เคส</span>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
         <div className="flex min-w-0 flex-col gap-6">

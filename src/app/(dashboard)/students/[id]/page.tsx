@@ -4,6 +4,7 @@ import {
   Activity,
   ArrowLeft,
   CalendarClock,
+  Edit2,
   HeartHandshake,
   ListChecks,
   MapPinned,
@@ -49,6 +50,7 @@ import {
   type StudentTimelineItem,
 } from "@/lib/server/student-care-read-models"
 import { cn } from "@/lib/utils"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 
 type StudentProfilePageProps = {
   params: Promise<{ id: string }>
@@ -180,6 +182,8 @@ const actionColumns: Array<DataTableColumn<ActionQueueItem>> = [
 
 export default async function StudentProfilePage({ params }: StudentProfilePageProps) {
   const { id } = await params
+  const context = await getCurrentUserContext()
+  const canEdit = ["admin", "homeroom_teacher", "counselor"].includes(context.role)
   let profile: StudentCareProfile | null = null
   let actionItems: ActionQueueItem[] = []
   let notes: StudentNoteItem[] = []
@@ -248,6 +252,9 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
             <Link href="/students" className={cn(buttonVariants({ variant: "outline" }))}>
               <ArrowLeft /> กลับรายชื่อ
             </Link>
+            {canEdit ? <Link href={`/students/${profile.studentId}/edit`} className={cn(buttonVariants({ variant: "outline" }))}>
+              <Edit2 /> แก้ไขข้อมูล
+            </Link> : null}
             <Link href={`/support?studentId=${profile.studentId}`} className={cn(buttonVariants())}>
               <HeartHandshake /> เปิดในงานดูแล
             </Link>

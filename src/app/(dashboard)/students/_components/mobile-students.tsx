@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Edit2 } from "lucide-react"
 
 import { StudentIdentity } from "@/components/dashboard"
 import { MobileList, Pagination } from "@/components/data"
@@ -12,9 +12,11 @@ import type { StudentListItem } from "./student-data"
 function MobileStudentRow({
   student,
   index,
+  canEdit,
 }: {
   student: StudentListItem
   index: number
+  canEdit: boolean
 }) {
   return (
     <article className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
@@ -39,11 +41,19 @@ function MobileStudentRow({
 
           <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <span className="truncate">{student.guardian}</span>
-            <Link
+            {canEdit ? <Link
               href={`/students/${student.id}`}
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
               ดูข้อมูล <ChevronRight />
+            </Link> : null}
+            <Link
+              href={`/students/${student.id}/edit`}
+              aria-label={`แก้ไขข้อมูล ${student.name}`}
+              title="แก้ไขข้อมูลนักเรียน"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+            >
+              <Edit2 />
             </Link>
           </div>
         </div>
@@ -59,6 +69,7 @@ export function MobileStudents({
   totalPages,
   pageSize,
   getPageHref,
+  canEdit,
 }: {
   students: StudentListItem[]
   totalFiltered: number
@@ -66,6 +77,7 @@ export function MobileStudents({
   totalPages: number
   pageSize: number
   getPageHref: (page: number) => string
+  canEdit: boolean
 }) {
   return (
     <MobileList
@@ -73,7 +85,7 @@ export function MobileStudents({
       getItemKey={(student) => student.id}
       title="รายชื่อนักเรียน"
       summary={`ทั้งหมด ${totalFiltered.toLocaleString("th-TH")} คน`}
-      renderItem={(student, index) => <MobileStudentRow student={student} index={index} />}
+      renderItem={(student, index) => <MobileStudentRow student={student} index={index} canEdit={canEdit} />}
       emptyState={
         <EmptyState
           size="compact"

@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server"
 
 import { getCurrentUserContext } from "./current-user"
 
-type HousingCondition = "good" | "moderate" | "poor" | "critical"
+export type HousingCondition = "good" | "moderate" | "poor" | "critical"
 
 type HomeVisitImageRow = {
   id: string
@@ -14,6 +14,7 @@ type HomeVisitImageRow = {
 type HomeVisitQueryRow = {
   id: string
   student_id: string
+  semester_id: string
   visit_date: string
   visit_time: string | null
   address_visited: string | null
@@ -23,6 +24,7 @@ type HomeVisitQueryRow = {
   travel_difficulty: boolean | null
   overall_assessment: string | null
   family_problem_detail: string | null
+  suggestions: string | null
   follow_up_detail: string | null
   created_at: string
   students: {
@@ -43,9 +45,17 @@ type HomeVisitQueryRow = {
 
 export type HomeVisitStatus = "completed" | "follow_up" | "urgent"
 
+export type HomeVisitImage = {
+  id: string
+  imageUrl: string
+  caption: string | null
+  displayOrder: number
+}
+
 export type HomeVisitRecord = {
   id: string
   studentId: string
+  semesterId: string
   studentName: string
   studentCode: string
   studentPhotoUrl: string | null
@@ -59,10 +69,13 @@ export type HomeVisitRecord = {
   travelDifficulty: boolean
   overallAssessment: string | null
   familyProblemDetail: string | null
+  suggestions: string | null
   followUpDetail: string | null
+  images: HomeVisitImage[]
   imageUrl: string | null
   status: HomeVisitStatus
   createdAt: string
+  canEdit: boolean
 }
 
 export type HomeVisitSummary = {
@@ -95,7 +108,10 @@ function getVisitStatus(row: HomeVisitQueryRow): HomeVisitStatus {
   return "completed"
 }
 
-function mapHomeVisitRow(row: HomeVisitQueryRow): HomeVisitRecord {
+function mapHomeVisitRow(
+  row: HomeVisitQueryRow,
+  actor?: { profileId: string | null; role: string },
+): HomeVisitRecord {
   const studentName = row.students
     ? `${row.students.prefix ? `${row.students.prefix}` : ""}${row.students.first_name} ${row.students.last_name}`.trim()
     : "ไม่ระบุนักเรียน"
@@ -105,10 +121,20 @@ function mapHomeVisitRow(row: HomeVisitQueryRow): HomeVisitRecord {
   const image = row.home_visit_images
     ?.slice()
     .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))[0]
+  const images = (row.home_visit_images ?? [])
+    .slice()
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((item) => ({
+      id: item.id,
+      imageUrl: item.image_url,
+      caption: item.caption,
+      displayOrder: item.display_order ?? 0,
+    }))
 
   return {
     id: row.id,
     studentId: row.student_id,
+    semesterId: row.semester_id,
     studentName,
     studentCode: row.students?.student_code ?? "-",
     studentPhotoUrl: row.students?.photo_url ?? null,
@@ -122,10 +148,15 @@ function mapHomeVisitRow(row: HomeVisitQueryRow): HomeVisitRecord {
     travelDifficulty: Boolean(row.travel_difficulty),
     overallAssessment: row.overall_assessment,
     familyProblemDetail: row.family_problem_detail,
+    suggestions: row.suggestions,
     followUpDetail: row.follow_up_detail,
+    images,
     imageUrl: image?.image_url ?? null,
     status: getVisitStatus(row),
     createdAt: row.created_at,
+    canEdit:
+      actor?.role === "admin" ||
+      (Boolean(actor?.profileId) && actor?.profileId === row.profiles?.id),
   }
 }
 
@@ -150,6 +181,7 @@ export async function getHomeVisitDashboard(limit = 120): Promise<HomeVisitDashb
       `
       id,
       student_id,
+      semester_id,
       visit_date,
       visit_time,
       address_visited,
@@ -159,6 +191,7 @@ export async function getHomeVisitDashboard(limit = 120): Promise<HomeVisitDashb
       travel_difficulty,
       overall_assessment,
       family_problem_detail,
+      suggestions,
       follow_up_detail,
       created_at,
       students!home_visits_student_id_fkey(id, first_name, last_name, student_code, photo_url, prefix),
@@ -181,12 +214,58 @@ export async function getHomeVisitDashboard(limit = 120): Promise<HomeVisitDashb
     throw new Error(error.message)
   }
 
-  const records = ((data ?? []) as unknown as HomeVisitQueryRow[]).map(mapHomeVisitRow)
+  const records = ((data ?? []) as unknown as HomeVisitQueryRow[]).map((row) =>
+    mapHomeVisitRow(row, context),
+  )
 
   return {
     records,
     summary: summarizeHomeVisits(records),
   }
+}
+
+export async function getHomeVisitById(id: string): Promise<HomeVisitRecord | null> {
+  const context = await getCurrentUserContext()
+  const supabase = await createClient()
+
+  let query = supabase
+    .from("home_visits")
+    .select(
+      `
+      id,
+      student_id,
+      semester_id,
+      visit_date,
+      visit_time,
+      address_visited,
+      housing_condition,
+      follow_up_needed,
+      has_family_problem,
+      travel_difficulty,
+      overall_assessment,
+      family_problem_detail,
+      suggestions,
+      follow_up_detail,
+      created_at,
+      students!home_visits_student_id_fkey(id, first_name, last_name, student_code, photo_url, prefix),
+      profiles!home_visits_visitor_id_fkey(id, first_name, last_name),
+      home_visit_images(id, image_url, caption, display_order)
+    `,
+    )
+    .eq("id", id)
+    .eq("school_id", context.schoolId)
+
+  if (context.role === "student" && context.studentId) {
+    query = query.eq("student_id", context.studentId)
+  }
+
+  const { data, error } = await query.maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data ? mapHomeVisitRow(data as unknown as HomeVisitQueryRow, context) : null
 }
 
 export type CreateHomeVisitInput = {
@@ -201,6 +280,7 @@ export type CreateHomeVisitInput = {
   overallAssessment?: string
   familyProblemDetail?: string
   suggestions?: string
+  followUpDetail?: string
 }
 
 export async function createHomeVisit(
@@ -212,11 +292,24 @@ export async function createHomeVisit(
     throw new Error("UNAUTHORIZED")
   }
 
+  if (!["admin", "homeroom_teacher", "counselor"].includes(context.role)) {
+    throw new Error("FORBIDDEN")
+  }
+
   if (!input.studentId || !input.visitDate) {
     throw new Error("VALIDATION_ERROR")
   }
 
   const client = await createClient()
+
+  const { data: student, error: studentError } = await client
+    .from("students")
+    .select("id")
+    .eq("id", input.studentId)
+    .eq("school_id", context.schoolId)
+    .maybeSingle()
+  if (studentError) throw new Error("INTERNAL_ERROR")
+  if (!student) throw new Error("FORBIDDEN")
 
   // Get current semester for the school
   const { data: semester } = await client
@@ -249,6 +342,7 @@ export async function createHomeVisit(
       overall_assessment: input.overallAssessment ?? null,
       family_problem_detail: input.familyProblemDetail ?? null,
       suggestions: input.suggestions ?? null,
+      follow_up_detail: input.followUpDetail ?? null,
     })
     .select("id")
     .single()

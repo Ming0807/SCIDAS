@@ -1,188 +1,99 @@
 "use client"
 
-import React, { useState, useTransition } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect, useMemo, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { Loader2, Save, Search } from "lucide-react"
+import { upsertAttendance, type AttendanceInput } from "@/app/actions/attendance.actions"
+import { ActionFeedback } from "@/components/forms/action-feedback"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon, Loader2, Save } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { upsertAttendance } from "@/app/actions/attendance.actions"
+import type { ActionResult } from "@/lib/server/action-result"
+import type { Database } from "@/types/database.types"
 
-type Student = {
-  id: string
-  name: string
-}
+type AttendanceStatus = Database["public"]["Enums"]["attendance_status"]
+type Student = { id: string; name: string }
+type InitialRecord = { student_id: string; status: AttendanceStatus; check_in_time: string | null; remark: string | null }
+type AttendanceFormProps = { classroom: { id: string; name: string }; students: Student[]; initialRecords: InitialRecord[]; dateStr: string }
+type Entry = { status: AttendanceStatus; checkInTime: string; remark: string }
 
-type AttendanceRecord = {
-  student_id: string
-  status: 'present' | 'absent' | 'late' | 'leave'
-  remark?: string
-}
-
-interface AttendanceFormProps {
-  classroom: { id: string, name: string }
-  students: Student[]
-  initialRecords: AttendanceRecord[]
-  dateStr: string
-}
-
-const statusOptions = [
-  { value: "present", label: "มาเรียน" },
-  { value: "absent", label: "ขาดเรียน" },
-  { value: "late", label: "สาย" },
-  { value: "leave", label: "ลา" },
+const statusOptions: { value: AttendanceStatus; label: string }[] = [
+  { value: "present", label: "มาเรียน" }, { value: "absent", label: "ขาดเรียน" }, { value: "late", label: "มาสาย" }, { value: "leave", label: "ลา" }, { value: "sick", label: "ป่วย" },
 ]
 
 export function AttendanceForm({ classroom, students, initialRecords, dateStr }: AttendanceFormProps) {
-  const [isPending, startTransition] = useTransition()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [date, setDate] = useState<Date>(new Date(dateStr))
-  
-  // Transform initial records into a dictionary for fast lookup
-  const initialState = students.reduce((acc, student) => {
-    const record = initialRecords.find(r => r.student_id === student.id)
-    acc[student.id] = record?.status || "present" // Default to present
-    return acc
-  }, {} as Record<string, AttendanceRecord["status"]>)
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const [query, setQuery] = useState("")
+  const [date, setDate] = useState(dateStr)
+  const [result, setResult] = useState<ActionResult<{ count: number }> | null>(null)
+  const [entries, setEntries] = useState<Record<string, Entry>>(() => Object.fromEntries(students.map((student) => {
+    const record = initialRecords.find((item) => item.student_id === student.id)
+    return [student.id, { status: record?.status ?? "present", checkInTime: record?.check_in_time?.slice(0, 5) ?? "", remark: record?.remark ?? "" }]
+  })))
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(entries))
+  const dirty = JSON.stringify(entries) !== savedSnapshot
 
-  const [attendance, setAttendance] = useState<Record<string, AttendanceRecord["status"]>>(initialState)
+  useEffect(() => {
+    if (!dirty) return
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [dirty])
 
-  const handleStatusChange = (studentId: string, value: AttendanceRecord["status"]) => {
-    setAttendance(prev => ({
-      ...prev,
-      [studentId]: value
-    }))
+  const filteredStudents = useMemo(() => students.filter((student) => student.name.toLocaleLowerCase("th").includes(query.toLocaleLowerCase("th"))), [students, query])
+  const updateEntry = (studentId: string, patch: Partial<Entry>) => setEntries((current) => ({ ...current, [studentId]: { ...current[studentId], ...patch } }))
+
+  function changeDate(nextDate: string) {
+    if (dirty && !window.confirm("มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปลี่ยนวันที่หรือไม่")) return
+    setDate(nextDate)
+    router.push(nextDate ? `/attendance?date=${nextDate}` : "/attendance")
   }
 
-  const handleSave = () => {
+  function save() {
+    const records: AttendanceInput[] = students.map((student) => ({ student_id: student.id, status: entries[student.id].status, check_in_time: entries[student.id].checkInTime || null, remark: entries[student.id].remark || null }))
     startTransition(async () => {
-      try {
-        const records = Object.entries(attendance).map(([studentId, status]) => ({
-          student_id: studentId,
-          status
-        }))
-        
-        // Format date to YYYY-MM-DD for PG
-        // Adjusting for local timezone correctly
-        const tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
-        const localISOTime = (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 10);
-        
-        await upsertAttendance(classroom.id, localISOTime, records)
-        alert('บันทึกข้อมูลการเข้าเรียนเรียบร้อยแล้ว')
-      } catch (error) {
-        console.error(error)
-        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล')
-      }
+      const nextResult = await upsertAttendance(classroom.id, date, records)
+      setResult(nextResult)
+      if (nextResult.ok) { setSavedSnapshot(JSON.stringify(entries)); router.refresh() }
     })
   }
 
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      // In a real app, this should trigger a hard navigation or router.push 
-      // with the date as a searchParam to refetch server-side records for that date.
-      // For simplicity here, we just update the local state. A full implementation
-      // would pass `?date=YYYY-MM-DD` and the Server Component would pass down the new `initialRecords`.
-      setDate(selectedDate)
-      window.location.href = `/attendance?date=${selectedDate.toISOString().split('T')[0]}`
-    }
-  }
-
-  const filteredStudents = students.filter(student => 
-    student.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Input 
-            placeholder="ค้นหานักเรียน..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-xs"
-          />
-          <Popover>
-            <PopoverTrigger>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>เลือกวันที่</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={handleDateSelect}
-                autoFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        
-        <Button onClick={handleSave} disabled={isPending}>
-          {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          บันทึกการเข้าเรียน
-        </Button>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">ลำดับ</TableHead>
-              <TableHead>ชื่อ-นามสกุล</TableHead>
-              <TableHead className="w-[200px]">สถานะการเข้าเรียน</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => (
-                <TableRow key={student.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">{student.name}</TableCell>
-                  <TableCell>
-                    <Select 
-                      value={attendance[student.id]} 
-                      onValueChange={(val) => handleStatusChange(student.id, val as AttendanceRecord["status"])}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
-                  ไม่พบรายชื่อนักเรียน
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+  return <section className="space-y-4" aria-labelledby="attendance-editor-title">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between"><div><h2 id="attendance-editor-title" className="font-semibold">บันทึกการมาเรียน · {classroom.name}</h2><p className="mt-1 text-sm text-muted-foreground">{students.length} คน{dirty ? " · มีรายการที่ยังไม่ได้บันทึก" : ""}</p></div><div className="flex flex-col gap-3 sm:flex-row sm:items-end"><label className="space-y-1 text-sm"><span className="block text-xs font-medium text-muted-foreground">วันที่</span><Input type="date" value={date} onChange={(event) => changeDate(event.target.value)} /></label><Button type="button" onClick={save} disabled={pending || students.length === 0 || !dirty} className="gap-2">{pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</Button></div></div>
+    <ActionFeedback result={result} />
+    <div className="flex items-center gap-2"><Search className="size-4 text-muted-foreground" aria-hidden="true" /><Input aria-label="ค้นหานักเรียน" placeholder="ค้นหานักเรียน..." value={query} onChange={(event) => setQuery(event.target.value)} className="max-w-sm" /></div>
+    <div className="space-y-3 md:hidden">
+      {filteredStudents.length ? filteredStudents.map((student, index) => {
+        const entry = entries[student.id]
+        return (
+          <article key={student.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">ลำดับ {index + 1}</p>
+                <h3 className="truncate font-medium text-foreground">{student.name}</h3>
+              </div>
+              <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{date}</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-1.5 text-sm">
+                <span className="block text-xs font-medium text-muted-foreground">สถานะ</span>
+                <select aria-label={`สถานะของ ${student.name}`} value={entry.status} onChange={(event) => updateEntry(student.id, { status: event.target.value as AttendanceStatus })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                  {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="space-y-1.5 text-sm">
+                <span className="block text-xs font-medium text-muted-foreground">เวลาเข้า</span>
+                <Input aria-label={`เวลาเข้าของ ${student.name}`} type="time" value={entry.checkInTime} onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })} className="h-10" />
+              </label>
+            </div>
+            <label className="mt-3 block space-y-1.5 text-sm">
+              <span className="block text-xs font-medium text-muted-foreground">หมายเหตุ</span>
+              <Input aria-label={`หมายเหตุของ ${student.name}`} placeholder="เพิ่มหมายเหตุ" value={entry.remark} onChange={(event) => updateEntry(student.id, { remark: event.target.value })} className="h-10" />
+            </label>
+          </article>
+        )
+      }) : <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">ไม่พบรายชื่อนักเรียน</div>}
     </div>
-  )
+    <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-border bg-muted/30 text-xs text-muted-foreground"><tr><th className="w-14 px-4 py-3">#</th><th className="px-4 py-3">นักเรียน</th><th className="w-48 px-4 py-3">สถานะ</th><th className="w-36 px-4 py-3">เวลาเข้า</th><th className="w-64 px-4 py-3">หมายเหตุ</th></tr></thead><tbody>{filteredStudents.length ? filteredStudents.map((student, index) => { const entry = entries[student.id]; return <tr key={student.id} className="border-b border-border last:border-0"><td className="px-4 py-3 text-muted-foreground">{index + 1}</td><td className="px-4 py-3 font-medium">{student.name}</td><td className="px-4 py-2"><select aria-label={`สถานะของ ${student.name}`} value={entry.status} onChange={(event) => updateEntry(student.id, { status: event.target.value as AttendanceStatus })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></td><td className="px-4 py-2"><Input aria-label={`เวลาเข้าของ ${student.name}`} type="time" value={entry.checkInTime} onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })} /></td><td className="px-4 py-2"><Input aria-label={`หมายเหตุของ ${student.name}`} placeholder="เพิ่มหมายเหตุ" value={entry.remark} onChange={(event) => updateEntry(student.id, { remark: event.target.value })} /></td></tr> }) : <tr><td colSpan={5} className="h-24 px-4 text-center text-muted-foreground">ไม่พบรายชื่อนักเรียน</td></tr>}</tbody></table></div>
+  </section>
 }

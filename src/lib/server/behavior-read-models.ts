@@ -18,6 +18,7 @@ export type BehaviorRecordItem = {
   severity: SeverityLevel | null
   date: string
   reportedByName: string | null
+  reportedById: string | null
   actionTaken: string | null
   parentNotified: boolean
 }
@@ -81,6 +82,7 @@ function toBehaviorRecordItem(row: Record<string, any>): BehaviorRecordItem {
     severity: row.severity as SeverityLevel | null,
     date: row.date as string,
     reportedByName,
+    reportedById: (row.reported_by as string) ?? null,
     actionTaken: (row.action_taken as string) ?? null,
     parentNotified: (row.parent_notified as boolean) ?? false,
   }

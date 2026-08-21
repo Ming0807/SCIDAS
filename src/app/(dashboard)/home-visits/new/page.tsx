@@ -34,11 +34,9 @@ export default async function RecordHomeVisitPage() {
   return (
     <PageShell>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/home-visits">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+        <Button nativeButton={false} variant="ghost" size="icon" className="rounded-full" aria-label="กลับไปรายการเยี่ยมบ้าน" render={<Link href="/home-visits" />}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         <div>
           <h1 className="text-2xl font-semibold text-foreground">
             บันทึกการเยี่ยมบ้าน

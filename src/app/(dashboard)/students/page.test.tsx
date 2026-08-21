@@ -95,6 +95,16 @@ vi.mock("@/lib/server/student-care-read-models", () => ({
   ]),
 }))
 
+vi.mock("@/lib/server/current-user", () => ({
+  getCurrentUserContext: vi.fn(async () => ({
+    userId: "U001",
+    schoolId: "SC001",
+    role: "admin",
+    profileId: "U001",
+    studentId: null,
+  })),
+}))
+
 describe("Students Module", () => {
   describe("Students List Page", () => {
     it("renders the students heading and data table", async () => {
@@ -104,6 +114,7 @@ describe("Students Module", () => {
       expect(screen.getByRole("heading", { name: "ข้อมูลนักเรียนและการจัดการ" })).toBeDefined()
       expect(screen.getAllByPlaceholderText("ค้นหาชื่อนักเรียน, เลขประจำตัว, ผู้ปกครอง...").length).toBeGreaterThan(0)
       expect(screen.getAllByText("เด็กชายกฤษฎา ใจดี").length).toBeGreaterThan(0)
+      expect(screen.getByRole("link", { name: /เพิ่มนักเรียน/ })).toBeDefined()
     })
   })
 
@@ -119,6 +130,7 @@ describe("Students Module", () => {
       expect(screen.getByRole("heading", { name: "ไทม์ไลน์การดูแล" })).toBeDefined()
       expect(screen.getByRole("heading", { name: "หลักฐานและไฟล์แนบ" })).toBeDefined()
       expect(screen.getByText("ติดตามผลการดูแล")).toBeDefined()
+      expect(screen.getByRole("link", { name: /แก้ไขข้อมูล/ })).toBeDefined()
     })
   })
 })

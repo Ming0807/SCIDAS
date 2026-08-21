@@ -14,6 +14,7 @@ export type UserProfileInfo = {
   roleLabel: string
   email: string | null
   phone: string | null
+  position: string | null
   schoolName: string | null
   avatarUrl: string | null
   lastSignIn: string | null
@@ -50,6 +51,8 @@ export async function getUserProfile(): Promise<UserProfileInfo> {
       role,
       email,
       phone,
+      position,
+      avatar_url,
       schools!profiles_school_id_fkey (
         name
       )
@@ -79,8 +82,9 @@ export async function getUserProfile(): Promise<UserProfileInfo> {
     roleLabel: getRoleLabel(profile.role),
     email: profile.email ?? user?.email ?? null,
     phone: profile.phone ?? null,
+    position: profile.position ?? null,
     schoolName: schools?.name ?? null,
-    avatarUrl: user?.user_metadata?.avatar_url ?? null,
+    avatarUrl: profile.avatar_url ?? user?.user_metadata?.avatar_url ?? null,
     lastSignIn: user?.last_sign_in_at ?? null,
   }
 }

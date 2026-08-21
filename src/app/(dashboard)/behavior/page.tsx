@@ -1,5 +1,5 @@
 import React from "react"
-import { AlertCircle, Plus, ThumbsDown, ThumbsUp, TrendingUp } from "lucide-react"
+import { AlertCircle, Pencil, Plus, ThumbsDown, ThumbsUp, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
 import { PageShell } from "@/components/dashboard/page-shell"
@@ -17,8 +17,12 @@ import {
   type BehaviorLeaderboardItem,
 } from "@/lib/server/behavior-read-models"
 import { getStudentInitials } from "@/lib/student-care-formatters"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 
 export default async function BehaviorDashboardPage() {
+  const context = await getCurrentUserContext()
+  const canCreate = ["admin", "homeroom_teacher", "subject_teacher", "counselor"].includes(context.role)
+  const canEditAll = context.role === "admin"
   let dashboard: Awaited<ReturnType<typeof getBehaviorDashboard>>
 
   try {
@@ -39,7 +43,7 @@ export default async function BehaviorDashboardPage() {
       <PageHeader
         title="ภาพรวมพฤติกรรมนักเรียน"
         description="บันทึกและติดตามพฤติกรรมเชิงบวก เชิงลบ และทั่วไปของนักเรียน"
-        actions={
+        actions={canCreate ? (
           <Link
             href="/behavior/record"
             className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm"
@@ -47,7 +51,7 @@ export default async function BehaviorDashboardPage() {
             <Plus className="w-4 h-4" />
             บันทึกพฤติกรรม
           </Link>
-        }
+        ) : undefined}
       />
 
       {/* Summary Cards */}
@@ -117,7 +121,7 @@ export default async function BehaviorDashboardPage() {
             </div>
           ) : (
             <div className="p-0 overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
+              <table className="w-full min-w-[680px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-border text-xs font-semibold text-muted-foreground bg-muted/30">
                     <th className="py-3 px-5 whitespace-nowrap">นักเรียน</th>
@@ -133,7 +137,7 @@ export default async function BehaviorDashboardPage() {
                 </thead>
                 <tbody className="text-sm">
                   {dashboard.recentRecords.map((record) => (
-                    <BehaviorTableRow key={record.id} record={record} />
+                    <BehaviorTableRow key={record.id} record={record} profileId={context.profileId} canEditAll={canEditAll} />
                   ))}
                 </tbody>
               </table>
@@ -186,7 +190,7 @@ export default async function BehaviorDashboardPage() {
 /* Sub-components                                                     */
 /* ------------------------------------------------------------------ */
 
-function BehaviorTableRow({ record }: { record: BehaviorRecordItem }) {
+function BehaviorTableRow({ record, profileId, canEditAll }: { record: BehaviorRecordItem; profileId: string | null; canEditAll: boolean }) {
   const isPositive = record.behaviorType === "positive"
   const isNegative = record.behaviorType === "negative"
   const statusTone = isPositive ? "success" : isNegative ? "danger" : "neutral"
@@ -227,12 +231,21 @@ function BehaviorTableRow({ record }: { record: BehaviorRecordItem }) {
         {formatRelativeTime(record.date)}
       </td>
       <td className="py-3 px-5 text-center whitespace-nowrap">
-        <Link
-          href={`/behavior/${record.id}`}
-          className="text-primary hover:text-primary/80 font-semibold text-xs bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/15 transition-colors inline-block"
-        >
-          ดูข้อมูล
-        </Link>
+        <div className="flex items-center justify-center gap-2">
+          {(canEditAll || Boolean(profileId && record.reportedById === profileId)) ? <Link
+            href={`/behavior/${record.id}`}
+            className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 hover:text-primary/80"
+          >
+            ดูข้อมูล
+          </Link> : null}
+          <Link
+            href={`/behavior/${record.id}/edit`}
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            แก้ไข
+          </Link>
+        </div>
       </td>
     </tr>
   )

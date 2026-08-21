@@ -1,7 +1,7 @@
 import React from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, User } from "lucide-react"
+import { ArrowLeft, Calendar, Pencil, User } from "lucide-react"
 
 import { PageShell } from "@/components/dashboard/page-shell"
 import { StatusBadge } from "@/components/dashboard/status-badge"
@@ -14,6 +14,7 @@ import {
 } from "@/lib/server/behavior-read-models"
 import { formatGradeLevel, getStudentInitials } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -21,6 +22,7 @@ interface PageProps {
 
 export default async function BehaviorDetailPage({ params }: PageProps) {
   const { id } = await params
+  const context = await getCurrentUserContext()
 
   let studentRecords: BehaviorRecordItem[] = []
 
@@ -54,17 +56,17 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
   return (
     <PageShell>
       {/* Back link */}
-      <Link
+              {(context.role === "admin" || Boolean(context.profileId && record.reportedById === context.profileId)) ? <Link
         href="/behavior"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
         กลับไปภาพรวมพฤติกรรม
-      </Link>
+              </Link> : null}
 
       {/* Record detail card */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-6 mb-6">
-        <div className="flex items-start justify-between mb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <span
               className={cn(
@@ -90,11 +92,20 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
               </p>
             </div>
           </div>
-          <StatusBadge
-            status={statusTone}
-            label={getBehaviorTypeLabel(record.behaviorType)}
-            size="default"
-          />
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+            <StatusBadge
+              status={statusTone}
+              label={getBehaviorTypeLabel(record.behaviorType)}
+              size="default"
+            />
+            <Link
+              href={`/behavior/${record.id}/edit`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              แก้ไข
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

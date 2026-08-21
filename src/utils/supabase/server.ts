@@ -39,6 +39,7 @@ export async function getUserRole(): Promise<Database['public']['Enums']['user_r
     .from('profiles')
     .select('role')
     .eq('id', user.id)
+    .eq('is_active', true)
     .single()
 
   if (profile) {
@@ -49,7 +50,7 @@ export async function getUserRole(): Promise<Database['public']['Enums']['user_r
   const { data: student } = await supabase
     .from('students')
     .select('id')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single()
 
   if (student) {

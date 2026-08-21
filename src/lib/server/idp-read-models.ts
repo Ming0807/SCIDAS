@@ -93,10 +93,15 @@ export async function getDevelopmentPlanList(): Promise<DevelopmentPlanListItem[
   const goalCountMap: Record<string, { total: number; completed: number }> = {}
 
   if (planIds.length > 0) {
-    const { data: goals } = await client
+    const { data: goals, error: goalsError } = await client
       .from("development_goals")
       .select("id, plan_id, status")
+      .eq("school_id", context.schoolId)
       .in("plan_id", planIds)
+
+    if (goalsError) {
+      throw new Error(goalsError.message)
+    }
 
     for (const goal of goals ?? []) {
       if (!goalCountMap[goal.plan_id]) {

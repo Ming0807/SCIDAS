@@ -1,7 +1,8 @@
 "use client"
 
 import { useActionState, useState } from "react"
-import { CheckCircle2, Loader2, Save } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, CheckCircle2, Eye, Loader2, Save } from "lucide-react"
 
 import { createHomeVisitAction } from "@/app/actions/home-visit.actions"
 import { Button } from "@/components/ui/button"
@@ -61,6 +62,15 @@ export function HomeVisitForm({ studentOptions }: HomeVisitFormProps) {
             />
           </CardContent>
         </Card>
+
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button nativeButton={false} variant="outline" render={<Link href="/home-visits" />}>
+            <ArrowLeft aria-hidden="true" /> กลับรายการเยี่ยมบ้าน
+          </Button>
+          <Button nativeButton={false} render={<Link href={`/home-visits/${state.data!.id}`} />}>
+            <Eye aria-hidden="true" /> ดูบันทึกนี้
+          </Button>
+        </div>
       </div>
     )
   }

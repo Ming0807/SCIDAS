@@ -3908,3 +3908,20 @@ All new tables enable RLS. Policies follow the existing `can_access_student(stud
 ### 11.6 Verification Note
 
 The local environment currently does not include Supabase CLI or `psql`, so the SQL migration still needs preview-project validation before production deployment.
+# Production CRUD hardening (migration 0010)
+
+`supabase/migrations/0010_security_crud_hardening.sql` is required before the
+production CRUD screens are enabled for real users. It aligns direct Supabase
+access with the same rules enforced by Server Actions:
+
+- staff signup role and school come only from trusted `app_metadata`;
+- users cannot change their own role, school, or activation state;
+- attendance, academic score, behavior, and home-visit writes enforce tenant,
+  assignment, enrollment, and actor ownership at the RLS boundary;
+- privileged risk RPCs are limited to `service_role` until caller scoping is
+  enforced inside each function;
+- CRUD tables write immutable audit events through `log_audit_event()`.
+
+The migration must be applied before authenticated CRUD smoke testing. Regenerate
+`src/types/database.types.ts` only when a migration changes the schema shape;
+policy and trigger-only changes do not require type regeneration.

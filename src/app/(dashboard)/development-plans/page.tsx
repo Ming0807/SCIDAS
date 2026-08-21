@@ -14,15 +14,25 @@ import {
   getPlanStatusLabel,
   getPlanStatusTone,
 } from "@/lib/server/idp-read-models"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 import { formatGradeLevel } from "@/lib/student-care-formatters"
+
+import { canEditDevelopmentPlans } from "./_lib/permissions"
 
 export default async function DevelopmentPlansPage() {
   let plans: Awaited<ReturnType<typeof getDevelopmentPlanList>>
   let summary: Awaited<ReturnType<typeof getPlanSummary>>
+  let canCreatePlan = false
 
   try {
-    plans = await getDevelopmentPlanList()
-    summary = await getPlanSummary()
+    const [planRows, planSummary, context] = await Promise.all([
+      getDevelopmentPlanList(),
+      getPlanSummary(),
+      getCurrentUserContext(),
+    ])
+    plans = planRows
+    summary = planSummary
+    canCreatePlan = canEditDevelopmentPlans(context.role)
   } catch {
     return (
       <PageShell>
@@ -39,7 +49,7 @@ export default async function DevelopmentPlansPage() {
       <PageHeader
         title="แผนพัฒนารายบุคคล"
         description="จัดการและติดตามแผนพัฒนารายบุคคล (IDP) สำหรับนักเรียน"
-        actions={
+        actions={canCreatePlan ? (
           <Link
             href="/development-plans/new"
             className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm"
@@ -47,7 +57,7 @@ export default async function DevelopmentPlansPage() {
             <Plus className="w-4 h-4" />
             สร้างแผนใหม่
           </Link>
-        }
+        ) : undefined}
       />
 
       {/* Summary Cards */}
@@ -107,7 +117,7 @@ export default async function DevelopmentPlansPage() {
             <EmptyState
               title="ยังไม่มีแผนพัฒนา"
               description="เริ่มสร้างแผนพัฒนารายบุคคลเพื่อติดตามและส่งเสริมการพัฒนานักเรียน"
-              action={
+              action={canCreatePlan ? (
                 <Link
                   href="/development-plans/new"
                   className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
@@ -115,7 +125,7 @@ export default async function DevelopmentPlansPage() {
                   <Plus className="w-4 h-4" />
                   สร้างแผนแรก
                 </Link>
-              }
+              ) : undefined}
             />
           </div>
         ) : (

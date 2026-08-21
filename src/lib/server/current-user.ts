@@ -29,6 +29,7 @@ export const getCurrentUserContext = cache(async (): Promise<CurrentUserContext>
     .from("profiles")
     .select("id, school_id, role")
     .eq("id", user.id)
+    .eq("is_active", true)
     .maybeSingle()
 
   if (profileError) {

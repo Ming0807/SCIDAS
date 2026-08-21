@@ -4,8 +4,10 @@ import {
   AlertTriangle,
   Calendar,
   Clock,
+  Eye,
   Home,
   MapPin,
+  Pencil,
   Plus,
   Route,
   Search,
@@ -246,13 +248,21 @@ function HomeVisitCard({ visit }: { visit: HomeVisitRecord }) {
           </p>
         ) : null}
 
-        <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
           <Link
-            href={`/students/${visit.studentId}`}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            href={`/home-visits/${visit.id}`}
+            className={cn(buttonVariants({ size: "sm" }))}
           >
-            ดูนักเรียน
+            <Eye /> ดูรายละเอียด
           </Link>
+          {visit.canEdit ? (
+            <Link
+              href={`/home-visits/${visit.id}/edit`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              <Pencil /> แก้ไข
+            </Link>
+          ) : null}
           {visit.followUpNeeded ? (
             <StatusBadge status="watch" label="มีงานติดตาม" size="sm" />
           ) : null}

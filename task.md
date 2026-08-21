@@ -443,3 +443,36 @@ Deleted 47 orphaned files across 4 modules (all verified zero-import before dele
 - [x] `npm run lint`: passed (0 warnings).
 - [x] `npm test -- --run`: passed (6/6 files, 16/16 tests).
 - [x] `npm run build`: passed (21 routes).
+
+## 2026-08-21 Production CRUD and Security Hardening
+
+### CRUD workflows
+
+- [x] Students: create, edit, archive/transfer status, role-aware controls.
+- [x] Attendance: real daily batch upsert, check-in time/remark, mobile and desktop editors.
+- [x] Academics: component scores, total/grade calculation, teacher assignment checks, mobile and desktop editors.
+- [x] Behavior: create, detail, owner/admin edit, school-scoped validation.
+- [x] Development plans: create/edit/cancel plus goal, activity, and evaluation CRUD; terminal plans are read-only.
+- [x] Support cases: create, detail, edit, and validated lifecycle transitions; no destructive case delete.
+- [x] Home visits: create, evidence handoff, detail, owner/admin edit; no destructive delete.
+- [x] Settings: safe self-profile editing; role, school, and activation remain read-only.
+
+### Security and data integrity
+
+- [x] Added `0010_security_crud_hardening.sql` for signup metadata trust, protected profile security fields, tenant-aware child policies, mutation RLS, internal-only privileged risk RPCs, and audit triggers.
+- [x] Server actions derive `school_id`, actor IDs, status timestamps, grades, and ownership fields from authenticated context.
+- [x] Inactive staff profiles are rejected by `getCurrentUserContext()`.
+- [x] Direct score, attendance, behavior, and home-visit writes are constrained by RLS as well as server actions.
+- [x] IDP terminal-state mutations and destructive child deletion are constrained; all CRUD-relevant tables are audited.
+- [ ] Apply migration `0010_security_crud_hardening.sql` to the target Supabase project.
+- [ ] Run authenticated runtime smoke tests for every CRUD workflow against the target Supabase instance.
+
+### Verification gate
+
+- [x] `git diff --check`
+- [x] `npx tsc --noEmit`
+- [x] `npm run lint`
+- [x] `npm test -- --run`
+- [x] `npm run build`
+- [x] Authenticated read-only desktop smoke: Students, Attendance, Academics, Behavior, IDP, Support, and Home Visits returned HTTP 200 with real data.
+- [ ] Authenticated desktop/mobile browser smoke

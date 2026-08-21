@@ -1,331 +1,122 @@
-import { getDevelopmentPlanById, getDevelopmentGoals, getDevelopmentActivities } from "@/app/actions/idp.actions"
-import type { DevelopmentActivity } from "@/app/actions/idp.actions"
-import { notFound } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronLeft, Calendar, User, FileText, CheckCircle2, Circle, Clock } from "lucide-react"
 import Link from "next/link"
-import { format } from "date-fns"
-import { th } from "date-fns/locale"
+import { notFound } from "next/navigation"
+import { ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, FileText, Plus, UserRound } from "lucide-react"
 
-interface PageProps {
-  params: Promise<{ id: string }>
-}
+import { getDevelopmentActivities, getDevelopmentEvaluations, getDevelopmentGoals, getDevelopmentPlanById } from "@/app/actions/idp.actions"
+import type { DevelopmentActivity, DevelopmentEvaluation, DevelopmentGoal } from "@/app/actions/idp.actions"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { PageShell } from "@/components/dashboard/page-shell"
+import { StatusBadge } from "@/components/dashboard/status-badge"
+import { EmptyState } from "@/components/feedback/empty-state"
+import { ErrorState } from "@/components/feedback/error-state"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getPlanStatusLabel, getPlanStatusTone } from "@/lib/server/idp-read-models"
 
-type PlanPerson = {
-  first_name: string | null
-  last_name: string | null
-}
+import { ActivityForm } from "../_components/activity-form"
+import { DeleteControl } from "../_components/delete-controls"
+import { EvaluationForm } from "../_components/evaluation-form"
+import { GoalForm } from "../_components/goal-form"
+import { PlanDetailActions } from "../_components/plan-detail-actions"
+import { canEditDevelopmentEvaluations, canEditDevelopmentPlans } from "../_lib/permissions"
 
+interface PageProps { params: Promise<{ id: string }> }
+type Person = { first_name: string | null; last_name: string | null; student_code?: string | null }
 const firstOrSelf = <T,>(value: T | T[] | null | undefined) => Array.isArray(value) ? value[0] : value
+const dateFormatter = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric" })
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "ไม่ระบุ"
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date)
+}
+
+function displayName(person: Person | null | undefined) {
+  return `${person?.first_name ?? ""} ${person?.last_name ?? ""}`.trim() || "ไม่ระบุ"
+}
+
+function goalStatusLabel(status: DevelopmentGoal["status"]) {
+  return { not_started: "ยังไม่เริ่ม", in_progress: "กำลังดำเนินการ", achieved: "บรรลุเป้าหมาย", not_achieved: "ยังไม่บรรลุ", cancelled: "ยกเลิก" }[status]
+}
+
+function goalStatusTone(status: DevelopmentGoal["status"]) {
+  return status === "achieved" ? "success" : status === "in_progress" ? "info" : status === "cancelled" || status === "not_achieved" ? "danger" : "neutral"
+}
+
+function evaluatorName(evaluation: DevelopmentEvaluation) {
+  const evaluator = (evaluation as DevelopmentEvaluation & { evaluator?: Person | Person[] | null }).evaluator
+  return displayName(firstOrSelf(evaluator))
+}
 
 export default async function DevelopmentPlanDetailsPage({ params }: PageProps) {
   const { id } = await params
-  
-  const plan = await getDevelopmentPlanById(id)
-  
-  if (!plan) {
-    notFound()
+  const [plan, context] = await Promise.all([
+    getDevelopmentPlanById(id),
+    getCurrentUserContext(),
+  ])
+  if (!plan) notFound()
+
+  let goals: DevelopmentGoal[] = []
+  let evaluations: DevelopmentEvaluation[] = []
+  let activitiesByGoal: Record<string, DevelopmentActivity[]> = {}
+  try {
+    const [goalRows, evaluationRows] = await Promise.all([getDevelopmentGoals(id), getDevelopmentEvaluations(id)])
+    goals = goalRows
+    evaluations = evaluationRows
+    const activityRows = await Promise.all(goals.map(async (goal) => [goal.id, await getDevelopmentActivities(goal.id)] as const))
+    activitiesByGoal = Object.fromEntries(activityRows)
+  } catch {
+    return <PageShell><ErrorState title="โหลดรายละเอียดรายการย่อยไม่สำเร็จ" description="ข้อมูลแผนยังเปิดดูได้ แต่ไม่สามารถโหลดเป้าหมาย กิจกรรม หรือการประเมินได้ในขณะนี้" /></PageShell>
   }
 
-  const goals = await getDevelopmentGoals(id)
-  
-  // Fetch activities for each goal
-  // Normally we might do a join, but let's fetch them in parallel for the goals
-  const activitiesByGoal = await Promise.all(
-    goals.map(async (goal) => {
-      const activities = await getDevelopmentActivities(goal.id)
-      return { goalId: goal.id, activities }
-    })
-  )
-  
-  const activitiesMap = activitiesByGoal.reduce((acc, curr) => {
-    acc[curr.goalId] = curr.activities
-    return acc
-  }, {} as Record<string, DevelopmentActivity[]>)
-
-  const student = firstOrSelf(plan.student as PlanPerson | PlanPerson[] | null | undefined)
-  const creator = firstOrSelf(plan.creator as PlanPerson | PlanPerson[] | null | undefined)
+  const student = firstOrSelf(plan.student as Person | Person[] | null | undefined)
+  const creator = firstOrSelf(plan.creator as Person | Person[] | null | undefined)
+  const activities = Object.values(activitiesByGoal).flat()
+  const totalProgress = Math.max(0, Math.min(100, plan.overall_progress ?? 0))
+  const isFrozen = plan.status === "completed" || plan.status === "cancelled"
+  const canMutatePlan = !isFrozen && canEditDevelopmentPlans(context.role)
+  const canMutateEvaluations = !isFrozen && canEditDevelopmentEvaluations(context.role)
 
   return (
-    <div className="space-y-6">
-      {/* Header with back button */}
-      <div className="flex items-center gap-4">
-        <Link 
-          href="/development-plans" 
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white hover:bg-slate-100"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-800">
-              {plan.title}
-            </h2>
-            <Badge 
-              variant="outline" 
-              className={
-                plan.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                plan.status === 'active' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                plan.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-200' :
-                'bg-slate-50 text-slate-600 border-slate-200'
-              }
-            >
-              {plan.status === 'draft' && 'ฉบับร่าง'}
-              {plan.status === 'active' && 'กำลังดำเนินการ'}
-              {plan.status === 'completed' && 'เสร็จสิ้น'}
-              {plan.status === 'cancelled' && 'ยกเลิก'}
-            </Badge>
-          </div>
-        </div>
-      </div>
+    <PageShell size="wide">
+      <PageHeader
+        breadcrumbs={<Link href="/development-plans" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" />แผนพัฒนารายบุคคล</Link>}
+        title={plan.title}
+        description={plan.description ?? "ติดตามเป้าหมาย กิจกรรม และผลการประเมินของนักเรียนในแผนเดียว"}
+        metadata={<StatusBadge status={getPlanStatusTone(plan.status)} label={getPlanStatusLabel(plan.status)} size="sm" />}
+        actions={<PlanDetailActions planId={id} status={plan.status} canEdit={canMutatePlan} />}
+      />
 
-      {/* Overview Card */}
-      <Card className="rounded-xl shadow-sm border-slate-200">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
-                <User className="h-4 w-4" /> นักเรียน
-              </p>
-              <p className="text-base font-medium text-slate-900">
-                {student?.first_name} {student?.last_name}
-              </p>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> ระยะเวลา
-              </p>
-              <p className="text-base font-medium text-slate-900">
-                {format(new Date(plan.start_date), 'd MMM yy', { locale: th })} - {format(new Date(plan.end_date), 'd MMM yy', { locale: th })}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
-                <FileText className="h-4 w-4" /> ผู้จัดทำ
-              </p>
-              <p className="text-base font-medium text-slate-900">
-                {creator?.first_name} {creator?.last_name}
-              </p>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> ความก้าวหน้าโดยรวม
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-600 rounded-full" 
-                    style={{ width: `${plan.overall_progress || 0}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium text-slate-700">
-                  {plan.overall_progress || 0}%
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {plan.description && (
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <h4 className="text-sm font-medium text-slate-900 mb-2">รายละเอียด</h4>
-              <p className="text-sm text-slate-600 whitespace-pre-wrap">{plan.description}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="ข้อมูลสรุปแผน">
+        <Card size="sm"><CardContent className="flex items-start gap-3"><UserRound className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div><p className="text-xs text-muted-foreground">นักเรียน</p><p className="mt-1 text-sm font-medium">{displayName(student)}</p><p className="text-xs text-muted-foreground">{student?.student_code ?? "ไม่ระบุรหัส"}</p></div></CardContent></Card>
+        <Card size="sm"><CardContent className="flex items-start gap-3"><CalendarDays className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div><p className="text-xs text-muted-foreground">ช่วงเวลา</p><p className="mt-1 text-sm font-medium">{formatDate(plan.start_date)} - {formatDate(plan.end_date)}</p><p className="text-xs text-muted-foreground">{plan.semester?.semester === "semester_1" ? "ภาคเรียนที่ 1" : plan.semester?.semester === "semester_2" ? "ภาคเรียนที่ 2" : "ไม่ระบุภาคเรียน"}</p></div></CardContent></Card>
+        <Card size="sm"><CardContent className="flex items-start gap-3"><FileText className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div><p className="text-xs text-muted-foreground">ผู้จัดทำ</p><p className="mt-1 text-sm font-medium">{displayName(creator)}</p><p className="text-xs text-muted-foreground">สร้างเมื่อ {formatDate(plan.created_at)}</p></div></CardContent></Card>
+        <Card size="sm"><CardContent className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">ความก้าวหน้า</p><span className="text-sm font-semibold">{totalProgress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={totalProgress} aria-valuemin={0} aria-valuemax={100} aria-label="ความก้าวหน้าโดยรวม"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${totalProgress}%` }} /></div></div></CardContent></Card>
+      </section>
 
       <Tabs defaultValue="goals" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="goals">เป้าหมาย</TabsTrigger>
-          <TabsTrigger value="activities">กิจกรรม</TabsTrigger>
-          <TabsTrigger value="evaluation">การประเมิน</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 sm:w-fit">
+          <TabsTrigger value="goals">เป้าหมาย ({goals.length})</TabsTrigger>
+          <TabsTrigger value="activities">กิจกรรม ({activities.length})</TabsTrigger>
+          <TabsTrigger value="evaluation">การประเมิน ({evaluations.length})</TabsTrigger>
         </TabsList>
-        
-        {/* Goals Tab */}
-        <TabsContent value="goals" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-slate-800">เป้าหมายการพัฒนา</h3>
-            <Button size="sm" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มเป้าหมาย</Button>
-          </div>
-          
-          {goals.length > 0 ? (
-            <div className="space-y-4">
-              {goals.map((goal) => (
-                <Card key={goal.id} className="rounded-xl shadow-sm border-slate-200">
-                  <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-                    <div className="flex justify-between items-start">
-                      <div className="flex gap-3">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium text-sm">
-                          {goal.goal_number}
-                        </div>
-                        <div>
-                          <CardTitle className="text-base text-slate-800">{goal.title}</CardTitle>
-                          <CardDescription className="mt-1">{goal.description}</CardDescription>
-                        </div>
-                      </div>
-                      <Badge 
-                        variant="outline" 
-                        className={
-                          goal.status === 'achieved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                          goal.status === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                          'bg-slate-50 text-slate-600 border-slate-200'
-                        }
-                      >
-                        {goal.status === 'not_started' && 'รอดำเนินการ'}
-                        {goal.status === 'in_progress' && 'กำลังดำเนินการ'}
-                        {goal.status === 'achieved' && 'บรรลุเป้าหมาย'}
-                        {goal.status === 'cancelled' && 'ยกเลิก'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">หมวดหมู่</p>
-                        <p className="text-sm font-medium">{goal.category || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">สถานะปัจจุบัน</p>
-                        <p className="text-sm font-medium">{goal.current_value || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">เป้าหมายที่คาดหวัง</p>
-                        <p className="text-sm font-medium">{goal.target_value || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">กำหนดเสร็จสิ้น</p>
-                        <p className="text-sm font-medium">
-                          {goal.target_date ? format(new Date(goal.target_date), 'd MMM yy', { locale: th }) : '-'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <p className="text-xs font-medium text-slate-500 min-w-[60px]">ความก้าวหน้า</p>
-                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${goal.status === 'achieved' ? 'bg-emerald-500' : 'bg-blue-600'}`}
-                          style={{ width: `${goal.progress || 0}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-slate-700 w-8 text-right">
-                        {goal.progress || 0}%
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="rounded-xl border-dashed border-slate-300 bg-slate-50">
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="h-6 w-6 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-medium text-slate-800">ยังไม่มีเป้าหมาย</h3>
-                <p className="text-sm text-slate-500 mt-1 mb-4">เพิ่มเป้าหมายเพื่อเริ่มติดตามการพัฒนา</p>
-                <Button size="sm" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มเป้าหมายแรก</Button>
-              </CardContent>
-            </Card>
-          )}
+
+        <TabsContent value="goals" className="mt-5 space-y-4">
+          {canMutatePlan ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><ClipboardList aria-hidden="true" className="size-5 text-primary" />เป้าหมายการพัฒนา</CardTitle><CardDescription>กำหนดผลลัพธ์ที่ต้องการเห็นและอัปเดตความก้าวหน้าเป็นระยะ</CardDescription></CardHeader><CardContent><GoalForm planId={id} /></CardContent></Card> : null}
+          {goals.length === 0 ? <EmptyState icon={ClipboardList} title="ยังไม่มีเป้าหมาย" description={canMutatePlan ? "เพิ่มเป้าหมายแรกเพื่อให้ทีมเริ่มติดตามการพัฒนาได้" : isFrozen ? "แผนนี้ถูกล็อก จึงไม่สามารถเพิ่มเป้าหมายได้" : "คุณไม่มีสิทธิ์เพิ่มเป้าหมายในแผนนี้"} size="compact" /> : <div className="space-y-4">{goals.map((goal) => <Card key={goal.id}><CardHeader className="gap-3 border-b border-border"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">{goal.goal_number}</span><div className="min-w-0"><CardTitle className="text-base">{goal.title}</CardTitle><CardDescription className="mt-1 whitespace-pre-wrap">{goal.description ?? "ยังไม่มีรายละเอียด"}</CardDescription></div></div><div className="flex shrink-0 items-center gap-2"><StatusBadge status={goalStatusTone(goal.status)} label={goalStatusLabel(goal.status)} size="sm" />{canMutatePlan ? <DeleteControl kind="goal" id={goal.id} /> : null}</div></div><div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground"><span>{goal.category ?? "ไม่ระบุหมวดหมู่"}</span><span>เป้าหมาย: {goal.target_value ?? "ไม่ระบุ"}</span><span>ครบกำหนด: {formatDate(goal.target_date)}</span></div></CardHeader><CardContent className="space-y-4"><div className="flex items-center gap-3"><span className="w-20 shrink-0 text-xs text-muted-foreground">ความก้าวหน้า</span><div className="h-2 flex-1 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, goal.progress ?? 0))}%` }} /></div><span className="w-10 text-right text-xs font-medium">{goal.progress ?? 0}%</span></div>{canMutatePlan ? <details className="group"><summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:underline">แก้ไขเป้าหมาย</summary><div className="mt-3"><GoalForm planId={id} goal={goal} /></div></details> : null}<div className="rounded-lg border border-border bg-muted/20 p-3"><div className="mb-3 flex items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">กิจกรรมของเป้าหมายนี้</h4><p className="text-xs text-muted-foreground">{(activitiesByGoal[goal.id] ?? []).length} รายการ</p></div>{canMutatePlan ? <Plus aria-hidden="true" className="size-4 text-muted-foreground" /> : null}</div>{canMutatePlan ? <ActivityForm goalId={goal.id} /> : null}{(activitiesByGoal[goal.id] ?? []).length ? <div className="mt-3 space-y-2">{(activitiesByGoal[goal.id] ?? []).map((activity) => <div key={activity.id} className="flex flex-col gap-3 rounded-md border border-border bg-background p-3"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-2"><span className="mt-0.5 text-muted-foreground" aria-hidden="true">{activity.is_completed ? "✓" : "○"}</span><div className="min-w-0"><p className="text-sm font-medium">{activity.title}</p><p className="mt-1 text-xs text-muted-foreground">{activity.description ?? "ไม่มีรายละเอียด"}</p><p className="mt-1 text-xs text-muted-foreground">{formatDate(activity.start_date)} - {formatDate(activity.end_date)} · {activity.responsible_person ?? "ไม่ระบุผู้รับผิดชอบ"}</p></div></div><div className="flex shrink-0 items-center gap-2"><Badge variant={activity.is_completed ? "default" : "outline"}>{activity.is_completed ? "เสร็จแล้ว" : "รอดำเนินการ"}</Badge>{canMutatePlan ? <DeleteControl kind="activity" id={activity.id} /> : null}</div></div>{canMutatePlan ? <details><summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:underline">แก้ไขกิจกรรม</summary><div className="mt-3"><ActivityForm goalId={goal.id} activity={activity} /></div></details> : null}</div>)}</div> : null}</div></CardContent></Card>)}</div>}
         </TabsContent>
 
-        {/* Activities Tab */}
-        <TabsContent value="activities" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-slate-800">กิจกรรมที่เกี่ยวข้อง</h3>
-            <Button size="sm" variant="outline" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มกิจกรรม</Button>
-          </div>
-          
-          <Card className="rounded-xl shadow-sm border-slate-200 overflow-hidden">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead className="w-[40px]"></TableHead>
-                  <TableHead>กิจกรรม</TableHead>
-                  <TableHead>เป้าหมายที่เกี่ยวข้อง</TableHead>
-                  <TableHead>ระยะเวลา</TableHead>
-                  <TableHead>ผู้รับผิดชอบ</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {goals.flatMap(goal => activitiesMap[goal.id] || []).length > 0 ? (
-                  goals.flatMap(goal => (
-                    (activitiesMap[goal.id] || []).map((activity) => (
-                      <TableRow key={activity.id}>
-                        <TableCell>
-                          {activity.is_completed ? (
-                            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-slate-300" />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium text-slate-900">
-                          {activity.title}
-                          {activity.description && (
-                            <p className="text-xs text-slate-500 font-normal mt-0.5">{activity.description}</p>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
-                            เป้าหมายที่ {goal.goal_number}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          <div className="flex items-center gap-1.5 text-xs">
-                            <Clock className="h-3.5 w-3.5" />
-                            {activity.start_date ? format(new Date(activity.start_date), 'd MMM', { locale: th }) : '?'} 
-                            {' - '} 
-                            {activity.end_date ? format(new Date(activity.end_date), 'd MMM', { locale: th }) : '?'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          {activity.responsible_person || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {activity.is_completed ? (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">เสร็จสิ้น</Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">รอรับการประเมิน</Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
-                      ไม่พบกิจกรรมในแผนพัฒนานี้
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Card>
+        <TabsContent value="activities" className="mt-5 space-y-4">
+          <Card><CardHeader><CardTitle>กิจกรรมทั้งหมด</CardTitle><CardDescription>รวมกิจกรรมจากทุกเป้าหมายในแผนนี้</CardDescription></CardHeader><CardContent>{activities.length === 0 ? <EmptyState title="ยังไม่มีกิจกรรม" description={canMutatePlan ? "เพิ่มกิจกรรมจากแต่ละเป้าหมายในแท็บเป้าหมาย" : isFrozen ? "แผนนี้ถูกล็อก จึงไม่สามารถเพิ่มกิจกรรมได้" : "คุณไม่มีสิทธิ์เพิ่มกิจกรรมในแผนนี้"} size="compact" /> : <div className="space-y-2">{goals.flatMap((goal) => (activitiesByGoal[goal.id] ?? []).map((activity) => <div key={activity.id} className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">{activity.title}</p><p className="mt-1 text-xs text-muted-foreground">เป้าหมายที่ {goal.goal_number} · {formatDate(activity.start_date)} - {formatDate(activity.end_date)}</p></div><Badge variant={activity.is_completed ? "default" : "outline"}>{activity.is_completed ? "เสร็จแล้ว" : "รอดำเนินการ"}</Badge></div>))}</div>}</CardContent></Card>
         </TabsContent>
-        
-        {/* Evaluation Tab */}
-        <TabsContent value="evaluation" className="mt-6">
-          <Card className="rounded-xl border-dashed border-slate-300 bg-slate-50">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <FileText className="h-6 w-6 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-medium text-slate-800">ยังไม่มีการประเมิน</h3>
-              <p className="text-sm text-slate-500 mt-1 mb-4">การประเมินจะสามารถทำได้เมื่อดำเนินกิจกรรมแล้วเสร็จ</p>
-              <Button size="sm" variant="outline" disabled title="ฟีเจอร์นี้กำลังพัฒนา">เพิ่มบันทึกการประเมิน</Button>
-            </CardContent>
-          </Card>
+
+        <TabsContent value="evaluation" className="mt-5 space-y-4">
+          {canMutateEvaluations ? <Card><CardHeader><CardTitle>บันทึกการประเมิน</CardTitle><CardDescription>สรุปผลที่เกิดขึ้นจริงและกำหนดทิศทางการดูแลรอบถัดไป</CardDescription></CardHeader><CardContent><EvaluationForm planId={id} /></CardContent></Card> : null}
+          {evaluations.length === 0 ? <EmptyState icon={FileText} title="ยังไม่มีการประเมิน" description={canMutateEvaluations ? "เพิ่มการประเมินเมื่อมีข้อมูลผลการดำเนินงานเพียงพอ" : isFrozen ? "แผนนี้ถูกล็อก จึงไม่สามารถเพิ่มการประเมินได้" : "คุณไม่มีสิทธิ์เพิ่มการประเมินในแผนนี้"} size="compact" /> : <div className="space-y-3">{evaluations.map((evaluation) => <Card key={evaluation.id}><CardHeader className="gap-3 border-b border-border"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">รอบที่ {evaluation.evaluation_round} · {formatDate(evaluation.evaluation_date)}</CardTitle><CardDescription className="mt-1">ผู้ประเมิน: {evaluatorName(evaluation)}</CardDescription></div><div className="flex items-center gap-2"><Badge variant={evaluation.continue_plan ? "default" : "outline"}>{evaluation.continue_plan ? "ดำเนินแผนต่อ" : "ปิดแผน"}</Badge>{canMutateEvaluations ? <DeleteControl kind="evaluation" id={evaluation.id} /> : null}</div></div></CardHeader><CardContent className="space-y-4"><div><p className="text-xs font-medium text-muted-foreground">ผลการประเมินโดยรวม</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6">{evaluation.overall_result}</p></div><div className="grid gap-4 text-sm sm:grid-cols-3"><div><p className="text-xs text-muted-foreground">จุดแข็ง</p><p className="mt-1 whitespace-pre-wrap">{evaluation.strengths ?? "ไม่ระบุ"}</p></div><div><p className="text-xs text-muted-foreground">สิ่งที่ควรพัฒนา</p><p className="mt-1 whitespace-pre-wrap">{evaluation.areas_for_improvement ?? "ไม่ระบุ"}</p></div><div><p className="text-xs text-muted-foreground">ข้อเสนอแนะ</p><p className="mt-1 whitespace-pre-wrap">{evaluation.recommendations ?? "ไม่ระบุ"}</p></div></div>{canMutateEvaluations ? <details><summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:underline">แก้ไขการประเมิน</summary><div className="mt-3"><EvaluationForm planId={id} evaluation={evaluation} /></div></details> : null}</CardContent></Card>)}</div>}
         </TabsContent>
       </Tabs>
-    </div>
+    </PageShell>
   )
 }
