@@ -70,7 +70,14 @@ VALUES (
   '�œู�‰�”ูแลระ�š�š',
   true
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  school_id = EXCLUDED.school_id,
+  role = EXCLUDED.role,
+  prefix = EXCLUDED.prefix,
+  first_name = EXCLUDED.first_name,
+  last_name = EXCLUDED.last_name,
+  position = EXCLUDED.position,
+  is_active = EXCLUDED.is_active;
 
 -- �•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•��•�
 -- 4. STUDENTS �€” 45 �„�™ ระ�”ั�š �›.4-ม.3
