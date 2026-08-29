@@ -2,6 +2,7 @@ import type { Database, Json } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
 import { getCurrentUserContext } from "./current-user"
+import { generateReportArtifact } from "./report-generator"
 
 type PublicTables = Database["public"]["Tables"]
 type ReportJobRow = PublicTables["report_jobs"]["Row"]
@@ -39,11 +40,13 @@ export type ReportJobItem = {
 const knownReportTypeLabels: Record<string, string> = {
   student_summary: "รายงานสรุปนักเรียน",
   risk_report: "รายงานกลุ่มเสี่ยง",
+  risk_assessment: "รายงานการประเมินความเสี่ยง",
   behavior_report: "รายงานพฤติกรรม",
   academic_report: "รายงานผลการเรียน",
   support_report: "รายงานการดูแลช่วยเหลือ",
   idp_report: "รายงานพัฒนารายบุคคล",
   attendance_report: "รายงานการมาเรียน",
+  attendance_summary: "รายงานสรุปการมาเรียน",
   admin_summary: "รายงานสำหรับผู้บริหาร",
   home_visit_report: "รายงานเยี่ยมบ้าน",
   intervention_summary: "รายงานการช่วยเหลือ",
@@ -61,7 +64,7 @@ function isReportJobType(reportType: string): reportType is ReportJobType {
   return reportJobTypes.includes(reportType as ReportJobType)
 }
 
-const signedUrlSeconds = 10 * 60
+const signedUrlSeconds = 60 * 60 // 1 hour valid signed URL
 
 const validStatuses: ReportJobStatus[] = [
   "queued",
@@ -216,14 +219,12 @@ export async function getPopularReportTypes(
     return []
   }
 
-  // Aggregate counts manually
   const counts: Record<string, number> = {}
   for (const row of data) {
     const rt = (row as { report_type: string }).report_type
     counts[rt] = (counts[rt] ?? 0) + 1
   }
 
-  // Sort by count descending
   const sorted = Object.entries(counts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, limit)
@@ -236,84 +237,124 @@ export async function getPopularReportTypes(
 }
 
 /**
- * Process the next queued report job for the current school.
- * Transitions: queued → running → completed (with output placeholder) or failed.
- * Returns the updated job status or null if no queued jobs.
+ * Process a specific report job or the next queued report job.
+ * Executes genuine PDF/XLSX generation, uploads to Supabase Storage, and updates DB status.
  */
-export async function processNextReportJob(): Promise<{
+export async function processReportJobById(jobId?: string): Promise<{
   id: string
   status: ReportJobStatus
   errorMessage: string | null
+  downloadUrl?: string | null
 } | null> {
   const context = await getCurrentUserContext()
-
-  if (!context.profileId) {
-    throw new Error("UNAUTHORIZED")
-  }
-
   const client = await createClient()
 
-  // Pick the oldest queued job
-  const { data: queued, error: fetchError } = await client
-    .from("report_jobs")
-    .select("id")
-    .eq("school_id", context.schoolId)
-    .eq("status", "queued")
-    .order("requested_at", { ascending: true })
-    .limit(1)
-    .maybeSingle()
+  let targetJobId = jobId
 
-  if (fetchError || !queued) {
+  if (!targetJobId) {
+    // Pick the oldest queued job
+    const { data: queued } = await client
+      .from("report_jobs")
+      .select("id")
+      .eq("school_id", context.schoolId)
+      .eq("status", "queued")
+      .order("requested_at", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (!queued) return null
+    targetJobId = (queued as { id: string }).id
+  }
+
+  // Fetch job details
+  const { data: jobRow, error: jobErr } = await client
+    .from("report_jobs")
+    .select("id, school_id, report_type, title, filters")
+    .eq("id", targetJobId)
+    .eq("school_id", context.schoolId)
+    .single()
+
+  if (jobErr || !jobRow) {
     return null
   }
 
-  const jobId = (queued as { id: string }).id
-
-  // Mark as running
-  const { error: runningError } = await client
+  // 1. Mark as running
+  await client
     .from("report_jobs")
-    .update({ status: "running" })
-    .eq("id", jobId)
-    .eq("school_id", context.schoolId)
+    .update({ status: "running", started_at: new Date().toISOString(), error_message: null })
+    .eq("id", targetJobId)
 
-  if (runningError) {
-    throw new Error(runningError.message)
-  }
-
-  // Placeholder report generation — real PDF/Excel generation not yet built.
-  // Mark completed without output file so UI does not show fake download readiness.
   try {
-    const now = new Date().toISOString()
+    // 2. Generate Real File Artifact
+    const artifact = await generateReportArtifact({
+      id: jobRow.id,
+      schoolId: jobRow.school_id,
+      reportType: jobRow.report_type,
+      title: jobRow.title,
+      filters: (jobRow.filters as Record<string, unknown>) || {},
+    })
 
-    const { error: completeError } = await client
+    const storagePath = `${jobRow.school_id}/${artifact.fileName}`
+
+    // 3. Upload to Supabase Storage 'reports' bucket
+    const { error: uploadError } = await client.storage
+      .from("reports")
+      .upload(storagePath, artifact.buffer, {
+        contentType: artifact.contentType,
+        upsert: true,
+      })
+
+    if (uploadError) {
+      throw new Error(`Storage upload failed: ${uploadError.message}`)
+    }
+
+    // 4. Mark completed
+    const completedNow = new Date().toISOString()
+    const { error: updateErr } = await client
       .from("report_jobs")
       .update({
         status: "completed",
-        completed_at: now,
+        completed_at: completedNow,
+        output_bucket: "reports",
+        output_path: storagePath,
         error_message: null,
       })
-      .eq("id", jobId)
-      .eq("school_id", context.schoolId)
+      .eq("id", targetJobId)
 
-    if (completeError) {
-      throw new Error(completeError.message)
+    if (updateErr) {
+      throw new Error(updateErr.message)
     }
 
-    return { id: jobId, status: "completed", errorMessage: null }
+    const { data: signed } = await client.storage
+      .from("reports")
+      .createSignedUrl(storagePath, signedUrlSeconds)
+
+    return {
+      id: targetJobId,
+      status: "completed",
+      errorMessage: null,
+      downloadUrl: signed?.signedUrl || null,
+    }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown generation error"
+    const errorMsg = err instanceof Error ? err.message : "Report generation failed"
 
     await client
       .from("report_jobs")
       .update({
         status: "failed",
         completed_at: new Date().toISOString(),
-        error_message: message,
+        error_message: errorMsg,
       })
-      .eq("id", jobId)
-      .eq("school_id", context.schoolId)
+      .eq("id", targetJobId)
 
-    return { id: jobId, status: "failed", errorMessage: message }
+    return {
+      id: targetJobId,
+      status: "failed",
+      errorMessage: errorMsg,
+    }
   }
 }
 
+export async function processNextReportJob() {
+  return processReportJobById()
+}

@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Sidebar } from "@/components/layout/sidebar"
 
+import { useRealtime } from "@/components/providers/realtime-provider"
+
 type ProfileProps = {
   fullName: string
   firstName: string
@@ -17,12 +19,14 @@ type ProfileProps = {
 export function Header({
   role,
   profile,
-  unreadCount = 0,
+  unreadCount: initialUnreadCount = 0,
 }: {
   role?: string | null
   profile?: ProfileProps | null
   unreadCount?: number
 }) {
+  const { unreadNotificationsCount } = useRealtime()
+  const unreadCount = unreadNotificationsCount ?? initialUnreadCount
   const schoolName = profile?.schoolName ?? null
   const initials = profile
     ? (profile.firstName.charAt(0) + profile.lastName.charAt(0)).toUpperCase()

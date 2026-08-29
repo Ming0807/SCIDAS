@@ -2,8 +2,14 @@
 
 import { revalidatePath } from "next/cache"
 
-import { processNextReportJob, reportJobTypes, requestReportJob } from "@/lib/server/report-read-models"
+import {
+  processReportJobById,
+  reportJobTypes,
+  requestReportJob,
+} from "@/lib/server/report-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
+import { createClient } from "@/utils/supabase/server"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 
 export async function requestReportJobActionState(
   _previousState: ActionResult<{ id: string }> | null,
@@ -39,9 +45,12 @@ export async function requestReportJobActionState(
   try {
     const result = await requestReportJob({ reportType, title })
 
+    // Trigger immediate generation in background
+    processReportJobById(result.id).catch(console.error)
+
     revalidatePath("/reports")
 
-    return actionOk("สร้างรายงานแล้ว", {
+    return actionOk("ขอสร้างรายงานแล้ว ระบบกำลังสร้างไฟล์เอกสาร", {
       data: { id: result.id },
       revalidated: ["/reports"],
     })
@@ -75,14 +84,13 @@ export async function requestReportJobActionState(
 }
 
 /**
- * Process the next queued report job. Simulates report generation.
- * In production this would be triggered by a queue worker.
+ * Process a specific report job or next queued.
  */
-export async function processReportJobAction(): Promise<
-  ActionResult<{ id: string; status: string } | null>
+export async function processReportJobAction(jobId?: string): Promise<
+  ActionResult<{ id: string; status: string; downloadUrl?: string | null } | null>
 > {
   try {
-    const result = await processNextReportJob()
+    const result = await processReportJobById(jobId)
 
     if (!result) {
       return actionOk("ไม่มีรายงานที่รอดำเนินการ", { data: null })
@@ -91,8 +99,8 @@ export async function processReportJobAction(): Promise<
     revalidatePath("/reports")
 
     if (result.status === "completed") {
-      return actionOk("สร้างรายงานสำเร็จ", {
-        data: { id: result.id, status: result.status },
+      return actionOk("สร้างไฟล์รายงานเอกสารสำเร็จ", {
+        data: { id: result.id, status: result.status, downloadUrl: result.downloadUrl },
       })
     }
 
@@ -102,5 +110,74 @@ export async function processReportJobAction(): Promise<
       "INTERNAL_ERROR",
       err instanceof Error ? err.message : "เกิดข้อผิดพลาด",
     )
+  }
+}
+
+/**
+ * Retry a failed or queued report job.
+ */
+export async function retryReportJobAction(jobId: string): Promise<ActionResult> {
+  try {
+    const context = await getCurrentUserContext()
+    const client = await createClient()
+
+    const { error: resetErr } = await client
+      .from("report_jobs")
+      .update({ status: "queued", error_message: null })
+      .eq("id", jobId)
+      .eq("school_id", context.schoolId)
+
+    if (resetErr) {
+      return actionFail("INTERNAL_ERROR", `ไม่สามารถเริ่มสร้างรายงานใหม่ได้: ${resetErr.message}`)
+    }
+
+    // Trigger generation
+    const res = await processReportJobById(jobId)
+    revalidatePath("/reports")
+
+    if (res?.status === "completed") {
+      return actionOk("สร้างไฟล์รายงานใหม่สำเร็จ")
+    }
+
+    return actionOk("กำลังประมวลผลรายงานใหม่")
+  } catch (err) {
+    return actionFail("INTERNAL_ERROR", err instanceof Error ? err.message : "เกิดข้อผิดพลาด")
+  }
+}
+
+/**
+ * Delete a report job and its generated file.
+ */
+export async function deleteReportJobAction(jobId: string): Promise<ActionResult> {
+  try {
+    const context = await getCurrentUserContext()
+    const client = await createClient()
+
+    // Fetch storage path
+    const { data: job } = await client
+      .from("report_jobs")
+      .select("output_bucket, output_path")
+      .eq("id", jobId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+
+    if (job?.output_bucket && job.output_path) {
+      await client.storage.from(job.output_bucket).remove([job.output_path])
+    }
+
+    const { error: delErr } = await client
+      .from("report_jobs")
+      .delete()
+      .eq("id", jobId)
+      .eq("school_id", context.schoolId)
+
+    if (delErr) {
+      return actionFail("INTERNAL_ERROR", `ไม่สามารถลบรายงานได้: ${delErr.message}`)
+    }
+
+    revalidatePath("/reports")
+    return actionOk("ลบรายงานเรียบร้อยแล้ว")
+  } catch (err) {
+    return actionFail("INTERNAL_ERROR", err instanceof Error ? err.message : "เกิดข้อผิดพลาด")
   }
 }

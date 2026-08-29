@@ -6,7 +6,7 @@ import {
   getStudentWorklist,
   type StudentWorklistItem,
 } from "@/lib/server/student-care-read-models"
-import { getRiskFactorDistribution } from "@/lib/server/risk-read-models"
+import { getRiskFactorDistribution, getRiskTrendHistory } from "@/lib/server/risk-read-models"
 
 import { RecalculateButton } from "./RecalculateButton"
 import { RiskFactorsChart } from "./_components/risk-factors-chart"
@@ -24,14 +24,17 @@ export default async function RiskAnalysisPage() {
     factors: [],
     totalStudents: 0,
   }
+  let trendData: Awaited<ReturnType<typeof getRiskTrendHistory>> = []
 
   try {
-    const [worklistResult, factorResult] = await Promise.all([
+    const [worklistResult, factorResult, trendResult] = await Promise.all([
       getStudentWorklist({ limit: 500 }),
       getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
+      getRiskTrendHistory().catch(() => []),
     ])
     students = worklistResult
     factorDistribution = factorResult
+    trendData = trendResult
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown risk data error"
   }
@@ -92,7 +95,7 @@ export default async function RiskAnalysisPage() {
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             <RiskFactorsChart factorDistribution={factorDistribution} />
-            <RiskHistoryChart />
+            <RiskHistoryChart trendData={trendData} />
             <RiskRecommendations students={students} />
           </div>
         </PageShell>

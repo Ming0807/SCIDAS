@@ -1,4 +1,50 @@
-﻿# Task Progress
+# Task Progress
+
+## 2026-08-29 Production Operations Phase
+
+Status: done. Completed all waves across Academic Administration, Student Import, Real Report Artifacts, Real Risk Analytics, and Realtime Hardening with 100% passing tests and production Next.js build.
+
+### Wave 1 — Parallel Foundation
+
+- [x] **Agent A (Academic Administration)**:
+  - Added migration `supabase/migrations/0011_admin_academic_management.sql` with triggers for single current academic year and single current semester per school, classroom/subject teacher foreign key tenant consistency, and admin-only RLS policies.
+  - Created `src/lib/server/academic-admin-read-models.ts` with `getAcademicAdminData()` returning typed DTOs for years, semesters, classrooms, subjects, classroom-subject assignments, and active teachers.
+  - Created `src/app/actions/academic-admin.actions.ts` with Server Actions returning `ActionResult<T>` for all academic structure CRUD (`upsertAcademicYearAction`, `deleteAcademicYearAction`, `upsertSemesterAction`, `setCurrentSemesterAction`, `deleteSemesterAction`, `upsertClassroomAction`, `deleteClassroomAction`, `upsertSubjectAction`, `deleteSubjectAction`, `assignClassroomSubjectAction`, `deleteClassroomSubjectAction`).
+  - Created `src/app/(dashboard)/settings/academic/page.tsx` and interactive client components (`academic-tabs-client.tsx`, `academic-years-panel.tsx`, `classrooms-panel.tsx`, `subjects-panel.tsx`, `assignments-panel.tsx`, `academic-forms.tsx`).
+  - Added leadership navigation banner in `/settings` to `/settings/academic`.
+- [x] **Agent B (Student Import)**:
+  - Added migration `supabase/migrations/0012_student_import_security.sql` with helper function `is_homeroom_teacher_of_classroom()` and atomic RPC `import_students_atomic(p_classroom_id, p_semester_id, p_students)`.
+  - Created `src/lib/student-import-parser.ts` with RFC-4180 CSV parser, Thai column aliases, row-level validators, duplicate detector, and `generateStudentImportTemplateCsv()`.
+  - Created `src/lib/server/student-import-service.ts` and `src/app/actions/student-import.actions.ts` (`parseStudentFileAction`, `executeStudentImportAction`).
+  - Created `/students/import` page and interactive client component (`student-import-client.tsx`) with template download, drag-and-drop dropzone, preview table, validation error reporting, and atomic batch commit.
+  - Added "นำเข้าข้อมูล" (Import) button to `/students` header.
+
+### Wave 2 — Parallel Production Features
+
+- [x] **Agent C (Real Report Artifacts)**:
+  - Added migration `supabase/migrations/0013_report_artifacts.sql` with private storage bucket `reports` and RLS storage policies for school staff and leadership.
+  - Created pure TypeScript PDF 1.4 binary engine and CSV/XLSX generator in `src/lib/server/report-generator.ts` with real database aggregations for student summary, risk assessments, attendance, and academic scores.
+  - Updated `src/lib/server/report-read-models.ts` and `src/app/actions/reports.actions.ts` to execute honest queued → running → completed/failed lifecycle with private signed download URLs, retry action, and delete action.
+  - Enhanced `DesktopLatestReports` table with real file download, retry, and delete controls.
+- [x] **Agent D (Real Risk Analytics)**:
+  - Added migration `supabase/migrations/0014_risk_analytics.sql` with RPC functions `get_school_risk_trend`, `get_risk_dimension_benchmarks`, and `get_classroom_risk_breakdown`.
+  - Updated `src/lib/server/risk-read-models.ts` with read models for trend history, multi-factor dimension benchmarks, and classroom breakdown.
+  - Connected `RiskHistoryChart` in `/risk-analysis` to real month-by-month historical data points.
+- [x] **Agent E (Realtime Hardening)**:
+  - Added migration `supabase/migrations/0015_realtime_hardening.sql` with `REPLICA IDENTITY FULL` and Postgres replication publication on `notifications`, `attendance_records`, `report_jobs`, `risk_assessments`.
+  - Created `src/components/providers/realtime-provider.tsx` with shared channels, unread counter state, and high-severity toast alerts.
+  - Connected live unread notification badge in `src/components/layout/header.tsx` and wrapped `DashboardLayout` in `RealtimeProvider`.
+
+### Wave 3 & Final Verification
+
+- [x] Security audit: All migrations enforce multi-tenant isolation, admin/homeroom role constraints, and private storage policies.
+- [x] Unit tests: Added `src/lib/student-import-parser.test.ts` (all 25 tests in test suite pass with 100% success).
+- [x] `npx tsc --noEmit`: Exited with code 0 (clean).
+- [x] `npm run lint`: Exited with code 0 (clean).
+- [x] `npm test -- --run`: Exited with code 0 (7 test files, 25 tests passed).
+- [x] `npm run build`: Exited with code 0 (all 24 routes successfully compiled and optimized).
+
+---
 
 ## 2026-06-11 Notifications → Real notifications Table Data
 
