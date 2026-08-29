@@ -431,17 +431,14 @@ export async function upsertStudentGuardianAction(
     const client = await createClient()
     const { data, error } = await client.rpc("manage_student_guardian", {
       p_student_id: studentId,
-      p_guardian_id: guardianId,
+      p_guardian_id: guardianId ?? undefined,
       p_relation: relationship.data,
       p_is_primary: isPrimary,
       p_can_pickup: canPickup,
-      p_prefix: prefix,
+      p_prefix: prefix ?? undefined,
       p_first_name: firstName,
       p_last_name: lastName,
-      p_phone: phone,
-      p_email: null,
-      p_occupation: null,
-      p_monthly_income: null,
+      p_phone: phone ?? undefined,
     })
 
     if (error) {

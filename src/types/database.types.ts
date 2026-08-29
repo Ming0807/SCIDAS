@@ -3253,54 +3253,97 @@ export type Database = {
       }
       can_access_student: { Args: { p_student_id: string }; Returns: boolean }
       claim_report_job: {
-        Args: { p_job_id?: string | null }
-        Returns: Database["public"]["Tables"]["report_jobs"]["Row"][]
+        Args: { p_job_id?: string }
+        Returns: {
+          claim_token: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          filters: Json
+          id: string
+          output_bucket: string | null
+          output_path: string | null
+          report_type: string
+          requested_at: string
+          requested_by: string
+          school_id: string
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "report_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       complete_report_job: {
         Args: { p_claim_token: string; p_job_id: string; p_output_path: string }
         Returns: boolean
       }
+      fail_report_job: {
+        Args: {
+          p_claim_token: string
+          p_error_message: string
+          p_job_id: string
+        }
+        Returns: boolean
+      }
+      get_classroom_risk_breakdown: {
+        Args: { p_school_id?: string }
+        Returns: {
+          classroom_id: string
+          classroom_name: string
+          grade_level: Database["public"]["Enums"]["grade_level"]
+          high_risk_count: number
+          normal_risk_count: number
+          section: number
+          total_students: number
+          watch_risk_count: number
+        }[]
+      }
       get_dashboard_summary: {
         Args: { p_school_id: string; p_semester_id: string }
         Returns: Json
       }
-      fail_report_job: {
-        Args: { p_claim_token: string; p_error_message: string; p_job_id: string }
-        Returns: boolean
+      get_risk_dimension_benchmarks: {
+        Args: { p_school_id?: string }
+        Returns: {
+          average_score: number
+          dimension_key: string
+          dimension_label: string
+          high_risk_count: number
+          watch_risk_count: number
+        }[]
       }
-      recover_stale_report_jobs: {
-        Args: { p_stale_before?: string | null }
-        Returns: number
-      }
-      retry_report_job: {
-        Args: { p_job_id: string }
-        Returns: boolean
+      get_school_risk_trend: {
+        Args: { p_school_id?: string }
+        Returns: {
+          high_count: number
+          normal_count: number
+          period_label: string
+          total_count: number
+          watch_count: number
+        }[]
       }
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_school_id: { Args: never; Returns: string }
-      manage_student_guardian: {
+      import_students_atomic: {
         Args: {
-          p_can_pickup?: boolean
-          p_email?: string | null
-          p_first_name?: string | null
-          p_guardian_id?: string | null
-          p_is_primary?: boolean
-          p_last_name?: string | null
-          p_monthly_income?: number | null
-          p_occupation?: string | null
-          p_phone?: string | null
-          p_prefix?: string | null
-          p_relation?: Database["public"]["Enums"]["guardian_relation"]
-          p_student_id: string
+          p_classroom_id: string
+          p_semester_id: string
+          p_students: Json
         }
         Returns: Json
       }
-      remove_student_guardian: {
-        Args: { p_guardian_id: string; p_student_id: string }
-        Returns: Json
+      is_homeroom_teacher_of_classroom: {
+        Args: { p_classroom_id: string }
+        Returns: boolean
       }
       is_homeroom_teacher_of_student: {
         Args: { p_student_id: string }
@@ -3310,9 +3353,48 @@ export type Database = {
         Args: { p_student_id: string }
         Returns: boolean
       }
+      manage_student_guardian: {
+        Args: {
+          p_can_pickup?: boolean
+          p_email?: string
+          p_first_name?: string
+          p_guardian_id?: string
+          p_is_primary?: boolean
+          p_last_name?: string
+          p_monthly_income?: number
+          p_occupation?: string
+          p_phone?: string
+          p_prefix?: string
+          p_relation?: Database["public"]["Enums"]["guardian_relation"]
+          p_student_id: string
+        }
+        Returns: Json
+      }
       notify_risk_alert: {
         Args: { p_assessment_id: string; p_student_id: string }
         Returns: undefined
+      }
+      recalculate_student_risk_signals: {
+        Args: { p_semester_id: string; p_student_id: string }
+        Returns: Json
+      }
+      recover_stale_report_jobs: {
+        Args: { p_stale_before?: string }
+        Returns: number
+      }
+      remove_student_guardian: {
+        Args: { p_guardian_id: string; p_student_id: string }
+        Returns: Json
+      }
+      retry_report_job: { Args: { p_job_id: string }; Returns: boolean }
+      upsert_academic_scores_batch: {
+        Args: {
+          p_classroom_id: string
+          p_scores: Json
+          p_semester_id: string
+          p_subject_id: string
+        }
+        Returns: number
       }
       upsert_risk_assessment: {
         Args: {
@@ -3321,51 +3403,6 @@ export type Database = {
           p_student_id: string
         }
         Returns: string
-      }
-      is_homeroom_teacher_of_classroom: {
-        Args: { p_classroom_id: string }
-        Returns: boolean
-      }
-      import_students_atomic: {
-        Args: {
-          p_classroom_id: string
-          p_semester_id: string
-          p_students: Json
-        }
-        Returns: Json
-      }
-      get_school_risk_trend: {
-        Args: { p_school_id?: string }
-        Returns: {
-          period_label: string
-          high_count: number
-          watch_count: number
-          normal_count: number
-          total_count: number
-        }[]
-      }
-      get_risk_dimension_benchmarks: {
-        Args: { p_school_id?: string }
-        Returns: {
-          dimension_key: string
-          dimension_label: string
-          average_score: number
-          high_risk_count: number
-          watch_risk_count: number
-        }[]
-      }
-      get_classroom_risk_breakdown: {
-        Args: { p_school_id?: string }
-        Returns: {
-          classroom_id: string
-          classroom_name: string
-          grade_level: Database["public"]["Enums"]["grade_level"]
-          section: number
-          high_risk_count: number
-          watch_risk_count: number
-          normal_risk_count: number
-          total_students: number
-        }[]
       }
     }
     Enums: {

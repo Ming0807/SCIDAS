@@ -256,7 +256,7 @@ export async function getPopularReportTypes(
 export async function claimReportJob(jobId?: string): Promise<ClaimedReportJob | null> {
   const client = await createClient()
   const { data, error } = await client
-    .rpc("claim_report_job", { p_job_id: jobId ?? null })
+    .rpc("claim_report_job", { p_job_id: jobId ?? undefined })
     .maybeSingle()
 
   if (error) {

@@ -1,4 +1,4 @@
-﻿-- Migration 0011: Admin Academic Management Security and Invariant Triggers
+-- Migration 0011: Admin Academic Management Security and Invariant Triggers
 
 -- 1. Function & trigger to maintain single-current academic year per school
 CREATE OR REPLACE FUNCTION public.maintain_single_current_academic_year()

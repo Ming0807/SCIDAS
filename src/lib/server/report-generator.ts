@@ -338,13 +338,25 @@ export async function generateReportArtifact(job: {
         primary_guardian_phone: string | null
       }[] = []
 
+      const classroomFilter = job.filters?.classroomId as string | undefined
+      const studentFilter = job.filters?.studentId as string | undefined
+
       while (true) {
-        const { data: pageData, error } = await supabase
+        let query = supabase
           .from("v_student_worklist")
           .select(
             "student_id, student_code, full_name, grade_level, classroom_name, risk_level, attendance_rate_30d, open_support_count, primary_guardian_name, primary_guardian_phone",
           )
           .eq("school_id", job.schoolId)
+
+        if (classroomFilter) {
+          query = query.eq("classroom_id", classroomFilter)
+        }
+        if (studentFilter) {
+          query = query.eq("student_id", studentFilter)
+        }
+
+        const { data: pageData, error } = await query
           .order("student_code", { ascending: true, nullsFirst: false })
           .order("student_id", { ascending: true })
           .range(from, from + pageSize - 1)
@@ -398,14 +410,22 @@ export async function generateReportArtifact(job: {
         primary_guardian_phone: string | null
       }[] = []
 
+      const classroomFilter = job.filters?.classroomId as string | undefined
+
       while (true) {
-        const { data: pageData, error } = await supabase
+        let query = supabase
           .from("v_student_worklist")
           .select(
             "student_id, student_code, full_name, classroom_name, risk_level, risk_score, active_flag_count, primary_guardian_name, primary_guardian_phone",
           )
           .eq("school_id", job.schoolId)
           .in("risk_level", ["high", "watch"])
+
+        if (classroomFilter) {
+          query = query.eq("classroom_id", classroomFilter)
+        }
+
+        const { data: pageData, error } = await query
           .order("risk_score", { ascending: false, nullsFirst: false })
           .order("student_id", { ascending: true })
           .range(from, from + pageSize - 1)
@@ -448,8 +468,13 @@ export async function generateReportArtifact(job: {
         classrooms: unknown
       }[] = []
 
+      const dateFrom = job.filters?.dateFrom as string | undefined
+      const dateTo = job.filters?.dateTo as string | undefined
+      const classroomFilter = job.filters?.classroomId as string | undefined
+      const studentFilter = job.filters?.studentId as string | undefined
+
       while (hasMore) {
-        const { data: pageData, error } = await supabase
+        let query = supabase
           .from("attendance_records")
           .select(`
             id, date, status, remark,
@@ -457,6 +482,21 @@ export async function generateReportArtifact(job: {
             classrooms(name)
           `)
           .eq("school_id", job.schoolId)
+
+        if (dateFrom) {
+          query = query.gte("date", dateFrom)
+        }
+        if (dateTo) {
+          query = query.lte("date", dateTo)
+        }
+        if (classroomFilter) {
+          query = query.eq("classroom_id", classroomFilter)
+        }
+        if (studentFilter) {
+          query = query.eq("student_id", studentFilter)
+        }
+
+        const { data: pageData, error } = await query
           .order("date", { ascending: false })
           .order("id", { ascending: true })
           .range(from, from + pageSize - 1)
@@ -531,8 +571,11 @@ export async function generateReportArtifact(job: {
         classroom_subjects: unknown
       }[] = []
 
+      const semesterFilter = job.filters?.semesterId as string | undefined
+      const studentFilter = job.filters?.studentId as string | undefined
+
       while (hasMore) {
-        const { data: pageData, error } = await supabase
+        let query = supabase
           .from("academic_scores")
           .select(`
             id, classwork_score, midterm_score, final_score, total_score, grade,
@@ -540,6 +583,15 @@ export async function generateReportArtifact(job: {
             classroom_subjects(subjects(name, subject_code))
           `)
           .eq("school_id", job.schoolId)
+
+        if (semesterFilter) {
+          query = query.eq("semester_id", semesterFilter)
+        }
+        if (studentFilter) {
+          query = query.eq("student_id", studentFilter)
+        }
+
+        const { data: pageData, error } = await query
           .order("created_at", { ascending: false })
           .order("id", { ascending: true })
           .range(from, from + pageSize - 1)

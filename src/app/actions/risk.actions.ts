@@ -1,190 +1,130 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
+import { z } from "zod"
+
+import type { ActionResult } from "@/lib/server/action-result"
+import { actionFail, actionOk } from "@/lib/server/action-result"
+import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/current-user"
 import { createClient } from "@/utils/supabase/server"
-import { getCurrentUserContext } from "@/lib/server/current-user"
 
-export async function calculateRiskScore(studentId: string) {
-  const context = await getCurrentUserContext()
-  const supabase = await createClient()
+const uuidSchema = z.string().uuid("รหัสไม่ถูกต้อง")
 
-  if (!context.schoolId || !context.profileId) {
-    throw new Error("Unauthorized — no school assigned")
-  }
-
-  // Verify student belongs to current school
-  const { data: student } = await supabase
-    .from("students")
-    .select("school_id")
-    .eq("id", studentId)
-    .eq("school_id", context.schoolId)
-    .maybeSingle()
-
-  if (!student) {
-    throw new Error("Student not found or not in your school")
-  }
-
-  // Get current semester scoped to school
-  const { data: semData } = await supabase
-    .from("semesters")
-    .select("id")
-    .eq("school_id", context.schoolId)
-    .eq("is_current", true)
-    .maybeSingle()
-
-  let semester_id = semData?.id
-  if (!semester_id) {
-    const { data: fallbackSem } = await supabase
-      .from("semesters")
-      .select("id")
-      .eq("school_id", context.schoolId)
-      .limit(1)
-      .maybeSingle()
-    semester_id = fallbackSem?.id
-  }
-  if (!semester_id) throw new Error("No semester found")
-
-  // 1. Total Absences
-  const { count: absencesCount } = await supabase
-    .from("attendance_records")
-    .select("*", { count: "exact", head: true })
-    .eq("student_id", studentId)
-    .eq("school_id", context.schoolId)
-    .eq("status", "absent")
-  const totalAbsences = absencesCount || 0
-
-  // 2. Low Grades
-  const { count: lowGradesCount } = await supabase
-    .from("academic_scores")
-    .select("*", { count: "exact", head: true })
-    .eq("student_id", studentId)
-    .eq("school_id", context.schoolId)
-    .lt("grade_point", 2.0)
-  const totalLowGrades = lowGradesCount || 0
-
-  // 3. Negative Behavior
-  const { count: negativeBehaviorCount } = await supabase
-    .from("behavior_records")
-    .select("*", { count: "exact", head: true })
-    .eq("student_id", studentId)
-    .eq("school_id", context.schoolId)
-    .eq("behavior_type", "negative")
-  const totalNegativeBehaviors = negativeBehaviorCount || 0
-
-  // Calculate score
-  let score = 0
-  score += totalAbsences * 20
-  score += totalLowGrades * 20
-  score += totalNegativeBehaviors * 15
-
-  if (score > 100) score = 100
-
-  // Determine Level
-  let level: 'normal' | 'watch' | 'high' = 'normal'
-  if (score >= 61) level = 'high'
-  else if (score >= 31) level = 'watch'
-
-  // Upsert risk_assessments — scoped to school
-  const { data: existingAssessment } = await supabase
-    .from("risk_assessments")
-    .select("id")
-    .eq("student_id", studentId)
-    .eq("semester_id", semester_id)
-    .eq("school_id", context.schoolId)
-    .maybeSingle()
-
-  let assessmentId = existingAssessment?.id
-
-  if (assessmentId) {
-    await supabase
-      .from("risk_assessments")
-      .update({
-        risk_score: score,
-        risk_level: level,
-        assessed_by: context.profileId,
-        assessed_at: new Date().toISOString(),
-      })
-      .eq("id", assessmentId)
-      .eq("school_id", context.schoolId)
-  } else {
-    const { data: newAssessment } = await supabase
-      .from("risk_assessments")
-      .insert({
-        school_id: context.schoolId,
-        student_id: studentId,
-        semester_id: semester_id,
-        risk_score: score,
-        risk_level: level,
-        assessed_by: context.profileId,
-      })
-      .select("id")
-      .single()
-    assessmentId = newAssessment?.id
-  }
-
-  // Handle risk_factors
-  if (assessmentId) {
-    await supabase
-      .from("risk_factors")
-      .delete()
-      .eq("risk_assessment_id", assessmentId)
-      .eq("school_id", context.schoolId)
-
-    const factorsToInsert = []
-    if (totalAbsences > 0) {
-      factorsToInsert.push({
-        school_id: context.schoolId,
-        risk_assessment_id: assessmentId,
-        factor_key: "frequent_absences",
-        factor_label: `Frequent Absences (${totalAbsences})`,
-        score: totalAbsences * 20,
-      })
-    }
-    if (totalLowGrades > 0) {
-      factorsToInsert.push({
-        school_id: context.schoolId,
-        risk_assessment_id: assessmentId,
-        factor_key: "low_grades",
-        factor_label: `Low Grades (${totalLowGrades} subjects)`,
-        score: totalLowGrades * 20,
-      })
-    }
-    if (totalNegativeBehaviors > 0) {
-      factorsToInsert.push({
-        school_id: context.schoolId,
-        risk_assessment_id: assessmentId,
-        factor_key: "negative_behavior",
-        factor_label: `Negative Behavior (${totalNegativeBehaviors} incidents)`,
-        score: totalNegativeBehaviors * 15,
-      })
-    }
-
-    if (factorsToInsert.length > 0) {
-      await supabase.from("risk_factors").insert(factorsToInsert)
-    }
-  }
-
-  return { success: true, score, level }
+export type RecalculatedRiskData = {
+  studentId: string
+  semesterId: string
+  assessmentId: string
+  overallScore: number
+  riskLevel: string
+  attendanceRate: number
+  behaviorPoints: number
+  failingGrades: number
+  openSupportCases: number
 }
 
-export async function recalculateAllRiskScores() {
-  const context = await getCurrentUserContext()
-  const supabase = await createClient()
+/**
+ * Recalculate risk score and explainable signals for a specific student using the database RPC.
+ */
+export async function recalculateStudentRiskAction(
+  studentId: string,
+  semesterId?: string,
+): Promise<ActionResult<RecalculatedRiskData>> {
+  try {
+    const studentParsed = uuidSchema.safeParse(studentId)
+    if (!studentParsed.success) {
+      return actionFail("VALIDATION_ERROR", "รหัสนักเรียนไม่ถูกต้อง")
+    }
 
-  if (!context.schoolId) {
-    return { success: false, error: "No school assigned" }
+    const context = await getCurrentUserContext()
+    if (!context.profileId || !context.schoolId) {
+      return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
+    }
+
+    const targetSemesterId = semesterId || (await getCurrentSemesterId(context.schoolId))
+    if (!targetSemesterId) {
+      return actionFail("NOT_FOUND", "ไม่พบภาคการศึกษาปัจจุบัน")
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc("recalculate_student_risk_signals", {
+      p_student_id: studentParsed.data,
+      p_semester_id: targetSemesterId,
+    })
+
+    if (error) {
+      console.error("recalculate_student_risk_signals error:", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถประมวลผลความเสี่ยงได้ กรุณาลองใหม่")
+    }
+
+    const result = data as unknown as RecalculatedRiskData
+
+    revalidatePath("/risk-analysis")
+    revalidatePath(`/students/${studentId}`)
+
+    return actionOk("ประมวลผลสัญญาณความเสี่ยงเรียบร้อยแล้ว", {
+      data: result,
+      revalidated: ["/risk-analysis", `/students/${studentId}`],
+    })
+  } catch (err) {
+    console.error("recalculateStudentRiskAction exception:", err)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการประมวลผลความเสี่ยง")
   }
+}
 
-  const { data: students } = await supabase
-    .from("students")
-    .select("id")
-    .eq("school_id", context.schoolId)
-
-  if (!students) return { success: false }
-
-  for (const s of students) {
-    await calculateRiskScore(s.id)
+/**
+ * Legacy compatibility wrapper calling the RPC.
+ */
+export async function calculateRiskScore(studentId: string) {
+  const res = await recalculateStudentRiskAction(studentId)
+  if (!res.ok || !res.data) {
+    return { success: false, score: 0, level: "normal" }
   }
-  return { success: true }
+  return {
+    success: true,
+    score: res.data.overallScore,
+    level: res.data.riskLevel,
+  }
+}
+
+/**
+ * Recalculate risk scores for all active students in the school.
+ */
+export async function recalculateAllRiskScores(): Promise<{ success: boolean; processedCount?: number; error?: string }> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.schoolId || !context.profileId) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const targetSemesterId = await getCurrentSemesterId(context.schoolId)
+    if (!targetSemesterId) {
+      return { success: false, error: "No active semester" }
+    }
+
+    const supabase = await createClient()
+    const { data: students, error } = await supabase
+      .from("students")
+      .select("id")
+      .eq("school_id", context.schoolId)
+      .eq("status", "active")
+
+    if (error || !students) {
+      return { success: false, error: "Could not fetch students" }
+    }
+
+    for (const student of students) {
+      await supabase.rpc("recalculate_student_risk_signals", {
+        p_student_id: student.id,
+        p_semester_id: targetSemesterId,
+      })
+    }
+
+    revalidatePath("/risk-analysis")
+    return { success: true, processedCount: students.length }
+  } catch (err) {
+    console.error("recalculateAllRiskScores error:", err)
+    return { success: false, error: "Failed to recalculate risk scores" }
+  }
 }
 
 export async function getRiskAssessments() {
@@ -199,7 +139,7 @@ export async function getRiskAssessments() {
     .from("risk_assessments")
     .select(`
       id,
-      risk_score,
+      overall_score,
       risk_level,
       student_id,
       students (
@@ -210,7 +150,7 @@ export async function getRiskAssessments() {
       )
     `)
     .eq("school_id", context.schoolId)
-    .order("risk_score", { ascending: false })
+    .order("overall_score", { ascending: false })
 
   if (error) {
     console.error(error)

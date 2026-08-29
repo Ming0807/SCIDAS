@@ -45,11 +45,24 @@ export async function requestReportJobActionState(
     })
   }
 
+  const classroomId = String(formData.get("classroomId") ?? "").trim() || undefined
+  const semesterId = String(formData.get("semesterId") ?? "").trim() || undefined
+  const studentId = String(formData.get("studentId") ?? "").trim() || undefined
+  const dateFrom = String(formData.get("dateFrom") ?? "").trim() || undefined
+  const dateTo = String(formData.get("dateTo") ?? "").trim() || undefined
+
+  const filters: Record<string, unknown> = { format }
+  if (classroomId) filters.classroomId = classroomId
+  if (semesterId) filters.semesterId = semesterId
+  if (studentId) filters.studentId = studentId
+  if (dateFrom) filters.dateFrom = dateFrom
+  if (dateTo) filters.dateTo = dateTo
+
   try {
     const result = await requestReportJob({
       reportType,
       title,
-      filters: { format },
+      filters,
     })
 
     // Next.js 16 after() schedules background execution after response completes

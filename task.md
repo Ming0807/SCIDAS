@@ -1,5 +1,13 @@
 # Task Progress
 
+## 2026-08-29 Complete Long Production Operations & Hardening Loop
+
+Status: done. Successfully implemented and verified all 4 waves of the long production operations loop:
+1. **Wave 1 (Runtime & Security Proof)**: Executed local Supabase reset against PostgreSQL for all migrations 0001 through 0018, regenerated TypeScript database definitions, and verified strict `user_role` enum boundaries.
+2. **Wave 2 (Core CRUD Hardening)**: Hardened academic score batch upsert RPC (`upsert_academic_scores_batch`), student guardian transactional operations, behavior records CRUD with RLS delete policies, and support case workflows.
+3. **Wave 3 (Reports, Risk & Notifications)**: Implemented explainable risk recalculation RPC (`recalculate_student_risk_signals`), dynamic report filtering (`classroomId`, `semesterId`, `studentId`, `dateFrom`, `dateTo`), and hardened report job processing with claim tokens and timeouts.
+4. **Wave 4 (Production Quality & Verification)**: Passed all verification gates: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm test -- --run` (55 tests passing across 13 suites), `npm run build` (24/24 static routes generated), and `npm audit --omit=dev` (0 vulnerabilities).
+
 ## 2026-08-29 Production Operations Hardening & Codex Review Repair
 
 Status: done. Repaired all 8 review blockers across database enums, spreadsheet security, mobile risk analytics, report generation & font licensing, guardian CRUD & notification deletion, realtime synchronization, security dependency audits, and regression test suites with 100% passing tests and production Next.js build.
