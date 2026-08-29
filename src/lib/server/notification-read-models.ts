@@ -398,3 +398,30 @@ export async function toggleNotificationRead(
 
   return { isRead: newIsRead }
 }
+
+export async function deleteNotification(notificationId: string): Promise<{ success: boolean }> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  if (!notificationId || typeof notificationId !== "string") {
+    throw new Error("VALIDATION_ERROR")
+  }
+
+  const client = await createClient()
+
+  const { error } = await client
+    .from("notifications")
+    .delete()
+    .eq("id", notificationId)
+    .eq("recipient_id", context.profileId)
+    .eq("school_id", context.schoolId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return { success: true }
+}

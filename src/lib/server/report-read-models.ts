@@ -41,26 +41,20 @@ const knownReportTypeLabels: Record<string, string> = {
   student_summary: "รายงานสรุปนักเรียน",
   risk_report: "รายงานกลุ่มเสี่ยง",
   risk_assessment: "รายงานการประเมินความเสี่ยง",
-  behavior_report: "รายงานพฤติกรรม",
-  academic_report: "รายงานผลการเรียน",
-  support_report: "รายงานการดูแลช่วยเหลือ",
-  idp_report: "รายงานพัฒนารายบุคคล",
   attendance_report: "รายงานการมาเรียน",
   attendance_summary: "รายงานสรุปการมาเรียน",
-  admin_summary: "รายงานสำหรับผู้บริหาร",
-  home_visit_report: "รายงานเยี่ยมบ้าน",
-  intervention_summary: "รายงานการช่วยเหลือ",
+  academic_report: "รายงานผลการเรียน",
 }
 
 export type ReportJobType = keyof typeof knownReportTypeLabels
 
 export const reportJobTypes = Object.keys(knownReportTypeLabels) as ReportJobType[]
 
-function getReportTypeLabel(reportType: string): string {
+export function getReportTypeLabel(reportType: string): string {
   return knownReportTypeLabels[reportType] ?? reportType.replace(/_/g, " ")
 }
 
-function isReportJobType(reportType: string): reportType is ReportJobType {
+export function isReportJobType(reportType: string): reportType is ReportJobType {
   return reportJobTypes.includes(reportType as ReportJobType)
 }
 
@@ -122,7 +116,8 @@ export async function requestReportJob(
     .single()
 
   if (error) {
-    throw new Error(error.message)
+    console.error("requestReportJob error:", error)
+    throw new Error("ไม่สามารถสร้างรายการคำขอรายงานได้")
   }
 
   return { id: data.id }
@@ -157,7 +152,8 @@ export async function getReportJobs(limit = 20): Promise<ReportJobItem[]> {
     .limit(limit)
 
   if (error) {
-    throw new Error(error.message)
+    console.error("getReportJobs error:", error)
+    return []
   }
 
   const rows = (data ?? []) as unknown as ReportJobQueryRow[]
@@ -237,8 +233,8 @@ export async function getPopularReportTypes(
 }
 
 /**
- * Process a specific report job or the next queued report job.
- * Executes genuine PDF/XLSX generation, uploads to Supabase Storage, and updates DB status.
+ * Concurrency-safe atomic worker to process a specific report job or next queued report job.
+ * Transitions state queued -> running atomically, runs generation, uploads artifact, updates completed/failed.
  */
 export async function processReportJobById(jobId?: string): Promise<{
   id: string
@@ -266,37 +262,38 @@ export async function processReportJobById(jobId?: string): Promise<{
     targetJobId = (queued as { id: string }).id
   }
 
-  // Fetch job details
-  const { data: jobRow, error: jobErr } = await client
+  // 1. Concurrency-safe atomic claim: update status to 'running' ONLY if currently 'queued' or 'failed'
+  const { data: claimedJob, error: claimErr } = await client
     .from("report_jobs")
-    .select("id, school_id, report_type, title, filters")
+    .update({
+      status: "running",
+      started_at: new Date().toISOString(),
+      error_message: null,
+    })
     .eq("id", targetJobId)
     .eq("school_id", context.schoolId)
-    .single()
+    .in("status", ["queued", "failed"])
+    .select("id, school_id, report_type, title, filters")
+    .maybeSingle()
 
-  if (jobErr || !jobRow) {
+  if (claimErr || !claimedJob) {
+    // Already claimed or running concurrently
     return null
   }
 
-  // 1. Mark as running
-  await client
-    .from("report_jobs")
-    .update({ status: "running", started_at: new Date().toISOString(), error_message: null })
-    .eq("id", targetJobId)
-
   try {
-    // 2. Generate Real File Artifact
+    // 2. Generate Genuine File Artifact (Thai PDF or XLSX)
     const artifact = await generateReportArtifact({
-      id: jobRow.id,
-      schoolId: jobRow.school_id,
-      reportType: jobRow.report_type,
-      title: jobRow.title,
-      filters: (jobRow.filters as Record<string, unknown>) || {},
+      id: claimedJob.id,
+      schoolId: claimedJob.school_id,
+      reportType: claimedJob.report_type,
+      title: claimedJob.title,
+      filters: (claimedJob.filters as Record<string, unknown>) || {},
     })
 
-    const storagePath = `${jobRow.school_id}/${artifact.fileName}`
+    const storagePath = `${claimedJob.school_id}/${artifact.fileName}`
 
-    // 3. Upload to Supabase Storage 'reports' bucket
+    // 3. Upload to private Supabase Storage 'reports' bucket
     const { error: uploadError } = await client.storage
       .from("reports")
       .upload(storagePath, artifact.buffer, {
@@ -305,10 +302,11 @@ export async function processReportJobById(jobId?: string): Promise<{
       })
 
     if (uploadError) {
-      throw new Error(`Storage upload failed: ${uploadError.message}`)
+      console.error("Report storage upload error:", uploadError)
+      throw new Error("ไม่สามารถอัปโหลดไฟล์รายงานไปยังระบบจัดเก็บได้")
     }
 
-    // 4. Mark completed
+    // 4. Mark job as completed
     const completedNow = new Date().toISOString()
     const { error: updateErr } = await client
       .from("report_jobs")
@@ -322,7 +320,8 @@ export async function processReportJobById(jobId?: string): Promise<{
       .eq("id", targetJobId)
 
     if (updateErr) {
-      throw new Error(updateErr.message)
+      console.error("Report status update error:", updateErr)
+      throw new Error("ไม่สามารถบันทึกสถานะรายงานสำเร็จได้")
     }
 
     const { data: signed } = await client.storage
@@ -336,7 +335,8 @@ export async function processReportJobById(jobId?: string): Promise<{
       downloadUrl: signed?.signedUrl || null,
     }
   } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : "Report generation failed"
+    const errorMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการประมวลผลไฟล์รายงาน"
+    console.error("processReportJobById failure:", err)
 
     await client
       .from("report_jobs")
@@ -353,8 +353,4 @@ export async function processReportJobById(jobId?: string): Promise<{
       errorMessage: errorMsg,
     }
   }
-}
-
-export async function processNextReportJob() {
-  return processReportJobById()
 }

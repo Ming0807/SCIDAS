@@ -1,6 +1,11 @@
 import "server-only"
 
+import * as XLSX from "xlsx"
+import { PDFDocument, rgb } from "pdf-lib"
+import fontkit from "@pdf-lib/fontkit"
+
 import { createClient } from "@/utils/supabase/server"
+import { getThaiFontBuffer } from "@/lib/fonts/thai-font"
 
 export type GeneratedArtifact = {
   contentType: string
@@ -10,203 +15,211 @@ export type GeneratedArtifact = {
 }
 
 // ----------------------------------------------------------------------------
-// Pure TypeScript Standard PDF 1.4 Binary Generator
+// Multi-Page Thai PDF Generator with fontkit & embedded TTF
 // ----------------------------------------------------------------------------
-function escapePdfText(text: string): string {
-  return text
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-}
-
-function toPdfSafeAscii(text: string): string {
-  if (!text) return "-"
-  return text
-    .replace(/รายงานสรุปนักเรียน/g, "Student Summary Report")
-    .replace(/รายงานกลุ่มเสี่ยง/g, "Risk and Early Warning Report")
-    .replace(/รายงานการมาเรียน/g, "Attendance Summary Report")
-    .replace(/รายงานผลการเรียน/g, "Academic Performance Report")
-    .replace(/รายงาน/g, "Report")
-    .replace(/ปกติ/g, "Normal")
-    .replace(/ติดตาม/g, "Watch")
-    .replace(/เสี่ยงสูง/g, "High-Risk")
-    .replace(/ชาย/g, "Male")
-    .replace(/หญิง/g, "Female")
-    .replace(/มา/g, "Present")
-    .replace(/ขาด/g, "Absent")
-    .replace(/สาย/g, "Late")
-    .replace(/ลา/g, "Leave")
-    .replace(/ป่วย/g, "Sick")
-    .replace(/ป\./g, "P.")
-    .replace(/ม\./g, "M.")
-    .replace(/[^\x20-\x7E]/g, "?")
-}
-
-export function buildStandardPdf(
+export async function buildThaiPdfDocument(
   title: string,
   subtitle: string,
   schoolName: string,
   headers: string[],
   rows: string[][]
-): Buffer {
-  const safeTitle = toPdfSafeAscii(title)
-  const safeSubtitle = toPdfSafeAscii(subtitle)
-  const safeSchool = toPdfSafeAscii(schoolName)
-  const safeHeaders = headers.map(toPdfSafeAscii)
+): Promise<Buffer> {
+  const doc = await PDFDocument.create()
+  doc.registerFontkit(fontkit)
 
-  const contentStreamLines: string[] = []
+  const fontBuffer = getThaiFontBuffer()
+  const customFont = await doc.embedFont(new Uint8Array(fontBuffer))
 
-  // Header
-  contentStreamLines.push("BT")
-  contentStreamLines.push("/F2 16 Tf")
-  contentStreamLines.push("50 790 Td")
-  contentStreamLines.push(`(${escapePdfText(safeTitle)}) Tj`)
-  contentStreamLines.push("ET")
+  const pageWidth = 595.28 // A4 width
+  const pageHeight = 841.89 // A4 height
+  const margin = 40
+  const contentWidth = pageWidth - margin * 2
 
-  contentStreamLines.push("BT")
-  contentStreamLines.push("/F1 10 Tf")
-  contentStreamLines.push("50 772 Td")
-  contentStreamLines.push(`(School: ${escapePdfText(safeSchool)}  |  ${escapePdfText(safeSubtitle)}) Tj`)
-  contentStreamLines.push("ET")
+  const colCount = Math.max(headers.length, 1)
+  const colWidth = contentWidth / colCount
 
-  // Header dividing line
-  contentStreamLines.push("0.5 w")
-  contentStreamLines.push("0.2 0.4 0.8 RG")
-  contentStreamLines.push("50 760 m 545 760 l S")
+  const titleSize = 15
+  const subtitleSize = 9.5
+  const headerFontSize = 9
+  const rowFontSize = 8.5
+  const rowHeight = 18
 
-  // Table coordinates
-  let y = 740
-  const colWidth = Math.floor(495 / Math.max(headers.length, 1))
-
-  // Draw Table Header
-  contentStreamLines.push("0.9 0.93 0.98 rg")
-  contentStreamLines.push(`50 ${y - 4} 495 18 re f`)
-
-  contentStreamLines.push("BT")
-  contentStreamLines.push("/F2 9 Tf")
-  contentStreamLines.push("0 0 0 rg")
-
-  safeHeaders.forEach((h, i) => {
-    const x = 54 + i * colWidth
-    contentStreamLines.push(`1 0 0 1 ${x} ${y} Tm`)
-    contentStreamLines.push(`(${escapePdfText(h.slice(0, 20))}) Tj`)
-  })
-  contentStreamLines.push("ET")
-
-  // Header line
-  contentStreamLines.push("0.5 w")
-  contentStreamLines.push("0.7 0.7 0.7 RG")
-  contentStreamLines.push(`50 ${y - 4} m 545 ${y - 4} l S`)
-
-  y -= 18
-
-  // Draw Table Rows
-  const maxRows = Math.min(rows.length, 32)
-  for (let r = 0; r < maxRows; r++) {
-    const row = rows[r]
-    const safeRow = row.map(toPdfSafeAscii)
-
-    if (r % 2 === 1) {
-      contentStreamLines.push("0.97 0.98 0.99 rg")
-      contentStreamLines.push(`50 ${y - 3} 495 14 re f`)
-    }
-
-    contentStreamLines.push("BT")
-    contentStreamLines.push("/F1 8.5 Tf")
-    contentStreamLines.push("0.1 0.1 0.1 rg")
-
-    safeRow.forEach((cell, i) => {
-      const x = 54 + i * colWidth
-      contentStreamLines.push(`1 0 0 1 ${x} ${y} Tm`)
-      contentStreamLines.push(`(${escapePdfText(cell.slice(0, 22))}) Tj`)
+  // Helper to draw page header
+  const drawPageHeader = (page: ReturnType<typeof doc.addPage>) => {
+    // School & Title
+    page.drawText(schoolName, {
+      x: margin,
+      y: pageHeight - 35,
+      size: subtitleSize,
+      font: customFont,
+      color: rgb(0.3, 0.4, 0.5),
     })
-    contentStreamLines.push("ET")
 
-    contentStreamLines.push("0.2 w")
-    contentStreamLines.push("0.85 0.85 0.85 RG")
-    contentStreamLines.push(`50 ${y - 3} m 545 ${y - 3} l S`)
+    page.drawText(title, {
+      x: margin,
+      y: pageHeight - 52,
+      size: titleSize,
+      font: customFont,
+      color: rgb(0.08, 0.15, 0.25),
+    })
 
-    y -= 14
+    page.drawText(subtitle, {
+      x: margin,
+      y: pageHeight - 66,
+      size: subtitleSize,
+      font: customFont,
+      color: rgb(0.4, 0.45, 0.5),
+    })
+
+    // Divider
+    page.drawLine({
+      start: { x: margin, y: pageHeight - 74 },
+      end: { x: pageWidth - margin, y: pageHeight - 74 },
+      thickness: 1,
+      color: rgb(0.2, 0.4, 0.8),
+    })
   }
 
-  // Footer
-  contentStreamLines.push("BT")
-  contentStreamLines.push("/F1 8 Tf")
-  contentStreamLines.push("0.5 0.5 0.5 rg")
-  contentStreamLines.push(`50 40 Td`)
-  contentStreamLines.push(`(Generated by SCIDAS  -  ${new Date().toISOString().slice(0, 10)}  -  Page 1 of 1) Tj`)
-  contentStreamLines.push("ET")
+  // Helper to draw table column headers
+  const drawTableHeader = (page: ReturnType<typeof doc.addPage>, y: number) => {
+    // Background box for header
+    page.drawRectangle({
+      x: margin,
+      y: y - 5,
+      width: contentWidth,
+      height: rowHeight + 2,
+      color: rgb(0.92, 0.95, 0.99),
+      borderColor: rgb(0.8, 0.85, 0.92),
+      borderWidth: 0.5,
+    })
 
-  const streamContent = contentStreamLines.join("\n")
-  const streamLength = Buffer.byteLength(streamContent, "utf8")
+    headers.forEach((headerText, i) => {
+      const x = margin + i * colWidth + 4
+      page.drawText(headerText, {
+        x,
+        y: y + 2,
+        size: headerFontSize,
+        font: customFont,
+        color: rgb(0.1, 0.2, 0.35),
+      })
+    })
 
-  const pdfBody = [
-    "%PDF-1.4",
-    "1 0 obj",
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "endobj",
-    "2 0 obj",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "endobj",
-    "3 0 obj",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>",
-    "endobj",
-    "4 0 obj",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "endobj",
-    "5 0 obj",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
-    "endobj",
-    "6 0 obj",
-    `<< /Length ${streamLength} >>`,
-    "stream",
-    streamContent,
-    "endstream",
-    "endobj",
-  ]
+    return y - rowHeight - 2
+  }
 
-  const offsets: number[] = []
-  const fullText = pdfBody.join("\n") + "\n"
+  let currentPage = doc.addPage([pageWidth, pageHeight])
+  drawPageHeader(currentPage)
+  let currentY = drawTableHeader(currentPage, pageHeight - 95)
 
-  const lines = fullText.split("\n")
-  let currentOffset = 0
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.match(/^\d+ 0 obj$/)) {
-      offsets.push(currentOffset)
+  // Draw rows
+  for (let r = 0; r < rows.length; r++) {
+    // Check if we need a new page
+    if (currentY < margin + 30) {
+      currentPage = doc.addPage([pageWidth, pageHeight])
+      drawPageHeader(currentPage)
+      currentY = drawTableHeader(currentPage, pageHeight - 95)
     }
-    currentOffset += Buffer.byteLength(line + "\n", "utf8")
+
+    const rowData = rows[r]
+
+    // Alternate row zebra tint
+    if (r % 2 === 1) {
+      currentPage.drawRectangle({
+        x: margin,
+        y: currentY - 3,
+        width: contentWidth,
+        height: rowHeight,
+        color: rgb(0.98, 0.985, 0.995),
+      })
+    }
+
+    // Row bottom line
+    currentPage.drawLine({
+      start: { x: margin, y: currentY - 3 },
+      end: { x: pageWidth - margin, y: currentY - 3 },
+      thickness: 0.3,
+      color: rgb(0.88, 0.88, 0.9),
+    })
+
+    rowData.forEach((cellText, c) => {
+      const x = margin + c * colWidth + 4
+      const safeText = String(cellText ?? "-")
+      // Truncate cell text if excessively long for column width
+      const maxChars = Math.max(10, Math.floor(colWidth / 5.5))
+      const displayText = safeText.length > maxChars ? safeText.slice(0, maxChars - 1) + "…" : safeText
+
+      currentPage.drawText(displayText, {
+        x,
+        y: currentY + 3,
+        size: rowFontSize,
+        font: customFont,
+        color: rgb(0.15, 0.15, 0.2),
+      })
+    })
+
+    currentY -= rowHeight
   }
 
-  const xref = [
-    "xref",
-    `0 ${offsets.length + 1}`,
-    "0000000000 65535 f ",
-    ...offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n `),
-    "trailer",
-    `<< /Size ${offsets.length + 1} /Root 1 0 R >>`,
-    "startxref",
-    String(currentOffset),
-    "%%EOF",
-  ].join("\n")
+  // Add footer page numbers to all pages
+  const totalPages = doc.getPageCount()
+  for (let p = 0; p < totalPages; p++) {
+    const page = doc.getPage(p)
+    const footerText = `ระบบดูแลช่วยเหลือนักเรียน SCIDAS  |  หน้า ${p + 1} จาก ${totalPages}`
+    page.drawText(footerText, {
+      x: margin,
+      y: 20,
+      size: 7.5,
+      font: customFont,
+      color: rgb(0.55, 0.55, 0.6),
+    })
+  }
 
-  return Buffer.from(fullText + xref, "utf8")
+  const pdfBytes = await doc.save()
+  return Buffer.from(pdfBytes)
 }
 
 // ----------------------------------------------------------------------------
-// Pure TypeScript Standard CSV / Excel-Friendly Generator
+// Genuine XLSX Spreadsheet Generator
 // ----------------------------------------------------------------------------
-export function buildCsvSpreadsheet(headers: string[], rows: string[][]): Buffer {
-  const bom = "\uFEFF"
-  const lines = [
-    headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(","),
-    ...rows.map((r) => r.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(",")),
+export function buildXlsxSpreadsheet(
+  title: string,
+  headers: string[],
+  rows: string[][]
+): Buffer {
+  const aoa: (string | number)[][] = [
+    [title],
+    [`วันที่สร้าง: ${new Date().toLocaleDateString("th-TH")}`],
+    [],
+    headers,
+    ...rows,
   ]
-  return Buffer.from(bom + lines.join("\r\n"), "utf8")
+
+  const worksheet = XLSX.utils.aoa_to_sheet(aoa)
+
+  // Auto-fit column widths
+  const colWidths = headers.map((h, colIndex) => {
+    let maxLen = h.length
+    for (const r of rows) {
+      const cellVal = String(r[colIndex] ?? "")
+      if (cellVal.length > maxLen) maxLen = cellVal.length
+    }
+    return { wch: Math.min(Math.max(maxLen + 4, 12), 40) }
+  })
+  worksheet["!cols"] = colWidths
+
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, "รายงาน")
+
+  const buffer = XLSX.write(workbook, {
+    type: "buffer",
+    bookType: "xlsx",
+  }) as Buffer
+
+  return buffer
 }
 
 // ----------------------------------------------------------------------------
-// Report Data Fetchers & Master Generator
+// Report Data Fetcher & Master Dispatcher
 // ----------------------------------------------------------------------------
 export async function generateReportArtifact(job: {
   id: string
@@ -230,23 +243,42 @@ export async function generateReportArtifact(job: {
   let rows: string[][] = []
   let subtitle = `วันที่สร้าง: ${new Date().toLocaleDateString("th-TH")}`
 
+  const format = (job.filters?.format as string) === "xlsx" ? "xlsx" : "pdf"
+
   switch (job.reportType) {
     case "student_summary": {
-      headers = ["รหัสนักเรียน", "ชื่อ - นามสกุล", "ระดับชั้น/ห้อง", "สถานะความเสี่ยง", "สถิติมาเรียน", "เคสช่วยเหลือ"]
-      const { data: students } = await supabase
+      headers = [
+        "รหัสนักเรียน",
+        "ชื่อ - นามสกุล",
+        "ระดับชั้น/ห้อง",
+        "สถานะความเสี่ยง",
+        "สถิติมาเรียน 30 วัน",
+        "เคสช่วยเหลือ",
+        "ผู้ปกครอง",
+        "เบอร์โทรผู้ปกครอง",
+      ]
+      const { data: students, error } = await supabase
         .from("v_student_worklist")
-        .select("student_code, full_name, grade_level, classroom_name, risk_level, attendance_rate_30d, open_support_count")
+        .select(
+          "student_code, full_name, grade_level, classroom_name, risk_level, attendance_rate_30d, open_support_count, primary_guardian_name, primary_guardian_phone"
+        )
         .eq("school_id", job.schoolId)
-        .limit(200)
+        .order("student_code", { ascending: true })
+
+      if (error) {
+        throw new Error(`Failed to load student summary: ${error.message}`)
+      }
 
       if (students) {
         rows = students.map((s) => [
           s.student_code || "-",
           s.full_name || "-",
           s.classroom_name || s.grade_level || "-",
-          s.risk_level === "high" ? "เสี่ยงสูง" : s.risk_level === "watch" ? "ติดตาม" : "ปกติ",
+          s.risk_level === "high" ? "เสี่ยงสูง" : s.risk_level === "watch" ? "ต้องติดตาม" : "ปกติ",
           s.attendance_rate_30d !== null ? `${s.attendance_rate_30d}%` : "-",
-          s.open_support_count ? `${s.open_support_count} เคส` : "ปกติ",
+          s.open_support_count ? `${s.open_support_count} เคส` : "ไม่มี",
+          s.primary_guardian_name || "-",
+          s.primary_guardian_phone || "-",
         ])
       }
       subtitle += ` | นักเรียนทั้งหมด: ${rows.length} คน`
@@ -255,14 +287,28 @@ export async function generateReportArtifact(job: {
 
     case "risk_report":
     case "risk_assessment": {
-      headers = ["รหัสนักเรียน", "ชื่อ - นามสกุล", "ห้องเรียน", "ระดับความเสี่ยง", "คะแนนความเสี่ยง", "จำนวนการแจ้งเตือน"]
-      const { data: risks } = await supabase
+      headers = [
+        "รหัสนักเรียน",
+        "ชื่อ - นามสกุล",
+        "ห้องเรียน",
+        "ระดับความเสี่ยง",
+        "คะแนนความเสี่ยง",
+        "จำนวนการแจ้งเตือน",
+        "ผู้ปกครอง",
+        "เบอร์ติดต่อ",
+      ]
+      const { data: risks, error } = await supabase
         .from("v_student_worklist")
-        .select("student_code, full_name, classroom_name, risk_level, risk_score, active_flag_count")
+        .select(
+          "student_code, full_name, classroom_name, risk_level, risk_score, active_flag_count, primary_guardian_name, primary_guardian_phone"
+        )
         .eq("school_id", job.schoolId)
         .in("risk_level", ["high", "watch"])
         .order("risk_score", { ascending: false })
-        .limit(200)
+
+      if (error) {
+        throw new Error(`Failed to load risk report: ${error.message}`)
+      }
 
       if (risks) {
         rows = risks.map((r) => [
@@ -270,18 +316,20 @@ export async function generateReportArtifact(job: {
           r.full_name || "-",
           r.classroom_name || "-",
           r.risk_level === "high" ? "เสี่ยงสูง (High)" : "ต้องติดตาม (Watch)",
-          r.risk_score ? String(r.risk_score) : "-",
-          r.active_flag_count ? `${r.active_flag_count} รายการ` : "-",
+          r.risk_score !== null ? String(r.risk_score) : "-",
+          r.active_flag_count ? `${r.active_flag_count} รายการ` : "0",
+          r.primary_guardian_name || "-",
+          r.primary_guardian_phone || "-",
         ])
       }
-      subtitle += ` | พบนักเรียนกลุ่มเสี่ยง: ${rows.length} คน`
+      subtitle += ` | นักเรียนกลุ่มเสี่ยง: ${rows.length} คน`
       break
     }
 
     case "attendance_report":
     case "attendance_summary": {
-      headers = ["วันที่", "รหัสนักเรียน", "ชื่อ - นามสกุล", "ห้องเรียน", "สถานะการมาเรียน", "หมายเหตุ"]
-      const { data: attendance } = await supabase
+      headers = ["วันที่", "รหัสนักเรียน", "ชื่อ - นามสกุล", "ห้องเรียน", "สถานะ", "หมายเหตุ"]
+      const { data: attendance, error } = await supabase
         .from("attendance_records")
         .select(`
           date, status, remark,
@@ -290,7 +338,11 @@ export async function generateReportArtifact(job: {
         `)
         .eq("school_id", job.schoolId)
         .order("date", { ascending: false })
-        .limit(200)
+        .limit(500)
+
+      if (error) {
+        throw new Error(`Failed to load attendance report: ${error.message}`)
+      }
 
       if (attendance) {
         rows = attendance.map((a) => {
@@ -319,7 +371,7 @@ export async function generateReportArtifact(job: {
 
     case "academic_report": {
       headers = ["รหัสนักเรียน", "ชื่อ - นามสกุล", "รายวิชา", "คะแนนเก็บ", "กลางภาค", "ปลายภาค", "รวม", "เกรด"]
-      const { data: scores } = await supabase
+      const { data: scores, error } = await supabase
         .from("academic_scores")
         .select(`
           classwork_score, midterm_score, final_score, total_score, grade,
@@ -328,7 +380,11 @@ export async function generateReportArtifact(job: {
         `)
         .eq("school_id", job.schoolId)
         .order("created_at", { ascending: false })
-        .limit(200)
+        .limit(500)
+
+      if (error) {
+        throw new Error(`Failed to load academic report: ${error.message}`)
+      }
 
       if (scores) {
         rows = scores.map((sc) => {
@@ -351,30 +407,25 @@ export async function generateReportArtifact(job: {
     }
 
     default: {
-      headers = ["รหัสนักเรียน", "ชื่อ - นามสกุล", "ระดับชั้น", "สถานะ"]
-      const { data: students } = await supabase
-        .from("v_student_worklist")
-        .select("student_code, full_name, classroom_name, risk_level")
-        .eq("school_id", job.schoolId)
-        .limit(100)
-
-      if (students) {
-        rows = students.map((s) => [
-          s.student_code || "-",
-          s.full_name || "-",
-          s.classroom_name || "-",
-          s.risk_level || "-",
-        ])
-      }
-      break
+      throw new Error(`ประเภทรายงาน '${job.reportType}' ยังไม่เปิดให้บริการในระบบ`)
     }
   }
 
-  const pdfBuffer = buildStandardPdf(job.title, subtitle, schoolName, headers, rows)
-  return {
-    contentType: "application/pdf",
-    fileExtension: "pdf",
-    buffer: pdfBuffer,
-    fileName: `${job.id}.pdf`,
+  if (format === "xlsx") {
+    const xlsxBuffer = buildXlsxSpreadsheet(job.title, headers, rows)
+    return {
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      fileExtension: "xlsx",
+      buffer: xlsxBuffer,
+      fileName: `${job.id}.xlsx`,
+    }
+  } else {
+    const pdfBuffer = await buildThaiPdfDocument(job.title, subtitle, schoolName, headers, rows)
+    return {
+      contentType: "application/pdf",
+      fileExtension: "pdf",
+      buffer: pdfBuffer,
+      fileName: `${job.id}.pdf`,
+    }
   }
 }

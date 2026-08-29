@@ -5,8 +5,8 @@ import Link from "next/link"
 import {
   AlertTriangle,
   CheckCircle2,
-  Download,
   FileSpreadsheet,
+  FileText,
   Loader2,
   Upload,
   UserCheck,
@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { EmptyState } from "@/components/feedback/empty-state"
 import {
   generateStudentImportTemplateCsv,
+  generateStudentImportTemplateXlsx,
   parseAndValidateStudentRows,
   type ParseImportResult,
 } from "@/lib/student-import-parser"
@@ -37,8 +38,8 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   const [isImporting, startImportTransition] = useTransition()
   const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null)
 
-  // Download template
-  const handleDownloadTemplate = () => {
+  // Download CSV template
+  const handleDownloadCsvTemplate = () => {
     const csvData = generateStudentImportTemplateCsv()
     const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
@@ -52,13 +53,36 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     toast.success("ดาวน์โหลดแบบฟอร์ม CSV เรียบร้อยแล้ว")
   }
 
-  // Handle file select
+  // Download XLSX template
+  const handleDownloadXlsxTemplate = () => {
+    const xlsxBuffer = generateStudentImportTemplateXlsx()
+    const blob = new Blob([xlsxBuffer as unknown as BlobPart], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "แบบฟอร์มนำเข้านักเรียน_SCIDAS.xlsx"
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success("ดาวน์โหลดแบบฟอร์ม Excel (.xlsx) เรียบร้อยแล้ว")
+  }
+
+  // Handle file select (CSV or XLSX)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
     if (!selected) return
 
-    if (!selected.name.endsWith(".csv") && !selected.name.endsWith(".txt")) {
-      toast.error("กรุณาเลือกไฟล์รูปแบบ .csv")
+    const ext = selected.name.split(".").pop()?.toLowerCase() ?? ""
+    if (!["csv", "xlsx", "xls", "txt"].includes(ext)) {
+      toast.error("กรุณาเลือกไฟล์รูปแบบ .csv หรือ .xlsx")
+      return
+    }
+
+    if (selected.size > 5 * 1024 * 1024) {
+      toast.error("ขนาดไฟล์เกิน 5 MB")
       return
     }
 
@@ -66,8 +90,8 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     setImportSuccessCount(null)
 
     try {
-      const text = await selected.text()
-      const result = parseAndValidateStudentRows(text)
+      const arrayBuffer = await selected.arrayBuffer()
+      const result = parseAndValidateStudentRows(Buffer.from(arrayBuffer), selected.name)
       setParseResult(result)
 
       if (result.validRows.length > 0) {
@@ -77,8 +101,9 @@ export function StudentImportClient({ context }: { context: ImportContextData })
         toast.error("ไม่พบข้อมูลนักเรียนที่ถูกต้องในไฟล์")
         setActiveTab("invalid")
       }
-    } catch {
-      toast.error("เกิดข้อผิดพลาดในการอ่านไฟล์")
+    } catch (err) {
+      console.error("Error reading file:", err)
+      toast.error("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบรูปแบบไฟล์")
     }
   }
 
@@ -130,14 +155,24 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               เลือกห้องเรียนและภาคเรียนปลายทางที่ต้องการนำเข้านักเรียน
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleDownloadTemplate}
-            className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3.5 py-2 text-sm font-medium hover:bg-muted shadow-sm transition-colors"
-          >
-            <Download className="size-4 text-primary" />
-            ดาวน์โหลดแบบฟอร์ม CSV
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleDownloadCsvTemplate}
+              className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3.5 py-2 text-xs font-medium hover:bg-muted shadow-sm transition-colors"
+            >
+              <FileText className="size-4 text-primary" />
+              แบบฟอร์ม CSV
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadXlsxTemplate}
+              className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 px-3.5 py-2 text-xs font-medium hover:bg-emerald-100 shadow-sm transition-colors"
+            >
+              <FileSpreadsheet className="size-4 text-emerald-600" />
+              แบบฟอร์ม Excel (.xlsx)
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -149,11 +184,11 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               id="importClassroom"
               value={selectedClassroomId}
               onChange={(e) => setSelectedClassroomId(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {context.classrooms.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} (ปีการศึกษา {c.academicYear}) {c.isHomeroom ? "— ครูประจำชั้น" : ""}
+                  {c.name} {c.isHomeroom ? "(ครูประจำชั้น)" : ""}
                 </option>
               ))}
             </select>
@@ -161,17 +196,17 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
           <div>
             <label htmlFor="importSemester" className="block text-sm font-medium">
-              ภาคเรียนที่ลงทะเบียน <span className="text-destructive">*</span>
+              ภาคเรียน <span className="text-destructive">*</span>
             </label>
             <select
               id="importSemester"
               value={selectedSemesterId}
               onChange={(e) => setSelectedSemesterId(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {context.semesters.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.label} {s.isCurrent ? "(ปัจจุบัน)" : ""}
+                  {s.label} {s.isCurrent ? "(ภาคเรียนปัจจุบัน)" : ""}
                 </option>
               ))}
             </select>
@@ -181,195 +216,175 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
       {/* 2. File Upload Dropzone */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
-        <h3 className="text-base font-semibold">ขั้นตอนที่ 2: เลือกไฟล์ข้อมูลนักเรียน</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          รองรับไฟล์ .CSV ที่กรอกตามแบบฟอร์มมาตรฐาน (เข้ารหัส UTF-8)
+        <h3 className="text-base font-semibold">ขั้นตอนที่ 2: อัปโหลดไฟล์รายชื่อนักเรียน (CSV หรือ Excel)</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          รองรับไฟล์นามสกุล .csv, .xlsx, .xls ขนาดไม่เกิน 5 MB และไม่เกิน 500 รายชื่อต่อครั้ง
         </p>
 
         {!file ? (
-          <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20 p-8 text-center transition-colors hover:border-primary/50 hover:bg-muted/40">
-            <Upload className="size-10 text-muted-foreground" />
-            <span className="mt-3 text-sm font-semibold">คลิกเพื่อเลือกไฟล์ CSV หรือลากไฟล์มาวางที่นี่</span>
-            <span className="mt-1 text-xs text-muted-foreground">ขนาดไฟล์ไม่เกิน 5 MB</span>
+          <label className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 p-8 text-center cursor-pointer transition hover:bg-muted/50">
             <input
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv, .xlsx, .xls, .txt, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, text/csv"
               onChange={handleFileChange}
-              className="hidden"
+              className="sr-only"
             />
+            <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+              <Upload className="size-7" />
+            </div>
+            <p className="text-sm font-semibold">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              รองรับไฟล์ .csv (UTF-8) หรือ .xlsx / .xls
+            </p>
           </label>
         ) : (
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-border bg-muted/40 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
                 <FileSpreadsheet className="size-5" />
               </div>
               <div>
-                <p className="font-semibold">{file.name}</p>
+                <p className="text-sm font-semibold">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} KB · ตรวจสอบแล้ว{" "}
-                  {parseResult ? `${parseResult.totalRows} แถว` : "กำลังอ่าน..."}
+                  {(file.size / 1024).toFixed(1)} KB &bull; ตรวจสอบพบทั้งหมด {parseResult?.totalRows || 0} รายการ
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleClearFile}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-background hover:text-foreground"
-              title="ยกเลิกไฟล์"
+              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              title="ลบไฟล์"
             >
-              <X className="size-5" />
+              <X className="size-4" />
             </button>
           </div>
         )}
       </div>
 
-      {/* 3. Validation Preview & Import Action */}
+      {/* 3. Validation Summary & Preview Table */}
       {parseResult && (
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-muted/20 px-5 py-4 sm:px-6">
             <div>
-              <h3 className="text-base font-semibold">ขั้นตอนที่ 3: ตรวจสอบข้อมูลก่อนนำเข้า</h3>
+              <h3 className="text-base font-semibold">ขั้นตอนที่ 3: ตรวจสอบความถูกต้องและยืนยันการนำเข้า</h3>
               <p className="text-sm text-muted-foreground">
-                นำเข้าสู่ห้องเรียน: <span className="font-semibold text-foreground">{selectedClassroom?.name}</span>
+                พร้อมนำเข้า {parseResult.summary.validCount} คน &bull; พบข้อผิดพลาด {parseResult.summary.invalidCount} รายการ
               </p>
             </div>
 
-            {/* Metric chips */}
+            {/* Tabs */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("valid")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "valid"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <CheckCircle2 className="size-3.5" />
+                <CheckCircle2 className="size-3.5 text-emerald-600" />
                 ข้อมูลถูกต้อง ({parseResult.summary.validCount})
               </button>
 
-              {parseResult.summary.invalidCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("invalid")}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    activeTab === "invalid"
-                      ? "bg-amber-600 text-white"
-                      : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300"
-                  }`}
-                >
-                  <AlertTriangle className="size-3.5" />
-                  พบข้อผิดพลาด ({parseResult.summary.invalidCount})
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setActiveTab("invalid")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  activeTab === "invalid"
+                    ? "bg-destructive/10 text-destructive border border-destructive/20"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <AlertTriangle className="size-3.5 text-destructive" />
+                พบข้อผิดพลาด ({parseResult.summary.invalidCount})
+              </button>
             </div>
           </div>
 
-          {/* Valid Rows Table */}
+          {/* Valid Rows Tab */}
           {activeTab === "valid" && (
-            <div>
+            <div className="p-0">
               {parseResult.validRows.length === 0 ? (
-                <EmptyState
-                  title="ไม่มีข้อมูลที่พร้อมนำเข้า"
-                  description="แถวทั้งหมดในไฟล์มีข้อผิดพลาด กรุณาตรวจสอบแท็บ 'พบข้อผิดพลาด'"
-                />
+                <div className="p-8">
+                  <EmptyState
+                    icon={AlertTriangle}
+                    title="ไม่มีรายการข้อมูลที่ถูกต้อง"
+                    description="โปรดตรวจสอบแถวที่มีข้อผิดพลาดในแท็บ 'พบข้อผิดพลาด' และแก้ไขข้อมูลในไฟล์"
+                  />
+                </div>
               ) : (
-                <div className="overflow-hidden rounded-xl border border-border bg-card">
-                  <div className="overflow-x-auto max-h-[380px]">
-                    <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 border-b border-border bg-muted/80 backdrop-blur text-xs font-semibold text-muted-foreground">
-                        <tr>
-                          <th className="px-3 py-2.5">เลขที่</th>
-                          <th className="px-3 py-2.5">รหัสนักเรียน</th>
-                          <th className="px-3 py-2.5">ชื่อ - นามสกุล</th>
-                          <th className="px-3 py-2.5">เพศ</th>
-                          <th className="px-3 py-2.5">วันเกิด</th>
-                          <th className="px-3 py-2.5">เลขบัตรประชาชน</th>
-                          <th className="px-3 py-2.5">ผู้ปกครอง</th>
+                <div className="overflow-x-auto max-h-96">
+                  <table className="w-full text-left text-sm">
+                    <thead className="sticky top-0 z-10 border-b border-border bg-muted/80 text-xs font-semibold text-muted-foreground backdrop-blur">
+                      <tr>
+                        <th className="px-4 py-3">แถว</th>
+                        <th className="px-4 py-3">เลขที่</th>
+                        <th className="px-4 py-3">รหัสนักเรียน</th>
+                        <th className="px-4 py-3">ชื่อ - นามสกุล</th>
+                        <th className="px-4 py-3">เพศ</th>
+                        <th className="px-4 py-3">วันเกิด</th>
+                        <th className="px-4 py-3">เลขประจำตัวประชาชน</th>
+                        <th className="px-4 py-3">ผู้ปกครอง</th>
+                        <th className="px-4 py-3">เบอร์ติดต่อผู้ปกครอง</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {parseResult.validRows.map((r) => (
+                        <tr key={r.rowNumber} className="hover:bg-muted/30">
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.rowNumber}</td>
+                          <td className="px-4 py-2.5 font-medium">{r.studentNumber ?? "-"}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs font-semibold text-primary">{r.studentCode}</td>
+                          <td className="px-4 py-2.5 font-medium">{`${r.prefix || ""} ${r.firstName} ${r.lastName}`.trim()}</td>
+                          <td className="px-4 py-2.5 text-xs">
+                            {r.gender === "male" ? "ชาย" : r.gender === "female" ? "หญิง" : "อื่นๆ"}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.dateOfBirth}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{r.nationalId || "-"}</td>
+                          <td className="px-4 py-2.5 text-xs">{`${r.guardianFirstName || ""} ${r.guardianLastName || ""}`.trim() || "-"}</td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.guardianPhone || "-"}</td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {parseResult.validRows.map((r, idx) => (
-                          <tr key={r.studentCode} className="hover:bg-muted/30">
-                            <td className="px-3 py-2 text-muted-foreground font-mono">
-                              {r.studentNumber ?? idx + 1}
-                            </td>
-                            <td className="px-3 py-2 font-mono font-semibold text-primary">
-                              {r.studentCode}
-                            </td>
-                            <td className="px-3 py-2">
-                              <span className="font-medium">
-                                {r.prefix ? `${r.prefix}` : ""}
-                                {r.firstName} {r.lastName}
-                              </span>
-                              {r.nickname && (
-                                <span className="ml-1 text-xs text-muted-foreground">({r.nickname})</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground text-xs">
-                              {r.gender === "male" ? "ชาย" : r.gender === "female" ? "หญิง" : "อื่นๆ"}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
-                              {r.dateOfBirth}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
-                              {r.nationalId || "-"}
-                            </td>
-                            <td className="px-3 py-2 text-xs">
-                              {r.guardianFirstName ? (
-                                <span>
-                                  {r.guardianFirstName} ({r.guardianRelation || "ผู้ปกครอง"})
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
           )}
 
-          {/* Invalid Rows Report */}
+          {/* Invalid Rows Tab */}
           {activeTab === "invalid" && (
-            <div className="space-y-3">
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20 text-xs text-amber-900 dark:text-amber-200">
-                <p className="font-semibold">แถวที่มีข้อผิดพลาดจะไม่ถูกนำเข้า:</p>
-                <p className="mt-1">
-                  กรุณาตรวจสอบและแก้ไขข้อผิดพลาดในไฟล์ Excel/CSV จากนั้นอัปโหลดไฟล์ใหม่อีกครั้ง
-                </p>
-              </div>
-
-              <div className="overflow-hidden rounded-xl border border-border bg-card">
-                <div className="overflow-x-auto max-h-[380px]">
+            <div className="p-0">
+              {parseResult.invalidRows.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState
+                    icon={CheckCircle2}
+                    title="ยอดเยี่ยม! ไม่พบข้อผิดพลาด"
+                    description="ข้อมูลทุกแถวในไฟล์ผ่านการตรวจสอบโครงสร้างและความถูกต้องครบถ้วน"
+                  />
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-96">
                   <table className="w-full text-left text-sm">
-                    <thead className="sticky top-0 border-b border-border bg-muted/80 backdrop-blur text-xs font-semibold text-muted-foreground">
+                    <thead className="sticky top-0 z-10 border-b border-border bg-muted/80 text-xs font-semibold text-muted-foreground backdrop-blur">
                       <tr>
-                        <th className="px-3 py-2.5">แถวที่ (Excel)</th>
-                        <th className="px-3 py-2.5">รหัส/ชื่อ</th>
-                        <th className="px-3 py-2.5">สาเหตุข้อผิดพลาด</th>
+                        <th className="px-4 py-3">แถวที่</th>
+                        <th className="px-4 py-3">รหัสนักเรียน</th>
+                        <th className="px-4 py-3">ชื่อ - นามสกุล</th>
+                        <th className="px-4 py-3">สาเหตุข้อผิดพลาด</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {parseResult.invalidRows.map((inv) => (
-                        <tr key={inv.rowNumber} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 font-mono font-semibold text-destructive">
-                            แถว {inv.rowNumber}
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <p className="font-medium">{inv.studentName}</p>
-                            <p className="text-xs font-mono text-muted-foreground">รหัส: {inv.studentCode}</p>
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <ul className="list-disc list-inside space-y-0.5 text-xs text-destructive">
-                              {inv.errors.map((err, eIdx) => (
-                                <li key={eIdx}>{err}</li>
+                      {parseResult.invalidRows.map((err) => (
+                        <tr key={err.rowNumber} className="bg-destructive/5 hover:bg-destructive/10">
+                          <td className="px-4 py-3 font-semibold text-destructive">{err.rowNumber}</td>
+                          <td className="px-4 py-3 font-mono text-xs">{err.studentCode || "-"}</td>
+                          <td className="px-4 py-3 text-xs">{err.studentName || "-"}</td>
+                          <td className="px-4 py-3">
+                            <ul className="list-disc list-inside space-y-1 text-xs text-destructive">
+                              {err.errors.map((e, i) => (
+                                <li key={i}>{e}</li>
                               ))}
                             </ul>
                           </td>
@@ -378,21 +393,15 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                     </tbody>
                   </table>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Confirm Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
-            <div className="text-xs text-muted-foreground">
-              {parseResult.validRows.length > 0 ? (
-                <span>
-                  พร้อมนำเข้า <strong className="text-foreground">{parseResult.validRows.length}</strong> คน เข้าสู่{" "}
-                  <strong>{selectedClassroom?.name}</strong>
-                </span>
-              ) : (
-                <span className="text-destructive font-medium">ไม่สามารถนำเข้าได้เนื่องจากไม่มีข้อมูลที่ถูกต้อง</span>
-              )}
+          {/* 4. Action & Submit Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-card px-5 py-4 sm:px-6">
+            <div className="text-sm">
+              <span className="text-muted-foreground">ห้องเรียนปลายทาง: </span>
+              <span className="font-semibold">{selectedClassroom?.name || "ยังไม่ได้เลือก"}</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -400,25 +409,26 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 type="button"
                 onClick={handleClearFile}
                 disabled={isImporting}
-                className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 ยกเลิก
               </button>
+
               <button
                 type="button"
-                disabled={isImporting || parseResult.validRows.length === 0}
                 onClick={handleConfirmImport}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shadow-sm"
+                disabled={isImporting || parseResult.validRows.length === 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
               >
                 {isImporting ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    กำลังบันทึกข้อมูล...
+                    กำลังนำเข้าข้อมูล...
                   </>
                 ) : (
                   <>
                     <UserCheck className="size-4" />
-                    ยืนยันการนำเข้า ({parseResult.validRows.length} คน)
+                    ยืนยันนำเข้า ({parseResult.validRows.length} คน)
                   </>
                 )}
               </button>
@@ -427,35 +437,32 @@ export function StudentImportClient({ context }: { context: ImportContextData })
         </div>
       )}
 
-      {/* Success Modal / Banner */}
+      {/* 5. Success Banner */}
       {importSuccessCount !== null && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-950 shadow-sm">
           <div className="flex items-start gap-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <CheckCircle2 className="size-6" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-base font-semibold text-emerald-900 dark:text-emerald-200">
-                นำเข้าข้อมูลนักเรียนสำเร็จ!
-              </h4>
-              <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-300">
-                บันทึกข้อมูลนักเรียนและลงทะเบียนเข้าห้องเรียน {selectedClassroom?.name} เรียบร้อยแล้ว จำนวน{" "}
-                <strong>{importSuccessCount}</strong> คน
+            <div className="flex-1">
+              <h4 className="text-base font-semibold">นำเข้าข้อมูลนักเรียนเสร็จสมบูรณ์</h4>
+              <p className="mt-1 text-sm text-emerald-800">
+                เพิ่มนักเรียนจำนวน {importSuccessCount} คน เข้าสู่ห้องเรียน {selectedClassroom?.name} เรียบร้อยแล้ว
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   href="/students"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm transition-colors"
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 transition"
                 >
                   <Users className="size-4" />
-                  ดูรายชื่อนักเรียนทั้งหมด
+                  ไปยังหน้ารายชื่อนักเรียน
                 </Link>
                 <button
                   type="button"
                   onClick={handleClearFile}
-                  className="rounded-lg border border-emerald-300 bg-white dark:bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                  className="rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100 transition"
                 >
-                  นำเข้าห้องเรียนอื่นต่อ
+                  นำเข้าไฟล์อื่นเพิ่มเติม
                 </button>
               </div>
             </div>

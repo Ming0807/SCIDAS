@@ -3278,6 +3278,51 @@ export type Database = {
         }
         Returns: string
       }
+      is_homeroom_teacher_of_classroom: {
+        Args: { p_classroom_id: string }
+        Returns: boolean
+      }
+      import_students_atomic: {
+        Args: {
+          p_classroom_id: string
+          p_semester_id: string
+          p_students: Json
+        }
+        Returns: Json
+      }
+      get_school_risk_trend: {
+        Args: { p_school_id?: string }
+        Returns: {
+          period_label: string
+          high_count: number
+          watch_count: number
+          normal_count: number
+          total_count: number
+        }[]
+      }
+      get_risk_dimension_benchmarks: {
+        Args: { p_school_id?: string }
+        Returns: {
+          dimension_key: string
+          dimension_label: string
+          average_score: number
+          high_risk_count: number
+          watch_risk_count: number
+        }[]
+      }
+      get_classroom_risk_breakdown: {
+        Args: { p_school_id?: string }
+        Returns: {
+          classroom_id: string
+          classroom_name: string
+          grade_level: Database["public"]["Enums"]["grade_level"]
+          section: number
+          high_risk_count: number
+          watch_risk_count: number
+          normal_risk_count: number
+          total_students: number
+        }[]
+      }
     }
     Enums: {
       attendance_status: "present" | "absent" | "late" | "leave" | "sick"

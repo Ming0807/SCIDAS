@@ -34,7 +34,7 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
   const context = await getCurrentUserContext()
   const supabase = await createClient()
 
-  const canImport = ["admin", "director", "homeroom_teacher"].includes(context.role)
+  const canImport = ["admin", "director", "homeroom_teacher", "counselor", "subject_teacher"].includes(context.role)
   if (!canImport) {
     return {
       classrooms: [],
@@ -53,7 +53,8 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
     .order("start_date", { ascending: false })
 
   if (semError) {
-    throw new Error(`Failed to load semesters: ${semError.message}`)
+    console.error("Failed to load semesters for import:", semError)
+    throw new Error("ไม่สามารถโหลดข้อมูลภาคเรียนได้")
   }
 
   const semesters: ImportSemesterOption[] = (semestersData || []).map((s) => {
@@ -77,7 +78,7 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
     .eq("school_id", context.schoolId)
     .eq("is_active", true)
 
-  if (context.role === "homeroom_teacher") {
+  if (context.role === "homeroom_teacher" || context.role === "subject_teacher") {
     classroomQuery = classroomQuery.or(
       `homeroom_teacher_id.eq.${context.profileId},co_teacher_id.eq.${context.profileId}`
     )
@@ -88,7 +89,8 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
     .order("section", { ascending: true })
 
   if (crError) {
-    throw new Error(`Failed to load classrooms: ${crError.message}`)
+    console.error("Failed to load classrooms for import:", crError)
+    throw new Error("ไม่สามารถโหลดข้อมูลห้องเรียนได้")
   }
 
   const classrooms: ImportClassroomOption[] = (classroomsData || []).map((c) => {
@@ -123,11 +125,11 @@ export async function executeStudentImportRpc(
   const context = await getCurrentUserContext()
   const supabase = await createClient()
 
-  if (!["admin", "director", "homeroom_teacher"].includes(context.role)) {
+  if (!["admin", "director", "homeroom_teacher", "counselor", "subject_teacher"].includes(context.role)) {
     return { success: false, count: 0, error: "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน" }
   }
 
-  // Transform DTO keys to database snake_case parameters for RPC
+  // Transform DTO keys to database snake_case parameters for RPC (students table has no phone)
   const payload = students.map((s) => ({
     student_code: s.studentCode,
     national_id: s.nationalId || null,
@@ -138,7 +140,6 @@ export async function executeStudentImportRpc(
     gender: s.gender,
     date_of_birth: s.dateOfBirth,
     blood_type: s.bloodType || null,
-    phone: s.phone || null,
     address: s.address || null,
     student_number: s.studentNumber || null,
     guardian_prefix: s.guardianPrefix || null,
@@ -148,13 +149,14 @@ export async function executeStudentImportRpc(
     guardian_relation: s.guardianRelation || null,
   }))
 
-  const { data, error } = await supabase.rpc("import_students_atomic" as unknown as never, {
+  const { data, error } = await supabase.rpc("import_students_atomic", {
     p_classroom_id: classroomId,
     p_semester_id: semesterId,
     p_students: payload,
-  } as unknown as never)
+  })
 
   if (error) {
+    console.error("executeStudentImportRpc error:", error)
     return {
       success: false,
       count: 0,

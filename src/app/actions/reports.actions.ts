@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 
 import {
   processReportJobById,
@@ -17,6 +18,8 @@ export async function requestReportJobActionState(
 ): Promise<ActionResult<{ id: string }>> {
   const reportType = String(formData.get("reportType") ?? "").trim()
   const title = String(formData.get("title") ?? "").trim()
+  const rawFormat = String(formData.get("format") ?? "pdf").toLowerCase().trim()
+  const format = rawFormat === "xlsx" ? "xlsx" : "pdf"
 
   if (!reportType) {
     return actionFail("VALIDATION_ERROR", "กรุณาเลือกประเภทรายงาน", {
@@ -43,43 +46,30 @@ export async function requestReportJobActionState(
   }
 
   try {
-    const result = await requestReportJob({ reportType, title })
+    const result = await requestReportJob({
+      reportType,
+      title,
+      filters: { format },
+    })
 
-    // Trigger immediate generation in background
-    processReportJobById(result.id).catch(console.error)
+    // Next.js 16 after() schedules background execution after response completes
+    after(async () => {
+      try {
+        await processReportJobById(result.id)
+      } catch (err) {
+        console.error("Background report generation error:", err)
+      }
+    })
 
     revalidatePath("/reports")
 
-    return actionOk("ขอสร้างรายงานแล้ว ระบบกำลังสร้างไฟล์เอกสาร", {
+    return actionOk("ขอสร้างรายงานแล้ว ระบบกำลังสร้างไฟล์เอกสารในพื้นหลัง", {
       data: { id: result.id },
       revalidated: ["/reports"],
     })
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === "UNAUTHORIZED") {
-        return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบอีกครั้ง")
-      }
-
-      if (error.message === "FORBIDDEN") {
-        return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์สร้างรายงาน")
-      }
-
-      if (error.message === "VALIDATION_ERROR:reportType") {
-        return actionFail("VALIDATION_ERROR", "ประเภทรายงานไม่ถูกต้อง", {
-          fieldErrors: { reportType: ["ประเภทรายงานไม่ถูกต้อง"] },
-        })
-      }
-
-      if (error.message === "VALIDATION_ERROR:title") {
-        return actionFail("VALIDATION_ERROR", "กรุณากรอกชื่อรายงาน", {
-          fieldErrors: { title: ["กรุณากรอกชื่อรายงาน"] },
-        })
-      }
-
-      return actionFail("INTERNAL_ERROR", error.message)
-    }
-
-    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการสร้างรายงาน")
+    console.error("requestReportJobActionState error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการสร้างคำขอรายงาน กรุณาลองใหม่อีกครั้ง")
   }
 }
 
@@ -106,10 +96,8 @@ export async function processReportJobAction(jobId?: string): Promise<
 
     return actionFail("INTERNAL_ERROR", result.errorMessage ?? "การสร้างรายงานล้มเหลว")
   } catch (err) {
-    return actionFail(
-      "INTERNAL_ERROR",
-      err instanceof Error ? err.message : "เกิดข้อผิดพลาด",
-    )
+    console.error("processReportJobAction error:", err)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการประมวลผลรายงาน")
   }
 }
 
@@ -128,20 +116,24 @@ export async function retryReportJobAction(jobId: string): Promise<ActionResult>
       .eq("school_id", context.schoolId)
 
     if (resetErr) {
-      return actionFail("INTERNAL_ERROR", `ไม่สามารถเริ่มสร้างรายงานใหม่ได้: ${resetErr.message}`)
+      console.error("retryReportJobAction reset error:", resetErr)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถเริ่มสร้างรายงานใหม่ได้")
     }
 
-    // Trigger generation
-    const res = await processReportJobById(jobId)
+    // Schedule background processing via after()
+    after(async () => {
+      try {
+        await processReportJobById(jobId)
+      } catch (err) {
+        console.error("Background retry report generation error:", err)
+      }
+    })
+
     revalidatePath("/reports")
-
-    if (res?.status === "completed") {
-      return actionOk("สร้างไฟล์รายงานใหม่สำเร็จ")
-    }
-
-    return actionOk("กำลังประมวลผลรายงานใหม่")
+    return actionOk("กำลังสร้างรายงานใหม่อีกครั้งในพื้นหลัง")
   } catch (err) {
-    return actionFail("INTERNAL_ERROR", err instanceof Error ? err.message : "เกิดข้อผิดพลาด")
+    console.error("retryReportJobAction error:", err)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการเริ่มสร้างรายงานใหม่")
   }
 }
 
@@ -162,7 +154,7 @@ export async function deleteReportJobAction(jobId: string): Promise<ActionResult
       .maybeSingle()
 
     if (job?.output_bucket && job.output_path) {
-      await client.storage.from(job.output_bucket).remove([job.output_path])
+      await client.storage.from(job.output_bucket).remove([job.output_path]).catch(console.error)
     }
 
     const { error: delErr } = await client
@@ -172,12 +164,14 @@ export async function deleteReportJobAction(jobId: string): Promise<ActionResult
       .eq("school_id", context.schoolId)
 
     if (delErr) {
-      return actionFail("INTERNAL_ERROR", `ไม่สามารถลบรายงานได้: ${delErr.message}`)
+      console.error("deleteReportJobAction error:", delErr)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบรายการรายงานได้")
     }
 
     revalidatePath("/reports")
     return actionOk("ลบรายงานเรียบร้อยแล้ว")
   } catch (err) {
-    return actionFail("INTERNAL_ERROR", err instanceof Error ? err.message : "เกิดข้อผิดพลาด")
+    console.error("deleteReportJobAction error:", err)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการลบรายงาน")
   }
 }

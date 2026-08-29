@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { markAllNotificationsRead, toggleNotificationRead } from "@/lib/server/notification-read-models"
+import { deleteNotification, markAllNotificationsRead, toggleNotificationRead } from "@/lib/server/notification-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -80,5 +80,38 @@ export async function toggleNotificationReadAction(
     }
 
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการเปลี่ยนสถานะการอ่าน")
+  }
+}
+
+export async function deleteNotificationAction(
+  notificationId: string,
+): Promise<ActionResult<{ id: string }>> {
+  if (!notificationId || !UUID_RE.test(notificationId)) {
+    return actionFail("VALIDATION_ERROR", "รหัสการแจ้งเตือนไม่ถูกต้อง")
+  }
+
+  try {
+    await deleteNotification(notificationId)
+
+    revalidatePath("/notifications")
+
+    return actionOk("ลบการแจ้งเตือนเรียบร้อยแล้ว", {
+      data: { id: notificationId },
+      revalidated: ["/notifications"],
+    })
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "UNAUTHORIZED") {
+        return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบอีกครั้ง")
+      }
+
+      if (error.message === "FORBIDDEN") {
+        return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ดำเนินการนี้")
+      }
+
+      return actionFail("INTERNAL_ERROR", error.message)
+    }
+
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการลบการแจ้งเตือน")
   }
 }

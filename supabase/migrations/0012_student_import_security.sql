@@ -1,4 +1,4 @@
--- Migration 0012: Student Import Security and Atomic Batch Import RPC
+-- Migration 0012: Student Import Security and Atomic Batch Import RPC (Repaired)
 
 -- 1. Helper function to check if current user is homeroom teacher of a specific classroom
 CREATE OR REPLACE FUNCTION public.is_homeroom_teacher_of_classroom(p_classroom_id uuid)
@@ -11,11 +11,15 @@ AS $$
     SELECT EXISTS (
         SELECT 1
         FROM classrooms c
+        JOIN profiles p ON p.id = auth.uid() AND p.is_active = true
         WHERE c.id = p_classroom_id
           AND (c.homeroom_teacher_id = auth.uid() OR c.co_teacher_id = auth.uid())
-          AND c.school_id = get_user_school_id()
+          AND c.school_id = p.school_id
     );
 $$;
+
+REVOKE ALL ON FUNCTION public.is_homeroom_teacher_of_classroom(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_homeroom_teacher_of_classroom(uuid) TO authenticated;
 
 -- 2. Atomic Student and Enrollment Import RPC
 CREATE OR REPLACE FUNCTION public.import_students_atomic(
@@ -46,7 +50,6 @@ DECLARE
     v_gender gender_type;
     v_dob date;
     v_blood_type varchar(5);
-    v_phone varchar(20);
     v_address text;
     v_student_number integer;
     v_g_prefix varchar(50);
@@ -90,12 +93,12 @@ BEGIN
     END IF;
 
     -- 4. Check permissions: Admin/Director can import everywhere in school; Homeroom only in assigned classroom
-    IF v_role IN ('admin', 'director') THEN
+    IF v_role IN ('admin', 'super_admin', 'director') THEN
         -- Allowed
         NULL;
-    ELSIF v_role = 'homeroom_teacher' THEN
+    ELSIF v_role = 'homeroom_teacher' OR v_role = 'teacher' THEN
         IF NOT is_homeroom_teacher_of_classroom(p_classroom_id) THEN
-            RAISE EXCEPTION 'Homeroom teachers can only import students into their assigned classroom'
+            RAISE EXCEPTION 'Teachers can only import students into their assigned classroom'
                 USING ERRCODE = '42501';
         END IF;
     ELSE
@@ -109,8 +112,8 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
-    IF jsonb_array_length(p_students) > 200 THEN
-        RAISE EXCEPTION 'Batch size exceeds maximum limit of 200 students per import'
+    IF jsonb_array_length(p_students) > 500 THEN
+        RAISE EXCEPTION 'Batch size exceeds maximum limit of 500 students per import'
             USING ERRCODE = '22023';
     END IF;
 
@@ -125,7 +128,6 @@ BEGIN
         v_prefix := NULLIF(btrim(v_student_elem->>'prefix'), '');
         v_nickname := NULLIF(btrim(v_student_elem->>'nickname'), '');
         v_blood_type := NULLIF(btrim(v_student_elem->>'blood_type'), '');
-        v_phone := NULLIF(btrim(v_student_elem->>'phone'), '');
         v_address := NULLIF(btrim(v_student_elem->>'address'), '');
 
         -- Required fields check
@@ -180,7 +182,7 @@ BEGIN
                 USING ERRCODE = '23505';
         END IF;
 
-        -- Insert Student
+        -- Insert Student (Note: students table does NOT have phone column)
         INSERT INTO students (
             school_id,
             student_code,
@@ -192,7 +194,6 @@ BEGIN
             gender,
             date_of_birth,
             blood_type,
-            phone,
             address,
             status,
             enrollment_date
@@ -207,7 +208,6 @@ BEGIN
             v_gender,
             v_dob,
             v_blood_type,
-            v_phone,
             v_address,
             'active',
             CURRENT_DATE
@@ -310,3 +310,6 @@ BEGIN
     );
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.import_students_atomic(uuid, uuid, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.import_students_atomic(uuid, uuid, jsonb) TO authenticated;

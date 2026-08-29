@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest"
 import {
   parseCsvContent,
+  parseXlsxContent,
   parseAndValidateStudentRows,
   generateStudentImportTemplateCsv,
+  generateStudentImportTemplateXlsx,
 } from "./student-import-parser"
 
 describe("Student Import Parser", () => {
@@ -41,6 +43,27 @@ describe("Student Import Parser", () => {
     })
   })
 
+  describe("parseXlsxContent and generateStudentImportTemplateXlsx", () => {
+    it("should generate a valid XLSX buffer and parse it correctly", () => {
+      const xlsxBuffer = generateStudentImportTemplateXlsx()
+      expect(Buffer.isBuffer(xlsxBuffer)).toBe(true)
+
+      const parsedTable = parseXlsxContent(xlsxBuffer)
+      expect(parsedTable.length).toBeGreaterThan(2)
+      expect(parsedTable[0]).toContain("รหัสนักเรียน")
+      expect(parsedTable[0]).toContain("ชื่อ")
+      expect(parsedTable[0]).toContain("นามสกุล")
+
+      // Validate through master parser with Buffer
+      const res = parseAndValidateStudentRows(xlsxBuffer, "template.xlsx")
+      expect(res.validRows.length).toBe(2)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.validRows[0].studentCode).toBe("STD1001")
+      expect(res.validRows[0].guardianPhone).toBe("0812345678")
+      expect(res.validRows[0].guardianRelation).toBe("father")
+    })
+  })
+
   describe("parseAndValidateStudentRows", () => {
     it("should fail when header is missing required columns", () => {
       const csv = "ชื่อเล่น,เบอร์โทร\nกอล์ฟ,0812345678"
@@ -51,7 +74,7 @@ describe("Student Import Parser", () => {
     })
 
     it("should parse valid student rows and normalize Thai dates & genders", () => {
-      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เพศ,วันเกิด,เลขบัตรประชาชน\nSTD1001,สมชาย,ใจดี,ชาย,15/05/2556,1100500123456`
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เพศ,วันเกิด,เลขบัตรประชาชน,เบอร์โทรผู้ปกครอง\nSTD1001,สมชาย,ใจดี,ชาย,15/05/2556,1100500123456,0812345678`
       const res = parseAndValidateStudentRows(csv)
       expect(res.validRows.length).toBe(1)
       expect(res.invalidRows.length).toBe(0)
@@ -61,6 +84,7 @@ describe("Student Import Parser", () => {
       expect(res.validRows[0].gender).toBe("male")
       expect(res.validRows[0].dateOfBirth).toBe("2013-05-15") // 2556 - 543 = 2013
       expect(res.validRows[0].nationalId).toBe("1100500123456")
+      expect(res.validRows[0].guardianPhone).toBe("0812345678")
     })
 
     it("should detect duplicate student codes within the batch", () => {

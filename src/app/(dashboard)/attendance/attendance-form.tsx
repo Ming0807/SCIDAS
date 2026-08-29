@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import type { ActionResult } from "@/lib/server/action-result"
 import type { Database } from "@/types/database.types"
 
+import { useRealtime } from "@/components/providers/realtime-provider"
+
 type AttendanceStatus = Database["public"]["Enums"]["attendance_status"]
 type Student = { id: string; name: string }
 type InitialRecord = { student_id: string; status: AttendanceStatus; check_in_time: string | null; remark: string | null }
@@ -22,6 +24,7 @@ const statusOptions: { value: AttendanceStatus; label: string }[] = [
 
 export function AttendanceForm({ classroom, students, initialRecords, dateStr }: AttendanceFormProps) {
   const router = useRouter()
+  const { lastAttendanceChange } = useRealtime()
   const [pending, startTransition] = useTransition()
   const [query, setQuery] = useState("")
   const [date, setDate] = useState(dateStr)
@@ -32,6 +35,12 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
   })))
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(entries))
   const dirty = JSON.stringify(entries) !== savedSnapshot
+
+  useEffect(() => {
+    if (lastAttendanceChange && !dirty) {
+      router.refresh()
+    }
+  }, [lastAttendanceChange, dirty, router])
 
   useEffect(() => {
     if (!dirty) return

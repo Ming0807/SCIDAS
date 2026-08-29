@@ -1,21 +1,29 @@
 import React from "react"
+import { TrendingUp } from "lucide-react"
+
 import type { RiskTrendPoint } from "@/lib/server/risk-read-models"
+import { EmptyState } from "@/components/feedback/empty-state"
 
 export function RiskHistoryChart({ trendData = [] }: { trendData?: RiskTrendPoint[] }) {
-  // If no trend data, provide empty/placeholder points based on current month
-  const points =
-    trendData.length > 0
-      ? trendData
-      : [
-          { periodLabel: "พ.ค.", highCount: 0, watchCount: 0, normalCount: 0, totalCount: 0 },
-          { periodLabel: "มิ.ย.", highCount: 0, watchCount: 0, normalCount: 0, totalCount: 0 },
-          { periodLabel: "ก.ค.", highCount: 0, watchCount: 0, normalCount: 0, totalCount: 0 },
-          { periodLabel: "ส.ค.", highCount: 0, watchCount: 0, normalCount: 0, totalCount: 0 },
-        ]
+  if (!trendData || trendData.length === 0) {
+    return (
+      <div className="bg-card rounded-xl p-5 border border-border shadow-sm flex flex-col h-full">
+        <h3 className="text-sm font-semibold text-foreground mb-4">แนวโน้มความเสี่ยงย้อนหลัง</h3>
+        <div className="flex-1 flex items-center justify-center py-6">
+          <EmptyState
+            icon={TrendingUp}
+            title="ยังไม่มีข้อมูลประวัติความเสี่ยง"
+            description="ระบบจะสร้างเส้นแนวโน้มอัตโนมัติเมื่อมีการบันทึกการประเมินความเสี่ยงรายเดือน"
+          />
+        </div>
+      </div>
+    )
+  }
 
+  const points = trendData
   const maxTotal = Math.max(
-    ...points.map((p) => Math.max(p.highCount, p.watchCount, p.normalCount, p.totalCount, 10)),
-    10
+    ...points.map((p) => Math.max(p.highCount, p.watchCount, p.normalCount, p.totalCount, 5)),
+    5
   )
 
   const getY = (val: number) => {
@@ -35,7 +43,7 @@ export function RiskHistoryChart({ trendData = [] }: { trendData?: RiskTrendPoin
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-foreground">แนวโน้มความเสี่ยงย้อนหลัง</h3>
+        <h3 className="text-sm font-semibold text-foreground">แนวโน้มความเสี่ยงย้อนหลัง</h3>
         <span className="text-xs text-muted-foreground">สถิติจริงตามระบบ</span>
       </div>
 
@@ -56,13 +64,12 @@ export function RiskHistoryChart({ trendData = [] }: { trendData?: RiskTrendPoin
 
       <div className="flex-1 relative min-h-[180px] pb-6 ml-6 mt-2">
         <div className="absolute -left-8 top-0 bottom-6 flex flex-col justify-between py-0 w-8 items-end pr-2">
-          <span className="text-[10px] text-muted-foreground">จำนวน</span>
           <span className="text-xs text-muted-foreground font-mono">{maxTotal}</span>
           <span className="text-xs text-muted-foreground font-mono">{Math.round(maxTotal * 0.5)}</span>
           <span className="text-xs text-muted-foreground font-mono">0</span>
         </div>
 
-        <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="กราฟแนวโน้มความเสี่ยงย้อนหลัง">
           {/* Grid lines */}
           <line x1="0" y1="15" x2="100" y2="15" stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.5" />
           <line x1="0" y1="52" x2="100" y2="52" stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.5" />

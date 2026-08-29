@@ -144,19 +144,13 @@ export async function getRiskTrendHistory(): Promise<RiskTrendPoint[]> {
   const context = await getCurrentUserContext()
   const client = await createClient()
 
-  // Attempt RPC call first
+  // Attempt RPC call
   const { data: rpcData, error: rpcErr } = await client.rpc(
-    "get_school_risk_trend" as unknown as never,
-    { p_school_id: context.schoolId } as unknown as never
+    "get_school_risk_trend",
+    { p_school_id: context.schoolId }
   )
 
-  const rpcList = rpcData as unknown as Array<{
-    period_label: string
-    high_count: number
-    watch_count: number
-    normal_count: number
-    total_count: number
-  }> | null
+  const rpcList = rpcData
 
   if (!rpcErr && Array.isArray(rpcList) && rpcList.length > 0) {
     return rpcList.map((r) => ({
@@ -168,7 +162,7 @@ export async function getRiskTrendHistory(): Promise<RiskTrendPoint[]> {
     }))
   }
 
-  // Fallback direct query on risk_assessments
+  // Fallback direct query on risk_assessments if RPC not available
   const { data: directData } = await client
     .from("risk_assessments")
     .select("risk_level, assessed_at")
@@ -205,17 +199,11 @@ export async function getRiskDimensionBenchmarks(): Promise<RiskDimensionBenchma
   const client = await createClient()
 
   const { data: rpcData, error: rpcErr } = await client.rpc(
-    "get_risk_dimension_benchmarks" as unknown as never,
-    { p_school_id: context.schoolId } as unknown as never
+    "get_risk_dimension_benchmarks",
+    { p_school_id: context.schoolId }
   )
 
-  const rpcList = rpcData as unknown as Array<{
-    dimension_key: string
-    dimension_label: string
-    average_score: number
-    high_risk_count: number
-    watch_risk_count: number
-  }> | null
+  const rpcList = rpcData
 
   if (!rpcErr && Array.isArray(rpcList) && rpcList.length > 0) {
     return rpcList.map((r) => ({
@@ -227,14 +215,69 @@ export async function getRiskDimensionBenchmarks(): Promise<RiskDimensionBenchma
     }))
   }
 
-  // Fallback defaults with clean labels
-  return [
-    { dimensionKey: "attendance", dimensionLabel: "การมาเรียน", averageScore: 82, highRiskCount: 3, watchRiskCount: 8 },
-    { dimensionKey: "academic", dimensionLabel: "ผลการเรียน", averageScore: 74, highRiskCount: 5, watchRiskCount: 12 },
-    { dimensionKey: "behavior", dimensionLabel: "พฤติกรรม", averageScore: 68, highRiskCount: 2, watchRiskCount: 6 },
-    { dimensionKey: "emotional", dimensionLabel: "สภาพอารมณ์", averageScore: 70, highRiskCount: 1, watchRiskCount: 4 },
-    { dimensionKey: "family", dimensionLabel: "สภาพครอบครัว", averageScore: 88, highRiskCount: 4, watchRiskCount: 9 },
-  ]
+  // Genuine direct aggregation on risk_factors + risk_assessments (no hardcoded numbers)
+  const { data: factorRows } = await client
+    .from("risk_factors")
+    .select(`
+      factor_key,
+      factor_label,
+      score,
+      risk_assessments!inner(risk_level)
+    `)
+    .eq("school_id", context.schoolId)
+
+  if (!factorRows || factorRows.length === 0) {
+    return []
+  }
+
+  const dimensionMap = new Map<
+    string,
+    { label: string; scores: number[]; highCount: number; watchCount: number }
+  >()
+
+  for (const row of factorRows) {
+    const r = row as unknown as {
+      factor_key: string
+      factor_label: string
+      score: number | null
+      risk_assessments: { risk_level: string }
+    }
+
+    const key = r.factor_key || "general"
+    const curr = dimensionMap.get(key) || {
+      label: r.factor_label || key,
+      scores: [],
+      highCount: 0,
+      watchCount: 0,
+    }
+
+    if (typeof r.score === "number") {
+      curr.scores.push(r.score)
+    }
+
+    if (r.risk_assessments?.risk_level === "high") {
+      curr.highCount++
+    } else if (r.risk_assessments?.risk_level === "watch") {
+      curr.watchCount++
+    }
+
+    dimensionMap.set(key, curr)
+  }
+
+  return Array.from(dimensionMap.entries()).map(([key, val]) => {
+    const avg =
+      val.scores.length > 0
+        ? Math.round(val.scores.reduce((a, b) => a + b, 0) / val.scores.length)
+        : 0
+
+    return {
+      dimensionKey: key,
+      dimensionLabel: val.label,
+      averageScore: avg,
+      highRiskCount: val.highCount,
+      watchRiskCount: val.watchCount,
+    }
+  })
 }
 
 export async function getClassroomRiskBreakdown(): Promise<ClassroomRiskItem[]> {
@@ -242,20 +285,11 @@ export async function getClassroomRiskBreakdown(): Promise<ClassroomRiskItem[]> 
   const client = await createClient()
 
   const { data: rpcData, error: rpcErr } = await client.rpc(
-    "get_classroom_risk_breakdown" as unknown as never,
-    { p_school_id: context.schoolId } as unknown as never
+    "get_classroom_risk_breakdown",
+    { p_school_id: context.schoolId }
   )
 
-  const rpcList = rpcData as unknown as Array<{
-    classroom_id: string
-    classroom_name: string
-    grade_level: string
-    section: number
-    high_risk_count: number
-    watch_risk_count: number
-    normal_risk_count: number
-    total_students: number
-  }> | null
+  const rpcList = rpcData
 
   if (!rpcErr && Array.isArray(rpcList)) {
     return rpcList.map((r) => ({

@@ -18,21 +18,22 @@ export async function parseStudentFileAction(
 ): Promise<ActionResult<ParseImportResult>> {
   try {
     const context = await getCurrentUserContext()
-    if (!["admin", "director", "homeroom_teacher"].includes(context.role)) {
+    if (!["admin", "director", "homeroom_teacher", "counselor", "subject_teacher"].includes(context.role)) {
       return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน")
     }
 
     const file = formData.get("file") as File | null
     if (!file || file.size === 0) {
-      return actionFail("VALIDATION_ERROR", "กรุณาเลือกไฟล์ CSV สำหรับนำเข้า")
+      return actionFail("VALIDATION_ERROR", "กรุณาเลือกไฟล์ CSV หรือ Excel (.xlsx) สำหรับนำเข้า")
     }
 
     if (file.size > 5 * 1024 * 1024) {
       return actionFail("VALIDATION_ERROR", "ขนาดไฟล์ต้องไม่เกิน 5 MB")
     }
 
-    const text = await file.text()
-    const result = parseAndValidateStudentRows(text)
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const result = parseAndValidateStudentRows(buffer, file.name)
 
     if (result.totalRows === 0) {
       return actionFail("VALIDATION_ERROR", "ไม่พบข้อมูลในไฟล์ หรือไฟล์ว่างเปล่า")
@@ -42,7 +43,8 @@ export async function parseStudentFileAction(
       data: result,
     })
   } catch (error) {
-    return actionFail("INTERNAL_ERROR", error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการอ่านไฟล์")
+    console.error("parseStudentFileAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการอ่านและตรวจสอบโครงสร้างไฟล์")
   }
 }
 
@@ -58,7 +60,7 @@ export async function executeStudentImportAction(
 ): Promise<ActionResult<{ count: number }>> {
   try {
     const context = await getCurrentUserContext()
-    if (!["admin", "director", "homeroom_teacher"].includes(context.role)) {
+    if (!["admin", "director", "homeroom_teacher", "counselor", "subject_teacher"].includes(context.role)) {
       return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน")
     }
 
@@ -87,6 +89,7 @@ export async function executeStudentImportAction(
       data: { count: rpcRes.count },
     })
   } catch (error) {
-    return actionFail("INTERNAL_ERROR", error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการนำเข้า")
+    console.error("executeStudentImportAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการบันทึกข้อมูลนำเข้านักเรียน")
   }
 }

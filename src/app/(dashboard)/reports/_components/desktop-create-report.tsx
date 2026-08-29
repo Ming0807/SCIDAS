@@ -2,10 +2,11 @@
 
 import { useActionState, useState } from "react"
 import {
+  CalendarCheck,
   CheckCircle2,
+  FileSpreadsheet,
   FileText,
-  HeartPulse,
-  LineChart,
+  GraduationCap,
   Loader2,
   ShieldAlert,
   XCircle,
@@ -37,9 +38,9 @@ const reportTypeOptions = [
     selectedBorder: "border-orange-300 bg-orange-50/60",
   },
   {
-    value: "behavior_report",
-    label: "รายงานพฤติกรรม",
-    icon: LineChart,
+    value: "attendance_report",
+    label: "รายงานการมาเรียน",
+    icon: CalendarCheck,
     iconColor: "text-emerald-600",
     iconBg: "bg-emerald-50",
     iconBorder: "border-emerald-200",
@@ -48,7 +49,7 @@ const reportTypeOptions = [
   {
     value: "academic_report",
     label: "รายงานผลการเรียน",
-    icon: HeartPulse,
+    icon: GraduationCap,
     iconColor: "text-blue-600",
     iconBg: "bg-blue-50",
     iconBorder: "border-blue-200",
@@ -57,16 +58,10 @@ const reportTypeOptions = [
 ]
 
 const defaultTitleByType: Record<string, string> = {
-  student_summary: "รายงานสรุปนักเรียน",
-  risk_report: "รายงานกลุ่มเสี่ยง",
-  behavior_report: "รายงานพฤติกรรม",
-  academic_report: "รายงานผลการเรียน",
-  support_report: "รายงานการดูแลช่วยเหลือ",
-  idp_report: "รายงานพัฒนารายบุคคล",
-  attendance_report: "รายงานการมาเรียน",
-  admin_summary: "รายงานสำหรับผู้บริหาร",
-  home_visit_report: "รายงานเยี่ยมบ้าน",
-  intervention_summary: "รายงานการช่วยเหลือ",
+  student_summary: "รายงานสรุปรายชื่อและข้อมูลนักเรียน",
+  risk_report: "รายงานคัดกรองนักเรียนกลุ่มเสี่ยง (Early Warning)",
+  attendance_report: "รายงานสรุปสถิติการมาเรียน",
+  academic_report: "รายงานสรุปผลการเรียนและคะแนนเก็บ",
 }
 
 export function DesktopCreateReport() {
@@ -76,6 +71,7 @@ export function DesktopCreateReport() {
   >(requestReportJobActionState, null)
 
   const [selectedType, setSelectedType] = useState<string>("student_summary")
+  const [selectedFormat, setSelectedFormat] = useState<"pdf" | "xlsx">("pdf")
   const [title, setTitle] = useState<string>(defaultTitleByType.student_summary)
 
   const typeErrors = state?.ok === false ? state.fieldErrors?.reportType : undefined
@@ -90,6 +86,7 @@ export function DesktopCreateReport() {
     e.preventDefault()
     const fd = new FormData()
     fd.set("reportType", selectedType)
+    fd.set("format", selectedFormat)
     fd.set("title", title)
     formAction(fd)
   }
@@ -150,6 +147,54 @@ export function DesktopCreateReport() {
           {typeErrors[0]}
         </p>
       ) : null}
+
+      {/* Format Selector (PDF vs XLSX) */}
+      <div className="mb-4">
+        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+          รูปแบบไฟล์เอกสาร
+        </label>
+        <div className="flex items-center gap-3">
+          <label
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-colors",
+              selectedFormat === "pdf"
+                ? "bg-red-50 border-red-200 text-red-700"
+                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+            )}
+          >
+            <input
+              type="radio"
+              name="format"
+              value="pdf"
+              checked={selectedFormat === "pdf"}
+              onChange={() => setSelectedFormat("pdf")}
+              className="sr-only"
+            />
+            <FileText className="w-4 h-4 text-red-600" />
+            <span>PDF Document (.pdf)</span>
+          </label>
+
+          <label
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-colors",
+              selectedFormat === "xlsx"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+            )}
+          >
+            <input
+              type="radio"
+              name="format"
+              value="xlsx"
+              checked={selectedFormat === "xlsx"}
+              onChange={() => setSelectedFormat("xlsx")}
+              className="sr-only"
+            />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Excel Spreadsheet (.xlsx)</span>
+          </label>
+        </div>
+      </div>
 
       {/* Title input */}
       <div className="mb-4">

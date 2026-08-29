@@ -1,7 +1,7 @@
--- Migration 0014: Real Risk Analytics Functions and Aggregations
+-- Migration 0014: Real Risk Analytics Functions and Aggregations (Repaired)
 
 -- 1. Function to get real risk trend history for the current school
-CREATE OR REPLACE FUNCTION public.get_school_risk_trend(p_school_id uuid)
+CREATE OR REPLACE FUNCTION public.get_school_risk_trend(p_school_id uuid DEFAULT NULL)
 RETURNS TABLE (
     period_label text,
     high_count bigint,
@@ -14,9 +14,31 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+    v_actor_id uuid;
+    v_role user_role;
     v_target_school uuid;
 BEGIN
-    v_target_school := COALESCE(p_school_id, get_user_school_id());
+    v_actor_id := auth.uid();
+    IF v_actor_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required' USING ERRCODE = '42501';
+    END IF;
+
+    SELECT role, school_id INTO v_role, v_target_school
+    FROM profiles
+    WHERE id = v_actor_id AND is_active = true;
+
+    IF v_target_school IS NULL THEN
+        RAISE EXCEPTION 'Active profile in a valid school is required' USING ERRCODE = '42501';
+    END IF;
+
+    -- Validate tenant scope
+    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school AND v_role <> 'super_admin' THEN
+        RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
+    END IF;
+
+    IF p_school_id IS NOT NULL AND v_role = 'super_admin' THEN
+        v_target_school := p_school_id;
+    END IF;
 
     RETURN QUERY
     WITH monthly_assessments AS (
@@ -40,8 +62,11 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.get_school_risk_trend(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_school_risk_trend(uuid) TO authenticated;
+
 -- 2. Function to get real multi-factor risk dimension benchmarks
-CREATE OR REPLACE FUNCTION public.get_risk_dimension_benchmarks(p_school_id uuid)
+CREATE OR REPLACE FUNCTION public.get_risk_dimension_benchmarks(p_school_id uuid DEFAULT NULL)
 RETURNS TABLE (
     dimension_key text,
     dimension_label text,
@@ -54,16 +79,38 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+    v_actor_id uuid;
+    v_role user_role;
     v_target_school uuid;
 BEGIN
-    v_target_school := COALESCE(p_school_id, get_user_school_id());
+    v_actor_id := auth.uid();
+    IF v_actor_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required' USING ERRCODE = '42501';
+    END IF;
+
+    SELECT role, school_id INTO v_role, v_target_school
+    FROM profiles
+    WHERE id = v_actor_id AND is_active = true;
+
+    IF v_target_school IS NULL THEN
+        RAISE EXCEPTION 'Active profile in a valid school is required' USING ERRCODE = '42501';
+    END IF;
+
+    -- Validate tenant scope
+    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school AND v_role <> 'super_admin' THEN
+        RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
+    END IF;
+
+    IF p_school_id IS NOT NULL AND v_role = 'super_admin' THEN
+        v_target_school := p_school_id;
+    END IF;
 
     RETURN QUERY
     WITH factors AS (
         SELECT
             rf.factor_key,
             rf.factor_label,
-            rf.weight,
+            rf.score,
             ra.risk_level
         FROM risk_factors rf
         JOIN risk_assessments ra ON rf.risk_assessment_id = ra.id
@@ -72,7 +119,7 @@ BEGIN
     SELECT
         f.factor_key::text AS dimension_key,
         MAX(f.factor_label)::text AS dimension_label,
-        ROUND(AVG(f.weight)::numeric, 1) AS average_score,
+        ROUND(AVG(f.score)::numeric, 1) AS average_score,
         COUNT(*) FILTER (WHERE f.risk_level = 'high') AS high_risk_count,
         COUNT(*) FILTER (WHERE f.risk_level = 'watch') AS watch_risk_count
     FROM factors f
@@ -81,8 +128,11 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.get_risk_dimension_benchmarks(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_risk_dimension_benchmarks(uuid) TO authenticated;
+
 -- 3. Function to get classroom risk breakdown
-CREATE OR REPLACE FUNCTION public.get_classroom_risk_breakdown(p_school_id uuid)
+CREATE OR REPLACE FUNCTION public.get_classroom_risk_breakdown(p_school_id uuid DEFAULT NULL)
 RETURNS TABLE (
     classroom_id uuid,
     classroom_name text,
@@ -98,10 +148,33 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+    v_actor_id uuid;
+    v_role user_role;
     v_target_school uuid;
     v_curr_sem uuid;
 BEGIN
-    v_target_school := COALESCE(p_school_id, get_user_school_id());
+    v_actor_id := auth.uid();
+    IF v_actor_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required' USING ERRCODE = '42501';
+    END IF;
+
+    SELECT role, school_id INTO v_role, v_target_school
+    FROM profiles
+    WHERE id = v_actor_id AND is_active = true;
+
+    IF v_target_school IS NULL THEN
+        RAISE EXCEPTION 'Active profile in a valid school is required' USING ERRCODE = '42501';
+    END IF;
+
+    -- Validate tenant scope
+    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school AND v_role <> 'super_admin' THEN
+        RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
+    END IF;
+
+    IF p_school_id IS NOT NULL AND v_role = 'super_admin' THEN
+        v_target_school := p_school_id;
+    END IF;
+
     SELECT id INTO v_curr_sem FROM semesters WHERE school_id = v_target_school AND is_current = true LIMIT 1;
 
     RETURN QUERY
@@ -110,10 +183,13 @@ BEGIN
         c.name::text AS classroom_name,
         c.grade_level,
         c.section,
-        COUNT(ra.id) FILTER (WHERE ra.risk_level = 'high') AS high_risk_count,
-        COUNT(ra.id) FILTER (WHERE ra.risk_level = 'watch') AS watch_risk_count,
-        COUNT(ra.id) FILTER (WHERE ra.risk_level = 'normal' OR ra.risk_level IS NULL) AS normal_risk_count,
-        COUNT(cs.student_id) AS total_students
+        COUNT(DISTINCT ra.id) FILTER (WHERE ra.risk_level = 'high') AS high_risk_count,
+        COUNT(DISTINCT ra.id) FILTER (WHERE ra.risk_level = 'watch') AS watch_risk_count,
+        COUNT(DISTINCT cs.student_id) - (
+            COUNT(DISTINCT ra.id) FILTER (WHERE ra.risk_level = 'high') +
+            COUNT(DISTINCT ra.id) FILTER (WHERE ra.risk_level = 'watch')
+        ) AS normal_risk_count,
+        COUNT(DISTINCT cs.student_id) AS total_students
     FROM classrooms c
     LEFT JOIN classroom_students cs ON cs.classroom_id = c.id AND cs.is_active = true
     LEFT JOIN risk_assessments ra ON ra.student_id = cs.student_id AND (v_curr_sem IS NULL OR ra.semester_id = v_curr_sem)
@@ -122,3 +198,6 @@ BEGIN
     ORDER BY c.grade_level ASC, c.section ASC;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_classroom_risk_breakdown(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_classroom_risk_breakdown(uuid) TO authenticated;
