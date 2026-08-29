@@ -1,48 +1,40 @@
 # Task Progress
 
-## 2026-08-29 Production Operations Phase
+## 2026-08-29 Production Operations Hardening & Codex Review Repair
 
-Status: done. Completed all waves across Academic Administration, Student Import, Real Report Artifacts, Real Risk Analytics, and Realtime Hardening with 100% passing tests and production Next.js build.
+Status: done. Repaired all 8 review blockers across database enums, spreadsheet security, mobile risk analytics, report generation & font licensing, guardian CRUD & notification deletion, realtime synchronization, security dependency audits, and regression test suites with 100% passing tests and production Next.js build.
 
-### Wave 1 — Parallel Foundation
-
-- [x] **Agent A (Academic Administration)**:
-  - Added migration `supabase/migrations/0011_admin_academic_management.sql` with triggers for single current academic year and single current semester per school, classroom/subject teacher foreign key tenant consistency, and admin-only RLS policies.
-  - Created `src/lib/server/academic-admin-read-models.ts` with `getAcademicAdminData()` returning typed DTOs for years, semesters, classrooms, subjects, classroom-subject assignments, and active teachers.
-  - Created `src/app/actions/academic-admin.actions.ts` with Server Actions returning `ActionResult<T>` for all academic structure CRUD (`upsertAcademicYearAction`, `deleteAcademicYearAction`, `upsertSemesterAction`, `setCurrentSemesterAction`, `deleteSemesterAction`, `upsertClassroomAction`, `deleteClassroomAction`, `upsertSubjectAction`, `deleteSubjectAction`, `assignClassroomSubjectAction`, `deleteClassroomSubjectAction`).
-  - Created `src/app/(dashboard)/settings/academic/page.tsx` and interactive client components (`academic-tabs-client.tsx`, `academic-years-panel.tsx`, `classrooms-panel.tsx`, `subjects-panel.tsx`, `assignments-panel.tsx`, `academic-forms.tsx`).
-  - Added leadership navigation banner in `/settings` to `/settings/academic`.
-- [x] **Agent B (Student Import)**:
-  - Added migration `supabase/migrations/0012_student_import_security.sql` with helper function `is_homeroom_teacher_of_classroom()` and atomic RPC `import_students_atomic(p_classroom_id, p_semester_id, p_students)`.
-  - Created `src/lib/student-import-parser.ts` with RFC-4180 CSV parser, Thai column aliases, row-level validators, duplicate detector, and `generateStudentImportTemplateCsv()`.
-  - Created `src/lib/server/student-import-service.ts` and `src/app/actions/student-import.actions.ts` (`parseStudentFileAction`, `executeStudentImportAction`).
-  - Created `/students/import` page and interactive client component (`student-import-client.tsx`) with template download, drag-and-drop dropzone, preview table, validation error reporting, and atomic batch commit.
-  - Added "นำเข้าข้อมูล" (Import) button to `/students` header.
-
-### Wave 2 — Parallel Production Features
-
-- [x] **Agent C (Real Report Artifacts)**:
-  - Added migration `supabase/migrations/0013_report_artifacts.sql` with private storage bucket `reports` and RLS storage policies for school staff and leadership.
-  - Created pure TypeScript PDF 1.4 binary engine and CSV/XLSX generator in `src/lib/server/report-generator.ts` with real database aggregations for student summary, risk assessments, attendance, and academic scores.
-  - Updated `src/lib/server/report-read-models.ts` and `src/app/actions/reports.actions.ts` to execute honest queued → running → completed/failed lifecycle with private signed download URLs, retry action, and delete action.
-  - Enhanced `DesktopLatestReports` table with real file download, retry, and delete controls.
-- [x] **Agent D (Real Risk Analytics)**:
-  - Added migration `supabase/migrations/0014_risk_analytics.sql` with RPC functions `get_school_risk_trend`, `get_risk_dimension_benchmarks`, and `get_classroom_risk_breakdown`.
-  - Updated `src/lib/server/risk-read-models.ts` with read models for trend history, multi-factor dimension benchmarks, and classroom breakdown.
-  - Connected `RiskHistoryChart` in `/risk-analysis` to real month-by-month historical data points.
-- [x] **Agent E (Realtime Hardening)**:
-  - Added migration `supabase/migrations/0015_realtime_hardening.sql` with `REPLICA IDENTITY FULL` and Postgres replication publication on `notifications`, `attendance_records`, `report_jobs`, `risk_assessments`.
-  - Created `src/components/providers/realtime-provider.tsx` with shared channels, unread counter state, and high-severity toast alerts.
-  - Connected live unread notification badge in `src/components/layout/header.tsx` and wrapped `DashboardLayout` in `RealtimeProvider`.
-
-### Wave 3 & Final Verification
-
-- [x] Security audit: All migrations enforce multi-tenant isolation, admin/homeroom role constraints, and private storage policies.
-- [x] Unit tests: Added `src/lib/student-import-parser.test.ts` (all 25 tests in test suite pass with 100% success).
-- [x] `npx tsc --noEmit`: Exited with code 0 (clean).
-- [x] `npm run lint`: Exited with code 0 (clean).
-- [x] `npm test -- --run`: Exited with code 0 (7 test files, 25 tests passed).
-- [x] `npm run build`: Exited with code 0 (all 24 routes successfully compiled and optimized).
+### 8 Review Blockers Repaired:
+1. **Database Runtime & Role Enum Integrity**:
+   - Strictly enforced PostgreSQL `user_role` enum (`'admin', 'director', 'homeroom_teacher', 'counselor', 'subject_teacher'`).
+   - Removed all legacy/nonexistent role literals (`super_admin`, `teacher`) across SQL migrations (`0012`, `0014`), documentation, Server Actions, and UI.
+   - Added automated Vitest regression test suite (`src/lib/server/migrations-enum.test.ts`) validating that all migrations reference only valid enum values.
+2. **Spreadsheet Security**:
+   - Completely uninstalled vulnerable `xlsx@0.18.5`.
+   - Replaced with zero-vulnerability libraries: `read-excel-file` and `write-excel-file`. `npm audit` and `npm audit --omit=dev` show 0 vulnerabilities.
+   - Removed Node `Buffer` usage from client component `student-import-client.tsx`, routing all parsing and template generation through Server Actions.
+   - Enforced server-side validation for XLSX magic bytes (`PK\x03\x04`), MIME type, 5 MB file size limit, and 500-row limit. Missing/invalid DOB is strictly a validation error.
+3. **Real Mobile Risk UI**:
+   - Replaced all hardcoded values in `mobile-overall-risk.tsx`, `mobile-risk-benchmark.tsx`, `mobile-risk-spider-chart.tsx`, and `mobile-risk-factors.tsx`.
+   - Fed dynamic typed read-model data (`students`, `riskCounts`, `factorDistribution`) with interactive student selector and honest `EmptyState` when data is absent.
+4. **Report Production Hardening & Licensing**:
+   - Replaced proprietary Tahoma font with Google Font `Sarabun-Regular.ttf` under SIL Open Font License (OFL) with included license files.
+   - Used statically traceable `new URL("./Sarabun-Regular.ttf", import.meta.url)` in `thai-font.ts` (eliminating Turbopack NFT tracing warnings).
+   - Implemented dynamic table cell sizing, text wrapping, and pagination loops fetching all records (>1,000 batches).
+   - Added stale running job recovery (`recoverStaleReportJobs()`) on a 10-minute timeout and transactional deletion (`deleteReportJob()`).
+5. **Complete CRUD & Transactional Guardian RPC**:
+   - Added `supabase/migrations/0016_guardian_transactional.sql` with `manage_student_guardian` RPC and notification DELETE RLS policy.
+   - Created interactive `StudentGuardianManager` component (`src/app/(dashboard)/students/[id]/_components/student-guardian-manager.tsx`) with full CRUD (add, edit, delete, primary status) and wired into student care profiles.
+   - Added student status selection (`active`, `graduated`, `transferred`, `dropped_out`, `suspended`) to `student-form.tsx`.
+   - Added notification delete buttons with confirmation to desktop and mobile notification lists.
+6. **Realtime Synchronization**:
+   - Enhanced `AttendanceForm` with bidirectional server prop synchronization when clean (`!dirty`) and amber update banner (`มีข้อมูลใหม่ที่บันทึกจากระบบ`) with conflict protection when dirty.
+   - Debounced realtime report job events in `DesktopLatestReports` to prevent rapid duplicate refreshes.
+7. **Security Maintenance**:
+   - Upgraded Next.js to `16.3.3`. Verified 0 vulnerabilities via `npm audit --omit=dev` and `npm audit`.
+8. **Tests, Docs, & Verification Gates**:
+   - Added comprehensive test suites (`migrations-enum.test.ts`, `report-read-models.test.ts`, `report-generator.test.ts`, `student-import-parser.test.ts`).
+   - Verified clean typecheck (`npx tsc --noEmit`), lint (`npm run lint`), vitest (`npm test -- --run` -> 10 test files, 41 tests passed), build (`npm run build`), audit (`npm audit --omit=dev`).
 
 ---
 

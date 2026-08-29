@@ -16,67 +16,97 @@ import {
 import { toast } from "sonner"
 
 import { EmptyState } from "@/components/feedback/empty-state"
+import type { ParseImportResult } from "@/lib/student-import-parser"
 import {
-  generateStudentImportTemplateCsv,
-  generateStudentImportTemplateXlsx,
-  parseAndValidateStudentRows,
-  type ParseImportResult,
-} from "@/lib/student-import-parser"
-import { executeStudentImportAction } from "@/app/actions/student-import.actions"
+  executeStudentImportAction,
+  getStudentImportTemplateAction,
+  parseStudentFileAction,
+} from "@/app/actions/student-import.actions"
 import type { ImportContextData } from "@/lib/server/student-import-service"
 
 export function StudentImportClient({ context }: { context: ImportContextData }) {
   const [selectedClassroomId, setSelectedClassroomId] = useState<string>(
-    context.classrooms[0]?.id || ""
+    context.classrooms[0]?.id || "",
   )
   const [selectedSemesterId, setSelectedSemesterId] = useState<string>(
-    context.currentSemesterId || context.semesters[0]?.id || ""
+    context.currentSemesterId || context.semesters[0]?.id || "",
   )
   const [file, setFile] = useState<File | null>(null)
   const [parseResult, setParseResult] = useState<ParseImportResult | null>(null)
   const [activeTab, setActiveTab] = useState<"valid" | "invalid">("valid")
+  const [isParsing, startParseTransition] = useTransition()
   const [isImporting, startImportTransition] = useTransition()
   const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null)
 
-  // Download CSV template
-  const handleDownloadCsvTemplate = () => {
-    const csvData = generateStudentImportTemplateCsv()
-    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "แบบฟอร์มนำเข้านักเรียน_SCIDAS.csv"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    toast.success("ดาวน์โหลดแบบฟอร์ม CSV เรียบร้อยแล้ว")
+  // Download CSV template via Server Action
+  const handleDownloadCsvTemplate = async () => {
+    try {
+      const res = await getStudentImportTemplateAction("csv")
+      if (!res.ok || !res.data) {
+        toast.error(res.message || "ไม่สามารถสร้างแบบฟอร์ม CSV ได้")
+        return
+      }
+
+      const byteCharacters = atob(res.data.contentBase64)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: res.data.contentType })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = res.data.fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success("ดาวน์โหลดแบบฟอร์ม CSV เรียบร้อยแล้ว")
+    } catch (err) {
+      console.error("Download CSV error:", err)
+      toast.error("เกิดข้อผิดพลาดในการดาวน์โหลดแบบฟอร์ม CSV")
+    }
   }
 
-  // Download XLSX template
-  const handleDownloadXlsxTemplate = () => {
-    const xlsxBuffer = generateStudentImportTemplateXlsx()
-    const blob = new Blob([xlsxBuffer as unknown as BlobPart], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "แบบฟอร์มนำเข้านักเรียน_SCIDAS.xlsx"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    toast.success("ดาวน์โหลดแบบฟอร์ม Excel (.xlsx) เรียบร้อยแล้ว")
+  // Download XLSX template via Server Action
+  const handleDownloadXlsxTemplate = async () => {
+    try {
+      const res = await getStudentImportTemplateAction("xlsx")
+      if (!res.ok || !res.data) {
+        toast.error(res.message || "ไม่สามารถสร้างแบบฟอร์ม Excel ได้")
+        return
+      }
+
+      const byteCharacters = atob(res.data.contentBase64)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: res.data.contentType })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = res.data.fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success("ดาวน์โหลดแบบฟอร์ม Excel (.xlsx) เรียบร้อยแล้ว")
+    } catch (err) {
+      console.error("Download XLSX error:", err)
+      toast.error("เกิดข้อผิดพลาดในการดาวน์โหลดแบบฟอร์ม Excel")
+    }
   }
 
-  // Handle file select (CSV or XLSX)
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file select (CSV or XLSX) through Server Action
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
     if (!selected) return
 
     const ext = selected.name.split(".").pop()?.toLowerCase() ?? ""
-    if (!["csv", "xlsx", "xls", "txt"].includes(ext)) {
+    if (!["csv", "xlsx", "xls"].includes(ext)) {
       toast.error("กรุณาเลือกไฟล์รูปแบบ .csv หรือ .xlsx")
       return
     }
@@ -89,22 +119,25 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     setFile(selected)
     setImportSuccessCount(null)
 
-    try {
-      const arrayBuffer = await selected.arrayBuffer()
-      const result = parseAndValidateStudentRows(Buffer.from(arrayBuffer), selected.name)
-      setParseResult(result)
+    startParseTransition(async () => {
+      const formData = new FormData()
+      formData.set("file", selected)
 
-      if (result.validRows.length > 0) {
-        toast.success(`ตรวจสอบไฟล์สำเร็จ: พร้อมนำเข้า ${result.validRows.length} คน`)
-        setActiveTab("valid")
+      const res = await parseStudentFileAction(null, formData)
+      if (res.ok && res.data) {
+        setParseResult(res.data)
+        if (res.data.validRows.length > 0) {
+          toast.success(`ตรวจสอบไฟล์สำเร็จ: พร้อมนำเข้า ${res.data.validRows.length} คน`)
+          setActiveTab("valid")
+        } else {
+          toast.error("ไม่พบข้อมูลนักเรียนที่ถูกต้องในไฟล์")
+          setActiveTab("invalid")
+        }
       } else {
-        toast.error("ไม่พบข้อมูลนักเรียนที่ถูกต้องในไฟล์")
-        setActiveTab("invalid")
+        toast.error(res.message || "เกิดข้อผิดพลาดในการตรวจสอบไฟล์")
+        setParseResult(null)
       }
-    } catch (err) {
-      console.error("Error reading file:", err)
-      toast.error("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบรูปแบบไฟล์")
-    }
+    })
   }
 
   // Clear file
@@ -221,7 +254,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
           รองรับไฟล์นามสกุล .csv, .xlsx, .xls ขนาดไม่เกิน 5 MB และไม่เกิน 500 รายชื่อต่อครั้ง
         </p>
 
-        {!file ? (
+        {isParsing ? (
+          <div className="mt-4 flex items-center justify-center gap-3 rounded-xl border border-border bg-muted/30 p-8 text-center">
+            <Loader2 className="size-6 animate-spin text-primary" />
+            <p className="text-sm font-medium text-muted-foreground">กำลังอ่านและตรวจสอบโครงสร้างไฟล์...</p>
+          </div>
+        ) : !file ? (
           <label className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 p-8 text-center cursor-pointer transition hover:bg-muted/50">
             <input
               type="file"

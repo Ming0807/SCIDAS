@@ -61,8 +61,9 @@ export default async function RiskAnalysisPage() {
     <div className="w-full overflow-x-hidden bg-background">
       <div className="block md:hidden">
         <MobileRiskProfile
-          riskScore={priorityStudents[0]?.riskScore ?? null}
-          riskLevel={priorityStudents[0]?.riskLevel ?? null}
+          students={students}
+          riskCounts={riskLevelCounts}
+          factorDistribution={factorDistribution}
         />
       </div>
 

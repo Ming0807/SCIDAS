@@ -1,5 +1,4 @@
-import fs from "fs"
-import path from "path"
+import fs from "node:fs"
 
 let cachedFontBuffer: Buffer | null = null
 
@@ -8,21 +7,15 @@ export function getThaiFontBuffer(): Buffer {
     return cachedFontBuffer
   }
 
-  const candidatePaths = [
-    path.join(/*turbopackIgnore: true*/ process.cwd(), "src", "lib", "fonts", "tahoma.ttf"),
-    path.join(/*turbopackIgnore: true*/ process.cwd(), "fonts", "tahoma.ttf"),
-    "C:\\Windows\\Fonts\\tahoma.ttf",
-    "C:\\Windows\\Fonts\\leelawad.ttf",
-  ]
-
-  for (const fontPath of candidatePaths) {
-    try {
-      if (fs.existsSync(fontPath)) {
-        cachedFontBuffer = fs.readFileSync(fontPath)
-        return cachedFontBuffer
-      }
-    } catch {
-      // Continue to next candidate
+  try {
+    const fontUrl = new URL("./Sarabun-Regular.ttf", import.meta.url)
+    cachedFontBuffer = fs.readFileSync(fontUrl)
+    return cachedFontBuffer
+  } catch {
+    const fallbackPath = process.cwd() + "/src/lib/fonts/Sarabun-Regular.ttf"
+    if (fs.existsSync(fallbackPath)) {
+      cachedFontBuffer = fs.readFileSync(fallbackPath)
+      return cachedFontBuffer
     }
   }
 

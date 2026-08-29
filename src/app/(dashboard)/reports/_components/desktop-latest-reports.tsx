@@ -23,10 +23,16 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
   const [isPending, startTransition] = useTransition()
   const { lastReportJobChange } = useRealtime()
 
+  const lastHandledRef = React.useRef<number>(0)
+
   useEffect(() => {
-    if (lastReportJobChange) {
-      router.refresh()
-    }
+    if (!lastReportJobChange) return
+
+    const now = Date.now()
+    if (now - lastHandledRef.current < 500) return
+    lastHandledRef.current = now
+
+    router.refresh()
   }, [lastReportJobChange, router])
 
   const handleRetry = (jobId: string, title: string) => {

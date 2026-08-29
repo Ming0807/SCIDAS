@@ -207,19 +207,29 @@ export async function updateStudentAction(
       return actionFail("VALIDATION_ERROR", "กรุณาตรวจสอบข้อมูลนักเรียน", { fieldErrors })
     }
 
+    const validStatuses = ["active", "graduated", "transferred", "dropped_out", "suspended"]
+    const rawStatus = (formData.get("status") as string | null)?.trim()
+    const statusToUpdate = rawStatus && validStatuses.includes(rawStatus) ? rawStatus : undefined
+
+    const updatePayload: Database["public"]["Tables"]["students"]["Update"] = {
+      student_code: values.student_code,
+      prefix: values.prefix,
+      first_name: values.first_name,
+      last_name: values.last_name,
+      nickname: values.nickname,
+      gender: values.gender as Database["public"]["Enums"]["gender_type"],
+      date_of_birth: values.date_of_birth,
+      address: values.address,
+    }
+
+    if (statusToUpdate) {
+      updatePayload.status = statusToUpdate as Database["public"]["Enums"]["student_status"]
+    }
+
     const client = await createClient()
     const { data, error } = await client
       .from("students")
-      .update({
-        student_code: values.student_code,
-        prefix: values.prefix,
-        first_name: values.first_name,
-        last_name: values.last_name,
-        nickname: values.nickname,
-        gender: values.gender as Database["public"]["Enums"]["gender_type"],
-        date_of_birth: values.date_of_birth,
-        address: values.address,
-      })
+      .update(updatePayload)
       .eq("id", studentId)
       .eq("school_id", context.schoolId)
       .select("id")
@@ -439,6 +449,19 @@ export async function upsertStudentGuardianAction(
       }
 
       targetGuardianId = newG.id
+    }
+
+    // If isPrimary is true, unset any other primary guardian for this student
+    if (isPrimary) {
+      const { error: unsetErr } = await client
+        .from("student_guardians")
+        .update({ is_primary: false })
+        .eq("student_id", studentId)
+        .eq("school_id", context.schoolId)
+
+      if (unsetErr) {
+        console.warn("Warning unsetting other primary guardians:", unsetErr)
+      }
     }
 
     // Link in student_guardians table

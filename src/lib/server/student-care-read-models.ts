@@ -902,3 +902,78 @@ export async function updateActionItemStatus(
 
   return mapActionRow(data, studentsById)
 }
+
+export type StudentGuardianItem = {
+  id: string
+  guardianId: string
+  studentId: string
+  prefix: string | null
+  firstName: string
+  lastName: string
+  fullName: string
+  phone: string | null
+  relationship: string
+  isPrimary: boolean
+  canPickup: boolean
+  occupation: string | null
+  monthlyIncome: number | null
+}
+
+export async function getStudentGuardians(
+  studentId: string,
+): Promise<StudentGuardianItem[]> {
+  const context = await getCurrentUserContext()
+  const supabase = await createClient()
+
+  if (!context.schoolId || !studentId) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from("student_guardians")
+    .select(`
+      id, student_id, guardian_id, relation, is_primary, can_pickup,
+      guardians(id, prefix, first_name, last_name, phone, occupation, monthly_income)
+    `)
+    .eq("student_id", studentId)
+    .order("is_primary", { ascending: false })
+
+  if (error || !data) {
+    return []
+  }
+
+  return data.map((item) => {
+    const g = item.guardians as unknown as {
+      id: string
+      prefix: string | null
+      first_name: string
+      last_name: string
+      phone: string | null
+      occupation: string | null
+      monthly_income: number | null
+    } | null
+
+    const firstName = g?.first_name || ""
+    const lastName = g?.last_name || ""
+    const prefix = g?.prefix || ""
+    const fullName =
+      `${prefix ? `${prefix} ` : ""}${firstName} ${lastName}`.trim() ||
+      "ไม่ระบุชื่อผู้ปกครอง"
+
+    return {
+      id: item.id,
+      guardianId: item.guardian_id,
+      studentId: item.student_id,
+      prefix: g?.prefix || null,
+      firstName,
+      lastName,
+      fullName,
+      phone: g?.phone || null,
+      relationship: item.relation || "guardian",
+      isPrimary: Boolean(item.is_primary),
+      canPickup: Boolean(item.can_pickup),
+      occupation: g?.occupation || null,
+      monthlyIncome: g?.monthly_income ? Number(g.monthly_income) : null,
+    }
+  })
+}

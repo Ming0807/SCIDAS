@@ -93,10 +93,10 @@ BEGIN
     END IF;
 
     -- 4. Check permissions: Admin/Director can import everywhere in school; Homeroom only in assigned classroom
-    IF v_role IN ('admin', 'super_admin', 'director') THEN
+    IF v_role IN ('admin', 'director') THEN
         -- Allowed
         NULL;
-    ELSIF v_role = 'homeroom_teacher' OR v_role = 'teacher' THEN
+    ELSIF v_role = 'homeroom_teacher' THEN
         IF NOT is_homeroom_teacher_of_classroom(p_classroom_id) THEN
             RAISE EXCEPTION 'Teachers can only import students into their assigned classroom'
                 USING ERRCODE = '42501';

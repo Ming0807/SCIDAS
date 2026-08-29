@@ -13,7 +13,7 @@ BEGIN
     IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
         -- Add notifications table if not already in publication
         IF NOT EXISTS (
-            SELECT 1 FROM pg_publication_tables 
+            SELECT 1 FROM pg_publication_tables
             WHERE pubname = 'supabase_realtime' AND tablename = 'notifications'
         ) THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
@@ -21,7 +21,7 @@ BEGIN
 
         -- Add attendance_records table if not already in publication
         IF NOT EXISTS (
-            SELECT 1 FROM pg_publication_tables 
+            SELECT 1 FROM pg_publication_tables
             WHERE pubname = 'supabase_realtime' AND tablename = 'attendance_records'
         ) THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE attendance_records;
@@ -29,7 +29,7 @@ BEGIN
 
         -- Add report_jobs table if not already in publication
         IF NOT EXISTS (
-            SELECT 1 FROM pg_publication_tables 
+            SELECT 1 FROM pg_publication_tables
             WHERE pubname = 'supabase_realtime' AND tablename = 'report_jobs'
         ) THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE report_jobs;
@@ -37,7 +37,7 @@ BEGIN
 
         -- Add risk_assessments table if not already in publication
         IF NOT EXISTS (
-            SELECT 1 FROM pg_publication_tables 
+            SELECT 1 FROM pg_publication_tables
             WHERE pubname = 'supabase_realtime' AND tablename = 'risk_assessments'
         ) THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE risk_assessments;

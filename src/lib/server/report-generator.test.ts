@@ -7,10 +7,10 @@ import { getThaiFontBuffer } from "@/lib/fonts/thai-font"
 
 describe("Report Generator Artifact Engine", () => {
   describe("getThaiFontBuffer", () => {
-    it("should load bundled Tahoma TTF font buffer without throwing", () => {
+    it("should load bundled Sarabun TTF font buffer without throwing", () => {
       const buffer = getThaiFontBuffer()
       expect(buffer).toBeDefined()
-      expect(buffer.length).toBeGreaterThan(100000)
+      expect(buffer.length).toBeGreaterThan(50000)
     })
   })
 
@@ -43,14 +43,14 @@ describe("Report Generator Artifact Engine", () => {
   })
 
   describe("buildXlsxSpreadsheet", () => {
-    it("should generate a valid XLSX spreadsheet buffer with title, headers and rows", () => {
+    it("should generate a valid XLSX spreadsheet buffer with title, headers and rows", async () => {
       const headers = ["รหัส", "ชื่อ", "นามสกุล", "คะแนน"]
       const rows = [
         ["STD01", "สมชาย", "ใจดี", "85"],
         ["STD02", "สมหญิง", "ดีใจ", "92"],
       ]
 
-      const xlsxBuffer = buildXlsxSpreadsheet(
+      const xlsxBuffer = await buildXlsxSpreadsheet(
         "คะแนนสอบรายวิชา",
         headers,
         rows

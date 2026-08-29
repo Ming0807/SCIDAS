@@ -196,6 +196,26 @@ export function StudentForm({ mode, student }: StudentFormProps) {
               />
             </div>
 
+            {isEdit ? (
+              <div className="space-y-2">
+                <label htmlFor="status" className="text-sm font-medium">
+                  สถานะการศึกษา
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  defaultValue={student?.status ?? "active"}
+                  className="h-8 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="active">กำลังศึกษา (Active)</option>
+                  <option value="graduated">สำเร็จการศึกษา (Graduated)</option>
+                  <option value="transferred">ย้ายสถานศึกษา (Transferred)</option>
+                  <option value="dropped_out">ออกกลางคัน (Dropped out)</option>
+                  <option value="suspended">พักการเรียน (Suspended)</option>
+                </select>
+              </div>
+            ) : null}
+
             <ActionFeedback result={state} />
 
             <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">

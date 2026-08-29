@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 
 import {
+  deleteReportJob,
   processReportJobById,
   reportJobTypes,
   requestReportJob,
@@ -142,36 +143,14 @@ export async function retryReportJobAction(jobId: string): Promise<ActionResult>
  */
 export async function deleteReportJobAction(jobId: string): Promise<ActionResult> {
   try {
-    const context = await getCurrentUserContext()
-    const client = await createClient()
-
-    // Fetch storage path
-    const { data: job } = await client
-      .from("report_jobs")
-      .select("output_bucket, output_path")
-      .eq("id", jobId)
-      .eq("school_id", context.schoolId)
-      .maybeSingle()
-
-    if (job?.output_bucket && job.output_path) {
-      await client.storage.from(job.output_bucket).remove([job.output_path]).catch(console.error)
-    }
-
-    const { error: delErr } = await client
-      .from("report_jobs")
-      .delete()
-      .eq("id", jobId)
-      .eq("school_id", context.schoolId)
-
-    if (delErr) {
-      console.error("deleteReportJobAction error:", delErr)
-      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบรายการรายงานได้")
-    }
-
+    await deleteReportJob(jobId)
     revalidatePath("/reports")
     return actionOk("ลบรายงานเรียบร้อยแล้ว")
   } catch (err) {
     console.error("deleteReportJobAction error:", err)
+    if (err instanceof Error && err.message === "FORBIDDEN") {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ลบรายงานนี้")
+    }
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการลบรายงาน")
   }
 }

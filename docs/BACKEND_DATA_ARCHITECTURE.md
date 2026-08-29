@@ -63,6 +63,7 @@ These views are intended for Server Components and server-only data access:
 - **Migration 0013**: `0013_report_artifacts.sql` — Private storage bucket `reports` with signed URL access and school-scoped RLS policies.
 - **Migration 0014**: `0014_risk_analytics.sql` — Real risk trend history and multi-dimension benchmarks RPCs (`get_school_risk_trend`, `get_risk_dimension_benchmarks`, `get_classroom_risk_breakdown`).
 - **Migration 0015**: `0015_realtime_hardening.sql` — Postgres replication publications and `REPLICA IDENTITY FULL` on `notifications`, `attendance_records`, `report_jobs`, `risk_assessments`.
+- **Migration 0016**: `0016_guardian_transactional.sql` — Transactional `manage_student_guardian` RPC maintaining atomic guardian upsert and primary-guardian invariant; notification DELETE RLS policy for recipients.
 
 ## Acceptance Criteria
 

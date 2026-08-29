@@ -6,6 +6,7 @@ import { getNotificationTypeLabel, formatRelativeTime } from "@/lib/server/notif
 import { EmptyState } from "@/components/feedback"
 import { cn } from "@/lib/utils"
 import { NotificationReadToggle } from "./notification-read-toggle"
+import { NotificationDeleteButton } from "./notification-delete-button"
 import { buildNotificationHref } from "./notification-link-helpers"
 
 export interface DesktopNotificationListProps {
@@ -118,11 +119,14 @@ function NotificationRow({ item }: { item: NotificationItem }) {
       ) : (
         <div className="flex min-w-0 flex-1 items-start gap-4">{body}</div>
       )}
-      <NotificationReadToggle
-        key={item.isRead ? "read" : "unread"}
-        notificationId={item.id}
-        isRead={item.isRead}
-      />
+      <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+        <NotificationReadToggle
+          key={item.isRead ? "read" : "unread"}
+          notificationId={item.id}
+          isRead={item.isRead}
+        />
+        <NotificationDeleteButton notificationId={item.id} />
+      </div>
     </div>
   )
 }

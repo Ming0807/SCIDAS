@@ -6,6 +6,7 @@ import { getNotificationTypeLabel, formatRelativeTime } from "@/lib/server/notif
 import { EmptyState } from "@/components/feedback"
 import { cn } from "@/lib/utils"
 import { NotificationReadToggle } from "../notification-read-toggle"
+import { NotificationDeleteButton } from "../notification-delete-button"
 import { buildNotificationHref } from "../notification-link-helpers"
 
 export interface MobileNotificationListProps {
@@ -68,19 +69,20 @@ function MobileNotificationRow({ item }: { item: NotificationItem }) {
         item.isRead ? "bg-slate-50" : "bg-white",
       )}
     >
-      <div className="absolute top-4 right-3">
+      <div className="absolute top-3.5 right-3 flex items-center gap-1">
         <NotificationReadToggle
           key={item.isRead ? "read" : "unread"}
           notificationId={item.id}
           isRead={item.isRead}
         />
+        <NotificationDeleteButton notificationId={item.id} />
       </div>
       {hasLink && item.link ? (
-        <Link href={item.link} className="flex min-w-0 flex-1 gap-3 pr-8">
+        <Link href={item.link} className="flex min-w-0 flex-1 gap-3 pr-14">
           {body}
         </Link>
       ) : (
-        <div className="flex min-w-0 flex-1 gap-3 pr-8">{body}</div>
+        <div className="flex min-w-0 flex-1 gap-3 pr-14">{body}</div>
       )}
     </div>
   )

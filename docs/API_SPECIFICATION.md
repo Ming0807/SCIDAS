@@ -48,15 +48,15 @@ Authorization: Bearer <supabase_access_token>
 
 สำหรับ **Server Actions** จะใช้ `createServerClient()` ของ `@supabase/ssr` ซึ่งอ่าน token จาก cookies โดยอัตโนมัติ
 
-### Roles & Permissions
+### Roles & Permissions (อ้างอิง enum user_role จากฐานข้อมูล)
 
-| Role | รหัส | สิทธิ์ |
+| Role | รหัส Enum | คำอธิบายและสิทธิ์การใช้งาน |
 |---|---|---|
-| **Super Admin** | `super_admin` | เข้าถึงทุกส่วน จัดการระบบ |
-| **Admin** | `admin` | จัดการข้อมูลทั้งโรงเรียน |
-| **Teacher** | `teacher` | จัดการข้อมูลนักเรียนในความดูแล |
-| **Counselor** | `counselor` | ดูข้อมูลนักเรียน บันทึกการให้คำปรึกษา |
-| **Viewer** | `viewer` | ดูข้อมูลอย่างเดียว (read-only) |
+| **Admin** | `admin` | ผู้ดูแลระบบโรงเรียน จัดการผู้ใช้ ข้อมูลโรงเรียน และโครงสร้างวิชาการ |
+| **Director** | `director` | ผู้บริหารโรงเรียน ดูรายงาน ภาพรวม และข้อมูลนักเรียนทั้งหมดในโรงเรียน |
+| **Homeroom Teacher** | `homeroom_teacher` | ครูประจำชั้น จัดการนักเรียน เช็คชื่อ เยี่ยมบ้าน ดูแลช่วยเหลือในห้องเรียน |
+| **Counselor** | `counselor` | ครูแนะแนว บันทึกเคสดูแลช่วยเหลือและติดตามพฤติกรรม |
+| **Subject Teacher** | `subject_teacher` | ครูผู้สอน บันทึกคะแนนและพฤติกรรมในรายวิชาที่สอน |
 
 ### Pagination Pattern
 

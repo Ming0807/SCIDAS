@@ -1,4 +1,4 @@
-﻿import { render, screen } from "@testing-library/react"
+import { render, screen } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import StudentsPage from "./page"
 import StudentProfilePage from "./[id]/page"
@@ -66,6 +66,23 @@ vi.mock("@/lib/server/student-care-read-models", () => ({
   getStudentAttachments: vi.fn(async () => []),
   getStudentNotes: vi.fn(async () => []),
   getStudentTimeline: vi.fn(async () => []),
+  getStudentGuardians: vi.fn(async () => [
+    {
+      id: "SG001",
+      guardianId: "G001",
+      studentId: "S001",
+      prefix: "นางสาว",
+      firstName: "อรพิน",
+      lastName: "ใจดี",
+      fullName: "นางสาวอรพิน ใจดี",
+      phone: "089-123-4567",
+      relationship: "mother",
+      isPrimary: true,
+      canPickup: true,
+      occupation: "ค้าขาย",
+      monthlyIncome: 25000,
+    },
+  ]),
   getStudentWorklist: vi.fn(async () => [
     {
       studentId: "S001",

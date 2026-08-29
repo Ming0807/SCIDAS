@@ -32,12 +32,8 @@ BEGIN
     END IF;
 
     -- Validate tenant scope
-    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school AND v_role <> 'super_admin' THEN
+    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school THEN
         RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
-    END IF;
-
-    IF p_school_id IS NOT NULL AND v_role = 'super_admin' THEN
-        v_target_school := p_school_id;
     END IF;
 
     RETURN QUERY
@@ -97,12 +93,8 @@ BEGIN
     END IF;
 
     -- Validate tenant scope
-    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school AND v_role <> 'super_admin' THEN
+    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school THEN
         RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
-    END IF;
-
-    IF p_school_id IS NOT NULL AND v_role = 'super_admin' THEN
-        v_target_school := p_school_id;
     END IF;
 
     RETURN QUERY
@@ -167,12 +159,8 @@ BEGIN
     END IF;
 
     -- Validate tenant scope
-    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school AND v_role <> 'super_admin' THEN
+    IF p_school_id IS NOT NULL AND p_school_id <> v_target_school THEN
         RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
-    END IF;
-
-    IF p_school_id IS NOT NULL AND v_role = 'super_admin' THEN
-        v_target_school := p_school_id;
     END IF;
 
     SELECT id INTO v_curr_sem FROM semesters WHERE school_id = v_target_school AND is_current = true LIMIT 1;

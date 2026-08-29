@@ -1,4 +1,5 @@
-import * as XLSX from "xlsx"
+import readXlsxFile from "read-excel-file/node"
+import writeXlsxFile from "write-excel-file/node"
 
 export type ParsedStudentRow = {
   rowNumber: number
@@ -17,7 +18,17 @@ export type ParsedStudentRow = {
   guardianFirstName?: string | null
   guardianLastName?: string | null
   guardianPhone?: string | null
-  guardianRelation?: "father" | "mother" | "grandfather" | "grandmother" | "uncle" | "aunt" | "sibling" | "other_relative" | "guardian" | null
+  guardianRelation?:
+    | "father"
+    | "mother"
+    | "grandfather"
+    | "grandmother"
+    | "uncle"
+    | "aunt"
+    | "sibling"
+    | "other_relative"
+    | "guardian"
+    | null
 }
 
 export type RowValidationError = {
@@ -95,39 +106,84 @@ export function parseCsvContent(content: string): string[][] {
 }
 
 // ----------------------------------------------------------------------------
-// XLSX / XLS Parser using SheetJS
+// XLSX Parser using read-excel-file
 // ----------------------------------------------------------------------------
-export function parseXlsxContent(buffer: Buffer | ArrayBuffer | Uint8Array): string[][] {
-  const workbook = XLSX.read(buffer, { type: "buffer", raw: false })
-  const firstSheetName = workbook.SheetNames[0]
-  if (!firstSheetName) return []
+export async function parseXlsxContent(
+  buffer: Buffer | ArrayBuffer | Uint8Array,
+): Promise<string[][]> {
+  const nodeBuf = Buffer.isBuffer(buffer)
+    ? buffer
+    : Buffer.from(buffer instanceof ArrayBuffer ? buffer : buffer.buffer)
 
-  const worksheet = workbook.Sheets[firstSheetName]
-  const rawRows = XLSX.utils.sheet_to_json<string[]>(worksheet, {
-    header: 1,
-    defval: "",
-    blankrows: false,
-  })
+  // Verify ZIP magic bytes PK\x03\x04
+  if (
+    nodeBuf.length < 4 ||
+    nodeBuf[0] !== 0x50 ||
+    nodeBuf[1] !== 0x4b ||
+    nodeBuf[2] !== 0x03 ||
+    nodeBuf[3] !== 0x04
+  ) {
+    throw new Error("ไฟล์ XLSX ไม่ถูกต้อง หรือไม่ใช่ไฟล์สเปรดชีตที่รองรับ")
+  }
 
-  return rawRows.map((row) => row.map((cell) => String(cell ?? "").trim()))
+  try {
+    const sheets = await readXlsxFile(nodeBuf)
+    if (!sheets || !Array.isArray(sheets) || sheets.length === 0) {
+      return []
+    }
+
+    const rawRows =
+      sheets.length > 0 &&
+      typeof sheets[0] === "object" &&
+      sheets[0] !== null &&
+      "data" in sheets[0]
+        ? ((sheets[0] as { data: unknown[][] }).data ?? [])
+        : (sheets as unknown as unknown[][])
+
+    return rawRows.map((row) =>
+      (Array.isArray(row) ? row : []).map((cell) => {
+        if (cell === null || cell === undefined) return ""
+        if (cell instanceof Date) {
+          const y = cell.getFullYear()
+          const m = String(cell.getMonth() + 1).padStart(2, "0")
+          const d = String(cell.getDate()).padStart(2, "0")
+          return `${y}-${m}-${d}`
+        }
+        return String(cell).trim()
+      }),
+    )
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการอ่านไฟล์ XLSX"
+    throw new Error(`ไฟล์ XLSX ไม่ถูกต้อง หรือข้อมูลเสียหาย: ${msg}`)
+  }
 }
 
 // ----------------------------------------------------------------------------
 // Master File-to-Table Dispatcher (Handles CSV & XLSX)
 // ----------------------------------------------------------------------------
-export function parseFileContent(
+export async function parseFileContent(
   fileData: string | Buffer | ArrayBuffer | Uint8Array,
-  fileName: string
-): string[][] {
+  fileName: string,
+): Promise<string[][]> {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
 
   if (ext === "xlsx" || ext === "xls") {
-    const buf = typeof fileData === "string" ? Buffer.from(fileData, "binary") : Buffer.from(fileData as ArrayBuffer)
+    const buf =
+      typeof fileData === "string"
+        ? Buffer.from(fileData, "binary")
+        : Buffer.isBuffer(fileData)
+          ? fileData
+          : Buffer.from(fileData instanceof ArrayBuffer ? fileData : fileData.buffer)
     return parseXlsxContent(buf)
   }
 
   // Treat as text CSV
-  const textContent = typeof fileData === "string" ? fileData : Buffer.from(fileData as ArrayBuffer).toString("utf8")
+  const textContent =
+    typeof fileData === "string"
+      ? fileData
+      : Buffer.from(
+          fileData instanceof ArrayBuffer ? fileData : fileData.buffer,
+        ).toString("utf8")
   return parseCsvContent(textContent)
 }
 
@@ -329,16 +385,31 @@ export function normalizeGuardianRelation(
 // ----------------------------------------------------------------------------
 // Master Row Parser & Validator
 // ----------------------------------------------------------------------------
-export function parseAndValidateStudentRows(
+export async function parseAndValidateStudentRows(
   input: string | string[][] | Buffer | ArrayBuffer | Uint8Array,
-  fileName = "data.csv"
-): ParseImportResult {
+  fileName = "data.csv",
+): Promise<ParseImportResult> {
   let table: string[][]
 
-  if (Array.isArray(input)) {
-    table = input as string[][]
-  } else {
-    table = parseFileContent(input, fileName)
+  try {
+    if (Array.isArray(input)) {
+      table = input as string[][]
+    } else {
+      table = await parseFileContent(input, fileName)
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "ไม่สามารถอ่านไฟล์ได้"
+    return {
+      validRows: [],
+      invalidRows: [
+        {
+          rowNumber: 1,
+          errors: [msg],
+        },
+      ],
+      totalRows: 0,
+      summary: { validCount: 0, invalidCount: 1 },
+    }
   }
 
   if (table.length < 2) {
@@ -347,7 +418,9 @@ export function parseAndValidateStudentRows(
       invalidRows: [
         {
           rowNumber: 1,
-          errors: ["ไม่พบข้อมูลในไฟล์ หรือไฟล์ไม่มีแถวข้อมูล (ต้องมีหัวตารางและข้อมูลอย่างน้อย 1 แถว)"],
+          errors: [
+            "ไม่พบข้อมูลในไฟล์ หรือไฟล์ไม่มีแถวข้อมูล (ต้องมีหัวตารางและข้อมูลอย่างน้อย 1 แถว)",
+          ],
         },
       ],
       totalRows: 0,
@@ -390,7 +463,8 @@ export function parseAndValidateStudentRows(
   // Ensure mandatory header columns are present
   const mappedProps = Object.values(headerMap)
   const missingHeaders: string[] = []
-  if (!mappedProps.includes("studentCode")) missingHeaders.push("รหัสนักเรียน (student_code)")
+  if (!mappedProps.includes("studentCode"))
+    missingHeaders.push("รหัสนักเรียน (student_code)")
   if (!mappedProps.includes("firstName")) missingHeaders.push("ชื่อ (first_name)")
   if (!mappedProps.includes("lastName")) missingHeaders.push("นามสกุล (last_name)")
 
@@ -470,19 +544,17 @@ export function parseAndValidateStudentRows(
       }
     }
 
-    // Validation 4: Date of Birth
+    // Validation 4: Date of Birth (MANDATORY - never fabricate identity data)
     const rawDob = (rowObj as { dateOfBirth?: string }).dateOfBirth
-    if (rawDob) {
+    if (!rawDob) {
+      rowErrors.push("จำเป็นต้องระบุวันเกิด (วัน/เดือน/ปีเกิด)")
+    } else {
       const normalizedDob = normalizeDateOfBirth(rawDob)
       if (!normalizedDob) {
         rowErrors.push("รูปแบบวันเกิดไม่ถูกต้อง (รองรับ วัน/เดือน/ปี หรือ ปี-เดือน-วัน)")
       } else {
         rowObj.dateOfBirth = normalizedDob
       }
-    } else {
-      // Default to 10 years ago if blank
-      const defaultYear = new Date().getFullYear() - 10
-      rowObj.dateOfBirth = `${defaultYear}-01-01`
     }
 
     // Validation 5: Gender
@@ -492,7 +564,7 @@ export function parseAndValidateStudentRows(
     // Validation 6: Guardian info
     if (rowObj.guardianFirstName) {
       rowObj.guardianRelation = normalizeGuardianRelation(
-        rowObj.guardianRelation as string | undefined
+        rowObj.guardianRelation as string | undefined,
       )
     }
 
@@ -500,7 +572,8 @@ export function parseAndValidateStudentRows(
       invalidRows.push({
         rowNumber,
         studentCode: rowObj.studentCode,
-        studentName: `${rowObj.firstName ?? ""} ${rowObj.lastName ?? ""}`.trim() || undefined,
+        studentName:
+          `${rowObj.firstName ?? ""} ${rowObj.lastName ?? ""}`.trim() || undefined,
         errors: rowErrors,
       })
     } else {
@@ -578,18 +651,31 @@ export function generateStudentImportTemplateCsv(): string {
   const bom = "\uFEFF"
   const lines = [
     SAMPLE_TEMPLATE_HEADERS.join(","),
-    ...SAMPLE_TEMPLATE_ROWS.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")),
+    ...SAMPLE_TEMPLATE_ROWS.map((r) =>
+      r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","),
+    ),
   ]
   return bom + lines.join("\r\n")
 }
 
-export function generateStudentImportTemplateXlsx(): Buffer {
-  const aoa = [SAMPLE_TEMPLATE_HEADERS, ...SAMPLE_TEMPLATE_ROWS]
-  const worksheet = XLSX.utils.aoa_to_sheet(aoa)
-  worksheet["!cols"] = SAMPLE_TEMPLATE_HEADERS.map((h) => ({ wch: Math.max(h.length * 2, 14) }))
+export async function generateStudentImportTemplateXlsx(): Promise<Buffer> {
+  const headerRow = SAMPLE_TEMPLATE_HEADERS.map((h) => ({
+    value: h,
+    fontWeight: "bold" as const,
+    backgroundColor: "#F1F5F9",
+  }))
 
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "รายชื่อนักเรียน")
+  const dataRows = SAMPLE_TEMPLATE_ROWS.map((row) =>
+    row.map((cell) => ({
+      value: cell,
+    })),
+  )
 
-  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer
+  const rows = [headerRow, ...dataRows]
+  const columns = SAMPLE_TEMPLATE_HEADERS.map((h) => ({
+    width: Math.max(h.length * 2, 16),
+  }))
+
+  const res = await writeXlsxFile(rows, { columns })
+  return await res.toBuffer()
 }

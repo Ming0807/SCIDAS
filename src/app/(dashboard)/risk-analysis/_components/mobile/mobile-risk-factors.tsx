@@ -1,68 +1,91 @@
 import React from "react"
-import { Calendar as CalendarIcon, Smile, Home, Activity, FolderOpen } from "lucide-react"
+import { AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react"
 
-export function MobileRiskFactors() {
+import { EmptyState } from "@/components/feedback/empty-state"
+import type { RiskFactorDistribution } from "@/lib/server/risk-read-models"
+import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
+
+type MobileRiskFactorsProps = {
+  factorDistribution: RiskFactorDistribution
+  student?: StudentWorklistItem | null
+}
+
+export function MobileRiskFactors({
+  factorDistribution,
+  student,
+}: MobileRiskFactorsProps) {
+  const factors = factorDistribution.factors || []
+
+  if (factors.length === 0) {
+    return (
+      <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full">
+        <h3 className="text-sm font-semibold text-foreground mb-3">ปัจจัยเสี่ยงที่ต้องเฝ้าระวัง</h3>
+        <EmptyState
+          title="ไม่พบปัจจัยเสี่ยง"
+          description="ระบบยังไม่ตรวจพบกลุ่มเสี่ยงสำคัญในโรงเรียนขณะนี้"
+          className="py-6"
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full">
-      <h3 className="text-sm font-bold text-slate-800 mb-5">ปัจจัยเสี่ยงที่ต้องเฝ้าระวัง</h3>
+    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-foreground">
+          {student ? `ปัจจัยเสี่ยงที่เกี่ยวข้องกับ ${student.fullName}` : "ปัจจัยเสี่ยงหลักในโรงเรียน"}
+        </h3>
+        <span className="text-xs text-muted-foreground">{factors.length} รายการ</span>
+      </div>
 
-      <div className="flex flex-col gap-4">
-        
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-            <CalendarIcon className="w-4 h-4 text-red-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-slate-800">การมาเรียน</h4>
-            <p className="text-xs text-slate-500 truncate">ขาดเรียนบ่อย</p>
-          </div>
-          <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">เสี่ยงสูง</span>
-        </div>
+      <div className="flex flex-col gap-3">
+        {factors.map((factor) => {
+          const percentage =
+            factorDistribution.totalStudents > 0
+              ? Math.round((factor.count / factorDistribution.totalStudents) * 100)
+              : 0
+          const isHigh = percentage >= 40
+          const isWatch = percentage >= 15
 
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-            <Home className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-slate-800">สภาพครอบครัว</h4>
-            <p className="text-xs text-slate-500 truncate">ข้อมูลครอบครัวไม่สมบูรณ์</p>
-          </div>
-          <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">เสี่ยงสูง</span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
-            <FolderOpen className="w-4 h-4 text-orange-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-slate-800">ผลการเรียน</h4>
-            <p className="text-xs text-slate-500 truncate">ผลการเรียนต่ำกว่าเกณฑ์</p>
-          </div>
-          <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">เสี่ยงปานกลาง</span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-            <Activity className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-slate-800">สภาพอารมณ์</h4>
-            <p className="text-xs text-slate-500 truncate">มีความเครียดบ่อยครั้ง</p>
-          </div>
-          <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-100">เฝ้าระวัง</span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-            <Smile className="w-4 h-4 text-green-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-slate-800">พฤติกรรม</h4>
-            <p className="text-xs text-slate-500 truncate">ไม่มีพฤติกรรมที่ผิดปกติ</p>
-          </div>
-          <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100 w-[55px] text-center">ปกติ</span>
-        </div>
-
+          return (
+            <div key={factor.factorKey} className="flex items-center gap-3 rounded-lg border border-border/70 bg-muted/20 p-3">
+              <div
+                className={`size-9 rounded-lg flex items-center justify-center shrink-0 ${
+                  isHigh
+                    ? "bg-red-100 text-red-700"
+                    : isWatch
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-emerald-100 text-emerald-700"
+                }`}
+              >
+                {isHigh ? (
+                  <ShieldAlert className="size-4" />
+                ) : isWatch ? (
+                  <AlertTriangle className="size-4" />
+                ) : (
+                  <CheckCircle2 className="size-4" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-semibold text-foreground truncate">{factor.factorLabel}</h4>
+                <p className="text-xs text-muted-foreground">
+                  พบ {factor.count} คน ({percentage}%)
+                </p>
+              </div>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded border shrink-0 ${
+                  isHigh
+                    ? "text-red-700 bg-red-50 border-red-200"
+                    : isWatch
+                      ? "text-amber-700 bg-amber-50 border-amber-200"
+                      : "text-emerald-700 bg-emerald-50 border-emerald-200"
+                }`}
+              >
+                {isHigh ? "เสี่ยงสูง" : isWatch ? "เฝ้าระวัง" : "ปกติ"}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

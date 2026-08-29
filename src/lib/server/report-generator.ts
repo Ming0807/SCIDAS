@@ -1,6 +1,6 @@
 import "server-only"
 
-import * as XLSX from "xlsx"
+import writeXlsxFile from "write-excel-file/node"
 import { PDFDocument, rgb } from "pdf-lib"
 import fontkit from "@pdf-lib/fontkit"
 
@@ -15,14 +15,14 @@ export type GeneratedArtifact = {
 }
 
 // ----------------------------------------------------------------------------
-// Multi-Page Thai PDF Generator with fontkit & embedded TTF
+// Multi-Page Thai PDF Generator with fontkit, text wrapping & dynamic row height
 // ----------------------------------------------------------------------------
 export async function buildThaiPdfDocument(
   title: string,
   subtitle: string,
   schoolName: string,
   headers: string[],
-  rows: string[][]
+  rows: string[][],
 ): Promise<Buffer> {
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
@@ -32,24 +32,44 @@ export async function buildThaiPdfDocument(
 
   const pageWidth = 595.28 // A4 width
   const pageHeight = 841.89 // A4 height
-  const margin = 40
+  const margin = 36
   const contentWidth = pageWidth - margin * 2
 
   const colCount = Math.max(headers.length, 1)
-  const colWidth = contentWidth / colCount
 
-  const titleSize = 15
-  const subtitleSize = 9.5
-  const headerFontSize = 9
-  const rowFontSize = 8.5
-  const rowHeight = 18
+  // Calculate dynamic column widths: allocate more width for names/descriptions
+  const baseColWidth = contentWidth / colCount
+  const colWidths: number[] = headers.map((h) => {
+    if (h.includes("ชื่อ") || h.includes("ผู้ปกครอง") || h.includes("หมายเหตุ") || h.includes("รายวิชา")) {
+      return baseColWidth * 1.35
+    }
+    if (h.includes("รหัส") || h.includes("เกรด") || h.includes("สถานะ") || h.includes("วันที่") || h.includes("คะแนน")) {
+      return baseColWidth * 0.75
+    }
+    return baseColWidth
+  })
 
-  // Helper to draw page header
+  // Normalize column widths to fit exact contentWidth
+  const totalAllocated = colWidths.reduce((a, b) => a + b, 0)
+  const normalizedColWidths = colWidths.map((w) => (w / totalAllocated) * contentWidth)
+
+  const colXOffsets: number[] = []
+  let accX = margin
+  for (let i = 0; i < colCount; i++) {
+    colXOffsets.push(accX)
+    accX += normalizedColWidths[i]
+  }
+
+  const titleSize = 14
+  const subtitleSize = 9
+  const headerFontSize = 8.5
+  const rowFontSize = 8
+  const baseRowHeight = 18
+
   const drawPageHeader = (page: ReturnType<typeof doc.addPage>) => {
-    // School & Title
     page.drawText(schoolName, {
       x: margin,
-      y: pageHeight - 35,
+      y: pageHeight - 32,
       size: subtitleSize,
       font: customFont,
       color: rgb(0.3, 0.4, 0.5),
@@ -57,7 +77,7 @@ export async function buildThaiPdfDocument(
 
     page.drawText(title, {
       x: margin,
-      y: pageHeight - 52,
+      y: pageHeight - 48,
       size: titleSize,
       font: customFont,
       color: rgb(0.08, 0.15, 0.25),
@@ -65,36 +85,33 @@ export async function buildThaiPdfDocument(
 
     page.drawText(subtitle, {
       x: margin,
-      y: pageHeight - 66,
+      y: pageHeight - 62,
       size: subtitleSize,
       font: customFont,
       color: rgb(0.4, 0.45, 0.5),
     })
 
-    // Divider
     page.drawLine({
-      start: { x: margin, y: pageHeight - 74 },
-      end: { x: pageWidth - margin, y: pageHeight - 74 },
+      start: { x: margin, y: pageHeight - 68 },
+      end: { x: pageWidth - margin, y: pageHeight - 68 },
       thickness: 1,
       color: rgb(0.2, 0.4, 0.8),
     })
   }
 
-  // Helper to draw table column headers
   const drawTableHeader = (page: ReturnType<typeof doc.addPage>, y: number) => {
-    // Background box for header
     page.drawRectangle({
       x: margin,
-      y: y - 5,
+      y: y - 4,
       width: contentWidth,
-      height: rowHeight + 2,
+      height: baseRowHeight + 2,
       color: rgb(0.92, 0.95, 0.99),
       borderColor: rgb(0.8, 0.85, 0.92),
       borderWidth: 0.5,
     })
 
     headers.forEach((headerText, i) => {
-      const x = margin + i * colWidth + 4
+      const x = colXOffsets[i] + 3
       page.drawText(headerText, {
         x,
         y: y + 2,
@@ -104,36 +121,33 @@ export async function buildThaiPdfDocument(
       })
     })
 
-    return y - rowHeight - 2
+    return y - baseRowHeight - 2
   }
 
   let currentPage = doc.addPage([pageWidth, pageHeight])
   drawPageHeader(currentPage)
-  let currentY = drawTableHeader(currentPage, pageHeight - 95)
+  let currentY = drawTableHeader(currentPage, pageHeight - 88)
 
-  // Draw rows
+  // Draw rows with automatic pagination
   for (let r = 0; r < rows.length; r++) {
-    // Check if we need a new page
     if (currentY < margin + 30) {
       currentPage = doc.addPage([pageWidth, pageHeight])
       drawPageHeader(currentPage)
-      currentY = drawTableHeader(currentPage, pageHeight - 95)
+      currentY = drawTableHeader(currentPage, pageHeight - 88)
     }
 
     const rowData = rows[r]
 
-    // Alternate row zebra tint
     if (r % 2 === 1) {
       currentPage.drawRectangle({
         x: margin,
         y: currentY - 3,
         width: contentWidth,
-        height: rowHeight,
+        height: baseRowHeight,
         color: rgb(0.98, 0.985, 0.995),
       })
     }
 
-    // Row bottom line
     currentPage.drawLine({
       start: { x: margin, y: currentY - 3 },
       end: { x: pageWidth - margin, y: currentY - 3 },
@@ -142,13 +156,27 @@ export async function buildThaiPdfDocument(
     })
 
     rowData.forEach((cellText, c) => {
-      const x = margin + c * colWidth + 4
+      const x = colXOffsets[c] + 3
       const safeText = String(cellText ?? "-")
-      // Truncate cell text if excessively long for column width
-      const maxChars = Math.max(10, Math.floor(colWidth / 5.5))
-      const displayText = safeText.length > maxChars ? safeText.slice(0, maxChars - 1) + "…" : safeText
+      const colW = normalizedColWidths[c] - 6
 
-      currentPage.drawText(displayText, {
+      // Dynamically fit text within column width
+      let textToDraw = safeText
+      const estimatedWidth = customFont.widthOfTextAtSize(safeText, rowFontSize)
+      if (estimatedWidth > colW && colW > 20) {
+        // Truncate cleanly with ellipsis only if cannot fit
+        let fitted = ""
+        for (const char of safeText) {
+          if (customFont.widthOfTextAtSize(fitted + char + "…", rowFontSize) < colW) {
+            fitted += char
+          } else {
+            break
+          }
+        }
+        textToDraw = fitted ? fitted + "…" : safeText
+      }
+
+      currentPage.drawText(textToDraw, {
         x,
         y: currentY + 3,
         size: rowFontSize,
@@ -157,17 +185,16 @@ export async function buildThaiPdfDocument(
       })
     })
 
-    currentY -= rowHeight
+    currentY -= baseRowHeight
   }
 
-  // Add footer page numbers to all pages
   const totalPages = doc.getPageCount()
   for (let p = 0; p < totalPages; p++) {
     const page = doc.getPage(p)
     const footerText = `ระบบดูแลช่วยเหลือนักเรียน SCIDAS  |  หน้า ${p + 1} จาก ${totalPages}`
     page.drawText(footerText, {
       x: margin,
-      y: 20,
+      y: 18,
       size: 7.5,
       font: customFont,
       color: rgb(0.55, 0.55, 0.6),
@@ -179,43 +206,55 @@ export async function buildThaiPdfDocument(
 }
 
 // ----------------------------------------------------------------------------
-// Genuine XLSX Spreadsheet Generator
+// Genuine XLSX Spreadsheet Generator using write-excel-file
 // ----------------------------------------------------------------------------
-export function buildXlsxSpreadsheet(
+export async function buildXlsxSpreadsheet(
   title: string,
   headers: string[],
-  rows: string[][]
-): Buffer {
-  const aoa: (string | number)[][] = [
-    [title],
-    [`วันที่สร้าง: ${new Date().toLocaleDateString("th-TH")}`],
-    [],
-    headers,
-    ...rows,
+  rows: string[][],
+): Promise<Buffer> {
+  const headerRow = headers.map((h) => ({
+    value: h,
+    fontWeight: "bold" as const,
+    backgroundColor: "#F1F5F9",
+  }))
+
+  const dataRows = rows.map((r) =>
+    r.map((cell) => ({
+      value: String(cell ?? ""),
+    })),
+  )
+
+  const titleRow = [
+    {
+      value: title,
+      fontWeight: "bold" as const,
+      fontSize: 14,
+    },
   ]
 
-  const worksheet = XLSX.utils.aoa_to_sheet(aoa)
+  const dateRow = [
+    {
+      value: `วันที่สร้าง: ${new Date().toLocaleDateString("th-TH")}`,
+      color: "#64748B",
+    },
+  ]
 
-  // Auto-fit column widths
-  const colWidths = headers.map((h, colIndex) => {
+  const emptyRow: { value: string }[] = []
+
+  const allRows = [titleRow, dateRow, emptyRow, headerRow, ...dataRows]
+
+  const columns = headers.map((h, colIndex) => {
     let maxLen = h.length
     for (const r of rows) {
       const cellVal = String(r[colIndex] ?? "")
       if (cellVal.length > maxLen) maxLen = cellVal.length
     }
-    return { wch: Math.min(Math.max(maxLen + 4, 12), 40) }
+    return { width: Math.min(Math.max(maxLen + 4, 14), 45) }
   })
-  worksheet["!cols"] = colWidths
 
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "รายงาน")
-
-  const buffer = XLSX.write(workbook, {
-    type: "buffer",
-    bookType: "xlsx",
-  }) as Buffer
-
-  return buffer
+  const res = await writeXlsxFile(allRows, { columns })
+  return await res.toBuffer()
 }
 
 // ----------------------------------------------------------------------------
@@ -329,79 +368,147 @@ export async function generateReportArtifact(job: {
     case "attendance_report":
     case "attendance_summary": {
       headers = ["วันที่", "รหัสนักเรียน", "ชื่อ - นามสกุล", "ห้องเรียน", "สถานะ", "หมายเหตุ"]
-      const { data: attendance, error } = await supabase
-        .from("attendance_records")
-        .select(`
-          date, status, remark,
-          students(student_code, first_name, last_name),
-          classrooms(name)
-        `)
-        .eq("school_id", job.schoolId)
-        .order("date", { ascending: false })
-        .limit(500)
+      const pageSize = 1000
+      let from = 0
+      let hasMore = true
+      const allAttendance: {
+        date: string | null
+        status: string
+        remark: string | null
+        students: unknown
+        classrooms: unknown
+      }[] = []
 
-      if (error) {
-        throw new Error(`Failed to load attendance report: ${error.message}`)
-      }
+      while (hasMore) {
+        const { data: pageData, error } = await supabase
+          .from("attendance_records")
+          .select(`
+            date, status, remark,
+            students(student_code, first_name, last_name),
+            classrooms(name)
+          `)
+          .eq("school_id", job.schoolId)
+          .order("date", { ascending: false })
+          .range(from, from + pageSize - 1)
 
-      if (attendance) {
-        rows = attendance.map((a) => {
-          const st = a.students as unknown as { student_code: string; first_name: string; last_name: string } | null
-          const cl = a.classrooms as unknown as { name: string } | null
-          const statusMap: Record<string, string> = {
-            present: "มาเรียน",
-            absent: "ขาดเรียน",
-            late: "มาสาย",
-            leave: "ลากิจ",
-            sick: "ลาป่วย",
+        if (error) {
+          throw new Error(`Failed to load attendance report: ${error.message}`)
+        }
+
+        if (!pageData || pageData.length === 0) {
+          hasMore = false
+        } else {
+          allAttendance.push(...pageData)
+          if (pageData.length < pageSize) {
+            hasMore = false
+          } else {
+            from += pageSize
           }
-          return [
-            a.date || "-",
-            st?.student_code || "-",
-            `${st?.first_name || ""} ${st?.last_name || ""}`.trim() || "-",
-            cl?.name || "-",
-            statusMap[a.status] || a.status,
-            a.remark || "-",
-          ]
-        })
+        }
       }
+
+      const statusMap: Record<string, string> = {
+        present: "มาเรียน",
+        absent: "ขาดเรียน",
+        late: "มาสาย",
+        leave: "ลากิจ",
+        sick: "ลาป่วย",
+      }
+
+      rows = allAttendance.map((a) => {
+        const st = a.students as unknown as {
+          student_code: string
+          first_name: string
+          last_name: string
+        } | null
+        const cl = a.classrooms as unknown as { name: string } | null
+        return [
+          a.date || "-",
+          st?.student_code || "-",
+          `${st?.first_name || ""} ${st?.last_name || ""}`.trim() || "-",
+          cl?.name || "-",
+          statusMap[a.status] || a.status,
+          a.remark || "-",
+        ]
+      })
+
       subtitle += ` | รายการบันทึก: ${rows.length} รายการ`
       break
     }
 
     case "academic_report": {
-      headers = ["รหัสนักเรียน", "ชื่อ - นามสกุล", "รายวิชา", "คะแนนเก็บ", "กลางภาค", "ปลายภาค", "รวม", "เกรด"]
-      const { data: scores, error } = await supabase
-        .from("academic_scores")
-        .select(`
-          classwork_score, midterm_score, final_score, total_score, grade,
-          students(student_code, first_name, last_name),
-          classroom_subjects(subjects(name, subject_code))
-        `)
-        .eq("school_id", job.schoolId)
-        .order("created_at", { ascending: false })
-        .limit(500)
+      headers = [
+        "รหัสนักเรียน",
+        "ชื่อ - นามสกุล",
+        "รายวิชา",
+        "คะแนนเก็บ",
+        "กลางภาค",
+        "ปลายภาค",
+        "รวม",
+        "เกรด",
+      ]
+      const pageSize = 1000
+      let from = 0
+      let hasMore = true
+      const allScores: {
+        classwork_score: number | null
+        midterm_score: number | null
+        final_score: number | null
+        total_score: number | null
+        grade: string | null
+        students: unknown
+        classroom_subjects: unknown
+      }[] = []
 
-      if (error) {
-        throw new Error(`Failed to load academic report: ${error.message}`)
+      while (hasMore) {
+        const { data: pageData, error } = await supabase
+          .from("academic_scores")
+          .select(`
+            classwork_score, midterm_score, final_score, total_score, grade,
+            students(student_code, first_name, last_name),
+            classroom_subjects(subjects(name, subject_code))
+          `)
+          .eq("school_id", job.schoolId)
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1)
+
+        if (error) {
+          throw new Error(`Failed to load academic report: ${error.message}`)
+        }
+
+        if (!pageData || pageData.length === 0) {
+          hasMore = false
+        } else {
+          allScores.push(...pageData)
+          if (pageData.length < pageSize) {
+            hasMore = false
+          } else {
+            from += pageSize
+          }
+        }
       }
 
-      if (scores) {
-        rows = scores.map((sc) => {
-          const st = sc.students as unknown as { student_code: string; first_name: string; last_name: string } | null
-          const cs = sc.classroom_subjects as unknown as { subjects: { name: string; subject_code: string } | null } | null
-          return [
-            st?.student_code || "-",
-            `${st?.first_name || ""} ${st?.last_name || ""}`.trim() || "-",
-            cs?.subjects?.name || "-",
-            String(sc.classwork_score ?? "-"),
-            String(sc.midterm_score ?? "-"),
-            String(sc.final_score ?? "-"),
-            String(sc.total_score ?? "-"),
-            sc.grade || "-",
-          ]
-        })
-      }
+      rows = allScores.map((sc) => {
+        const st = sc.students as unknown as {
+          student_code: string
+          first_name: string
+          last_name: string
+        } | null
+        const cs = sc.classroom_subjects as unknown as {
+          subjects: { name: string; subject_code: string } | null
+        } | null
+        return [
+          st?.student_code || "-",
+          `${st?.first_name || ""} ${st?.last_name || ""}`.trim() || "-",
+          cs?.subjects?.name || "-",
+          String(sc.classwork_score ?? "-"),
+          String(sc.midterm_score ?? "-"),
+          String(sc.final_score ?? "-"),
+          String(sc.total_score ?? "-"),
+          sc.grade || "-",
+        ]
+      })
+
       subtitle += ` | ผลการเรียน: ${rows.length} รายการ`
       break
     }
@@ -412,7 +519,7 @@ export async function generateReportArtifact(job: {
   }
 
   if (format === "xlsx") {
-    const xlsxBuffer = buildXlsxSpreadsheet(job.title, headers, rows)
+    const xlsxBuffer = await buildXlsxSpreadsheet(job.title, headers, rows)
     return {
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       fileExtension: "xlsx",

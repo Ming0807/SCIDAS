@@ -41,16 +41,19 @@ import {
   getStudentActionItems,
   getStudentAttachments,
   getStudentCareProfile,
+  getStudentGuardians,
   getStudentNotes,
   getStudentTimeline,
   type ActionQueueItem,
   type StudentAttachmentItem,
   type StudentCareProfile,
+  type StudentGuardianItem,
   type StudentNoteItem,
   type StudentTimelineItem,
 } from "@/lib/server/student-care-read-models"
 import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { StudentGuardianManager } from "./_components/student-guardian-manager"
 
 type StudentProfilePageProps = {
   params: Promise<{ id: string }>
@@ -189,15 +192,24 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
   let notes: StudentNoteItem[] = []
   let timeline: StudentTimelineItem[] = []
   let attachments: StudentAttachmentItem[] = []
+  let guardians: StudentGuardianItem[] = []
   let loadError: string | null = null
 
   try {
-    const [profileData, actionData, notesData, timelineData, attachmentData] = await Promise.all([
+    const [
+      profileData,
+      actionData,
+      notesData,
+      timelineData,
+      attachmentData,
+      guardiansData,
+    ] = await Promise.all([
       getStudentCareProfile(id),
       getStudentActionItems(id, { limit: 12 }),
       getStudentNotes(id, 8),
       getStudentTimeline(id, 12),
       getStudentAttachments(id, 10),
+      getStudentGuardians(id),
     ])
 
     profile = profileData
@@ -205,6 +217,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
     notes = notesData
     timeline = timelineData
     attachments = attachmentData
+    guardians = guardiansData
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown student profile error"
   }
@@ -370,6 +383,12 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
               />
             </div>
           </Section>
+
+          <StudentGuardianManager
+            studentId={profile.studentId}
+            guardians={guardians}
+            canEdit={canEdit}
+          />
 
           <DataTable
             className="min-h-[360px]"
