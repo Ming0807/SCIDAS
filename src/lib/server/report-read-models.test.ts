@@ -1,10 +1,15 @@
-﻿import { describe, it, expect, vi, beforeEach } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
 import {
+  claimReportJob,
+  completeReportJob,
+  deleteReportJob,
+  failReportJob,
   getReportTypeLabel,
   isReportJobType,
-  reportJobTypes,
   recoverStaleReportJobs,
-  deleteReportJob,
+  reportJobTypes,
+  retryReportJob,
 } from "./report-read-models"
 
 vi.mock("./current-user", () => ({
@@ -17,11 +22,13 @@ vi.mock("./current-user", () => ({
 }))
 
 const mockFrom = vi.fn()
+const mockRpc = vi.fn()
 const mockStorageFrom = vi.fn()
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     from: mockFrom,
+    rpc: mockRpc,
     storage: {
       from: mockStorageFrom,
     },
@@ -50,34 +57,64 @@ describe("Report Read Models & Lifecycle", () => {
     })
   })
 
-  describe("recoverStaleReportJobs", () => {
-    it("should update stale running jobs with timeout status", async () => {
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: [{ id: "job-1" }, { id: "job-2" }],
-        error: null,
+  describe("Database lifecycle RPCs", () => {
+    it("claims a job through the DB RPC and returns its claim token", async () => {
+      const claim = {
+        id: "job-1",
+        school_id: "school-1",
+        report_type: "student_summary",
+        title: "รายงานนักเรียน",
+        filters: {},
+        claim_token: "token-1",
+      }
+      const maybeSingle = vi.fn().mockResolvedValue({ data: claim, error: null })
+      mockRpc.mockReturnValue({ maybeSingle })
+
+      await expect(claimReportJob("job-1")).resolves.toEqual(claim)
+      expect(mockRpc).toHaveBeenCalledWith("claim_report_job", { p_job_id: "job-1" })
+      expect(maybeSingle).toHaveBeenCalledOnce()
+    })
+
+    it("uses the claim token for completion and failure transitions", async () => {
+      mockRpc.mockResolvedValue({ data: true, error: null })
+
+      await expect(completeReportJob("job-1", "token-1", "school-1/report.pdf")).resolves.toBe(true)
+      expect(mockRpc).toHaveBeenNthCalledWith(1, "complete_report_job", {
+        p_job_id: "job-1",
+        p_claim_token: "token-1",
+        p_output_path: "school-1/report.pdf",
       })
-      const mockLt = vi.fn().mockReturnValue({ select: mockSelect })
-      const mockEqStatus = vi.fn().mockReturnValue({ lt: mockLt })
-      const mockEqSchool = vi.fn().mockReturnValue({ eq: mockEqStatus })
-      const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqSchool })
 
-      mockFrom.mockReturnValue({ update: mockUpdate })
+      await expect(failReportJob("job-1", "token-1", "generation failed")).resolves.toBe(true)
+      expect(mockRpc).toHaveBeenNthCalledWith(2, "fail_report_job", {
+        p_job_id: "job-1",
+        p_claim_token: "token-1",
+        p_error_message: "generation failed",
+      })
+    })
 
-      const res = await recoverStaleReportJobs()
-      expect(res.recoveredCount).toBe(2)
-      expect(mockFrom).toHaveBeenCalledWith("report_jobs")
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: "failed",
-          error_message: expect.stringContaining("Timeout"),
-        }),
+    it("recovers stale jobs through a tenant-scoped RPC", async () => {
+      mockRpc.mockResolvedValue({ data: 2, error: null })
+
+      await expect(recoverStaleReportJobs()).resolves.toEqual({ recoveredCount: 2 })
+      expect(mockRpc).toHaveBeenCalledWith(
+        "recover_stale_report_jobs",
+        expect.objectContaining({ p_stale_before: expect.any(String) }),
       )
+      expect(mockFrom).not.toHaveBeenCalledWith("report_jobs")
+    })
+
+    it("retries through the DB RPC instead of a broad report_jobs update", async () => {
+      mockRpc.mockResolvedValue({ data: true, error: null })
+
+      await expect(retryReportJob("job-1")).resolves.toBe(true)
+      expect(mockRpc).toHaveBeenCalledWith("retry_report_job", { p_job_id: "job-1" })
+      expect(mockFrom).not.toHaveBeenCalledWith("report_jobs")
     })
   })
 
   describe("deleteReportJob", () => {
-    it("should delete storage file and database row consistently", async () => {
-      // 1. Mock select query for job info
+    function setupDeleteJob() {
       const mockMaybeSingle = vi.fn().mockResolvedValue({
         data: {
           id: "job-1",
@@ -91,31 +128,37 @@ describe("Report Read Models & Lifecycle", () => {
       const mockEqSchoolFetch = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle })
       const mockEqIdFetch = vi.fn().mockReturnValue({ eq: mockEqSchoolFetch })
       const mockSelect = vi.fn().mockReturnValue({ eq: mockEqIdFetch })
-
-      // 2. Mock storage remove
-      const mockRemove = vi.fn().mockResolvedValue({ error: null })
-      mockStorageFrom.mockReturnValue({ remove: mockRemove })
-
-      // 3. Mock delete query
       const mockEqSchoolDelete = vi.fn().mockResolvedValue({ error: null })
       const mockEqIdDelete = vi.fn().mockReturnValue({ eq: mockEqSchoolDelete })
       const mockDelete = vi.fn().mockReturnValue({ eq: mockEqIdDelete })
 
-      mockFrom.mockImplementation((table: string) => {
-        if (table === "report_jobs") {
-          return {
-            select: mockSelect,
-            delete: mockDelete,
-          }
-        }
-        return {}
+      mockFrom.mockReturnValue({
+        select: mockSelect,
+        delete: mockDelete,
       })
 
-      const res = await deleteReportJob("job-1")
-      expect(res.success).toBe(true)
+      return { mockDelete }
+    }
+
+    it("deletes the Storage object before deleting the DB row", async () => {
+      const { mockDelete } = setupDeleteJob()
+      const mockRemove = vi.fn().mockResolvedValue({ error: null })
+      mockStorageFrom.mockReturnValue({ remove: mockRemove })
+
+      await expect(deleteReportJob("job-1")).resolves.toEqual({ success: true })
       expect(mockStorageFrom).toHaveBeenCalledWith("reports")
       expect(mockRemove).toHaveBeenCalledWith(["school-1/student_summary.pdf"])
-      expect(mockDelete).toHaveBeenCalled()
+      expect(mockDelete).toHaveBeenCalledOnce()
+    })
+
+    it("preserves the DB row when Storage deletion fails", async () => {
+      const { mockDelete } = setupDeleteJob()
+      mockStorageFrom.mockReturnValue({
+        remove: vi.fn().mockResolvedValue({ error: new Error("storage denied") }),
+      })
+
+      await expect(deleteReportJob("job-1")).rejects.toThrow("STORAGE_DELETE_FAILED")
+      expect(mockDelete).not.toHaveBeenCalled()
     })
   })
 })

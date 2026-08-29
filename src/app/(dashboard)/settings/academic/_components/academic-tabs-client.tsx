@@ -79,7 +79,7 @@ export function AcademicTabsClient({ data }: { data: AcademicAdminData }) {
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveTab(tab.key)}
                 onKeyDown={(e) => handleKeyDown(e, tab.key)}
-                className={`group inline-flex items-center gap-2 border-b-2 py-3 text-sm font-semibold whitespace-nowrap transition-colors rounded-t-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`group inline-flex items-center gap-2 border-b-2 py-3 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   isActive
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"

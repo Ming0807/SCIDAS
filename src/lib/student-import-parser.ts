@@ -167,7 +167,7 @@ export async function parseFileContent(
 ): Promise<string[][]> {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
 
-  if (ext === "xlsx" || ext === "xls") {
+  if (ext === "xlsx") {
     const buf =
       typeof fileData === "string"
         ? Buffer.from(fileData, "binary")
@@ -177,7 +177,11 @@ export async function parseFileContent(
     return parseXlsxContent(buf)
   }
 
-  // Treat as text CSV
+  if (ext !== "csv") {
+    throw new Error("รองรับเฉพาะไฟล์ CSV และ XLSX")
+  }
+
+  // Treat as UTF-8 CSV text.
   const textContent =
     typeof fileData === "string"
       ? fileData
@@ -310,7 +314,7 @@ export function normalizeDateOfBirth(rawDate: string): string | null {
       year -= 543
     }
 
-    return `${year}-${month}-${day}`
+    return normalizeCalendarDate(year, Number(month), Number(day))
   }
 
   // YYYY-MM-DD
@@ -324,7 +328,7 @@ export function normalizeDateOfBirth(rawDate: string): string | null {
       year -= 543
     }
 
-    return `${year}-${month}-${day}`
+    return normalizeCalendarDate(year, Number(month), Number(day))
   }
 
   // Excel serial date number
@@ -334,10 +338,26 @@ export function normalizeDateOfBirth(rawDate: string): string | null {
     const y = dateObj.getFullYear()
     const m = String(dateObj.getMonth() + 1).padStart(2, "0")
     const d = String(dateObj.getDate()).padStart(2, "0")
-    return `${y}-${m}-${d}`
+    return normalizeCalendarDate(y, Number(m), Number(d))
   }
 
   return null
+}
+
+function normalizeCalendarDate(year: number, month: number, day: number): string | null {
+  if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return null
+
+  const value = new Date(Date.UTC(year, month - 1, day))
+  if (
+    value.getUTCFullYear() !== year ||
+    value.getUTCMonth() !== month - 1 ||
+    value.getUTCDate() !== day ||
+    value.getTime() > Date.now()
+  ) {
+    return null
+  }
+
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
 }
 
 // ----------------------------------------------------------------------------

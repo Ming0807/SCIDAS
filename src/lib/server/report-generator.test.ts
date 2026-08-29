@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest"
+import { PDFDocument } from "pdf-lib"
 import {
   buildThaiPdfDocument,
   buildXlsxSpreadsheet,
@@ -39,6 +40,9 @@ describe("Report Generator Artifact Engine", () => {
       // Verify PDF header magic bytes "%PDF-"
       const headerString = pdfBuffer.subarray(0, 5).toString("utf8")
       expect(headerString).toBe("%PDF-")
+
+      const pdf = await PDFDocument.load(new Uint8Array(pdfBuffer))
+      expect(pdf.getPageCount()).toBeGreaterThan(1)
     })
   })
 

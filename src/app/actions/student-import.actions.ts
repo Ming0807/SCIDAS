@@ -15,6 +15,74 @@ import {
 import { executeStudentImportRpc } from "@/lib/server/student-import-service"
 
 const importAllowedRoles = new Set<AppRole>(["admin", "director", "homeroom_teacher"])
+const guardianRelations = [
+  "father",
+  "mother",
+  "grandfather",
+  "grandmother",
+  "uncle",
+  "aunt",
+  "sibling",
+  "other_relative",
+  "guardian",
+] as const
+const nullableText = (max: number) => z.string().trim().max(max).nullable().optional()
+const studentImportRowSchema = z.object({
+  rowNumber: z.number().int().positive(),
+  studentCode: z.string().trim().min(1).max(20),
+  nationalId: z.string().regex(/^\d{13}$/).nullable().optional(),
+  prefix: nullableText(50),
+  firstName: z.string().trim().min(1).max(100),
+  lastName: z.string().trim().min(1).max(100),
+  nickname: nullableText(50),
+  gender: z.enum(["male", "female", "other"]),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  bloodType: nullableText(5),
+  address: nullableText(2000),
+  studentNumber: z.number().int().positive().max(9999).nullable().optional(),
+  guardianPrefix: nullableText(50),
+  guardianFirstName: nullableText(100),
+  guardianLastName: nullableText(100),
+  guardianPhone: nullableText(20),
+  guardianRelation: z.enum(guardianRelations).nullable().optional(),
+})
+const studentImportBatchSchema = z
+  .array(studentImportRowSchema)
+  .min(1)
+  .max(500)
+  .superRefine((rows, ctx) => {
+    const studentCodes = new Set<string>()
+    const nationalIds = new Set<string>()
+    rows.forEach((row, index) => {
+      if (studentCodes.has(row.studentCode)) {
+        ctx.addIssue({
+          code: "custom",
+          message: `รหัสนักเรียน ${row.studentCode} ซ้ำในชุดนำเข้า`,
+          path: [index, "studentCode"],
+        })
+      }
+      studentCodes.add(row.studentCode)
+
+      if (row.nationalId) {
+        if (nationalIds.has(row.nationalId)) {
+          ctx.addIssue({
+            code: "custom",
+            message: `เลขประจำตัวประชาชน ${row.nationalId} ซ้ำในชุดนำเข้า`,
+            path: [index, "nationalId"],
+          })
+        }
+        nationalIds.add(row.nationalId)
+      }
+    })
+  })
+
+const acceptedMimeTypes: Record<"csv" | "xlsx", Set<string>> = {
+  csv: new Set(["text/csv", "application/csv", "text/plain", "application/vnd.ms-excel"]),
+  xlsx: new Set([
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/octet-stream",
+  ]),
+}
 
 export async function parseStudentFileAction(
   _prevState: ActionResult<ParseImportResult> | null,
@@ -36,15 +104,19 @@ export async function parseStudentFileAction(
     }
 
     const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
-    if (!["csv", "xlsx", "xls"].includes(ext)) {
+    if (ext !== "csv" && ext !== "xlsx") {
       return actionFail("VALIDATION_ERROR", "รูปแบบไฟล์ไม่ถูกต้อง รองรับเฉพาะไฟล์นามสกุล .csv และ .xlsx")
+    }
+
+    if (file.type && !acceptedMimeTypes[ext].has(file.type.toLowerCase())) {
+      return actionFail("VALIDATION_ERROR", "ชนิดไฟล์ไม่ตรงกับรูปแบบ CSV หรือ XLSX ที่รองรับ")
     }
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
     // Validate magic bytes
-    if (ext === "xlsx" || ext === "xls") {
+    if (ext === "xlsx") {
       // XLSX (ZIP format) starts with PK\x03\x04: 0x50, 0x4B, 0x03, 0x04
       const isZipMagic =
         buffer.length >= 4 &&
@@ -116,7 +188,16 @@ export async function executeStudentImportAction(
       return actionFail("VALIDATION_ERROR", "จำนวนนักเรียนเกินขีดจำกัดสูงสุด 500 คนต่อครั้ง")
     }
 
-    const rpcRes = await executeStudentImportRpc(classroomId, semesterId, students)
+    const parsedStudents = studentImportBatchSchema.safeParse(students)
+    if (!parsedStudents.success) {
+      return actionFail("VALIDATION_ERROR", "ข้อมูลนักเรียนไม่ผ่านการตรวจสอบฝั่งเซิร์ฟเวอร์")
+    }
+
+    const rpcRes = await executeStudentImportRpc(
+      classroomId,
+      semesterId,
+      parsedStudents.data as ParsedStudentRow[],
+    )
 
     if (!rpcRes.success) {
       return actionFail("CONFLICT", rpcRes.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล")

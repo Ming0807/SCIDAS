@@ -514,3 +514,33 @@ Deleted 47 orphaned files across 4 modules (all verified zero-import before dele
 - [x] `npm run build`
 - [x] Authenticated read-only desktop smoke: Students, Attendance, Academics, Behavior, IDP, Support, and Home Visits returned HTTP 200 with real data.
 - [ ] Authenticated desktop/mobile browser smoke
+
+## 2026-08-29 Codex Production Repair Checkpoint
+
+### Database and authorization
+
+- [x] Repaired `0016_guardian_transactional.sql` to match the real `profiles`, `guardians`, and `student_guardians` schema.
+- [x] Guardian create/update/primary changes and unlink cleanup now use tenant-scoped transactional RPCs.
+- [x] Enforced one primary guardian per student with a partial unique index.
+- [x] Restricted homeroom guardian mutations through `can_access_student()` and aligned roles with UI/RLS.
+- [x] Added recipient-owned notification DELETE policy using `profiles.id = auth.uid()` identity.
+- [x] Added `0017_report_job_hardening.sql` with claim tokens, guarded lifecycle RPCs, tenant-scoped stale recovery, failed-only retry, and aligned artifact deletion policy.
+
+### Import, reports, and risk analytics
+
+- [x] Removed unsupported legacy `.xls`; CSV/XLSX now have extension, MIME, size, magic-byte, row-count, and server-side payload validation.
+- [x] Added real drag/drop and accessible validation tabs to student import.
+- [x] Report queries paginate all supported report types with deterministic tie-break ordering.
+- [x] Thai PDF tables wrap text with dynamic row heights and paginate without fixed-row truncation.
+- [x] Report artifact deletion preserves the DB row if Storage deletion fails; failed workers clean uploaded artifacts only after a valid claim transition.
+- [x] Mobile risk views switch between explicitly labeled school aggregates and the selected student's real factors/benchmarks.
+- [x] Risk aggregation RPCs constrain active factors, tenant ownership, and the current semester.
+
+### Toolchain and documentation
+
+- [x] Pinned `next` and `eslint-config-next` to matching version `16.3.3`.
+- [x] Updated `docs/AI_HANDOFF.md` to the current local-commit/no-push review workflow.
+- [x] Added focused regression tests for migration contracts, import dates/formats, PDF pagination, report lifecycle, deletion failure, and mobile risk semantics.
+- [ ] Run `npx supabase db reset` when Docker Desktop is available; local database runtime validation was unavailable because the Docker engine was stopped.
+- [ ] Apply pending migrations `0011` through `0017` to the target Supabase project in order after backup and staging validation.
+- [ ] Run authenticated desktop/mobile mutation smoke tests against the migrated target Supabase instance.

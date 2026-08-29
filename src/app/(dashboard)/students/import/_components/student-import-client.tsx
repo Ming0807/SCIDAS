@@ -37,6 +37,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   const [isParsing, startParseTransition] = useTransition()
   const [isImporting, startImportTransition] = useTransition()
   const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Download CSV template via Server Action
   const handleDownloadCsvTemplate = async () => {
@@ -101,12 +102,9 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   }
 
   // Handle file select (CSV or XLSX) through Server Action
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0]
-    if (!selected) return
-
+  const processFile = (selected: File) => {
     const ext = selected.name.split(".").pop()?.toLowerCase() ?? ""
-    if (!["csv", "xlsx", "xls"].includes(ext)) {
+    if (ext !== "csv" && ext !== "xlsx") {
       toast.error("กรุณาเลือกไฟล์รูปแบบ .csv หรือ .xlsx")
       return
     }
@@ -138,6 +136,18 @@ export function StudentImportClient({ context }: { context: ImportContextData })
         setParseResult(null)
       }
     })
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0]
+    if (selected) processFile(selected)
+  }
+
+  const handleFileDrop = (event: React.DragEvent<HTMLLabelElement>) => {
+    event.preventDefault()
+    setIsDragging(false)
+    const selected = event.dataTransfer.files?.[0]
+    if (selected) processFile(selected)
   }
 
   // Clear file
@@ -251,7 +261,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <h3 className="text-base font-semibold">ขั้นตอนที่ 2: อัปโหลดไฟล์รายชื่อนักเรียน (CSV หรือ Excel)</h3>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          รองรับไฟล์นามสกุล .csv, .xlsx, .xls ขนาดไม่เกิน 5 MB และไม่เกิน 500 รายชื่อต่อครั้ง
+          รองรับไฟล์นามสกุล .csv และ .xlsx ขนาดไม่เกิน 5 MB และไม่เกิน 500 รายชื่อต่อครั้ง
         </p>
 
         {isParsing ? (
@@ -260,10 +270,23 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             <p className="text-sm font-medium text-muted-foreground">กำลังอ่านและตรวจสอบโครงสร้างไฟล์...</p>
           </div>
         ) : !file ? (
-          <label className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 p-8 text-center cursor-pointer transition hover:bg-muted/50">
+          <label
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDragging(true)
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleFileDrop}
+            className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition ${
+              isDragging
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/30 hover:bg-muted/50"
+            }`}
+          >
             <input
               type="file"
-              accept=".csv, .xlsx, .xls, .txt, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, text/csv"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={handleFileChange}
               className="sr-only"
             />
@@ -272,7 +295,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </div>
             <p className="text-sm font-semibold">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              รองรับไฟล์ .csv (UTF-8) หรือ .xlsx / .xls
+              รองรับไฟล์ .csv (UTF-8) หรือ .xlsx
             </p>
           </label>
         ) : (
@@ -293,6 +316,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               onClick={handleClearFile}
               className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
               title="ลบไฟล์"
+              aria-label="ลบไฟล์ที่เลือก"
             >
               <X className="size-4" />
             </button>
@@ -312,9 +336,13 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </div>
 
             {/* Tabs */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" role="tablist" aria-label="ผลการตรวจสอบไฟล์">
               <button
                 type="button"
+                id="valid-import-tab"
+                role="tab"
+                aria-selected={activeTab === "valid"}
+                aria-controls="valid-import-panel"
                 onClick={() => setActiveTab("valid")}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "valid"
@@ -328,6 +356,10 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
               <button
                 type="button"
+                id="invalid-import-tab"
+                role="tab"
+                aria-selected={activeTab === "invalid"}
+                aria-controls="invalid-import-panel"
                 onClick={() => setActiveTab("invalid")}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "invalid"
@@ -343,7 +375,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
           {/* Valid Rows Tab */}
           {activeTab === "valid" && (
-            <div className="p-0">
+            <div
+              id="valid-import-panel"
+              role="tabpanel"
+              aria-labelledby="valid-import-tab"
+              className="p-0"
+            >
               {parseResult.validRows.length === 0 ? (
                 <div className="p-8">
                   <EmptyState
@@ -393,7 +430,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
           {/* Invalid Rows Tab */}
           {activeTab === "invalid" && (
-            <div className="p-0">
+            <div
+              id="invalid-import-panel"
+              role="tabpanel"
+              aria-labelledby="invalid-import-tab"
+              className="p-0"
+            >
               {parseResult.invalidRows.length === 0 ? (
                 <div className="p-8">
                   <EmptyState

@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
@@ -22,6 +23,17 @@ type StudentFormData = {
 
 export type StudentArchiveStatus = "transferred" | "dropped_out"
 const studentEditors = new Set(["admin", "homeroom_teacher", "counselor"])
+const guardianRelationSchema = z.enum([
+  "father",
+  "mother",
+  "grandfather",
+  "grandmother",
+  "uncle",
+  "aunt",
+  "sibling",
+  "other_relative",
+  "guardian",
+])
 
 const studentFormFields = [
   "student_code",
@@ -388,7 +400,9 @@ export async function upsertStudentGuardianAction(
     const firstName = (formData.get("first_name") as string | null)?.trim() ?? ""
     const lastName = (formData.get("last_name") as string | null)?.trim() ?? ""
     const phone = (formData.get("phone") as string | null)?.trim() || null
-    const relationship = (formData.get("relationship") as string | null)?.trim() || null
+    const relationship = guardianRelationSchema.safeParse(
+      (formData.get("relationship") as string | null)?.trim() || "guardian",
+    )
     const isPrimary = formData.get("is_primary") === "true" || formData.get("is_primary") === "on"
     const canPickup = formData.get("can_pickup") === "true" || formData.get("can_pickup") === "on"
 
@@ -408,82 +422,37 @@ export async function upsertStudentGuardianAction(
       })
     }
 
+    if (!relationship.success) {
+      return actionFail("VALIDATION_ERROR", "ความสัมพันธ์กับนักเรียนไม่ถูกต้อง", {
+        fieldErrors: { relationship: ["กรุณาเลือกความสัมพันธ์ที่ถูกต้อง"] },
+      })
+    }
+
     const client = await createClient()
+    const { data, error } = await client.rpc("manage_student_guardian", {
+      p_student_id: studentId,
+      p_guardian_id: guardianId,
+      p_relation: relationship.data,
+      p_is_primary: isPrimary,
+      p_can_pickup: canPickup,
+      p_prefix: prefix,
+      p_first_name: firstName,
+      p_last_name: lastName,
+      p_phone: phone,
+      p_email: null,
+      p_occupation: null,
+      p_monthly_income: null,
+    })
 
-    let targetGuardianId = guardianId
-
-    if (targetGuardianId) {
-      // Update existing guardian
-      const { error: gUpdateErr } = await client
-        .from("guardians")
-        .update({
-          prefix,
-          first_name: firstName,
-          last_name: lastName,
-          phone,
-        })
-        .eq("id", targetGuardianId)
-        .eq("school_id", context.schoolId)
-
-      if (gUpdateErr) {
-        console.error("Error updating guardian:", gUpdateErr)
-        return actionFail("INTERNAL_ERROR", "ไม่สามารถแก้ไขข้อมูลผู้ปกครองได้")
-      }
-    } else {
-      // Create new guardian
-      const { data: newG, error: gInsertErr } = await client
-        .from("guardians")
-        .insert({
-          school_id: context.schoolId,
-          prefix,
-          first_name: firstName,
-          last_name: lastName,
-          phone,
-        })
-        .select("id")
-        .single()
-
-      if (gInsertErr || !newG) {
-        console.error("Error creating guardian:", gInsertErr)
-        return actionFail("INTERNAL_ERROR", "ไม่สามารถเพิ่มข้อมูลผู้ปกครองได้")
-      }
-
-      targetGuardianId = newG.id
+    if (error) {
+      console.error("Error saving student guardian transaction:", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกข้อมูลผู้ปกครองได้")
     }
 
-    // If isPrimary is true, unset any other primary guardian for this student
-    if (isPrimary) {
-      const { error: unsetErr } = await client
-        .from("student_guardians")
-        .update({ is_primary: false })
-        .eq("student_id", studentId)
-        .eq("school_id", context.schoolId)
-
-      if (unsetErr) {
-        console.warn("Warning unsetting other primary guardians:", unsetErr)
-      }
-    }
-
-    // Link in student_guardians table
-    const relationValue = (relationship as Database["public"]["Enums"]["guardian_relation"]) || "guardian"
-
-    const { error: linkErr } = await client
-      .from("student_guardians")
-      .upsert(
-        {
-          school_id: context.schoolId,
-          student_id: studentId,
-          guardian_id: targetGuardianId,
-          relation: relationValue,
-          is_primary: isPrimary,
-          can_pickup: canPickup,
-        },
-        { onConflict: "student_id,guardian_id" },
-      )
-
-    if (linkErr) {
-      console.error("Error linking student guardian:", linkErr)
-      return actionFail("INTERNAL_ERROR", "ไม่สามารถเชื่อมโยงผู้ปกครองกับนักเรียนได้")
+    const result = data as { guardian_id?: string } | null
+    const targetGuardianId = result?.guardian_id
+    if (!targetGuardianId) {
+      return actionFail("INTERNAL_ERROR", "ระบบไม่ได้ส่งรหัสผู้ปกครองกลับมา")
     }
 
     revalidatePath("/students")
@@ -510,17 +479,24 @@ export async function deleteStudentGuardianAction(
     }
 
     const client = await createClient()
+    const idSchema = z.string().uuid()
+    if (!idSchema.safeParse(studentId).success || !idSchema.safeParse(guardianId).success) {
+      return actionFail("VALIDATION_ERROR", "รหัสนักเรียนหรือผู้ปกครองไม่ถูกต้อง")
+    }
 
-    const { error } = await client
-      .from("student_guardians")
-      .delete()
-      .eq("student_id", studentId)
-      .eq("guardian_id", guardianId)
-      .eq("school_id", context.schoolId)
+    const { data, error } = await client.rpc("remove_student_guardian", {
+      p_student_id: studentId,
+      p_guardian_id: guardianId,
+    })
 
     if (error) {
       console.error("Error removing student guardian link:", error)
       return actionFail("INTERNAL_ERROR", "ไม่สามารถลบความสัมพันธ์ผู้ปกครองได้")
+    }
+
+    const result = data as { deleted?: boolean } | null
+    if (!result?.deleted) {
+      return actionFail("NOT_FOUND", "ไม่พบความสัมพันธ์ผู้ปกครองที่ต้องการลบ")
     }
 
     revalidatePath("/students")

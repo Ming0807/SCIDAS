@@ -34,7 +34,7 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
   const context = await getCurrentUserContext()
   const supabase = await createClient()
 
-  const canImport = ["admin", "director", "homeroom_teacher", "counselor", "subject_teacher"].includes(context.role)
+  const canImport = ["admin", "director", "homeroom_teacher"].includes(context.role)
   if (!canImport) {
     return {
       classrooms: [],
@@ -78,7 +78,7 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
     .eq("school_id", context.schoolId)
     .eq("is_active", true)
 
-  if (context.role === "homeroom_teacher" || context.role === "subject_teacher") {
+  if (context.role === "homeroom_teacher") {
     classroomQuery = classroomQuery.or(
       `homeroom_teacher_id.eq.${context.profileId},co_teacher_id.eq.${context.profileId}`
     )
@@ -125,7 +125,7 @@ export async function executeStudentImportRpc(
   const context = await getCurrentUserContext()
   const supabase = await createClient()
 
-  if (!["admin", "director", "homeroom_teacher", "counselor", "subject_teacher"].includes(context.role)) {
+  if (!["admin", "director", "homeroom_teacher"].includes(context.role)) {
     return { success: false, count: 0, error: "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน" }
   }
 

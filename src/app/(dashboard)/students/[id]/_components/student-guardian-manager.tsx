@@ -115,9 +115,12 @@ export function StudentGuardianManager({
     father: "บิดา",
     mother: "มารดา",
     guardian: "ผู้ปกครอง",
-    grandparent: "ปู่/ย่า/ตา/ยาย",
-    relative: "ญาติ",
-    other: "อื่นๆ",
+    grandfather: "ปู่/ตา",
+    grandmother: "ย่า/ยาย",
+    uncle: "ลุง/อา/น้า",
+    aunt: "ป้า/อา/น้า",
+    sibling: "พี่/น้อง",
+    other_relative: "ญาติอื่น",
   }
 
   return (
@@ -150,6 +153,7 @@ export function StudentGuardianManager({
               type="button"
               onClick={() => setIsFormOpen(false)}
               className="text-muted-foreground hover:text-foreground"
+              aria-label="ปิดแบบฟอร์มผู้ปกครอง"
             >
               <X className="size-4" />
             </button>
@@ -228,9 +232,12 @@ export function StudentGuardianManager({
                 <option value="father">บิดา</option>
                 <option value="mother">มารดา</option>
                 <option value="guardian">ผู้ปกครอง</option>
-                <option value="grandparent">ปู่/ย่า/ตา/ยาย</option>
-                <option value="relative">ญาติ</option>
-                <option value="other">อื่นๆ</option>
+                <option value="grandfather">ปู่/ตา</option>
+                <option value="grandmother">ย่า/ยาย</option>
+                <option value="uncle">ลุง/อา/น้า</option>
+                <option value="aunt">ป้า/อา/น้า</option>
+                <option value="sibling">พี่/น้อง</option>
+                <option value="other_relative">ญาติอื่น</option>
               </select>
             </div>
           </div>
@@ -328,6 +335,7 @@ export function StudentGuardianManager({
                       disabled={isPending}
                       className="rounded p-1 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       title="ลบ"
+                      aria-label={`ลบผู้ปกครอง ${g.fullName}`}
                     >
                       <Trash2 className="size-3.5" />
                     </button>

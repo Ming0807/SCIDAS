@@ -78,6 +78,7 @@ DECLARE
     v_actor_id uuid;
     v_role user_role;
     v_target_school uuid;
+    v_current_semester uuid;
 BEGIN
     v_actor_id := auth.uid();
     IF v_actor_id IS NULL THEN
@@ -97,6 +98,12 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized school access' USING ERRCODE = '42501';
     END IF;
 
+    SELECT id INTO v_current_semester
+    FROM semesters
+    WHERE school_id = v_target_school
+      AND is_current = true
+    LIMIT 1;
+
     RETURN QUERY
     WITH factors AS (
         SELECT
@@ -107,6 +114,9 @@ BEGIN
         FROM risk_factors rf
         JOIN risk_assessments ra ON rf.risk_assessment_id = ra.id
         WHERE rf.school_id = v_target_school
+          AND rf.is_active = true
+          AND ra.school_id = v_target_school
+          AND (v_current_semester IS NULL OR ra.semester_id = v_current_semester)
     )
     SELECT
         f.factor_key::text AS dimension_key,
@@ -180,7 +190,9 @@ BEGIN
         COUNT(DISTINCT cs.student_id) AS total_students
     FROM classrooms c
     LEFT JOIN classroom_students cs ON cs.classroom_id = c.id AND cs.is_active = true
-    LEFT JOIN risk_assessments ra ON ra.student_id = cs.student_id AND (v_curr_sem IS NULL OR ra.semester_id = v_curr_sem)
+    LEFT JOIN risk_assessments ra ON ra.student_id = cs.student_id
+        AND ra.school_id = v_target_school
+        AND (v_curr_sem IS NULL OR ra.semester_id = v_curr_sem)
     WHERE c.school_id = v_target_school AND c.is_active = true
     GROUP BY c.id, c.name, c.grade_level, c.section
     ORDER BY c.grade_level ASC, c.section ASC;

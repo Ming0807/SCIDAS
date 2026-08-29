@@ -6,7 +6,12 @@ import {
   getStudentWorklist,
   type StudentWorklistItem,
 } from "@/lib/server/student-care-read-models"
-import { getRiskFactorDistribution, getRiskTrendHistory } from "@/lib/server/risk-read-models"
+import {
+  getRiskDimensionBenchmarks,
+  getRiskFactorDistribution,
+  getRiskTrendHistory,
+  getStudentRiskFactorsByStudentIds,
+} from "@/lib/server/risk-read-models"
 
 import { RecalculateButton } from "./RecalculateButton"
 import { RiskFactorsChart } from "./_components/risk-factors-chart"
@@ -25,16 +30,23 @@ export default async function RiskAnalysisPage() {
     totalStudents: 0,
   }
   let trendData: Awaited<ReturnType<typeof getRiskTrendHistory>> = []
+  let dimensionBenchmarks: Awaited<ReturnType<typeof getRiskDimensionBenchmarks>> = []
+  let studentRiskFactors: Awaited<ReturnType<typeof getStudentRiskFactorsByStudentIds>> = {}
 
   try {
-    const [worklistResult, factorResult, trendResult] = await Promise.all([
+    const [worklistResult, factorResult, trendResult, benchmarkResult] = await Promise.all([
       getStudentWorklist({ limit: 500 }),
       getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
       getRiskTrendHistory().catch(() => []),
+      getRiskDimensionBenchmarks().catch(() => []),
     ])
     students = worklistResult
     factorDistribution = factorResult
     trendData = trendResult
+    dimensionBenchmarks = benchmarkResult
+    studentRiskFactors = await getStudentRiskFactorsByStudentIds(
+      students.map((student) => student.studentId),
+    ).catch(() => ({}))
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown risk data error"
   }
@@ -64,6 +76,8 @@ export default async function RiskAnalysisPage() {
           students={students}
           riskCounts={riskLevelCounts}
           factorDistribution={factorDistribution}
+          dimensionBenchmarks={dimensionBenchmarks}
+          studentRiskFactors={studentRiskFactors}
         />
       </div>
 

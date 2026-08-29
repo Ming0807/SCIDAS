@@ -929,6 +929,17 @@ export async function getStudentGuardians(
     return []
   }
 
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("id")
+    .eq("id", studentId)
+    .eq("school_id", context.schoolId)
+    .maybeSingle()
+
+  if (studentError || !student) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from("student_guardians")
     .select(`
@@ -936,6 +947,7 @@ export async function getStudentGuardians(
       guardians(id, prefix, first_name, last_name, phone, occupation, monthly_income)
     `)
     .eq("student_id", studentId)
+    .eq("school_id", context.schoolId)
     .order("is_primary", { ascending: false })
 
   if (error || !data) {

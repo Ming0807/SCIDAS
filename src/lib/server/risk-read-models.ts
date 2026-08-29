@@ -23,6 +23,18 @@ export type RiskFactorDistribution = {
   totalStudents: number
 }
 
+export type StudentRiskFactor = {
+  factorKey: string
+  factorLabel: string
+  score: number
+  evidence: string | null
+}
+
+export type StudentRiskFactorData = {
+  hasAssessment: boolean
+  factors: StudentRiskFactor[]
+}
+
 export type RiskTrendPoint = {
   periodLabel: string
   highCount: number
@@ -138,6 +150,70 @@ export async function getRiskFactorDistribution(): Promise<RiskFactorDistributio
     factors,
     totalStudents: studentSet.size,
   }
+}
+
+export async function getStudentRiskFactorsByStudentIds(
+  studentIds: string[],
+): Promise<Record<string, StudentRiskFactorData>> {
+  const context = await getCurrentUserContext()
+  const client = await createClient()
+  const result: Record<string, StudentRiskFactorData> = {}
+
+  for (const studentId of studentIds) {
+    result[studentId] = { hasAssessment: false, factors: [] }
+  }
+
+  if (studentIds.length === 0) {
+    return result
+  }
+
+  const semesterId = await getCurrentSemesterId(context.schoolId)
+  if (!semesterId) {
+    return result
+  }
+
+  const { data: assessments, error: assessmentError } = await client
+    .from("risk_assessments")
+    .select("id, student_id")
+    .eq("school_id", context.schoolId)
+    .eq("semester_id", semesterId)
+    .in("student_id", studentIds)
+
+  if (assessmentError || !assessments || assessments.length === 0) {
+    return result
+  }
+
+  const assessmentToStudent = new Map<string, string>()
+  for (const assessment of assessments) {
+    assessmentToStudent.set(assessment.id, assessment.student_id)
+    result[assessment.student_id] = { hasAssessment: true, factors: [] }
+  }
+
+  const { data: factors, error: factorError } = await client
+    .from("risk_factors")
+    .select("risk_assessment_id, factor_key, factor_label, score, evidence")
+    .eq("school_id", context.schoolId)
+    .eq("is_active", true)
+    .in("risk_assessment_id", Array.from(assessmentToStudent.keys()))
+    .order("score", { ascending: false })
+
+  if (factorError || !factors) {
+    return result
+  }
+
+  for (const factor of factors) {
+    const studentId = assessmentToStudent.get(factor.risk_assessment_id)
+    if (!studentId) continue
+
+    result[studentId].factors.push({
+      factorKey: factor.factor_key,
+      factorLabel: factor.factor_label,
+      score: factor.score,
+      evidence: factor.evidence,
+    })
+  }
+
+  return result
 }
 
 export async function getRiskTrendHistory(): Promise<RiskTrendPoint[]> {

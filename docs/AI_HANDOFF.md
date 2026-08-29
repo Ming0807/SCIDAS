@@ -1,102 +1,84 @@
 # AI Handoff Guide
 
-This document is the handoff packet for any follow-up AI agent working after the Codex baseline commit on branch `codex/system-ux-foundation`.
+This is the operating contract for any follow-up coding agent working on SCIDAS after the latest Codex-reviewed checkpoint on `main`.
 
-The follow-up agent must not commit or push. Codex owns the checkpoint commits so later reviews can compare the follow-up work against a clean baseline.
+## Ownership
+
+- The follow-up agent may create one local commit after all requested batches pass verification.
+- The follow-up agent must never push. Codex reviews the diff and owns remote pushes.
+- Never rewrite, reset, clean, or revert user work. Leave `.agents`, `.gemini`, `.reasonix`, and `skills-lock.json` untracked unless the user explicitly requests otherwise.
+- Report the baseline SHA, final local SHA, files changed, checks run, remaining risks, and the first files Codex should inspect.
 
 ## Read First
 
-Read these files in this order before changing code:
-
 1. `AGENTS.md`
-2. Relevant local Next.js 16 docs under `node_modules/next/dist/docs/`
+2. Relevant Next.js 16.3 docs in `node_modules/next/dist/docs/`
 3. `task.md`
 4. `docs/BACKEND_DATA_ARCHITECTURE.md`
 5. `docs/UX_UI_SYSTEM_ROADMAP.md`
 6. `docs/frontend.md`
-7. `docs/COMPONENT_ARCHITECTURE.md`, especially section `0. Active Migration Architecture`
-8. `docs/API_SPECIFICATION.md`, especially `ActionResult And Server Action Flow`
-9. `supabase/migrations/0008_ux_data_foundation.sql`
-10. `supabase/migrations/0009_identity_evidence_flow.sql`
-11. `src/lib/server/student-care-read-models.ts`
-12. `src/app/actions/care.actions.ts`
-13. `src/components/care/*`
+7. `docs/COMPONENT_ARCHITECTURE.md`
+8. `docs/API_SPECIFICATION.md`
+9. The latest migrations in `supabase/migrations/`
+10. Existing read models under `src/lib/server/` and actions under `src/app/actions/`
+
+For frontend work, also read `.agents/skills/impeccable/SKILL.md`. For broad architecture work, read `.agents/skills/improve-codebase-architecture/SKILL.md` when available.
 
 ## Current Baseline
 
-The current production direction is:
+- Next.js `16.3.3`, React `19.2.4`, Tailwind CSS `4`, Supabase.
+- Server Components load initial data through server-only read models and typed DTOs.
+- Mutations are thin Server Actions returning `ActionResult<T>` and validating all client input.
+- Every query and mutation is explicitly tenant-scoped by authenticated `school_id`; RLS is defense in depth.
+- Multi-table invariants use transactional database RPCs. Generated Supabase types must match new RPCs.
+- Storage and database operations must use failure-safe lifecycle semantics; do not call cross-system operations atomic.
+- Shared UI belongs in established component directories. Do not add page-local duplicates.
+- Empty, loading, error, success, permission, and conflict states must be honest and usable on desktop and mobile.
+- Applied migrations are append-only. If deployment status is uncertain, add a new repair migration instead of rewriting production history.
 
-- Next.js `16.2.7`, React `19.2.4`, Tailwind CSS `4`.
-- Supabase migrations are append-only after they have been applied. Do not edit old applied migrations such as `0001` through `0008`; add a new migration instead.
-- Student care data should flow through shared server read models and typed DTOs, not page-local duplicated queries.
-- Mutations should be thin Server Actions returning `ActionResult<T>`.
-- Forms that need pending or field-level feedback should use `useActionState`.
-- Shared UI belongs under `src/components/dashboard`, `src/components/data`, `src/components/forms`, `src/components/feedback`, or `src/components/care` when it is reused across routes.
+## Required Gates
+
+Use focused checks during implementation. Before the local checkpoint commit run:
+
+```bash
+git diff --check
+npx tsc --noEmit
+npm run lint
+npm test -- --run
+npm run build
+npm audit --omit=dev
+```
+
+When migrations change and Docker is available:
+
+```bash
+npx supabase start
+npx supabase db reset
+npm run db:types
+```
+
+For UI changes, run authenticated browser smoke tests at desktop and mobile widths. Never refresh visual snapshots blindly; inspect the rendered result first.
 
 ## Coding Rules
 
-- Do not commit or push.
-- Do not run destructive git commands.
-- Keep changes scoped to the requested task.
-- Do not introduce new page-local UI patterns when a shared component already exists.
-- Server Components should load initial data through server-only read models.
-- Client Components should only handle interaction, local UI state, and form feedback.
-- Every Server Action must re-check authentication and authorization.
-- Every student-scoped query or mutation must respect school ownership and RLS.
-- Do not use a service-role key from UI actions.
-- Use generated Supabase types from `src/types/database.types.ts`.
-- For frontend work, follow the design-system rules in `docs/frontend.md` and the reusable component contracts in `docs/COMPONENT_ARCHITECTURE.md`.
-- Update `task.md` and the relevant architecture doc when behavior, data flow, or migration status changes.
+- Use `apply_patch` for manual edits and keep changes scoped.
+- Read the relevant local Next.js guide before changing framework code.
+- Authenticate, authorize, validate, and tenant-scope every Server Action.
+- Never trust a typed client argument as runtime validation.
+- Prefer database constraints plus RPC transactions for invariants and concurrency.
+- Use deterministic ordering for paginated queries.
+- Add focused regression tests for each repaired production defect.
+- Do not silence errors, fabricate data, leave decorative controls, or mark incomplete work complete in `task.md`.
+- Do not commit generated caches, credentials, local agent configuration, or unrelated changes.
 
-## Verification Checklist
+## Handoff Output
 
-Run the relevant subset for small changes, and the full set before handing back broad work:
+Return a compact report containing:
 
-```bash
-npm run db:start
-npx supabase db reset
-npm run db:types
-npm run lint
-npx tsc --noEmit
-npm test -- --run
-npm run build
-node .agents/skills/impeccable/scripts/detect.mjs --json src/app src/components
-```
-
-For UI changes, also run browser checks at desktop and mobile sizes. Protected routes may redirect to `/login` without an authenticated session; authenticated visual smoke is still required before production sign-off.
-
-## Near-Term Backlog
-
-High-value next tasks:
-
-- Wire the existing `student_attachments` panel into concrete home-visit detail/edit and report detail flows.
-- Build the dedicated support case lifecycle UI around open, in-progress, resolved, and monitoring states.
-- Continue replacing route-local mock data with read models for behavior, development plans, reports, notifications, and settings.
-- Add real `report_jobs` queue behavior and download state.
-- Add authenticated visual smoke tests for the migrated dashboard routes.
-
-## Starter Prompt For Follow-Up AI
-
-Use this as the initial prompt for the next agent:
-
-```text
-You are continuing work on the SCIDAS Next.js 16 project after Codex's baseline commit on branch codex/system-ux-foundation.
-
-Important constraints:
-- Do not commit or push. Leave all changes unstaged unless explicitly asked.
-- Read AGENTS.md first.
-- Before writing Next.js code, read the relevant local docs in node_modules/next/dist/docs/.
-- Read docs/AI_HANDOFF.md, task.md, docs/BACKEND_DATA_ARCHITECTURE.md, docs/UX_UI_SYSTEM_ROADMAP.md, docs/frontend.md, docs/COMPONENT_ARCHITECTURE.md section 0, and docs/API_SPECIFICATION.md ActionResult section.
-- Follow the existing patterns in src/lib/server/student-care-read-models.ts, src/app/actions/care.actions.ts, and src/components/care/*.
-
-Task:
-Pick the next highest-value item from task.md that moves the app toward real production usage. Prefer shared read models, typed DTOs, reusable components, and thin Server Actions. Do not create page-local duplicate UI if a shared component fits. Update task.md and relevant docs when you change architecture or status.
-
-Verification expected before handoff:
-- npx tsc --noEmit
-- npm run lint
-- npm test -- --run
-- npm run build
-- node .agents/skills/impeccable/scripts/detect.mjs --json src/app src/components
-- If migrations changed: npm run db:start, npx supabase db reset, npm run db:types
-```
+1. Baseline and local commit SHA; confirm `push: none`.
+2. Batches completed and user-visible behavior.
+3. Migrations/RPCs and authorization model changed.
+4. Exact verification results.
+5. Runtime checks not performed and why.
+6. Remaining risks and recommended next order.
+7. Highest-risk files for Codex review.

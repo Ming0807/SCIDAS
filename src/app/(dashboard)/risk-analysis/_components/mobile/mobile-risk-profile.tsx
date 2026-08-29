@@ -3,7 +3,11 @@
 import React, { useState } from "react"
 
 import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
-import type { RiskFactorDistribution } from "@/lib/server/risk-read-models"
+import type {
+  RiskDimensionBenchmark,
+  RiskFactorDistribution,
+  StudentRiskFactorData,
+} from "@/lib/server/risk-read-models"
 import { MobileRiskHeader } from "./mobile-risk-header"
 import { MobileOverallRisk } from "./mobile-overall-risk"
 import { MobileRiskBenchmark } from "./mobile-risk-benchmark"
@@ -15,16 +19,23 @@ type MobileRiskProfileProps = {
   students: StudentWorklistItem[]
   riskCounts: { high: number; watch: number; normal: number; total: number }
   factorDistribution: RiskFactorDistribution
+  dimensionBenchmarks: RiskDimensionBenchmark[]
+  studentRiskFactors: Record<string, StudentRiskFactorData>
 }
 
 export function MobileRiskProfile({
   students,
   riskCounts,
   factorDistribution,
+  dimensionBenchmarks,
+  studentRiskFactors,
 }: MobileRiskProfileProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
 
   const selectedStudent = students.find((s) => s.studentId === selectedStudentId) || null
+  const selectedStudentFactors = selectedStudent
+    ? studentRiskFactors[selectedStudent.studentId] ?? { hasAssessment: false, factors: [] }
+    : null
 
   // Calculate school average risk score
   const validScores = students.map((s) => s.riskScore).filter((score): score is number => score !== null)
@@ -75,20 +86,27 @@ export function MobileRiskProfile({
         {/* 2. Benchmark */}
         <div className="px-4 mb-5">
           <MobileRiskBenchmark
-            student={selectedStudent}
-            schoolAverageScore={schoolAverageScore}
             totalStudents={students.length}
+            benchmarks={dimensionBenchmarks}
+            studentFactors={selectedStudentFactors}
           />
         </div>
 
         {/* 3. Spider / Dimension Chart */}
         <div className="px-4 mb-5">
-          <MobileRiskSpiderChart factorDistribution={factorDistribution} />
+          <MobileRiskSpiderChart
+            factorDistribution={factorDistribution}
+            studentFactors={selectedStudentFactors}
+          />
         </div>
 
         {/* 4. Risk Factors List */}
         <div className="px-4 mb-5">
-          <MobileRiskFactors factorDistribution={factorDistribution} student={selectedStudent} />
+          <MobileRiskFactors
+            factorDistribution={factorDistribution}
+            student={selectedStudent}
+            studentFactors={selectedStudentFactors}
+          />
         </div>
 
         {/* 5. Guidelines */}

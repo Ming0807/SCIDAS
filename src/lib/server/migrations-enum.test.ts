@@ -83,4 +83,18 @@ describe("Database Migration Enum & Security Integrity", () => {
     expect(riskMigration).not.toContain("'teacher'")
     expect(riskMigration).not.toContain("'super_admin'")
   })
+
+  it("should keep guardian RPCs aligned with the generated database schema", () => {
+    const guardianMigration = fs.readFileSync(
+      path.join(migrationsDir, "0016_guardian_transactional.sql"),
+      "utf8",
+    )
+
+    expect(guardianMigration).toContain("WHERE id = v_actor_id")
+    expect(guardianMigration).toContain("relation, is_primary, can_pickup")
+    expect(guardianMigration).toContain("public.can_access_student(p_student_id)")
+    expect(guardianMigration).not.toContain("auth_user_id")
+    expect(guardianMigration).not.toMatch(/student_guardians[\s\S]{0,180}updated_at/)
+    expect(guardianMigration).not.toMatch(/student_guardians[\s\S]{0,180}relationship/)
+  })
 })

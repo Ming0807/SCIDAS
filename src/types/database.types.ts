@@ -1748,6 +1748,7 @@ export type Database = {
       }
       report_jobs: {
         Row: {
+          claim_token: string | null
           completed_at: string | null
           created_at: string
           error_message: string | null
@@ -1765,6 +1766,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          claim_token?: string | null
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
@@ -1782,6 +1784,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          claim_token?: string | null
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
@@ -3249,15 +3252,56 @@ export type Database = {
         }[]
       }
       can_access_student: { Args: { p_student_id: string }; Returns: boolean }
+      claim_report_job: {
+        Args: { p_job_id?: string | null }
+        Returns: Database["public"]["Tables"]["report_jobs"]["Row"][]
+      }
+      complete_report_job: {
+        Args: { p_claim_token: string; p_job_id: string; p_output_path: string }
+        Returns: boolean
+      }
       get_dashboard_summary: {
         Args: { p_school_id: string; p_semester_id: string }
         Returns: Json
+      }
+      fail_report_job: {
+        Args: { p_claim_token: string; p_error_message: string; p_job_id: string }
+        Returns: boolean
+      }
+      recover_stale_report_jobs: {
+        Args: { p_stale_before?: string | null }
+        Returns: number
+      }
+      retry_report_job: {
+        Args: { p_job_id: string }
+        Returns: boolean
       }
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_school_id: { Args: never; Returns: string }
+      manage_student_guardian: {
+        Args: {
+          p_can_pickup?: boolean
+          p_email?: string | null
+          p_first_name?: string | null
+          p_guardian_id?: string | null
+          p_is_primary?: boolean
+          p_last_name?: string | null
+          p_monthly_income?: number | null
+          p_occupation?: string | null
+          p_phone?: string | null
+          p_prefix?: string | null
+          p_relation?: Database["public"]["Enums"]["guardian_relation"]
+          p_student_id: string
+        }
+        Returns: Json
+      }
+      remove_student_guardian: {
+        Args: { p_guardian_id: string; p_student_id: string }
+        Returns: Json
+      }
       is_homeroom_teacher_of_student: {
         Args: { p_student_id: string }
         Returns: boolean
@@ -3639,4 +3683,3 @@ export const Constants = {
     },
   },
 } as const
-

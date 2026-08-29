@@ -3,41 +3,67 @@ import { Calendar as CalendarIcon, BookOpen, Smile, Home, Activity } from "lucid
 
 import { EmptyState } from "@/components/feedback/empty-state"
 import type { RiskFactorDistribution } from "@/lib/server/risk-read-models"
+import type { StudentRiskFactorData } from "@/lib/server/risk-read-models"
 
 const defaultIcons = [CalendarIcon, BookOpen, Smile, Activity, Home]
 
 export function MobileRiskSpiderChart({
   factorDistribution,
+  studentFactors,
 }: {
   factorDistribution: RiskFactorDistribution
+  studentFactors?: StudentRiskFactorData | null
 }) {
-  const factors = factorDistribution.factors || []
+  const isStudentView = studentFactors !== null && studentFactors !== undefined
+  const factors = isStudentView
+    ? (studentFactors?.factors ?? []).map((factor) => ({
+        factorKey: factor.factorKey,
+        factorLabel: factor.factorLabel,
+        value: factor.score,
+        valueLabel: `${factor.score} คะแนน`,
+      }))
+    : factorDistribution.factors.map((factor) => ({
+        factorKey: factor.factorKey,
+        factorLabel: factor.factorLabel,
+        value: factor.count,
+        valueLabel: `${factor.count} คน`,
+      }))
 
   if (factors.length === 0) {
     return (
       <div className="bg-card rounded-xl p-5 border border-border shadow-sm flex flex-col h-full">
-        <h3 className="text-sm font-semibold text-foreground mb-3">ปัจจัยความเสี่ยง 5 ด้าน</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">
+          {isStudentView ? "ปัจจัยความเสี่ยงของนักเรียน" : "ปัจจัยความเสี่ยงหลักของโรงเรียน"}
+        </h3>
         <EmptyState
-          title="ไม่มีข้อมูลปัจจัยเสี่ยง"
-          description="ยังไม่พบการกระจายตัวของปัจจัยความเสี่ยงในระบบ"
+          title={isStudentView && !studentFactors?.hasAssessment ? "ยังไม่มีผลประเมินของนักเรียน" : "ไม่มีข้อมูลปัจจัยเสี่ยง"}
+          description={
+            isStudentView
+              ? studentFactors?.hasAssessment
+                ? "ผลประเมินนี้ยังไม่มีปัจจัยความเสี่ยงที่บันทึกไว้"
+                : "นักเรียนคนนี้ยังไม่มีผลประเมินความเสี่ยงในภาคเรียนปัจจุบัน"
+              : "ยังไม่พบการกระจายตัวของปัจจัยความเสี่ยงในโรงเรียน"
+          }
           className="py-6"
         />
       </div>
     )
   }
 
-  // Calculate polygon points based on up to 5 factors
+  // Plot each available dimension so the chart does not imply a fixed five-factor model.
   const center = 50
   const radius = 38
-  const angles = [0, 72, 144, 216, 288].map((deg) => (deg - 90) * (Math.PI / 180))
+  const angles = factors.map((_, index) => ((index * 360) / factors.length - 90) * (Math.PI / 180))
 
   const gridPoints = angles.map((a) => `${center + radius * Math.cos(a)},${center + radius * Math.sin(a)}`).join(" ")
   const midPoints = angles.map((a) => `${center + radius * 0.5 * Math.cos(a)},${center + radius * 0.5 * Math.sin(a)}`).join(" ")
 
-  const totalStudents = factorDistribution.totalStudents || 1
+  const maxValue = Math.max(...factors.map((factor) => factor.value), 1)
   const factorsWithPct = factors.map((f) => ({
     ...f,
-    percentage: Math.round((f.count / totalStudents) * 100),
+    percentage: isStudentView
+      ? Math.round((f.value / maxValue) * 100)
+      : Math.round((f.value / Math.max(factorDistribution.totalStudents, 1)) * 100),
   }))
 
   const maxPct = Math.max(...factorsWithPct.map((f) => f.percentage), 1)
@@ -54,7 +80,9 @@ export function MobileRiskSpiderChart({
 
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm flex flex-col h-full">
-      <h3 className="text-sm font-semibold text-foreground mb-4">สัดส่วนปัจจัยความเสี่ยง</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-4">
+        {isStudentView ? "คะแนนปัจจัยความเสี่ยงของนักเรียน" : "สัดส่วนปัจจัยความเสี่ยงของโรงเรียน"}
+      </h3>
 
       <div className="flex-1 flex items-center justify-center relative mb-4">
         <div className="relative w-[180px] h-[180px]">
@@ -90,7 +118,7 @@ export function MobileRiskSpiderChart({
 
       {/* Factor Legend Badges */}
       <div className="space-y-1.5 pt-2 border-t border-border">
-        {factorsWithPct.slice(0, 5).map((f, i) => {
+        {factorsWithPct.map((f, i) => {
           const Icon = defaultIcons[i % defaultIcons.length]
           return (
             <div key={f.factorKey} className="flex items-center justify-between text-xs">
@@ -98,7 +126,9 @@ export function MobileRiskSpiderChart({
                 <Icon className="size-3.5 text-primary" />
                 <span className="text-muted-foreground truncate max-w-[150px]">{f.factorLabel}</span>
               </div>
-              <span className="font-semibold text-foreground">{f.percentage}% ({f.count} คน)</span>
+               <span className="font-semibold text-foreground">
+                 {isStudentView ? f.valueLabel : `${f.valueLabel} (${f.percentage}% ของโรงเรียน)`}
+               </span>
             </div>
           )
         })}

@@ -111,6 +111,20 @@ describe("Student Import Parser", () => {
       expect(res.invalidRows[0].errors.some((e) => e.includes("วันเกิด"))).toBe(true)
     })
 
+    it("should reject impossible calendar dates", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เพศ,วันเกิด\nSTD1001,สมชาย,ใจดี,ชาย,31/02/2556`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows).toHaveLength(0)
+      expect(res.invalidRows[0].errors.some((e) => e.includes("วันเกิด"))).toBe(true)
+    })
+
+    it("should reject unsupported legacy XLS files", async () => {
+      const legacyXlsHeader = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])
+      const res = await parseAndValidateStudentRows(legacyXlsHeader, "legacy.xls")
+      expect(res.validRows).toHaveLength(0)
+      expect(res.invalidRows[0].errors.some((e) => e.includes("CSV และ XLSX"))).toBe(true)
+    })
+
     it("should reject file exceeding 500 rows", async () => {
       const header = "รหัสนักเรียน,ชื่อ,นามสกุล,เพศ,วันเกิด\n"
       const rows = Array.from({ length: 501 }, (_, i) => `STD${1000 + i},สมชาย,ใจดี,ชาย,2013-05-15`).join("\n")

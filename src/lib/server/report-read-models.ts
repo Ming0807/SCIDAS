@@ -6,6 +6,12 @@ import { generateReportArtifact } from "./report-generator"
 
 type PublicTables = Database["public"]["Tables"]
 type ReportJobRow = PublicTables["report_jobs"]["Row"]
+type ClaimedReportJob = Pick<
+  ReportJobRow,
+  "id" | "school_id" | "report_type" | "title" | "filters"
+> & {
+  claim_token: string
+}
 type ReportJobQueryRow = Pick<
   ReportJobRow,
   | "id"
@@ -56,6 +62,11 @@ export function getReportTypeLabel(reportType: string): string {
 
 export function isReportJobType(reportType: string): reportType is ReportJobType {
   return reportJobTypes.includes(reportType as ReportJobType)
+}
+
+function reportLifecycleError(operation: string, error: { message: string }) {
+  console.error(`${operation} error:`, error)
+  return new Error(`ไม่สามารถ${operation}ได้`)
 }
 
 const signedUrlSeconds = 60 * 60 // 1 hour valid signed URL
@@ -127,11 +138,14 @@ export async function getReportJobs(limit = 20): Promise<ReportJobItem[]> {
   const context = await getCurrentUserContext()
   const client = await createClient()
 
-  // Recover stale jobs if any
-  try {
-    await recoverStaleReportJobs()
-  } catch (recErr) {
-    console.warn("Stale job recovery warning:", recErr)
+  // Recovery is a leadership maintenance operation; regular staff can still
+  // read the school-wide report queue without attempting a forbidden RPC.
+  if (context.role === "admin" || context.role === "director") {
+    try {
+      await recoverStaleReportJobs()
+    } catch (recErr) {
+      console.warn("Stale job recovery warning:", recErr)
+    }
   }
 
   const { data, error } = await client
@@ -239,9 +253,73 @@ export async function getPopularReportTypes(
   }))
 }
 
+export async function claimReportJob(jobId?: string): Promise<ClaimedReportJob | null> {
+  const client = await createClient()
+  const { data, error } = await client
+    .rpc("claim_report_job", { p_job_id: jobId ?? null })
+    .maybeSingle()
+
+  if (error) {
+    throw reportLifecycleError("รับงานรายงาน", error)
+  }
+
+  return (data as ClaimedReportJob | null) ?? null
+}
+
+export async function completeReportJob(
+  jobId: string,
+  claimToken: string,
+  outputPath: string,
+): Promise<boolean> {
+  const client = await createClient()
+  const { data, error } = await client.rpc("complete_report_job", {
+    p_job_id: jobId,
+    p_claim_token: claimToken,
+    p_output_path: outputPath,
+  })
+
+  if (error) {
+    throw reportLifecycleError("บันทึกผลรายงาน", error)
+  }
+
+  return data === true
+}
+
+export async function failReportJob(
+  jobId: string,
+  claimToken: string,
+  errorMessage: string,
+): Promise<boolean> {
+  const client = await createClient()
+  const { data, error } = await client.rpc("fail_report_job", {
+    p_job_id: jobId,
+    p_claim_token: claimToken,
+    p_error_message: errorMessage,
+  })
+
+  if (error) {
+    throw reportLifecycleError("บันทึกความล้มเหลวของรายงาน", error)
+  }
+
+  return data === true
+}
+
+export async function retryReportJob(jobId: string): Promise<boolean> {
+  const client = await createClient()
+  const { data, error } = await client.rpc("retry_report_job", {
+    p_job_id: jobId,
+  })
+
+  if (error) {
+    throw reportLifecycleError("เริ่มรายงานใหม่", error)
+  }
+
+  return data === true
+}
+
 /**
- * Concurrency-safe atomic worker to process a specific report job or next queued report job.
- * Transitions state queued -> running atomically, runs generation, uploads artifact, updates completed/failed.
+ * Processes a claimed report job. The database owns lifecycle transitions and
+ * the claim token prevents stale workers from overwriting newer attempts.
  */
 export async function processReportJobById(jobId?: string): Promise<{
   id: string
@@ -252,41 +330,9 @@ export async function processReportJobById(jobId?: string): Promise<{
   const context = await getCurrentUserContext()
   const client = await createClient()
 
-  let targetJobId = jobId
-
-  if (!targetJobId) {
-    // Pick the oldest queued job
-    const { data: queued } = await client
-      .from("report_jobs")
-      .select("id")
-      .eq("school_id", context.schoolId)
-      .eq("status", "queued")
-      .order("requested_at", { ascending: true })
-      .limit(1)
-      .maybeSingle()
-
-    if (!queued) return null
-    targetJobId = (queued as { id: string }).id
-  }
-
-  // 1. Concurrency-safe atomic claim: update status to 'running' ONLY if currently 'queued' or 'failed'
-  const { data: claimedJob, error: claimErr } = await client
-    .from("report_jobs")
-    .update({
-      status: "running",
-      started_at: new Date().toISOString(),
-      error_message: null,
-    })
-    .eq("id", targetJobId)
-    .eq("school_id", context.schoolId)
-    .in("status", ["queued", "failed"])
-    .select("id, school_id, report_type, title, filters")
-    .maybeSingle()
-
-  if (claimErr || !claimedJob) {
-    // Already claimed or running concurrently
-    return null
-  }
+  const claimedJob = await claimReportJob(jobId)
+  if (!claimedJob || claimedJob.school_id !== context.schoolId) return null
+  let uploadedStoragePath: string | null = null
 
   try {
     // 2. Generate Genuine File Artifact (Thai PDF or XLSX)
@@ -312,23 +358,23 @@ export async function processReportJobById(jobId?: string): Promise<{
       console.error("Report storage upload error:", uploadError)
       throw new Error("ไม่สามารถอัปโหลดไฟล์รายงานไปยังระบบจัดเก็บได้")
     }
+    uploadedStoragePath = storagePath
 
     // 4. Mark job as completed
-    const completedNow = new Date().toISOString()
-    const { error: updateErr } = await client
-      .from("report_jobs")
-      .update({
-        status: "completed",
-        completed_at: completedNow,
-        output_bucket: "reports",
-        output_path: storagePath,
-        error_message: null,
-      })
-      .eq("id", targetJobId)
+    const completed = await completeReportJob(
+      claimedJob.id,
+      claimedJob.claim_token,
+      storagePath,
+    )
 
-    if (updateErr) {
-      console.error("Report status update error:", updateErr)
-      throw new Error("ไม่สามารถบันทึกสถานะรายงานสำเร็จได้")
+    if (!completed) {
+      const { error: cleanupError } = await client.storage
+        .from("reports")
+        .remove([storagePath])
+      if (cleanupError) {
+        console.warn("Report artifact cleanup after lost claim failed:", cleanupError)
+      }
+      return null
     }
 
     const { data: signed } = await client.storage
@@ -336,7 +382,7 @@ export async function processReportJobById(jobId?: string): Promise<{
       .createSignedUrl(storagePath, signedUrlSeconds)
 
     return {
-      id: targetJobId,
+      id: claimedJob.id,
       status: "completed",
       errorMessage: null,
       downloadUrl: signed?.signedUrl || null,
@@ -345,17 +391,26 @@ export async function processReportJobById(jobId?: string): Promise<{
     const errorMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการประมวลผลไฟล์รายงาน"
     console.error("processReportJobById failure:", err)
 
-    await client
-      .from("report_jobs")
-      .update({
-        status: "failed",
-        completed_at: new Date().toISOString(),
-        error_message: errorMsg,
-      })
-      .eq("id", targetJobId)
+    let markedFailed = false
+    try {
+      markedFailed = await failReportJob(claimedJob.id, claimedJob.claim_token, errorMsg)
+    } catch (failErr) {
+      console.error("Report failure status update error:", failErr)
+    }
+
+    if (!markedFailed) return null
+
+    if (uploadedStoragePath) {
+      const { error: cleanupError } = await client.storage
+        .from("reports")
+        .remove([uploadedStoragePath])
+      if (cleanupError) {
+        console.warn("Report artifact cleanup after failed generation failed:", cleanupError)
+      }
+    }
 
     return {
-      id: targetJobId,
+      id: claimedJob.id,
       status: "failed",
       errorMessage: errorMsg,
     }
@@ -366,33 +421,24 @@ export async function processReportJobById(jobId?: string): Promise<{
  * Recovers stale running jobs that timed out (> 10 minutes without completion).
  */
 export async function recoverStaleReportJobs(): Promise<{ recoveredCount: number }> {
-  const context = await getCurrentUserContext()
   const client = await createClient()
 
   const staleCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString()
 
-  const { data: staleJobs, error: staleErr } = await client
-    .from("report_jobs")
-    .update({
-      status: "failed",
-      completed_at: new Date().toISOString(),
-      error_message: "การประมวลผลหมดเวลา (Timeout) กรุณากดลองใหม่",
-    })
-    .eq("school_id", context.schoolId)
-    .eq("status", "running")
-    .lt("started_at", staleCutoff)
-    .select("id")
+  const { data, error } = await client.rpc("recover_stale_report_jobs", {
+    p_stale_before: staleCutoff,
+  })
 
-  if (staleErr) {
-    console.error("recoverStaleReportJobs error:", staleErr)
-    return { recoveredCount: 0 }
+  if (error) {
+    throw reportLifecycleError("กู้คืนงานรายงานที่ค้าง", error)
   }
 
-  return { recoveredCount: (staleJobs ?? []).length }
+  return { recoveredCount: data ?? 0 }
 }
 
 /**
- * Consistent deletion: deletes both storage object and DB row atomically.
+ * Deletes the artifact first, then the DB row. These are separate systems, so
+ * the DB row is intentionally preserved when Storage removal fails.
  */
 export async function deleteReportJob(
   jobId: string,
@@ -422,17 +468,26 @@ export async function deleteReportJob(
   }
 
   // 2. Remove file from storage if present
-  if (job.output_bucket && job.output_path) {
+  if (job.output_path) {
+    if (job.output_bucket !== "reports") {
+      throw new Error("STORAGE_DELETE_FAILED")
+    }
+
     try {
       const { error: storageDelErr } = await client.storage
-        .from(job.output_bucket)
+        .from("reports")
         .remove([job.output_path])
 
       if (storageDelErr) {
-        console.warn("Storage file removal warning:", storageDelErr)
+        console.error("Storage file removal error:", storageDelErr)
+        throw new Error("STORAGE_DELETE_FAILED")
       }
     } catch (sErr) {
-      console.warn("Storage delete exception:", sErr)
+      if (sErr instanceof Error && sErr.message === "STORAGE_DELETE_FAILED") {
+        throw sErr
+      }
+      console.error("Storage delete exception:", sErr)
+      throw new Error("STORAGE_DELETE_FAILED")
     }
   }
 

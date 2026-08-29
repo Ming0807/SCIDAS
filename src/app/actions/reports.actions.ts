@@ -8,10 +8,9 @@ import {
   processReportJobById,
   reportJobTypes,
   requestReportJob,
+  retryReportJob,
 } from "@/lib/server/report-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
-import { createClient } from "@/utils/supabase/server"
-import { getCurrentUserContext } from "@/lib/server/current-user"
 
 export async function requestReportJobActionState(
   _previousState: ActionResult<{ id: string }> | null,
@@ -103,22 +102,13 @@ export async function processReportJobAction(jobId?: string): Promise<
 }
 
 /**
- * Retry a failed or queued report job.
+ * Retry a failed report job.
  */
 export async function retryReportJobAction(jobId: string): Promise<ActionResult> {
   try {
-    const context = await getCurrentUserContext()
-    const client = await createClient()
-
-    const { error: resetErr } = await client
-      .from("report_jobs")
-      .update({ status: "queued", error_message: null })
-      .eq("id", jobId)
-      .eq("school_id", context.schoolId)
-
-    if (resetErr) {
-      console.error("retryReportJobAction reset error:", resetErr)
-      return actionFail("INTERNAL_ERROR", "ไม่สามารถเริ่มสร้างรายงานใหม่ได้")
+    const reset = await retryReportJob(jobId)
+    if (!reset) {
+      return actionFail("CONFLICT", "รายงานนี้ไม่อยู่ในสถานะที่ลองใหม่ได้ หรือคุณไม่มีสิทธิ์ดำเนินการ")
     }
 
     // Schedule background processing via after()
@@ -150,6 +140,12 @@ export async function deleteReportJobAction(jobId: string): Promise<ActionResult
     console.error("deleteReportJobAction error:", err)
     if (err instanceof Error && err.message === "FORBIDDEN") {
       return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ลบรายงานนี้")
+    }
+    if (err instanceof Error && err.message === "STORAGE_DELETE_FAILED") {
+      return actionFail(
+        "INTERNAL_ERROR",
+        "ไม่สามารถลบไฟล์รายงานจากพื้นที่จัดเก็บได้ รายการรายงานยังคงอยู่",
+      )
     }
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการลบรายงาน")
   }
