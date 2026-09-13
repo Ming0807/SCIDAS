@@ -78,52 +78,56 @@ export function DesktopNotificationSidebar({
         ) : null}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
         <div className="flex flex-col gap-1">
           <Link
             href={buildNotificationHref({ status: currentStatus })}
-            className={`flex items-center justify-between rounded-xl p-2.5 ${
-              !currentType ? "bg-slate-100" : "text-slate-700 hover:bg-slate-50"
+            className={`flex items-center justify-between rounded-xl p-2.5 transition-colors ${
+              !currentType
+                ? "bg-muted text-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
           >
             <div className="flex items-center gap-3">
-              <LayoutGrid className="h-4 w-4 text-slate-400" />
-              <span className="text-sm font-medium">ทั้งหมด</span>
+              <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">ทั้งหมด</span>
             </div>
-            <span className="text-xs font-bold text-slate-500">{counts.total}</span>
+            <span className="text-xs font-bold text-muted-foreground">{counts.total}</span>
           </Link>
 
           <Link
             href={buildNotificationHref({ status: "unread", type: currentType })}
-            className="flex items-center justify-between rounded-xl bg-indigo-50 p-2.5 text-indigo-700 hover:bg-indigo-100"
+            className="flex items-center justify-between rounded-xl bg-primary/10 p-2.5 text-primary hover:bg-primary/15 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <MessageSquare className="h-4 w-4 text-indigo-500" />
+              <MessageSquare className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold">ยังไม่ได้อ่าน</span>
             </div>
-            <span className="text-xs font-bold text-indigo-600">{counts.unread}</span>
+            <span className="text-xs font-bold text-primary">{counts.unread}</span>
           </Link>
 
           {typeRows.map(([type, count]) => {
             const Icon = typeIcons[type] ?? Bell
-            const colorClass = typeIconColors[type] ?? "bg-slate-100 text-slate-600"
+            const colorClass = typeIconColors[type] ?? "bg-muted text-muted-foreground"
             const isActive = currentType === type
 
             return (
               <Link
                 key={type}
                 href={buildNotificationHref({ status: currentStatus, type })}
-                className={`flex items-center justify-between rounded-xl p-2.5 ${
-                  isActive ? "bg-slate-100" : "text-slate-700 hover:bg-slate-50"
+                className={`flex items-center justify-between rounded-xl p-2.5 transition-colors ${
+                  isActive
+                    ? "bg-muted text-foreground font-semibold"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex h-4 w-4 items-center justify-center rounded-sm ${colorClass}`}>
                     <Icon className="h-3 w-3" />
                   </div>
-                  <span className="text-sm font-medium">{getNotificationTypeLabel(type)}</span>
+                  <span className="text-sm">{getNotificationTypeLabel(type)}</span>
                 </div>
-                <span className="text-xs font-bold text-slate-500">{count}</span>
+                <span className="text-xs font-bold text-muted-foreground">{count}</span>
               </Link>
             )
           })}

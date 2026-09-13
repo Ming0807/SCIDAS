@@ -109,11 +109,11 @@ function NotificationRow({ item }: { item: NotificationItem }) {
     <div
       className={cn(
         "flex items-start gap-4 p-4 rounded-xl border transition-colors group",
-        item.isRead ? "border-slate-100 bg-slate-50/70" : `${visual.borderClass} bg-white`,
+        item.isRead ? "border-border/60 bg-muted/40" : `${visual.borderClass} bg-card`,
       )}
     >
       {hasLink && item.link ? (
-        <Link href={item.link} className="flex min-w-0 flex-1 items-start gap-4 hover:bg-slate-50">
+        <Link href={item.link} className="flex min-w-0 flex-1 items-start gap-4 hover:bg-muted/50 rounded-lg p-1 -m-1 transition-colors">
           {body}
         </Link>
       ) : (
@@ -142,12 +142,12 @@ export function DesktopNotificationList({
   currentType,
 }: DesktopNotificationListProps) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col h-full">
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-        <h3 className="text-sm font-bold text-slate-800">ทั้งหมด {totalCount} รายการ</h3>
+    <div className="bg-card rounded-xl p-5 border border-border shadow-sm flex flex-col h-full">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+        <h3 className="text-sm font-bold text-foreground">ทั้งหมด {totalCount} รายการ</h3>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">จัดเรียงตาม</span>
-          <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+          <span className="text-xs text-muted-foreground">จัดเรียงตาม</span>
+          <span className="rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
             ล่าสุด
           </span>
         </div>
@@ -171,8 +171,8 @@ export function DesktopNotificationList({
       )}
 
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+          <div className="text-xs font-medium text-muted-foreground">
             หน้า {page} จาก {totalPages} ({totalCount} รายการ)
           </div>
           <div className="flex items-center gap-2">
@@ -183,13 +183,13 @@ export function DesktopNotificationList({
                   type: currentType,
                   page: page - 1,
                 })}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 ก่อนหน้า
               </Link>
             ) : (
-              <span className="flex items-center gap-1 rounded-lg border border-slate-100 px-3 py-1.5 text-xs font-medium text-slate-300 cursor-not-allowed">
+              <span className="flex items-center gap-1 rounded-lg border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/40 cursor-not-allowed">
                 <ChevronLeft className="h-3.5 w-3.5" />
                 ก่อนหน้า
               </span>
@@ -202,13 +202,13 @@ export function DesktopNotificationList({
                   type: currentType,
                   page: page + 1,
                 })}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 ถัดไป
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             ) : (
-              <span className="flex items-center gap-1 rounded-lg border border-slate-100 px-3 py-1.5 text-xs font-medium text-slate-300 cursor-not-allowed">
+              <span className="flex items-center gap-1 rounded-lg border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/40 cursor-not-allowed">
                 ถัดไป
                 <ChevronRight className="h-3.5 w-3.5" />
               </span>

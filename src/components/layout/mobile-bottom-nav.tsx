@@ -51,7 +51,7 @@ export function MobileBottomNav() {
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center justify-center w-16 h-12 gap-1 relative rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive ? "text-primary" : "text-slate-400 hover:text-slate-600"
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <div className="relative">
@@ -76,7 +76,7 @@ export function MobileBottomNav() {
               aria-label="เปิดเมนูทั้งหมด"
               className={cn(
                 "flex flex-col items-center justify-center w-16 h-12 gap-1 relative rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isMenuActive ? "text-primary" : "text-slate-400 hover:text-slate-600"
+                isMenuActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             />
           }
@@ -114,7 +114,7 @@ export function MobileBottomNav() {
                       "flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border px-2 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isActive
                         ? "border-primary/30 bg-accent text-accent-foreground"
-                        : "border-border bg-card text-slate-600 hover:bg-muted hover:text-foreground"
+                        : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   />
                 }

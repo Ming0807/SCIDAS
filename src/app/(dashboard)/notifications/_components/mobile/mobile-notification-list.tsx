@@ -65,8 +65,8 @@ function MobileNotificationRow({ item }: { item: NotificationItem }) {
   return (
     <div
       className={cn(
-        "rounded-xl p-4 border border-slate-200 shadow-sm flex gap-3 relative",
-        item.isRead ? "bg-slate-50" : "bg-white",
+        "rounded-xl p-4 border shadow-sm flex gap-3 relative transition-colors",
+        item.isRead ? "border-border/60 bg-muted/40" : "border-border bg-card",
       )}
     >
       <div className="absolute top-3.5 right-3 flex items-center gap-1">
@@ -78,7 +78,7 @@ function MobileNotificationRow({ item }: { item: NotificationItem }) {
         <NotificationDeleteButton notificationId={item.id} />
       </div>
       {hasLink && item.link ? (
-        <Link href={item.link} className="flex min-w-0 flex-1 gap-3 pr-14">
+        <Link href={item.link} className="flex min-w-0 flex-1 gap-3 pr-14 hover:opacity-90">
           {body}
         </Link>
       ) : (
@@ -120,7 +120,7 @@ export function MobileNotificationList({
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-xs font-medium text-slate-500">
+          <div className="text-xs font-medium text-muted-foreground">
             หน้า {page} จาก {totalPages}
           </div>
           <div className="flex items-center gap-2">
@@ -131,13 +131,13 @@ export function MobileNotificationList({
                   type: currentType,
                   page: page - 1,
                 })}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600"
+                className="flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 ก่อนหน้า
               </Link>
             ) : (
-              <span className="flex items-center gap-1 rounded-lg border border-slate-100 px-3 py-1.5 text-xs font-medium text-slate-300">
+              <span className="flex items-center gap-1 rounded-lg border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/40 cursor-not-allowed">
                 <ChevronLeft className="h-3.5 w-3.5" />
                 ก่อนหน้า
               </span>
@@ -150,13 +150,13 @@ export function MobileNotificationList({
                   type: currentType,
                   page: page + 1,
                 })}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600"
+                className="flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 ถัดไป
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             ) : (
-              <span className="flex items-center gap-1 rounded-lg border border-slate-100 px-3 py-1.5 text-xs font-medium text-slate-300">
+              <span className="flex items-center gap-1 rounded-lg border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/40 cursor-not-allowed">
                 ถัดไป
                 <ChevronRight className="h-3.5 w-3.5" />
               </span>

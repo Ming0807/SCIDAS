@@ -25,7 +25,7 @@ export function MobileNotificationProfile({
   currentType,
 }: MobileNotificationProfileProps) {
   return (
-    <div className="bg-slate-50 min-h-screen relative">
+    <div className="bg-background min-h-screen relative">
       <MobileNotificationHeader
         counts={counts}
         currentStatus={currentStatus}

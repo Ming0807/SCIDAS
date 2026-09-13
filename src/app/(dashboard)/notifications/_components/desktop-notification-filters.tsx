@@ -31,43 +31,43 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-slate-800">สถานะการอ่าน</h3>
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">สถานะการอ่าน</h3>
         <div className="grid grid-cols-3 gap-2">
           <Link
             href={buildNotificationHref({ status: "all", type: currentType })}
             className={`rounded-lg p-3 transition-colors ${
-              currentStatus === "all" ? "ring-2 ring-indigo-400 bg-slate-50" : "bg-slate-50 hover:bg-slate-100"
+              currentStatus === "all" ? "ring-2 ring-primary/40 bg-muted" : "bg-muted/50 hover:bg-muted"
             }`}
           >
-            <div className="text-xs text-slate-500">ทั้งหมด</div>
-            <div className="mt-1 text-lg font-bold text-slate-800">{counts.total}</div>
+            <div className="text-xs text-muted-foreground">ทั้งหมด</div>
+            <div className="mt-1 text-lg font-bold text-foreground">{counts.total}</div>
           </Link>
           <Link
             href={buildNotificationHref({ status: "unread", type: currentType })}
             className={`rounded-lg p-3 transition-colors ${
-              currentStatus === "unread" ? "ring-2 ring-indigo-400 bg-red-50" : "bg-red-50 hover:bg-red-100"
+              currentStatus === "unread" ? "ring-2 ring-destructive/40 bg-destructive/10" : "bg-destructive/5 hover:bg-destructive/10"
             }`}
           >
-            <div className="text-xs text-red-600">ยังไม่ได้อ่าน</div>
-            <div className="mt-1 text-lg font-bold text-red-700">{counts.unread}</div>
+            <div className="text-xs text-destructive">ยังไม่ได้อ่าน</div>
+            <div className="mt-1 text-lg font-bold text-destructive">{counts.unread}</div>
           </Link>
           <Link
             href={buildNotificationHref({ status: "read", type: currentType })}
             className={`rounded-lg p-3 transition-colors ${
-              currentStatus === "read" ? "ring-2 ring-indigo-400 bg-green-50" : "bg-green-50 hover:bg-green-100"
+              currentStatus === "read" ? "ring-2 ring-emerald-500/40 bg-emerald-500/10" : "bg-emerald-500/5 hover:bg-emerald-500/10"
             }`}
           >
-            <div className="text-xs text-green-600">อ่านแล้ว</div>
-            <div className="mt-1 text-lg font-bold text-green-700">{readCount}</div>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400">อ่านแล้ว</div>
+            <div className="mt-1 text-lg font-bold text-emerald-700 dark:text-emerald-300">{readCount}</div>
           </Link>
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-slate-800">ประเภทที่พบ</h3>
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">ประเภทที่พบ</h3>
         {typeRows.length === 0 ? (
-          <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+          <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
             <Bell className="h-4 w-4" />
             ยังไม่มีข้อมูลประเภทการแจ้งเตือน
           </div>
@@ -80,16 +80,16 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
                   key={type}
                   href={buildNotificationHref({ status: currentStatus, type })}
                   className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
-                    isActive ? "bg-slate-100" : "hover:bg-slate-50"
+                    isActive ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${typeDotClasses[type]}`} />
-                    <span className="text-xs font-medium text-slate-700">
+                    <span className="text-xs">
                       {getNotificationTypeLabel(type)}
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-slate-800">{count}</span>
+                  <span className="text-xs font-semibold">{count}</span>
                 </Link>
               )
             })}
@@ -97,34 +97,34 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-slate-800">ช่องทางการแจ้งเตือน</h3>
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">ช่องทางการแจ้งเตือน</h3>
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between rounded-lg p-2">
             <div className="flex items-center gap-3">
-              <Monitor className="h-4 w-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-700">ในระบบ</span>
+              <Monitor className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">ในระบบ</span>
             </div>
-            <span className="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-3 w-3" />
               เปิด
             </span>
           </div>
           <div className="flex items-center justify-between rounded-lg p-2">
             <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-700">อีเมล</span>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">อีเมล</span>
             </div>
-            <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+            <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
               ยังไม่เชื่อมต่อ
             </span>
           </div>
           <div className="flex items-center justify-between rounded-lg p-2">
             <div className="flex items-center gap-3">
-              <MessageCircle className="h-4 w-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-700">LINE Notify</span>
+              <MessageCircle className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">LINE Notify</span>
             </div>
-            <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+            <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
               ยังไม่เชื่อมต่อ
             </span>
           </div>
