@@ -22,9 +22,10 @@ describe("Sidebar", () => {
 
   it("renders navigation links", () => {
     render(<Sidebar />);
-    expect(screen.getByRole("link", { name: /ภาพรวม/ })).toBeDefined();
-    expect(screen.getByRole("link", { name: /นักเรียน/ })).toBeDefined();
-    expect(screen.getByRole("link", { name: /การมาเรียน/ })).toBeDefined();
+    expect(screen.getByRole("link", { name: /^ภาพรวม$/ })).toBeDefined();
+    expect(screen.getByRole("link", { name: /^นักเรียน$/ })).toBeDefined();
+    expect(screen.getByRole("link", { name: /^คัดกรองนักเรียน$/ })).toBeDefined();
+    expect(screen.getByRole("link", { name: /^การมาเรียน$/ })).toBeDefined();
   });
 
   it("marks the active navigation item from the shared route matcher", () => {
@@ -41,9 +42,9 @@ describe("Sidebar", () => {
   it("uses role visibility from the shared navigation config", () => {
     render(<Sidebar role="student" />);
 
-    expect(screen.getByRole("link", { name: /ภาพรวม/ })).toBeDefined();
-    expect(screen.getByRole("link", { name: /ตั้งค่า/ })).toBeDefined();
-    expect(screen.queryByRole("link", { name: /นักเรียน/ })).toBeNull();
+    expect(screen.getByRole("link", { name: /^ภาพรวม$/ })).toBeDefined();
+    expect(screen.getByRole("link", { name: /^ตั้งค่า$/ })).toBeDefined();
+    expect(screen.queryByRole("link", { name: /^นักเรียน$/ })).toBeNull();
   });
 });
 

@@ -124,6 +124,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         perform: () => router.push("/referrals"),
       },
       {
+        id: "nav-screening",
+        title: "ศูนย์กลางการคัดกรองนักเรียน (Screening Hub)",
+        subtitle: "ภาพรวมการคัดกรอง SDQ, 5 ด้าน สพฐ., และทักษะพื้นฐาน 3R",
+        category: "navigation",
+        icon: ClipboardCheck,
+        keywords: ["screening", "คัดกรอง", "sdq", "3r", "สพฐ", "5 ด้าน"],
+        perform: () => router.push("/screening"),
+      },
+      {
         id: "nav-sdq",
         title: "แบบประเมินพฤติกรรม SDQ (Strengths & Difficulties)",
         subtitle: "ประเมินพฤติกรรม 25 ข้อ 5 มิติ มาตรฐานกรมสุขภาพจิต/สพฐ.",
@@ -167,6 +176,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         icon: Settings,
         keywords: ["settings", "ตั้งค่า", "ปีการศึกษา", "ห้องเรียน"],
         perform: () => router.push("/settings"),
+      },
+      {
+        id: "nav-staff",
+        title: "จัดการบุคลากรและครูประจำชั้น (Staff Management)",
+        subtitle: "กำหนดสิทธิ์ผู้ดูแล ผู้อำนวยการ ครูแนะแนว และมอบหมายห้องเรียน",
+        category: "navigation",
+        icon: Users,
+        keywords: ["staff", "บุคลากร", "ครู", "ครูประจำชั้น", "สิทธิ์", "admin", "บทบาท"],
+        perform: () => router.push("/settings/staff"),
       },
       {
         id: "nav-audit-logs",

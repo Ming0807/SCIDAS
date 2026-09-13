@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BookOpen, ChevronRight, Clock, Mail, Shield } from "lucide-react"
+import { BookOpen, ChevronRight, Clock, Mail, Shield, ShieldCheck, Users } from "lucide-react"
 
 import { ErrorState } from "@/components/feedback/error-state"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -57,11 +57,29 @@ export default async function SettingsPage() {
                   การจัดการสำหรับผู้ดูแลระบบ
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  กำหนดโครงสร้างวิชาการ ปีการศึกษา ภาคเรียน ห้องเรียน และรายวิชา
+                  กำหนดโครงสร้างบุคลากร วิชาการ ความปลอดภัย และการปฏิบัติตามมาตรฐาน PDPA
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-1">
+                <Link
+                  href="/settings/staff"
+                  className="flex items-center justify-between rounded-lg border border-border bg-background p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-300">
+                      <Users className="size-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">จัดการบุคลากรและครูประจำชั้น</p>
+                      <p className="text-xs text-muted-foreground">
+                        รายชื่อครู กำหนดบทบาทสิทธิ์ (Admin, ผอ., ครูที่ปรึกษา, ครูแนะแนว) และมอบหมายครูประจำชั้น
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="size-5 text-muted-foreground" />
+                </Link>
+
                 <Link
                   href="/settings/academic"
                   className="flex items-center justify-between rounded-lg border border-border bg-background p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
@@ -71,9 +89,27 @@ export default async function SettingsPage() {
                       <BookOpen className="size-5" />
                     </div>
                     <div>
-                      <p className="font-semibold">จัดการโครงสร้างวิชาการ</p>
+                      <p className="font-semibold text-sm">จัดการโครงสร้างวิชาการ</p>
                       <p className="text-xs text-muted-foreground">
                         ปีการศึกษา, ภาคเรียนปัจจุบัน, ห้องเรียน, รายวิชา, และครูประจำวิชา
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="size-5 text-muted-foreground" />
+                </Link>
+
+                <Link
+                  href="/settings/audit-logs"
+                  className="flex items-center justify-between rounded-lg border border-border bg-background p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+                      <ShieldCheck className="size-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">บันทึกการตรวจสอบความปลอดภัยและ PDPA</p>
+                      <p className="text-xs text-muted-foreground">
+                        ประวัติการเข้าใช้งานระบบ (Access Log), การแก้ไขระเบียนนักเรียน และความปลอดภัย
                       </p>
                     </div>
                   </div>
