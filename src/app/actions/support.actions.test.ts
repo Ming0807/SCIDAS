@@ -7,6 +7,8 @@ import {
   transitionSupportRecord,
   getSupportRecords,
   getSupportRecord,
+  createSupportFollowupAction,
+  deleteSupportFollowupAction,
 } from "./support.actions"
 
 vi.mock("next/cache", () => ({
@@ -580,18 +582,35 @@ describe("support.actions", () => {
       }
 
       const mockClient = {
-        from: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({ data: mockRow, error: null }),
+        from: vi.fn((table: string) => {
+          if (table === "support_records") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: mockRow, error: null }),
+                  }),
+                }),
               }),
-            }),
-          }),
+            }
+          }
+          if (table === "support_followups") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    order: vi.fn().mockResolvedValue({ data: [], error: null }),
+                  }),
+                }),
+              }),
+            }
+          }
+          return {}
         }),
       }
-      // @ts-expect-error mock supabase client
-      vi.mocked(createClient).mockResolvedValueOnce(mockClient)
+      vi.mocked(createClient).mockResolvedValueOnce(
+        mockClient as unknown as Awaited<ReturnType<typeof createClient>>,
+      )
 
       const result = await getSupportRecord("supp-1")
       expect(result.ok).toBe(true)
@@ -599,7 +618,122 @@ describe("support.actions", () => {
         expect(result.data.id).toBe("supp-1")
         expect(result.data.canEdit).toBe(true)
         expect(result.data.student?.first_name).toBe("John")
+        expect(Array.isArray(result.data.followups)).toBe(true)
       }
+    })
+  })
+
+  describe("createSupportFollowupAction", () => {
+    it("creates a support followup successfully and triggers revalidations", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: "followup-123" }, error: null }),
+        }),
+      })
+
+      const mockClient = {
+        from: vi.fn((table: string) => {
+          if (table === "support_records") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({
+                      data: { id: "case-1", student_id: "stu-1" },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            }
+          }
+          if (table === "support_followups") {
+            return { insert: mockInsert }
+          }
+          return {}
+        }),
+      }
+
+      vi.mocked(createClient).mockResolvedValueOnce(
+        mockClient as unknown as Awaited<ReturnType<typeof createClient>>,
+      )
+
+      const formData = new FormData()
+      formData.set("support_record_id", "case-1")
+      formData.set("followup_date", "2026-09-15")
+      formData.set("description", "Student shows positive adaptation in class")
+      formData.set("result", "ดีขึ้น")
+      formData.set("improvement_noted", "true")
+
+      const result = await createSupportFollowupAction(null, formData)
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.id).toBe("followup-123")
+      }
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          support_record_id: "case-1",
+          school_id: "sch-1",
+          followed_by: "prof-1",
+          followup_date: "2026-09-15",
+          improvement_noted: true,
+        }),
+      )
+    })
+
+    it("fails with VALIDATION_ERROR if description is missing", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const formData = new FormData()
+      formData.set("support_record_id", "case-1")
+      formData.set("description", "")
+
+      const result = await createSupportFollowupAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.description).toBeDefined()
+      }
+    })
+  })
+
+  describe("deleteSupportFollowupAction", () => {
+    it("deletes a support followup successfully and revalidates route", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-admin",
+        studentId: null,
+      })
+
+      const mockDelete = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      })
+
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn().mockReturnValue({ delete: mockDelete }),
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
+
+      const result = await deleteSupportFollowupAction("followup-1", "case-1")
+      expect(result.ok).toBe(true)
+      expect(revalidatePath).toHaveBeenCalledWith("/support/case-1")
     })
   })
 })

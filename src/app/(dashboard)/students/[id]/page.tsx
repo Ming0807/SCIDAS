@@ -54,6 +54,7 @@ import {
 import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { StudentGuardianManager } from "./_components/student-guardian-manager"
+import { StudentPrintableCard } from "./_components/student-printable-card"
 
 type StudentProfilePageProps = {
   params: Promise<{ id: string }>
@@ -265,6 +266,11 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
             <Link href="/students" className={cn(buttonVariants({ variant: "outline" }))}>
               <ArrowLeft /> กลับรายชื่อ
             </Link>
+            <StudentPrintableCard
+              profile={profile}
+              guardians={guardians}
+              actionItems={actionItems}
+            />
             {canEdit ? <Link href={`/students/${profile.studentId}/edit`} className={cn(buttonVariants({ variant: "outline" }))}>
               <Edit2 /> แก้ไขข้อมูล
             </Link> : null}

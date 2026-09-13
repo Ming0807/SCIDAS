@@ -1,10 +1,12 @@
 "use client"
 
-import { Bell, Menu, Calendar } from "lucide-react"
+import { Bell, Menu, Calendar, Search } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Sidebar } from "@/components/layout/sidebar"
+import { CommandPalette } from "@/components/layout/command-palette"
 import { getNavigationLabel } from "@/lib/navigation"
 
 import { useRealtime } from "@/components/providers/realtime-provider"
@@ -28,6 +30,7 @@ export function Header({
   unreadCount?: number
 }) {
   const pathname = usePathname()
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const { unreadNotificationsCount } = useRealtime()
   const unreadCount = unreadNotificationsCount ?? initialUnreadCount
   const schoolName = profile?.schoolName ?? null
@@ -35,6 +38,17 @@ export function Header({
   const initials = profile
     ? (profile.firstName.charAt(0) + profile.lastName.charAt(0)).toUpperCase()
     : "?"
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        setPaletteOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   return (
     <header className="sticky top-0 z-30 flex h-14 md:h-20 w-full items-center justify-between px-4 md:px-8 bg-card border-b border-border">
@@ -62,7 +76,21 @@ export function Header({
         </h1>
       </div>
 
-      <div className="flex items-center gap-4 shrink-0 min-w-0">
+      <div className="flex items-center gap-3 shrink-0 min-w-0">
+        {/* Global Search / Command Palette Trigger */}
+        <button
+          type="button"
+          onClick={() => setPaletteOpen(true)}
+          className="flex items-center gap-2 h-9 px-3 rounded-full border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground text-xs transition-colors shrink-0"
+          aria-label="เปิดค้นหาด่วน (Ctrl+K)"
+        >
+          <Search className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">ค้นหาด่วน...</span>
+          <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+            Ctrl K
+          </kbd>
+        </button>
+
         {/* Today's date */}
         <div className="hidden 2xl:flex items-center gap-2 h-9 px-4 rounded-full border border-border bg-card shrink-0">
           <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -115,6 +143,8 @@ export function Header({
           </div>
         </div>
       </div>
+
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </header>
   )
 }

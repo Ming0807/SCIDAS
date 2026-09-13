@@ -52,6 +52,11 @@ export type SupportCase = Pick<
   student: RelatedStudent | null
   provider: RelatedProfile | null
   canEdit: boolean
+  followups?: SupportFollowup[]
+}
+
+export type SupportFollowup = Tables<"support_followups"> & {
+  follower?: RelatedProfile | null
 }
 
 export type SupportRecordListItem = Pick<
@@ -328,8 +333,27 @@ export async function getSupportRecord(id: string): Promise<ActionResult<Support
     }
     if (!data) return actionFail("NOT_FOUND", "ไม่พบเคสช่วยเหลือในโรงเรียนปัจจุบัน")
 
+    let followups: SupportFollowup[] = []
+    try {
+      const followupsRes = await client
+        .from("support_followups")
+        .select("id, support_record_id, school_id, followed_by, followup_date, description, result, improvement_noted, next_action, next_followup_date, created_at, follower:profiles!support_followups_followed_by_fkey(id, first_name, last_name)")
+        .eq("support_record_id", id)
+        .eq("school_id", context.schoolId)
+        .order("followup_date", { ascending: false })
+
+      if (followupsRes && followupsRes.data) {
+        followups = followupsRes.data as unknown as SupportFollowup[]
+      }
+    } catch {
+      // In case followups mock or table is omitted
+    }
+
+    const supportCase = readSupportCase(data as unknown as SupportQueryRow, supportEditors.has(context.role))
+    supportCase.followups = followups
+
     return actionOk("โหลดรายละเอียดเคสสำเร็จ", {
-      data: readSupportCase(data as unknown as SupportQueryRow, supportEditors.has(context.role)),
+      data: supportCase,
     })
   } catch (error) {
     const result = actionFailureFromError(error, "ไม่สามารถโหลดรายละเอียดเคสได้")
@@ -546,4 +570,112 @@ export async function createSupportRecordFormAction(
   formData: FormData,
 ): Promise<ActionResult<SupportActionData>> {
   return createSupportRecord(prev, formData)
+}
+
+export async function createSupportFollowupAction(
+  _prev: ActionResult<{ id: string }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ id: string }>> {
+  const access = await requireSupportEditor()
+  if (!access.ok) return access.result as ActionResult<{ id: string }>
+
+  const supportRecordId = getFormString(formData, "support_record_id")
+  const followupDate = getFormString(formData, "followup_date") || new Date().toISOString().slice(0, 10)
+  const description = getFormString(formData, "description")
+  const result = getFormString(formData, "result") || null
+  const rawImprovement = formData.get("improvement_noted")
+  const improvementNoted = rawImprovement === "true" || rawImprovement === "on"
+  const nextAction = getFormString(formData, "next_action") || null
+  const nextFollowupDate = getFormString(formData, "next_followup_date") || null
+
+  if (!supportRecordId) {
+    return actionFail("VALIDATION_ERROR", "ไม่พบรหัสเคสการช่วยเหลือ")
+  }
+
+  if (!description) {
+    return actionFail("VALIDATION_ERROR", "กรุณาระบุรายละเอียดการติดตามผล", {
+      fieldErrors: { description: ["กรุณาระบุรายละเอียดการติดตามผล"] },
+    })
+  }
+
+  if (!isValidDate(followupDate)) {
+    return actionFail("VALIDATION_ERROR", "วันที่ติดตามผลไม่ถูกต้อง", {
+      fieldErrors: { followup_date: ["วันที่ติดตามผลไม่ถูกต้อง"] },
+    })
+  }
+
+  try {
+    const client = await createClient()
+    const { data: supportCase } = await client
+      .from("support_records")
+      .select("id, student_id")
+      .eq("id", supportRecordId)
+      .eq("school_id", access.context.schoolId)
+      .maybeSingle()
+
+    if (!supportCase) {
+      return actionFail("NOT_FOUND", "ไม่พบเคสช่วยเหลือนี้ในโรงเรียน")
+    }
+
+    const { data, error } = await client
+      .from("support_followups")
+      .insert({
+        support_record_id: supportRecordId,
+        school_id: access.context.schoolId,
+        followed_by: access.context.profileId,
+        followup_date: followupDate,
+        description,
+        result,
+        improvement_noted: improvementNoted,
+        next_action: nextAction,
+        next_followup_date: nextFollowupDate && isValidDate(nextFollowupDate) ? nextFollowupDate : null,
+      })
+      .select("id")
+      .single()
+
+    if (error) {
+      console.error("Error creating support followup:", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกการติดตามผลได้")
+    }
+
+    revalidateSupportRoutes(supportRecordId, supportCase.student_id)
+    return actionOk("บันทึกการติดตามผลเรียบร้อยแล้ว", {
+      data: { id: data.id },
+      revalidated: [`/support/${supportRecordId}`],
+    })
+  } catch (error) {
+    return actionFailureFromError(error, "เกิดข้อผิดพลาดในการบันทึกการติดตามผล") as ActionResult<{ id: string }>
+  }
+}
+
+export async function deleteSupportFollowupAction(
+  followupId: string,
+  supportRecordId: string,
+): Promise<ActionResult<{ id: string }>> {
+  const access = await requireSupportEditor()
+  if (!access.ok) return access.result as ActionResult<{ id: string }>
+
+  if (!followupId) {
+    return actionFail("VALIDATION_ERROR", "ไม่พบรหัสรายการติดตามผล")
+  }
+
+  try {
+    const client = await createClient()
+    const { error } = await client
+      .from("support_followups")
+      .delete()
+      .eq("id", followupId)
+      .eq("school_id", access.context.schoolId)
+
+    if (error) {
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบรายการติดตามผลได้")
+    }
+
+    revalidatePath(`/support/${supportRecordId}`)
+    return actionOk("ลบรายการติดตามผลเรียบร้อยแล้ว", {
+      data: { id: followupId },
+    })
+  } catch (error) {
+    return actionFailureFromError(error, "ไม่สามารถลบรายการติดตามผลได้") as ActionResult<{ id: string }>
+  }
 }

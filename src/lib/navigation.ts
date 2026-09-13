@@ -11,6 +11,7 @@ import {
   Home,
   House,
   Settings,
+  Share2,
   Smile,
   Users,
 } from "lucide-react";
@@ -93,6 +94,14 @@ export const dashboardNavItems: NavigationItem[] = [
     label: "ดูแลช่วยเหลือ",
     href: "/support",
     icon: HeartHandshake,
+    group: "care",
+    placements: ["sidebar", "moduleMenu"],
+  },
+  {
+    key: "referrals",
+    label: "การส่งต่อ",
+    href: "/referrals",
+    icon: Share2,
     group: "care",
     placements: ["sidebar", "moduleMenu"],
   },
@@ -204,12 +213,14 @@ const exactPathLabels: Record<string, string> = {
   "/behavior/record": "บันทึกพฤติกรรม",
   "/home-visits/new": "บันทึกเยี่ยมบ้าน",
   "/support/new": "สร้างเคสดูแลช่วยเหลือ",
+  "/referrals/new": "สร้างการส่งต่อนักเรียน",
 };
 
 const dynamicPathLabels: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /^\/students\/[^/]+$/, label: "ข้อมูลนักเรียน" },
   { pattern: /^\/behavior\/[^/]+$/, label: "รายละเอียดพฤติกรรม" },
   { pattern: /^\/development-plans\/[^/]+$/, label: "รายละเอียดแผน" },
+  { pattern: /^\/referrals\/[^/]+$/, label: "รายละเอียดการส่งต่อ" },
 ];
 
 const segmentLabels: Record<string, string> = {

@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { AlertTriangle, Loader2, RotateCw, Save, Search } from "lucide-react"
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  RotateCw,
+  Save,
+  Search,
+} from "lucide-react"
 import { upsertAttendance, type AttendanceInput } from "@/app/actions/attendance.actions"
 import { ActionFeedback } from "@/components/forms/action-feedback"
 import { Button } from "@/components/ui/button"
@@ -27,6 +34,7 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
   const { lastAttendanceChange } = useRealtime()
   const [pending, startTransition] = useTransition()
   const [query, setQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "non_present">("all")
   const [date, setDate] = useState(dateStr)
   const [result, setResult] = useState<ActionResult<{ count: number }> | null>(null)
   const [hasExternalUpdate, setHasExternalUpdate] = useState(false)
@@ -59,6 +67,49 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
     }
   }
 
+  // Live count summary
+  const counters = useMemo(() => {
+    let present = 0
+    let absent = 0
+    let late = 0
+    let leave = 0
+    let sick = 0
+    for (const student of students) {
+      const st = entries[student.id]?.status ?? "present"
+      if (st === "present") present++
+      else if (st === "absent") absent++
+      else if (st === "late") late++
+      else if (st === "leave") leave++
+      else if (st === "sick") sick++
+    }
+    return { present, absent, late, leave, sick, total: students.length }
+  }, [students, entries])
+
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesQuery = student.name.toLocaleLowerCase("th").includes(query.toLocaleLowerCase("th"))
+      if (!matchesQuery) return false
+      if (statusFilter === "non_present") {
+        return entries[student.id]?.status !== "present"
+      }
+      return true
+    })
+  }, [students, query, statusFilter, entries])
+
+  const updateEntry = (studentId: string, patch: Partial<Entry>) =>
+    setEntries((current) => ({ ...current, [studentId]: { ...current[studentId], ...patch } }))
+
+  function markAllPresent() {
+    const nextEntries: Record<string, Entry> = {}
+    for (const student of students) {
+      nextEntries[student.id] = {
+        ...entries[student.id],
+        status: "present",
+      }
+    }
+    setEntries(nextEntries)
+  }
+
   useEffect(() => {
     if (lastAttendanceChange) {
       if (!dirty) {
@@ -79,9 +130,6 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [dirty])
 
-  const filteredStudents = useMemo(() => students.filter((student) => student.name.toLocaleLowerCase("th").includes(query.toLocaleLowerCase("th"))), [students, query])
-  const updateEntry = (studentId: string, patch: Partial<Entry>) => setEntries((current) => ({ ...current, [studentId]: { ...current[studentId], ...patch } }))
-
   function changeDate(nextDate: string) {
     if (dirty && !window.confirm("มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปลี่ยนวันที่หรือไม่")) return
     setDate(nextDate)
@@ -89,7 +137,12 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
   }
 
   function save() {
-    const records: AttendanceInput[] = students.map((student) => ({ student_id: student.id, status: entries[student.id].status, check_in_time: entries[student.id].checkInTime || null, remark: entries[student.id].remark || null }))
+    const records: AttendanceInput[] = students.map((student) => ({
+      student_id: student.id,
+      status: entries[student.id].status,
+      check_in_time: entries[student.id].checkInTime || null,
+      remark: entries[student.id].remark || null,
+    }))
     startTransition(async () => {
       const nextResult = await upsertAttendance(classroom.id, date, records)
       setResult(nextResult)
@@ -101,29 +154,131 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
     })
   }
 
-  return <section className="space-y-4" aria-labelledby="attendance-editor-title">
-    {hasExternalUpdate && dirty ? (
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-sm">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="size-4 text-amber-600 shrink-0" />
-          <span>มีข้อมูลบันทึกการมาเรียนใหม่จากระบบ โดยคุณมีรายการที่แก้ไขค้างอยู่</span>
+  return (
+    <section className="space-y-4" aria-labelledby="attendance-editor-title">
+      {hasExternalUpdate && dirty ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-4 text-amber-600 shrink-0" />
+            <span>มีข้อมูลบันทึกการมาเรียนใหม่จากระบบ โดยคุณมีรายการที่แก้ไขค้างอยู่</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSavedSnapshot(JSON.stringify(entries))
+              router.refresh()
+            }}
+            className="inline-flex items-center gap-1 rounded-md bg-amber-200/80 px-2.5 py-1 font-semibold text-amber-900 hover:bg-amber-300 transition"
+          >
+            <RotateCw className="size-3" />
+            โหลดข้อมูลใหม่
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setSavedSnapshot(JSON.stringify(entries))
-            router.refresh()
-          }}
-          className="inline-flex items-center gap-1 rounded-md bg-amber-200/80 px-2.5 py-1 font-semibold text-amber-900 hover:bg-amber-300 transition"
-        >
-          <RotateCw className="size-3" />
-          โหลดข้อมูลใหม่
-        </button>
+      ) : null}
+
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 id="attendance-editor-title" className="font-semibold">
+            บันทึกการมาเรียน · {classroom.name}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {students.length} คน{dirty ? " · มีรายการที่ยังไม่ได้บันทึก" : ""}
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="space-y-1 text-sm">
+            <span className="block text-xs font-medium text-muted-foreground">วันที่</span>
+            <Input type="date" value={date} onChange={(event) => changeDate(event.target.value)} />
+          </label>
+          <Button
+            type="button"
+            onClick={save}
+            disabled={pending || students.length === 0 || !dirty}
+            className="gap-2"
+          >
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+          </Button>
+        </div>
       </div>
-    ) : null}
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between"><div><h2 id="attendance-editor-title" className="font-semibold">บันทึกการมาเรียน · {classroom.name}</h2><p className="mt-1 text-sm text-muted-foreground">{students.length} คน{dirty ? " · มีรายการที่ยังไม่ได้บันทึก" : ""}</p></div><div className="flex flex-col gap-3 sm:flex-row sm:items-end"><label className="space-y-1 text-sm"><span className="block text-xs font-medium text-muted-foreground">วันที่</span><Input type="date" value={date} onChange={(event) => changeDate(event.target.value)} /></label><Button type="button" onClick={save} disabled={pending || students.length === 0 || !dirty} className="gap-2">{pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</Button></div></div>
-    <ActionFeedback result={result} />
-    <div className="flex items-center gap-2"><Search className="size-4 text-muted-foreground" aria-hidden="true" /><Input aria-label="ค้นหานักเรียน" placeholder="ค้นหานักเรียน..." value={query} onChange={(event) => setQuery(event.target.value)} className="max-w-sm" /></div>
+
+      <ActionFeedback result={result} />
+
+      {/* Live Counters & One-Click Attendance Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            มาเรียน: <strong className="font-semibold">{counters.present}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+            <span className="size-2 rounded-full bg-rose-500" />
+            ขาดเรียน: <strong className="font-semibold">{counters.absent}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+            <span className="size-2 rounded-full bg-amber-500" />
+            มาสาย: <strong className="font-semibold">{counters.late}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
+            <span className="size-2 rounded-full bg-sky-500" />
+            ลา/ป่วย: <strong className="font-semibold">{counters.leave + counters.sick}</strong>
+          </span>
+          <span className="text-muted-foreground ml-1">
+            (รวม {counters.total} คน)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={markAllPresent}
+            className="gap-1.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+          >
+            <CheckCircle2 className="size-3.5" />
+            มาเรียนทุกคน (One-Click)
+          </Button>
+        </div>
+      </div>
+
+      {/* Search & Status Filter */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 flex-1 max-w-sm">
+          <Search className="size-4 text-muted-foreground" aria-hidden="true" />
+          <Input
+            aria-label="ค้นหานักเรียน"
+            placeholder="ค้นหานักเรียนในห้อง..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center gap-1 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setStatusFilter("all")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              statusFilter === "all"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            ทั้งหมด ({counters.total})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("non_present")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              statusFilter === "non_present"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            เฉพาะขาด/สาย/ลา ({counters.absent + counters.late + counters.leave + counters.sick})
+          </button>
+        </div>
+      </div>
     <div className="space-y-3 md:hidden">
       {filteredStudents.length ? filteredStudents.map((student, index) => {
         const entry = entries[student.id]
@@ -158,4 +313,5 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
     </div>
     <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-border bg-muted/30 text-xs text-muted-foreground"><tr><th className="w-14 px-4 py-3">#</th><th className="px-4 py-3">นักเรียน</th><th className="w-48 px-4 py-3">สถานะ</th><th className="w-36 px-4 py-3">เวลาเข้า</th><th className="w-64 px-4 py-3">หมายเหตุ</th></tr></thead><tbody>{filteredStudents.length ? filteredStudents.map((student, index) => { const entry = entries[student.id]; return <tr key={student.id} className="border-b border-border last:border-0"><td className="px-4 py-3 text-muted-foreground">{index + 1}</td><td className="px-4 py-3 font-medium">{student.name}</td><td className="px-4 py-2"><select aria-label={`สถานะของ ${student.name}`} value={entry.status} onChange={(event) => updateEntry(student.id, { status: event.target.value as AttendanceStatus })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></td><td className="px-4 py-2"><Input aria-label={`เวลาเข้าของ ${student.name}`} type="time" value={entry.checkInTime} onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })} /></td><td className="px-4 py-2"><Input aria-label={`หมายเหตุของ ${student.name}`} placeholder="เพิ่มหมายเหตุ" value={entry.remark} onChange={(event) => updateEntry(student.id, { remark: event.target.value })} /></td></tr> }) : <tr><td colSpan={5} className="h-24 px-4 text-center text-muted-foreground">ไม่พบรายชื่อนักเรียน</td></tr>}</tbody></table></div>
   </section>
+  )
 }

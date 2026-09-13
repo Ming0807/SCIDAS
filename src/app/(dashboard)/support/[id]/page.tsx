@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 
 import { getSupportRecord, type SupportCase } from "@/app/actions/support.actions"
 import { SupportStatusForm } from "@/app/(dashboard)/support/_components/support-status-form"
+import { SupportFollowups } from "@/app/(dashboard)/support/_components/support-followups"
 import { ErrorState } from "@/components/feedback"
 import { StatusBadge } from "@/components/dashboard"
 import { StudentAttachmentsPanel } from "@/components/care"
@@ -153,6 +154,12 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
           showForm={supportCase.canEdit}
         />
       </section>
+
+      <SupportFollowups
+        supportRecordId={supportCase.id}
+        followups={supportCase.followups ?? []}
+        canEdit={supportCase.canEdit}
+      />
 
       {supportCase.canEdit ? (
         <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
