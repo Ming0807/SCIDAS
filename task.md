@@ -1,5 +1,27 @@
 # Task Progress
 
+## 2026-09-13 Notification Center & App Shell Semantic Design Token Polish
+
+Status: done. Standardized all desktop and mobile notification center components and app shell headers to semantic design system tokens (`bg-card`, `border-border`, `text-foreground`, `text-muted-foreground`, `text-primary`, `bg-muted`):
+1. **Desktop Notification Center**:
+   - `desktop-notification-filters.tsx`: Replaced hardcoded `slate-200/50/100/700/800`, `indigo-400` with `border-border`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, and semantic status rings.
+   - `desktop-notification-list.tsx`: Replaced hardcoded `slate` borders, text, and pagination colors with `border-border`, `bg-card`, `text-foreground`, and `text-muted-foreground`.
+   - `desktop-notification-sidebar.tsx`: Standardized unread badge and notification type links to semantic tokens.
+2. **Mobile Notification Center**:
+   - `mobile-notification-header.tsx`: Replaced hardcoded `slate-900`, `indigo-50/100/600` with `text-foreground`, `bg-primary/10`, `text-primary`, `bg-destructive`, and semantic status pills.
+   - `mobile-notification-list.tsx`: Aligned read/unread card styling, pagination controls, and chevron icons with semantic tokens.
+   - `mobile-notification-profile.tsx`: Replaced `bg-slate-50` with semantic `bg-background`.
+3. **App Shell**:
+   - `header.tsx`: Aligned header background and borders to `bg-card border-border`, date badge and notification bell to semantic tokens.
+   - `mobile-bottom-nav.tsx`: Aligned navigation links and menu sheet items with `text-muted-foreground hover:text-foreground`.
+4. **Verification Gates Passed**:
+   - `git diff --check`: PASS
+   - `npx tsc --noEmit`: PASS (0 errors)
+   - `npm run lint`: PASS (0 warnings)
+   - `npm test -- --run`: PASS (71/71 tests across 15 suites)
+   - `npm run build`: PASS (24/24 static routes generated)
+   - `npm audit --omit=dev`: PASS (0 vulnerabilities)
+
 ## 2026-09-13 Production Audit, Design Polish & Reports Real Data Hardening
 
 Status: done. Audited the codebase, repaired dependency security, aligned navigation roles, replaced all arbitrary text anti-patterns, wired real risk factor distribution and trend data into the reports views, and passed all 6 production verification gates:
