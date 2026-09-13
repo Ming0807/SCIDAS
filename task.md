@@ -1,5 +1,25 @@
 # Task Progress
 
+## 2026-09-13 UI Design Token Guardrail Automation, Banned Pattern Repair & Page Inventory
+
+Status: done. Implemented automated regression testing for design system token guardrails, repaired remaining button and calendar font size tokens, created comprehensive page inventory documentation, and marked roadmap waves complete:
+1. **Automated UI Pattern Guardrails Test Suite**:
+   - Created `src/lib/design/ui-pattern-guardrails.test.ts` scanning all `.tsx` and `.ts` files under `src/app` and `src/components`.
+   - Validates that arbitrary pixel/rem font sizes (`text-[...px]`, `text-[...rem]`), banned `rounded-3xl`, and hardcoded legacy background hexes (`bg-[#f8fafc]`, `bg-[#4f46e5]`) can never be introduced.
+2. **UI Component Font Token Standardization**:
+   - Repaired `src/components/ui/button.tsx`: Replaced `text-[0.8rem]` with standard `text-xs` in `sm` size.
+   - Repaired `src/components/ui/calendar.tsx`: Replaced `text-[0.8rem]` with standard `text-xs` in weekday and week_number slots.
+3. **Comprehensive Page Inventory Documentation**:
+   - Created `docs/PAGE_INVENTORY.md` listing all 24 static and dynamic routes, ownership roles, server read models, feedback states, and 100% completed migration status.
+   - Updated `docs/UX_UI_SYSTEM_ROADMAP.md` checking off completed migration waves (Waves 1-5) and quality automation gates.
+4. **Verification Gates Passed**:
+   - `git diff --check`: PASS
+   - `npx tsc --noEmit`: PASS (0 errors)
+   - `npm run lint`: PASS (0 warnings)
+   - `npm test -- --run`: PASS (19 test files, 81/81 tests passing)
+   - `npm run build`: PASS (24/24 static routes generated)
+   - `npm audit --omit=dev`: PASS (0 vulnerabilities)
+
 ## 2026-09-13 Realtime Resilience, Offline Banner, Next.js 16.3.3 Documentation & Image Optimization
 
 Status: done. Completed all remaining tracks across the production readiness roadmap:

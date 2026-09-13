@@ -160,30 +160,30 @@ Route Server Component
 ### P2: Page Migration Waves
 
 - [x] Wave 1: app shell, dashboard overview, students list
-- [ ] Wave 2: attendance, academics, behavior
+- [x] Wave 2: attendance, academics, behavior
   - [x] attendance pilot migrated to shared shell/data/list patterns.
   - [x] academics migrated to shared shell/data/list patterns.
-  - [ ] behavior remains.
-- [ ] Wave 3: risk-analysis, support, development-plans
+  - [x] behavior migrated to `getBehaviorDashboard()`, `PageShell`, `MetricCard`, `StatusBadge`, `EmptyState`.
+- [x] Wave 3: risk-analysis, support, development-plans
   - [x] risk-analysis overview/top-risk/recommendations now read from `v_student_worklist`.
   - [x] support now uses a real action/support workbench backed by `getStudentCareDashboard()`, `getActionQueue()`, `getStudentNotes()`, and `getStudentTimeline()`.
-  - [ ] development-plans remains.
-- [ ] Wave 4: reports, notifications, settings, home-visits
+  - [x] development-plans migrated to `getDevelopmentPlanList()`, `PageShell`, `MetricCard`, `StatusBadge`.
+- [x] Wave 4: reports, notifications, settings, home-visits
   - [x] home-visits now reads real `home_visits`/`home_visit_images`.
-  - [x] reports now reads `report_jobs` via `src/lib/server/report-read-models.ts` on the async Server Component.
-  - [x] notifications now reads real `notifications` table via `src/lib/server/notification-read-models.ts` with mark-all-read + per-item toggle Server Actions, URL search params for status/type/page/limit filters, real `<Link>` pagination, and `NotificationReadToggle` client component with optimistic UI. No fake buttons. Push delivery still pending.
-  - [ ] settings remain.
-- [ ] Wave 5: student detail and behavior/detail pages
+  - [x] reports now reads `report_jobs` and real risk distributions via `src/lib/server/report-read-models.ts`.
+  - [x] notifications now reads real `notifications` table via `src/lib/server/notification-read-models.ts`.
+  - [x] settings migrated to `getUserProfile()`, `PageShell`, `PageHeader`, `ProfileSettingsForm`.
+- [x] Wave 5: student detail and behavior/detail pages
   - [x] student detail now reads the real care profile, open action items, notes, and timeline.
-  - [ ] behavior/detail pages remain.
+  - [x] behavior/detail pages migrated to `getBehaviorRecordById()`, `getBehaviorRecordsByStudentId()`.
 
 ### P3: Quality Gates and Automation
 
 - [ ] Add visual smoke tests for authenticated dashboard states
 - [ ] Add accessibility checks for contrast, focus ring, keyboard flow, tap targets
-- [ ] Add responsive checks for desktop, laptop, tablet, mobile
-- [ ] Add lint detector or codemod for banned UI patterns: `text-[10px]`, hard-coded hex, arbitrary shadows, `rounded-3xl`, decorative gradients
-- [ ] Add page inventory doc with owner, data source, states, and migration status
+- [x] Add responsive checks for desktop, laptop, tablet, mobile (`tests/batch1.spec.ts`, `tests/behavior-academics.spec.ts`, `tests/support-reports.spec.ts`)
+- [x] Add lint detector or codemod for banned UI patterns: `text-[10px]`, hard-coded hex, arbitrary shadows, `rounded-3xl`, decorative gradients (`src/lib/design/ui-pattern-guardrails.test.ts`)
+- [x] Add page inventory doc with owner, data source, states, and migration status (`docs/PAGE_INVENTORY.md`)
 
 ## Route-Level Plan
 
