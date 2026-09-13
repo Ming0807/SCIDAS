@@ -1,5 +1,24 @@
 # Task Progress
 
+## 2026-09-13 Server Action Integration & Validation Test Suite Expansion (137 Tests, 26 Suites)
+
+Status: done. Expanded automated regression and integration test coverage across all major Server Actions, testing authentication/authorization enforcement, input validation, conflict handling, transactional consistency, and path revalidation:
+1. **New Server Action Test Suites**:
+   - `src/app/actions/care.actions.test.ts` (12 tests): Status updates, student care notes, attachment uploads, contextual revalidation for home visits and support cases.
+   - `src/app/actions/notifications.actions.test.ts` (7 tests): Mark all as read, toggle read/unread status, delete notification, UUID validation.
+   - `src/app/actions/behavior.actions.test.ts` (8 tests): Role permission guardrails, student school scoping, behavior type/points validation, create/update actions.
+   - `src/app/actions/home-visit.actions.test.ts` (8 tests): Date/time formatting validation, housing condition validation, home visit creation and updates.
+   - `src/app/actions/attendance.actions.test.ts` (9 tests): Homeroom teacher ownership, student classroom enrollment verification, duplicate detection, batch attendance upsert.
+   - `src/app/actions/student.actions.test.ts` (6 tests): Duplicate student code (23505) conflict mapping, role checks, required field validation, create/update student actions.
+   - `src/app/actions/idp.actions.test.ts` (6 tests): Chronological date ordering (end_date >= start_date), editor permission verification, development plan creation and updates.
+2. **Verification Gates Passed**:
+   - `git diff --check`: PASS
+   - `npx tsc --noEmit`: PASS (0 errors)
+   - `npm run lint`: PASS (0 warnings)
+   - `npm test -- --run`: PASS (**26 test files, 137 tests passing**, 100%)
+   - `npm run build`: PASS (24/24 static routes generated)
+   - `npm audit --omit=dev`: PASS (0 vulnerabilities)
+
 ## 2026-09-13 UI Design Token Guardrail Automation, Banned Pattern Repair & Page Inventory
 
 Status: done. Implemented automated regression testing for design system token guardrails, repaired remaining button and calendar font size tokens, created comprehensive page inventory documentation, and marked roadmap waves complete:
