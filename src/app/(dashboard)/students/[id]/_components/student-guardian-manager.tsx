@@ -308,7 +308,7 @@ export function StudentGuardianManager({
                     <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                       {g.fullName}
                       {g.isPrimary && (
-                        <span className="inline-flex items-center gap-0.5 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                        <span className="inline-flex items-center gap-0.5 rounded bg-primary/20 px-1.5 py-0.5 text-micro font-bold text-primary">
                           <UserCheck className="size-3" /> ผู้ปกครองหลัก
                         </span>
                       )}

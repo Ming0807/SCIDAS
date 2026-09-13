@@ -19,9 +19,11 @@ import {
   isNavigationItemActive,
 } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useRealtime } from "@/components/providers/realtime-provider";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const { unreadNotificationsCount } = useRealtime();
   const navItems = getMobilePrimaryNavigation();
   const moduleMenuItems = getModuleMenuNavigation();
   const activeItem = getActiveNavigationItem(pathname);
@@ -35,7 +37,12 @@ export function MobileBottomNav() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = isNavigationItemActive(pathname, item.href);
-          const badge = item.key === "notifications" ? 3 : undefined;
+          const badge =
+            item.key === "notifications" && unreadNotificationsCount > 0
+              ? unreadNotificationsCount > 99
+                ? "99+"
+                : unreadNotificationsCount
+              : undefined;
 
           return (
             <Link

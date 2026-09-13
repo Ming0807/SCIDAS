@@ -1,74 +1,123 @@
 import React from "react"
-import { ChevronDown } from "lucide-react"
+import type { RiskTrendPoint } from "@/lib/server/risk-read-models"
+import { EmptyState } from "@/components/feedback/empty-state"
 
-export function DesktopTrendComparison() {
+export function DesktopTrendComparison({
+  trendData,
+}: {
+  trendData?: RiskTrendPoint[] | null
+}) {
+  const points = trendData ?? []
+
+  if (points.length === 0) {
+    return (
+      <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+        <h3 className="text-sm font-semibold text-foreground mb-4">แนวโน้มเปรียบเทียบ</h3>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <EmptyState
+            title="ยังไม่มีข้อมูลแนวโน้มย้อนหลัง"
+            description="เมื่อมีการประเมินความเสี่ยงหลายช่วงเวลา ระบบจะแสดงกราฟเปรียบเทียบที่นี่"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const maxVal = Math.max(...points.map((p) => Math.max(p.highCount, p.watchCount, p.normalCount)), 10)
+
+  // Normalize points to SVG coordinates (viewBox 0 0 100 100)
+  // X coordinates distributed across available width
+  const stepX = points.length > 1 ? 80 / (points.length - 1) : 0
+  const coords = points.map((p, i) => {
+    const x = points.length === 1 ? 50 : 10 + i * stepX
+    // Y inverted: 100 is bottom, 10 is top
+    const yHigh = 85 - (p.highCount / maxVal) * 70
+    const yWatch = 85 - (p.watchCount / maxVal) * 70
+    const yNormal = 85 - (p.normalCount / maxVal) * 70
+    return { ...p, x, yHigh, yWatch, yNormal }
+  })
+
+  const highPath = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(1)},${c.yHigh.toFixed(1)}`).join(" ")
+  const watchPath = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(1)},${c.yWatch.toFixed(1)}`).join(" ")
+  const normalPath = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(1)},${c.yNormal.toFixed(1)}`).join(" ")
+
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm h-full flex flex-col">
+    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-800">แนวโน้มเปรียบเทียบ</h3>
-        <button className="flex items-center gap-1 text-xs font-bold text-slate-700 border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50">
-          เปรียบเทียบ 2 ภาคเรียน
-          <ChevronDown className="w-3 h-3" />
-        </button>
+        <h3 className="text-sm font-semibold text-foreground">แนวโน้มเปรียบเทียบ</h3>
+        <span className="text-xs text-muted-foreground">
+          {points.length} ช่วงเวลา
+        </span>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-0.5 bg-red-500 rounded-full"></div>
-          <span className="text-xs font-medium text-slate-600">กลุ่มเสี่ยง</span>
+      <div className="flex items-center justify-center gap-6 mb-4">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-0.5 bg-red-500 rounded-full" />
+          <span className="text-xs font-medium text-muted-foreground">เสี่ยงสูง</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-0.5 bg-yellow-400 rounded-full"></div>
-          <span className="text-xs font-medium text-slate-600">อยู่ระหว่างการดูแล</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-0.5 bg-amber-500 rounded-full" />
+          <span className="text-xs font-medium text-muted-foreground">ต้องติดตาม</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-0.5 bg-green-500 rounded-full"></div>
-          <span className="text-xs font-medium text-slate-600">ช่วยเหลือสำเร็จ</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-0.5 bg-emerald-500 rounded-full" />
+          <span className="text-xs font-medium text-muted-foreground">ปกติ</span>
         </div>
       </div>
 
-      <div className="flex-1 relative min-h-[160px] pb-6 ml-6 mt-2">
-        <div className="absolute -left-8 top-0 bottom-6 flex flex-col justify-between py-0 w-8 items-end pr-2">
-          <span className="text-xs text-slate-400 font-medium">250</span>
-          <span className="text-xs text-slate-400 font-medium">200</span>
-          <span className="text-xs text-slate-400 font-medium">150</span>
-          <span className="text-xs text-slate-400 font-medium">100</span>
-          <span className="text-xs text-slate-400 font-medium">50</span>
-          <span className="text-xs text-slate-400 font-medium">0</span>
+      <div className="flex-1 relative min-h-[160px] pb-6 ml-6 mt-1">
+        <div className="absolute -left-7 top-0 bottom-6 flex flex-col justify-between py-0 w-6 items-end pr-1 text-micro text-muted-foreground">
+          <span>{maxVal}</span>
+          <span>{Math.round(maxVal / 2)}</span>
+          <span>0</span>
         </div>
 
         <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
           {/* Grid lines */}
-          <line x1="0" y1="20" x2="100" y2="20" stroke="#f1f5f9" strokeWidth="0.5" />
-          <line x1="0" y1="40" x2="100" y2="40" stroke="#f1f5f9" strokeWidth="0.5" />
-          <line x1="0" y1="60" x2="100" y2="60" stroke="#f1f5f9" strokeWidth="0.5" />
-          <line x1="0" y1="80" x2="100" y2="80" stroke="#f1f5f9" strokeWidth="0.5" />
-          <line x1="0" y1="100" x2="100" y2="100" stroke="#e2e8f0" strokeWidth="1" />
+          <line x1="0" y1="15" x2="100" y2="15" stroke="currentColor" className="text-border" strokeWidth="0.5" />
+          <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" className="text-border" strokeWidth="0.5" />
+          <line x1="0" y1="85" x2="100" y2="85" stroke="currentColor" className="text-border" strokeWidth="0.75" />
 
-          {/* Red Line */}
-          <path d="M 20,40 L 50,35 L 80,45" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="20" cy="40" r="1.5" fill="#fff" stroke="#ef4444" strokeWidth="1" />
-          <circle cx="50" cy="35" r="1.5" fill="#fff" stroke="#ef4444" strokeWidth="1" />
-          <circle cx="80" cy="45" r="1.5" fill="#fff" stroke="#ef4444" strokeWidth="1" />
+          {/* High risk line & points */}
+          {points.length > 1 && (
+            <path d={highPath} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          )}
+          {coords.map((c) => (
+            <circle key={`h-${c.periodLabel}`} cx={c.x} cy={c.yHigh} r="2" fill="#fff" stroke="#ef4444" strokeWidth="1.2" />
+          ))}
 
-          {/* Yellow Line */}
-          <path d="M 20,80 L 50,75 L 80,90" fill="none" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="20" cy="80" r="1.5" fill="#fff" stroke="#eab308" strokeWidth="1" />
-          <circle cx="50" cy="75" r="1.5" fill="#fff" stroke="#eab308" strokeWidth="1" />
-          <circle cx="80" cy="90" r="1.5" fill="#fff" stroke="#eab308" strokeWidth="1" />
+          {/* Watch risk line & points */}
+          {points.length > 1 && (
+            <path d={watchPath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          )}
+          {coords.map((c) => (
+            <circle key={`w-${c.periodLabel}`} cx={c.x} cy={c.yWatch} r="2" fill="#fff" stroke="#f59e0b" strokeWidth="1.2" />
+          ))}
 
-          {/* Green Line */}
-          <path d="M 20,60 L 50,55 L 80,30" fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="20" cy="60" r="1.5" fill="#fff" stroke="#22c55e" strokeWidth="1" />
-          <circle cx="50" cy="55" r="1.5" fill="#fff" stroke="#22c55e" strokeWidth="1" />
-          <circle cx="80" cy="30" r="1.5" fill="#fff" stroke="#22c55e" strokeWidth="1" />
+          {/* Normal risk line & points */}
+          {points.length > 1 && (
+            <path d={normalPath} fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          )}
+          {coords.map((c) => (
+            <circle key={`n-${c.periodLabel}`} cx={c.x} cy={c.yNormal} r="2" fill="#fff" stroke="#10b981" strokeWidth="1.2" />
+          ))}
 
           {/* X Axis Labels */}
-          <text x="20" y="112" fontSize="5" fill="#94a3b8" textAnchor="middle">ภาคเรียน 2/2566</text>
-          <text x="80" y="112" fontSize="5" fill="#94a3b8" textAnchor="middle">ภาคเรียน 1/2567</text>
+          {coords.map((c) => (
+            <text
+              key={`lbl-${c.periodLabel}`}
+              x={c.x}
+              y="97"
+              fontSize="4"
+              fill="currentColor"
+              className="text-muted-foreground"
+              textAnchor="middle"
+            >
+              {c.periodLabel}
+            </text>
+          ))}
         </svg>
       </div>
-
     </div>
   )
 }

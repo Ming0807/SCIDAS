@@ -34,7 +34,7 @@ export function MobileDownloadReports({ jobs }: { jobs: ReportJobItem[] }) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-lg bg-red-50 flex flex-col items-center justify-center shrink-0 border border-red-100">
-                  <span className="text-[10px] font-semibold text-red-600 uppercase">
+                  <span className="text-micro font-bold text-red-600 uppercase">
                     PDF
                   </span>
                 </div>

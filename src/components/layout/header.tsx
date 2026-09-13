@@ -2,8 +2,10 @@
 
 import { Bell, Menu, Calendar } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Sidebar } from "@/components/layout/sidebar"
+import { getNavigationLabel } from "@/lib/navigation"
 
 import { useRealtime } from "@/components/providers/realtime-provider"
 
@@ -25,9 +27,11 @@ export function Header({
   profile?: ProfileProps | null
   unreadCount?: number
 }) {
+  const pathname = usePathname()
   const { unreadNotificationsCount } = useRealtime()
   const unreadCount = unreadNotificationsCount ?? initialUnreadCount
   const schoolName = profile?.schoolName ?? null
+  const pageTitle = getNavigationLabel(pathname) ?? "ระบบดูแลช่วยเหลือนักเรียน"
   const initials = profile
     ? (profile.firstName.charAt(0) + profile.lastName.charAt(0)).toUpperCase()
     : "?"
@@ -54,7 +58,7 @@ export function Header({
 
       <div className="hidden lg:flex items-center min-w-0 shrink-0">
         <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
-          ภาพรวมระบบ
+          {pageTitle}
         </h1>
       </div>
 
@@ -78,7 +82,7 @@ export function Header({
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 ? (
-            <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
+            <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-micro font-bold text-white ring-2 ring-white">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           ) : null}

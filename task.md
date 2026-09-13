@@ -1,5 +1,24 @@
 # Task Progress
 
+## 2026-09-13 Production Audit, Design Polish & Reports Real Data Hardening
+
+Status: done. Audited the codebase, repaired dependency security, aligned navigation roles, replaced all arbitrary text anti-patterns, wired real risk factor distribution and trend data into the reports views, and passed all 6 production verification gates:
+1. **Security Vulnerability Resolution**:
+   - Upgraded `baseline-browser-mapping` from `< 2.11.0` to `2.11.23` via `npm audit fix`, resolving moderate vulnerability with 0 remaining vulnerabilities (`npm audit` & `npm audit --omit=dev`).
+2. **Navigation & Role Enum Alignment**:
+   - Aligned `AppRole` in `src/lib/navigation.ts` with PostgreSQL `user_role` enum (`admin`, `director`, `homeroom_teacher`, `counselor`, `subject_teacher`, `student`).
+   - Replaced hardcoded "ภาพรวมระบบ" in `Header` with dynamic route and section titles derived from `getNavigationLabel(pathname)`.
+   - Connected `MobileBottomNav` unread notification badge to `useRealtime().unreadNotificationsCount` (eliminating hardcoded badge 3).
+3. **Design System & Banned Pattern Cleanup**:
+   - Replaced all remaining arbitrary font sizes (`text-[9px]`, `text-[10px]`, `text-[11px]`, `text-[0.8rem]`) with standard semantic tokens (`text-micro`, `text-xs`) across `desktop-latest-reports.tsx`, `mobile-download-reports.tsx`, `mobile-overall-risk.tsx`, `mobile-risk-benchmark.tsx`, `mobile-risk-factors.tsx`, `student-guardian-manager.tsx`, `student-table.tsx`, and `header.tsx`.
+4. **Reports Unified Shell & Real Data Integration**:
+   - Migrated `/reports` to `PageShell` and `PageHeader`, eliminating duplicate user profile and bell icons in the page body.
+   - Replaced fabricated mock data and SVGs in `DesktopStatsCategory` and `DesktopTrendComparison` with dynamic data from `getRiskFactorDistribution()` and `getRiskTrendHistory()`.
+   - Wired dynamic trend points into `MobileTrendChart` with honest `EmptyState` fallbacks when no assessments exist.
+5. **Quality Gates & Regression Test Coverage**:
+   - Added `reports-components.test.tsx` and `navigation.test.ts` suites.
+   - Passed all verification gates: `git diff --check`, `npx tsc --noEmit` (0 errors), `npm run lint` (0 warnings), `npm test -- --run` (71/71 tests passing across 15 suites), `npm run build` (24/24 static routes generated cleanly), and `npm audit --omit=dev` (0 vulnerabilities).
+
 ## 2026-08-29 Complete Long Production Operations & Hardening Loop
 
 Status: done. Successfully implemented and verified all 4 waves of the long production operations loop:

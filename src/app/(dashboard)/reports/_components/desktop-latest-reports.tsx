@@ -120,7 +120,7 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                         </span>
                         {job.status === "failed" && job.errorMessage && (
                           <span
-                            className="text-[11px] text-red-600 max-w-[200px] truncate"
+                            className="text-xs text-red-600 max-w-[200px] truncate"
                             title={job.errorMessage}
                           >
                             {job.errorMessage}

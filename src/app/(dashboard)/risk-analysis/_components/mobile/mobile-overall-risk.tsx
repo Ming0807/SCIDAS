@@ -56,15 +56,15 @@ export function MobileOverallRisk({
               <div className="mt-4 grid grid-cols-3 gap-2 w-full pt-3 border-t border-border text-center">
                 <div className="rounded-lg bg-red-50/60 p-1.5">
                   <div className="text-base font-bold text-red-600">{riskCounts.high}</div>
-                  <div className="text-[10px] text-red-700 font-medium">เสี่ยงสูง</div>
+                  <div className="text-micro text-red-700 font-medium">เสี่ยงสูง</div>
                 </div>
                 <div className="rounded-lg bg-amber-50/60 p-1.5">
                   <div className="text-base font-bold text-amber-600">{riskCounts.watch}</div>
-                  <div className="text-[10px] text-amber-700 font-medium">ต้องติดตาม</div>
+                  <div className="text-micro text-amber-700 font-medium">ต้องติดตาม</div>
                 </div>
                 <div className="rounded-lg bg-emerald-50/60 p-1.5">
                   <div className="text-base font-bold text-emerald-600">{riskCounts.normal}</div>
-                  <div className="text-[10px] text-emerald-700 font-medium">ปกติ</div>
+                  <div className="text-micro text-emerald-700 font-medium">ปกติ</div>
                 </div>
               </div>
             ) : null}

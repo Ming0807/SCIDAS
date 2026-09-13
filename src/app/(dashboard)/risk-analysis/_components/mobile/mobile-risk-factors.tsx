@@ -103,7 +103,7 @@ export function MobileRiskFactors({
                 </p>
               </div>
               <span
-                className={`text-[11px] font-bold px-2 py-0.5 rounded border shrink-0 ${
+                className={`text-xs font-bold px-2 py-0.5 rounded border shrink-0 ${
                   isHigh
                     ? "text-red-700 bg-red-50 border-red-200"
                     : isWatch

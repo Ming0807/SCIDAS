@@ -92,19 +92,19 @@ function StudentTableToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-secondary px-2.5 text-[0.8rem] font-medium text-secondary-foreground">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-secondary px-2.5 text-xs font-medium text-secondary-foreground">
           รายการที่แสดง
           <span className="rounded-full bg-background px-1.5 py-0.5 text-xs">
             {totalFiltered.toLocaleString("th-TH")}
           </span>
         </span>
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground">
           ต้องติดตาม
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
             {(summary.watch + summary.highRisk).toLocaleString("th-TH")}
           </span>
         </span>
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground">
           งานเปิด
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
             {summary.openActions.toLocaleString("th-TH")}

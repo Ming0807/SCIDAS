@@ -18,9 +18,9 @@ import {
 export type AppRole =
   | "admin"
   | "director"
-  | "homeroom"
+  | "homeroom_teacher"
   | "counselor"
-  | "teacher"
+  | "subject_teacher"
   | "student";
 
 export type NavigationGroup = "core" | "care" | "insight" | "system";
