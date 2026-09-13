@@ -1,4 +1,4 @@
-﻿# UX/UI System Roadmap
+# UX/UI System Roadmap
 
 วันที่ตรวจ: 2026-06-10
 ขอบเขต: SCIDAS dashboard, navigation, page layout, reusable components, frontend flow, documentation, and future migration plan
@@ -137,13 +137,13 @@ Route Server Component
 
 ### P0: Foundation Before More Page Work
 
-- [ ] สร้าง navigation source of truth ที่ `src/lib/navigation.ts`
-- [ ] แก้ mobile `/menu`: เปลี่ยนเป็น `Sheet` menu หรือเพิ่ม route จริง โดยแนะนำ `Sheet`
-- [ ] สร้าง `PageShell`, `PageHeader`, `PageToolbar`, `Section` และใช้กับหน้า pilot
-- [ ] กำหนด design token จริงใน `globals.css` และ update `docs/frontend.md`
-- [ ] แก้ detector findings 16 จุดเรื่อง gray text บน colored background
-- [ ] อัปเดตเอกสารที่ stale: Next.js 15 -> Next.js 16.2.7 และ route structure จริง
-- [ ] เพิ่ม rule ใน task/checklist ว่าห้ามเพิ่ม page-local pattern ใหม่ถ้ามี shared component รองรับแล้ว
+- [x] สร้าง navigation source of truth ที่ `src/lib/navigation.ts`
+- [x] แก้ mobile `/menu`: เปลี่ยนเป็น `Sheet` menu หรือเพิ่ม route จริง โดยแนะนำ `Sheet`
+- [x] สร้าง `PageShell`, `PageHeader`, `PageToolbar`, `Section` และใช้กับหน้า pilot
+- [x] กำหนด design token จริงใน `globals.css` และ update `docs/frontend.md`
+- [x] แก้ detector findings 16 จุดเรื่อง gray text บน colored background
+- [x] อัปเดตเอกสารที่ stale: Next.js 15 -> Next.js 16.3.3 และ route structure จริง
+- [x] เพิ่ม rule ใน task/checklist ว่าห้ามเพิ่ม page-local pattern ใหม่ถ้ามี shared component รองรับแล้ว
 
 ### P1: Shared Product Components
 

@@ -4,11 +4,11 @@
 
 ### Student Care and Individual Development Analytics System for Small Schools
 
-> **Tech Stack**: Next.js 16.2.7 App Router · React 19.2.4 · Tailwind CSS v4 · shadcn/ui · Recharts · Lucide Icons · Supabase
-> **เวอร์ชันเอกสาร**: 1.0.0  
-> **อัปเดตล่าสุด**: 10 มิถุนายน 2569
+> **Tech Stack**: Next.js 16.3.3 App Router · React 19.2.4 · Tailwind CSS v4 · shadcn/ui · Recharts · Lucide Icons · Supabase
+> **เวอร์ชันเอกสาร**: 1.1.0
+> **อัปเดตล่าสุด**: 13 กันยายน 2569
 
-> **Current planning note (2026-06-10):** Section 0 below is the active migration architecture. Older sections remain for historical context and still contain stale Next.js 15 route/component examples that must not be used as implementation authority.
+> **Current planning note:** Section 0 below is the active migration architecture. Older sections remain for historical context. The application runs Next.js 16.3.3 App Router.
 
 ---
 
@@ -151,7 +151,7 @@ Required page states:
 
 ### 1.1 ภาพรวมโครงสร้าง Route ทั้งหมด
 
-ระบบใช้ **Next.js 15 App Router** พร้อม **Route Groups** เพื่อจัดการ Layout แยกระหว่างหน้า Authentication และหน้า Dashboard หลัก
+ระบบใช้ **Next.js 16 App Router** พร้อม **Route Groups** เพื่อจัดการ Layout แยกระหว่างหน้า Authentication และหน้า Dashboard หลัก
 
 ```
 app/
@@ -1705,7 +1705,7 @@ interface ConfirmDialogProps {
 
 ### 3.1 ภาพรวมแนวทาง State Management
 
-ระบบนี้ใช้แนวทาง **Hybrid State Management** ที่ผสมผสานระหว่าง Server-side และ Client-side ตามหลัก Next.js 15 App Router
+ระบบนี้ใช้แนวทาง **Hybrid State Management** ที่ผสมผสานระหว่าง Server-side และ Client-side ตามหลัก Next.js 16 App Router
 
 ```mermaid
 graph TB

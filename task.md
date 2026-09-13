@@ -1,5 +1,20 @@
 # Task Progress
 
+## 2026-09-13 Realtime Resilience, Offline Banner, Next.js 16.3.3 Documentation & Image Optimization
+
+Status: done. Completed all remaining tracks across the production readiness roadmap:
+1. **Realtime Resilience & Offline Banner**:
+   - Built accessible `OfflineBanner` component (`src/components/layout/offline-banner.tsx`) using `useRealtime().isOnline` with ARIA status role and reconnection messaging.
+   - Wired `<OfflineBanner />` globally into the dashboard shell layout (`src/app/(dashboard)/layout.tsx`).
+   - Extended `RealtimeProvider` with subscriptions for `support_records` (`lastSupportChange`) and `development_plans` (`lastPlanChange`).
+   - Added unit test suites `offline-banner.test.tsx` and `realtime-provider.test.tsx`.
+2. **Next.js Image Optimization**:
+   - Configured `images.remotePatterns` in `next.config.ts` for Supabase bucket storage (`**.supabase.co`) and local environments (`localhost`, `127.0.0.1`).
+3. **Documentation Alignment**:
+   - Synchronized `docs/README.md`, `docs/COMPONENT_ARCHITECTURE.md`, and `docs/UX_UI_SYSTEM_ROADMAP.md` to reflect Next.js 16.3.3, React 19.2.4, and Turbopack App Router.
+4. **Production Verification Gates**:
+   - Passed all 6 quality gates: `git diff --check`, `npx tsc --noEmit` (0 errors), `npm run lint` (0 warnings), `npm test -- --run` (77/77 tests passing across 18 suites), `npm run build` (24/24 static routes generated), and `npm audit --omit=dev` (0 vulnerabilities).
+
 ## 2026-09-13 Evidence Flow Completion: Home Visits & Support Case Attachments
 
 Status: done. Completed the evidence flow integration across Home Visits and Support Cases details, extending `StudentAttachmentsPanel` with reference tracking and scoped revalidation:

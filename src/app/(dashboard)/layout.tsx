@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
+import { OfflineBanner } from "@/components/layout/offline-banner"
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav"
 import { RealtimeProvider } from "@/components/providers/realtime-provider"
 import { getUserRole } from "@/utils/supabase/server"
@@ -60,6 +61,7 @@ export default async function DashboardLayout({
                 : null
             }
           />
+          <OfflineBanner />
           <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
             <div className="h-full animate-fade-in w-full max-w-full">
               {children}

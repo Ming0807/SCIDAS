@@ -12,6 +12,8 @@ type RealtimeContextValue = {
   resetUnread: () => void
   lastAttendanceChange: { studentId: string; status: string; timestamp: number } | null
   lastReportJobChange: { jobId: string; status: string; timestamp: number } | null
+  lastSupportChange: { caseId: string; status: string; timestamp: number } | null
+  lastPlanChange: { planId: string; status: string; timestamp: number } | null
   isOnline: boolean
 }
 
@@ -21,6 +23,8 @@ const RealtimeContext = createContext<RealtimeContextValue>({
   resetUnread: () => {},
   lastAttendanceChange: null,
   lastReportJobChange: null,
+  lastSupportChange: null,
+  lastPlanChange: null,
   isOnline: true,
 })
 
@@ -47,6 +51,16 @@ export function RealtimeProvider({
   } | null>(null)
   const [lastReportJobChange, setLastReportJobChange] = useState<{
     jobId: string
+    status: string
+    timestamp: number
+  } | null>(null)
+  const [lastSupportChange, setLastSupportChange] = useState<{
+    caseId: string
+    status: string
+    timestamp: number
+  } | null>(null)
+  const [lastPlanChange, setLastPlanChange] = useState<{
+    planId: string
     status: string
     timestamp: number
   } | null>(null)
@@ -148,6 +162,46 @@ export function RealtimeProvider({
           }
         }
       )
+      // 4. Listen to support records status changes
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "support_records",
+          ...(schoolId ? { filter: `school_id=eq.${schoolId}` } : {}),
+        },
+        (payload) => {
+          const row = payload.new as Database["public"]["Tables"]["support_records"]["Row"] | null
+          if (row) {
+            setLastSupportChange({
+              caseId: row.id,
+              status: row.status,
+              timestamp: Date.now(),
+            })
+          }
+        }
+      )
+      // 5. Listen to development plans status changes
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "development_plans",
+          ...(schoolId ? { filter: `school_id=eq.${schoolId}` } : {}),
+        },
+        (payload) => {
+          const row = payload.new as Database["public"]["Tables"]["development_plans"]["Row"] | null
+          if (row) {
+            setLastPlanChange({
+              planId: row.id,
+              status: row.status,
+              timestamp: Date.now(),
+            })
+          }
+        }
+      )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           // Connected cleanly
@@ -172,6 +226,8 @@ export function RealtimeProvider({
         resetUnread,
         lastAttendanceChange,
         lastReportJobChange,
+        lastSupportChange,
+        lastPlanChange,
         isOnline,
       }}
     >

@@ -11,7 +11,7 @@
 
 ---
 
-> **Current planning note (2026-06-10):** UX/UI, component architecture, route flow, and documentation cleanup are now tracked in [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md). Design-system rules live in [frontend.md](./frontend.md). Some architecture sections below still reflect older Next.js 15 assumptions and must be reconciled with the current Next.js 16.2.7 app before implementation.
+> **Current planning note (2026-06-10):** UX/UI, component architecture, route flow, and documentation cleanup are now tracked in [UX_UI_SYSTEM_ROADMAP.md](./UX_UI_SYSTEM_ROADMAP.md). Design-system rules live in [frontend.md](./frontend.md). The application uses Next.js 16.3.3 App Router.
 
 > **Backend data foundation note (2026-06-11):** Real frontend integration is now tracked in [BACKEND_DATA_ARCHITECTURE.md](./BACKEND_DATA_ARCHITECTURE.md). The active database migrations for this phase are `supabase/migrations/0008_ux_data_foundation.sql` and `supabase/migrations/0009_identity_evidence_flow.sql`.
 
@@ -140,7 +140,7 @@
 ┌─────────────────────────────────────────────────────────┐
 │                    CLIENT (Browser)                      │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐  │
-│  │  Next.js 15  │  │  shadcn/ui   │  │  Tailwind CSS  │  │
+│  │  Next.js 16  │  │  shadcn/ui   │  │  Tailwind CSS  │  │
 │  │  App Router  │  │  Components  │  │  + Framer      │  │
 │  └──────┬──────┘  └──────────────┘  └────────────────┘  │
 │         │                                                │
