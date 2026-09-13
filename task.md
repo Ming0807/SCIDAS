@@ -1,5 +1,19 @@
 # Task Progress
 
+## 2026-09-13 Evidence Flow Completion: Home Visits & Support Case Attachments
+
+Status: done. Completed the evidence flow integration across Home Visits and Support Cases details, extending `StudentAttachmentsPanel` with reference tracking and scoped revalidation:
+1. **Scoped Student Attachments Read Model**:
+   - Extended `getStudentAttachments` in `src/lib/server/student-care-read-models.ts` with optional `filter?: { referenceTable?: string | null; referenceId?: string | null }` to query attachments tied to specific records.
+2. **Contextual Action Revalidation**:
+   - Updated `addStudentAttachmentActionState` in `src/app/actions/care.actions.ts` to conditionally revalidate `/home-visits/${referenceId}` and `/support/${referenceId}` based on `referenceTable` and `referenceId`.
+3. **Detail Pages Evidence Integration**:
+   - `src/app/(dashboard)/home-visits/[id]/page.tsx`: Connected `StudentAttachmentsPanel` scoped to `referenceTable="home_visits"` and `referenceId={record.id}` with permission-guarded form (`record.canEdit`).
+   - `src/app/(dashboard)/support/[id]/page.tsx`: Connected `StudentAttachmentsPanel` scoped to `referenceTable="support_cases"` and `referenceId={supportCase.id}` with permission-guarded form (`supportCase.canEdit`).
+4. **Verification & Tests**:
+   - Added unit test suite `src/lib/server/student-attachments.test.ts` verifying filtered and unfiltered queries.
+   - Passed all verification gates: `git diff --check`, `npx tsc --noEmit` (0 errors), `npm run lint` (0 warnings), `npm test -- --run` (73/73 tests across 16 suites), `npm run build` (24/24 static routes generated cleanly), and `npm audit --omit=dev` (0 vulnerabilities).
+
 ## 2026-09-13 Notification Center & App Shell Semantic Design Token Polish
 
 Status: done. Standardized all desktop and mobile notification center components and app shell headers to semantic design system tokens (`bg-card`, `border-border`, `text-foreground`, `text-muted-foreground`, `text-primary`, `bg-muted`):
@@ -177,7 +191,7 @@ Source of truth:
 - [x] Increased the Next.js Server Action body limit to `12mb` while the app validates student evidence files at 10 MB.
 - [x] Add upload pending/success/error client feedback around the attachment form.
 - [x] Added `docs/AI_HANDOFF.md` with required reading, guardrails, verification checklist, and a starter prompt for follow-up AI agents that must not commit or push.
-- [ ] Wire the same attachment panel into concrete home-visit/report detail flows when those detail routes exist.
+- [x] Wire the same attachment panel into concrete home-visit/support detail flows when those detail routes exist.
 
 ### P0 Next Tasks
 
@@ -194,7 +208,7 @@ Source of truth:
 - [x] Connect `/support` notes and timeline panels to `student_notes` and `student_timeline_events`.
 - [x] Connect `/students/[id]` to the shared care profile, notes, timeline, and action item read models.
 - [x] Add generic evidence upload flow using `student_attachments` for support/student detail evidence.
-- [ ] Extend evidence upload to concrete home-visit/report detail records when those flows are migrated.
+- [x] Extend evidence upload to concrete home-visit/support detail records when those flows are migrated.
 - [ ] Convert migrated mutations to `ActionResult<T>` and verify auth/authorization inside every action.
 
 ### P1 Next Tasks

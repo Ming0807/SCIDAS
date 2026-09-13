@@ -13,12 +13,14 @@ import {
 
 import { PageShell, StatusBadge } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
+import { StudentAttachmentsPanel } from "@/components/care"
 import { buttonVariants } from "@/components/ui/button"
 import {
   getHomeVisitById,
   type HomeVisitRecord,
   type HomeVisitStatus,
 } from "@/lib/server/home-visit-read-models"
+import { getStudentAttachments } from "@/lib/server/student-care-read-models"
 import { formatThaiShortDate, type StudentRiskLevel } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
 
@@ -92,6 +94,11 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
   }
 
   if (!record) notFound()
+
+  const attachments = await getStudentAttachments(record.studentId, 10, {
+    referenceTable: "home_visits",
+    referenceId: record.id,
+  }).catch(() => [])
 
   const query = searchParams ? await searchParams : {}
   const updated = query.updated === "1" || (Array.isArray(query.updated) && query.updated.includes("1"))
@@ -225,6 +232,18 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
                 ยังไม่มีหลักฐานแนบในรายการนี้
               </div>
             )}
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+            <StudentAttachmentsPanel
+              studentId={record.studentId}
+              attachments={attachments}
+              title="ไฟล์และเอกสารแนบ"
+              description="แนบเอกสารหรือหลักฐานเพิ่มเติมสำหรับการเยี่ยมบ้านนี้"
+              referenceTable="home_visits"
+              referenceId={record.id}
+              showForm={record.canEdit}
+            />
           </section>
 
           <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">

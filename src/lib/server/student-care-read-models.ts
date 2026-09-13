@@ -667,16 +667,26 @@ export async function getStudentNotes(
 export async function getStudentAttachments(
   studentId: string,
   limit = 12,
+  filter?: { referenceTable?: string | null; referenceId?: string | null },
 ): Promise<StudentAttachmentItem[]> {
   const context = await getCurrentUserContext()
   assertStudentAccess(context, studentId)
 
   const client = await createClient()
-  const { data, error } = await client
+  let query = client
     .from("student_attachments")
     .select("*")
     .eq("school_id", context.schoolId)
     .eq("student_id", studentId)
+
+  if (filter?.referenceTable) {
+    query = query.eq("reference_table", filter.referenceTable)
+  }
+  if (filter?.referenceId) {
+    query = query.eq("reference_id", filter.referenceId)
+  }
+
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(limit)
 

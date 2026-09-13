@@ -170,15 +170,29 @@ export async function addStudentAttachment(
     revalidatePath("/home-visits")
     revalidatePath("/reports")
 
+    const revalidated = [
+      "/support",
+      "/students",
+      `/students/${studentId}`,
+      "/home-visits",
+      "/reports",
+    ]
+
+    if (referenceTable === "home_visits" && referenceId) {
+      const path = `/home-visits/${referenceId}`
+      revalidatePath(path)
+      revalidated.push(path)
+    }
+
+    if (referenceTable === "support_cases" && referenceId) {
+      const path = `/support/${referenceId}`
+      revalidatePath(path)
+      revalidated.push(path)
+    }
+
     return actionOk("Attachment uploaded", {
       data: { id: attachment.id, studentId: attachment.studentId },
-      revalidated: [
-        "/support",
-        "/students",
-        `/students/${studentId}`,
-        "/home-visits",
-        "/reports",
-      ],
+      revalidated,
     })
   } catch (error) {
     if (error instanceof Error) {

@@ -6,7 +6,9 @@ import { getSupportRecord, type SupportCase } from "@/app/actions/support.action
 import { SupportStatusForm } from "@/app/(dashboard)/support/_components/support-status-form"
 import { ErrorState } from "@/components/feedback"
 import { StatusBadge } from "@/components/dashboard"
+import { StudentAttachmentsPanel } from "@/components/care"
 import { Button } from "@/components/ui/button"
+import { getStudentAttachments } from "@/lib/server/student-care-read-models"
 import { formatThaiDateTime, formatThaiShortDate } from "@/lib/student-care-formatters"
 
 type SupportCasePageProps = {
@@ -65,6 +67,11 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
   }
 
   const supportCase = result.data
+  const attachments = await getStudentAttachments(supportCase.student_id, 10, {
+    referenceTable: "support_cases",
+    referenceId: supportCase.id,
+  }).catch(() => [])
+
   const studentName = supportCase.student
     ? `${supportCase.student.first_name} ${supportCase.student.last_name}`
     : "ไม่พบข้อมูลนักเรียน"
@@ -133,6 +140,18 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
           <DetailItem label="การช่วยเหลือที่ดำเนินการแล้ว" value={supportCase.provided_support} />
           <DetailItem label="การส่งต่อภายนอก" value={supportCase.external_referral} />
         </dl>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+        <StudentAttachmentsPanel
+          studentId={supportCase.student_id}
+          attachments={attachments}
+          title="เอกสารและหลักฐานประกอบเคส"
+          description="รวมเอกสาร รูปภาพ และหลักฐานที่เกี่ยวข้องกับการให้ความช่วยเหลือในเคสนี้"
+          referenceTable="support_cases"
+          referenceId={supportCase.id}
+          showForm={supportCase.canEdit}
+        />
       </section>
 
       {supportCase.canEdit ? (
