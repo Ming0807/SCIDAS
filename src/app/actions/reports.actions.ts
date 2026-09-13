@@ -11,6 +11,8 @@ import {
   retryReportJob,
 } from "@/lib/server/report-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
+import { checkRateLimit } from "@/lib/server/rate-limiter"
+import { logAudit } from "@/lib/server/audit-logger"
 
 export async function requestReportJobActionState(
   _previousState: ActionResult<{ id: string }> | null,
@@ -20,6 +22,18 @@ export async function requestReportJobActionState(
   const title = String(formData.get("title") ?? "").trim()
   const rawFormat = String(formData.get("format") ?? "pdf").toLowerCase().trim()
   const format = rawFormat === "xlsx" ? "xlsx" : "pdf"
+
+  const limitResult = checkRateLimit(`report_request:${reportType || "unknown"}`, {
+    maxRequests: 30,
+    windowMs: 60_000,
+  })
+
+  if (!limitResult.allowed) {
+    return actionFail(
+      "RATE_LIMITED",
+      `คุณส่งคำขอสร้างรายงานถี่เกินไป กรุณารอ ${limitResult.retryAfterSeconds} วินาทีก่อนลองใหม่อีกครั้ง`,
+    )
+  }
 
   if (!reportType) {
     return actionFail("VALIDATION_ERROR", "กรุณาเลือกประเภทรายงาน", {
@@ -73,6 +87,13 @@ export async function requestReportJobActionState(
         console.error("Background report generation error:", err)
       }
     })
+
+    logAudit({
+      action: "EXPORT",
+      tableName: "report_jobs",
+      recordId: result.id,
+      newData: { reportType, title, format },
+    }).catch(() => {})
 
     revalidatePath("/reports")
 

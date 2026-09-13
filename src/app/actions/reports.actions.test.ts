@@ -36,12 +36,27 @@ vi.mock("@/lib/server/report-read-models", () => ({
   deleteReportJob: vi.fn(),
 }))
 
+vi.mock("@/lib/server/rate-limiter", () => ({
+  checkRateLimit: vi.fn(() => ({
+    allowed: true,
+    remaining: 20,
+    totalLimit: 30,
+    resetTimeMs: Date.now() + 60000,
+  })),
+  resetRateLimits: vi.fn(),
+}))
+
+vi.mock("@/lib/server/audit-logger", () => ({
+  logAudit: vi.fn().mockResolvedValue({ success: true, id: "audit-1" }),
+}))
+
 import {
   requestReportJob,
   processReportJobById,
   retryReportJob,
   deleteReportJob,
 } from "@/lib/server/report-read-models"
+import { checkRateLimit } from "@/lib/server/rate-limiter"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 
@@ -158,6 +173,27 @@ describe("reports.actions", () => {
       expect(result.ok).toBe(false)
       if (!result.ok) {
         expect(result.code).toBe("INTERNAL_ERROR")
+      }
+    })
+
+    it("returns RATE_LIMITED when rate limit check fails", async () => {
+      vi.mocked(checkRateLimit).mockReturnValueOnce({
+        allowed: false,
+        remaining: 0,
+        totalLimit: 30,
+        resetTimeMs: Date.now() + 15000,
+        retryAfterSeconds: 15,
+      })
+
+      const formData = new FormData()
+      formData.set("reportType", "student_profile")
+      formData.set("title", "Profile Export")
+
+      const result = await requestReportJobActionState(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("RATE_LIMITED")
+        expect(result.message).toContain("15 วินาที")
       }
     })
   })
