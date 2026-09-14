@@ -117,7 +117,7 @@ export default async function StaffManagementPage() {
         }
       />
 
-      <StaffManager initialData={staffData} />
+      <StaffManager initialData={JSON.parse(JSON.stringify(staffData))} />
     </PageShell>
   )
 }

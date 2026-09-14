@@ -82,18 +82,25 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
 
   // Filtered staff list
   const filteredStaff = useMemo(() => {
-    return staffList.filter((s) => {
+    return (staffList ?? []).filter((s) => {
+      if (!s) return false
+      const name = (s.fullName ?? "").toLowerCase()
+      const email = (s.email ?? "").toLowerCase()
+      const dept = (s.department ?? "").toLowerCase()
+      const pos = (s.position ?? "").toLowerCase()
+      const q = (search ?? "").toLowerCase().trim()
+
       const matchesSearch =
-        search === "" ||
-        s.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        (s.email && s.email.toLowerCase().includes(search.toLowerCase())) ||
-        (s.department && s.department.toLowerCase().includes(search.toLowerCase())) ||
-        (s.position && s.position.toLowerCase().includes(search.toLowerCase()))
+        q === "" ||
+        name.includes(q) ||
+        email.includes(q) ||
+        dept.includes(q) ||
+        pos.includes(q)
 
       const matchesRole = roleFilter === "ALL" || s.role === roleFilter
       const matchesStatus =
         statusFilter === "ALL" ||
-        (statusFilter === "ACTIVE" && s.isActive) ||
+        (statusFilter === "ACTIVE" && Boolean(s.isActive)) ||
         (statusFilter === "INACTIVE" && !s.isActive)
 
       return matchesSearch && matchesRole && matchesStatus
@@ -319,11 +326,11 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5">
                           <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-semibold text-sm">
-                            {staff.firstName.slice(0, 1) || "ค"}
+                            {(staff?.firstName || staff?.fullName || "ค").slice(0, 1)}
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                              {staff.fullName}
+                              {staff?.fullName || "ไม่ระบุชื่อ"}
                               {!staff.isActive && (
                                 <span className="rounded-md bg-rose-100 px-1.5 py-0.2 text-xs text-rose-700 dark:bg-rose-950 dark:text-rose-300">
                                   ระงับ
@@ -331,7 +338,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                               )}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {staff.position || staff.department || "บุคลากรการศึกษา"}
+                              {staff?.position || staff?.department || "บุคลากรการศึกษา"}
                             </p>
                           </div>
                         </div>
@@ -350,7 +357,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                           }`}
                         >
                           <Shield className="size-3" />
-                          {staff.roleLabel}
+                          {staff?.roleLabel || staff?.role || "บุคลากร"}
                         </span>
                       </div>
 
@@ -375,13 +382,13 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                         <p className="text-xs font-medium text-foreground mb-1.5">
                           ห้องเรียนที่ดูแลรับผิดชอบ:
                         </p>
-                        {staff.assignedClassrooms.length === 0 ? (
+                        {(!staff.assignedClassrooms || staff.assignedClassrooms.length === 0) ? (
                           <p className="text-xs text-muted-foreground italic">
                             ไม่ได้เป็นครูประจำชั้นห้องใด
                           </p>
                         ) : (
                           <div className="flex flex-wrap gap-1">
-                            {staff.assignedClassrooms.map((ac) => (
+                            {(staff.assignedClassrooms ?? []).map((ac) => (
                               <span
                                 key={ac.classroomId}
                                 className={`rounded-md px-2 py-0.5 text-xs font-medium ${
@@ -508,11 +515,11 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                           className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="NONE">-- ยังไม่ระบุ --</option>
-                          {staffList
-                            .filter((s) => s.isActive)
+                          {(staffList ?? [])
+                            .filter((s) => s && s.isActive)
                             .map((s) => (
                               <option key={s.id} value={s.id}>
-                                {s.fullName} ({s.roleLabel})
+                                {s.fullName || "ไม่ระบุชื่อ"} ({s.roleLabel || s.role || "บุคลากร"})
                               </option>
                             ))}
                         </select>
@@ -532,11 +539,11 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                           className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="NONE">-- ไม่มี / ไม่ระบุ --</option>
-                          {staffList
-                            .filter((s) => s.isActive)
+                          {(staffList ?? [])
+                            .filter((s) => s && s.isActive)
                             .map((s) => (
                               <option key={s.id} value={s.id}>
-                                {s.fullName} ({s.roleLabel})
+                                {s.fullName || "ไม่ระบุชื่อ"} ({s.roleLabel || s.role || "บุคลากร"})
                               </option>
                             ))}
                         </select>
