@@ -35,14 +35,14 @@ const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/
 const firstOrSelf = <T,>(value: T | T[] | null) =>
   Array.isArray(value) ? value[0] : value
 
-export async function getClassroomStudents() {
+export async function getClassroomStudents(classroomId?: string) {
   const context = await getCurrentUserContext()
-  if (!context.profileId) return { classroom: null, students: [] }
+  if (!context.profileId) return { classroom: null, classrooms: [], students: [] }
   const supabase = await createClient()
 
   let classroomQuery = supabase
     .from("classrooms")
-    .select("id, name")
+    .select("id, name, grade_level, room_number")
     .eq("school_id", context.schoolId)
     .eq("is_active", true)
 
@@ -50,14 +50,22 @@ export async function getClassroomStudents() {
     classroomQuery = classroomQuery.eq("homeroom_teacher_id", context.profileId)
   }
 
-  const { data: classroom, error: classroomError } = await classroomQuery
+  const { data: accessibleClassrooms, error: classroomError } = await classroomQuery
     .order("grade_level")
     .order("room_number")
-    .limit(1)
-    .maybeSingle()
 
   if (classroomError) throw new Error(classroomError.message)
-  if (!classroom) return { classroom: null, students: [] }
+  if (!accessibleClassrooms || accessibleClassrooms.length === 0) {
+    return { classroom: null, classrooms: [], students: [] }
+  }
+
+  const selectedClassroom =
+    (classroomId
+      ? accessibleClassrooms.find((c) => c.id === classroomId)
+      : null) ?? accessibleClassrooms[0]
+
+  const classrooms = accessibleClassrooms.map((c) => ({ id: c.id, name: c.name }))
+  const classroom = { id: selectedClassroom.id, name: selectedClassroom.name }
 
   const { data: classroomStudents, error } = await supabase
     .from("classroom_students")
@@ -87,7 +95,7 @@ export async function getClassroomStudents() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "th"))
 
-  return { classroom, students }
+  return { classroom, classrooms, students }
 }
 
 export async function getAttendanceForDate(classroomId: string, date: string) {

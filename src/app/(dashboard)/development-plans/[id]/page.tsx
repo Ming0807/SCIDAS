@@ -79,6 +79,29 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
   const canMutatePlan = !isFrozen && canEditDevelopmentPlans(context.role)
   const canMutateEvaluations = !isFrozen && canEditDevelopmentEvaluations(context.role)
 
+  const semesterName =
+    plan.semester?.semester === "semester_1"
+      ? "ภาคเรียนที่ 1"
+      : plan.semester?.semester === "semester_2"
+        ? "ภาคเรียนที่ 2"
+        : "ไม่ระบุภาคเรียน"
+
+  const planData = {
+    planTitle: plan.title,
+    planDescription: plan.description,
+    studentName: displayName(student),
+    studentCode: student?.student_code ?? null,
+    creatorName: displayName(creator),
+    semesterName,
+    startDate: formatDate(plan.start_date),
+    endDate: formatDate(plan.end_date),
+    progress: totalProgress,
+    statusLabel: getPlanStatusLabel(plan.status),
+    goals,
+    activitiesByGoal,
+    evaluations,
+  }
+
   return (
     <PageShell size="wide">
       <PageHeader
@@ -86,7 +109,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
         title={plan.title}
         description={plan.description ?? "ติดตามเป้าหมาย กิจกรรม และผลการประเมินของนักเรียนในแผนเดียว"}
         metadata={<StatusBadge status={getPlanStatusTone(plan.status)} label={getPlanStatusLabel(plan.status)} size="sm" />}
-        actions={<PlanDetailActions planId={id} status={plan.status} canEdit={canMutatePlan} />}
+        actions={<PlanDetailActions planId={id} status={plan.status} canEdit={canMutatePlan} planData={planData} />}
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="ข้อมูลสรุปแผน">

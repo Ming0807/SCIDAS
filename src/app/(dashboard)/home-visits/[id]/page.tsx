@@ -24,6 +24,8 @@ import { getStudentAttachments } from "@/lib/server/student-care-read-models"
 import { formatThaiShortDate, type StudentRiskLevel } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
 
+import { HomeVisitPrintableCard } from "./_components/home-visit-printable-card"
+
 type PageProps = {
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
@@ -113,6 +115,7 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
           <ArrowLeft className="size-4" /> กลับไปบันทึกเยี่ยมบ้าน
         </Link>
         <div className="flex flex-wrap gap-2">
+          <HomeVisitPrintableCard record={record} attachments={attachments} />
           <Link
             href={`/students/${record.studentId}`}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}

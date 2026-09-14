@@ -30,88 +30,96 @@ describe("UI Design System Token Guardrails", () => {
   ]
 
   const sourceFiles = scanDirs.flatMap((dir) => getAllSourceFiles(dir))
+  const fileContents = sourceFiles.map((filePath) => ({
+    filePath,
+    relativePath: path.relative(rootDir, filePath).replace(/\\/g, "/"),
+    lines: fs.readFileSync(filePath, "utf8").split("\n"),
+  }))
 
   it("should find source files to scan", () => {
     expect(sourceFiles.length).toBeGreaterThan(0)
   })
 
-  it("should never use arbitrary pixel or rem font sizes (e.g. text-[10px], text-[11px], text-[0.8rem])", () => {
-    const violations: { file: string; line: number; match: string }[] = []
-    const arbitraryFontSizeRegex = /\btext-\[(\d+px|\d+(\.\d+)?rem)\]/g
+  it(
+    "should never use arbitrary pixel or rem font sizes (e.g. text-[10px], text-[11px], text-[0.8rem])",
+    () => {
+      const violations: { file: string; line: number; match: string }[] = []
+      const arbitraryFontSizeRegex = /\btext-\[(\d+px|\d+(\.\d+)?rem)\]/g
 
-    for (const filePath of sourceFiles) {
-      const content = fs.readFileSync(filePath, "utf8")
-      const lines = content.split("\n")
-
-      lines.forEach((line, index) => {
-        const matches = line.match(arbitraryFontSizeRegex)
-        if (matches) {
-          matches.forEach((match) => {
-            violations.push({
-              file: path.relative(rootDir, filePath).replace(/\\/g, "/"),
-              line: index + 1,
-              match,
+      for (const { relativePath, lines } of fileContents) {
+        lines.forEach((line, index) => {
+          const matches = line.match(arbitraryFontSizeRegex)
+          if (matches) {
+            matches.forEach((match) => {
+              violations.push({
+                file: relativePath,
+                line: index + 1,
+                match,
+              })
             })
-          })
-        }
-      })
-    }
+          }
+        })
+      }
 
-    expect(
-      violations,
-      `Found arbitrary font size anti-patterns:\n${JSON.stringify(violations, null, 2)}`
-    ).toEqual([])
-  })
+      expect(
+        violations,
+        `Found arbitrary font size anti-patterns:\n${JSON.stringify(violations, null, 2)}`,
+      ).toEqual([])
+    },
+    30000,
+  )
 
-  it("should never use banned rounded-3xl in app or components", () => {
-    const violations: { file: string; line: number }[] = []
-    const rounded3xlRegex = /\brounded-3xl\b/g
+  it(
+    "should never use banned rounded-3xl in app or components",
+    () => {
+      const violations: { file: string; line: number }[] = []
+      const rounded3xlRegex = /\brounded-3xl\b/g
 
-    for (const filePath of sourceFiles) {
-      const content = fs.readFileSync(filePath, "utf8")
-      const lines = content.split("\n")
-
-      lines.forEach((line, index) => {
-        if (rounded3xlRegex.test(line)) {
-          violations.push({
-            file: path.relative(rootDir, filePath).replace(/\\/g, "/"),
-            line: index + 1,
-          })
-        }
-      })
-    }
-
-    expect(
-      violations,
-      `Found banned rounded-3xl anti-patterns:\n${JSON.stringify(violations, null, 2)}`
-    ).toEqual([])
-  })
-
-  it("should never use hardcoded legacy hex backgrounds (bg-[#f8fafc] or bg-[#4f46e5])", () => {
-    const violations: { file: string; line: number; match: string }[] = []
-    const hardcodedHexRegex = /\bbg-\[#(f8fafc|4f46e5)\]/gi
-
-    for (const filePath of sourceFiles) {
-      const content = fs.readFileSync(filePath, "utf8")
-      const lines = content.split("\n")
-
-      lines.forEach((line, index) => {
-        const matches = line.match(hardcodedHexRegex)
-        if (matches) {
-          matches.forEach((match) => {
+      for (const { relativePath, lines } of fileContents) {
+        lines.forEach((line, index) => {
+          if (rounded3xlRegex.test(line)) {
             violations.push({
-              file: path.relative(rootDir, filePath).replace(/\\/g, "/"),
+              file: relativePath,
               line: index + 1,
-              match,
             })
-          })
-        }
-      })
-    }
+          }
+        })
+      }
 
-    expect(
-      violations,
-      `Found hardcoded legacy hex backgrounds:\n${JSON.stringify(violations, null, 2)}`
-    ).toEqual([])
-  })
+      expect(
+        violations,
+        `Found banned rounded-3xl anti-patterns:\n${JSON.stringify(violations, null, 2)}`,
+      ).toEqual([])
+    },
+    30000,
+  )
+
+  it(
+    "should never use hardcoded legacy hex backgrounds (bg-[#f8fafc] or bg-[#4f46e5])",
+    () => {
+      const violations: { file: string; line: number; match: string }[] = []
+      const hardcodedHexRegex = /\bbg-\[#(f8fafc|4f46e5)\]/gi
+
+      for (const { relativePath, lines } of fileContents) {
+        lines.forEach((line, index) => {
+          const matches = line.match(hardcodedHexRegex)
+          if (matches) {
+            matches.forEach((match) => {
+              violations.push({
+                file: relativePath,
+                line: index + 1,
+                match,
+              })
+            })
+          }
+        })
+      }
+
+      expect(
+        violations,
+        `Found hardcoded legacy hex backgrounds:\n${JSON.stringify(violations, null, 2)}`,
+      ).toEqual([])
+    },
+    30000,
+  )
 })

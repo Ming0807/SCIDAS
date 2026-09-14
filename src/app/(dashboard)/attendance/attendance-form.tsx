@@ -15,26 +15,48 @@ import { ActionFeedback } from "@/components/forms/action-feedback"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { ActionResult } from "@/lib/server/action-result"
-import type { Database } from "@/types/database.types"
 
 import { useRealtime } from "@/components/providers/realtime-provider"
+import type {
+  AttendanceRiskLevel,
+  AttendanceStatus,
+  MonthlyAttendanceSummary,
+} from "@/lib/attendance-constants"
 
-type AttendanceStatus = Database["public"]["Enums"]["attendance_status"]
+import { AttendanceAnalyticsBar } from "./_components/attendance-analytics-bar"
+import { AttendancePrintableDialog } from "./_components/attendance-printable-dialog"
+
 type Student = { id: string; name: string }
 type InitialRecord = { student_id: string; status: AttendanceStatus; check_in_time: string | null; remark: string | null }
-type AttendanceFormProps = { classroom: { id: string; name: string }; students: Student[]; initialRecords: InitialRecord[]; dateStr: string }
+type AttendanceFormProps = {
+  classroom: { id: string; name: string }
+  classrooms?: Array<{ id: string; name: string }>
+  students: Student[]
+  initialRecords: InitialRecord[]
+  dateStr: string
+  monthlySummary?: MonthlyAttendanceSummary
+}
 type Entry = { status: AttendanceStatus; checkInTime: string; remark: string }
 
 const statusOptions: { value: AttendanceStatus; label: string }[] = [
   { value: "present", label: "มาเรียน" }, { value: "absent", label: "ขาดเรียน" }, { value: "late", label: "มาสาย" }, { value: "leave", label: "ลา" }, { value: "sick", label: "ป่วย" },
 ]
 
-export function AttendanceForm({ classroom, students, initialRecords, dateStr }: AttendanceFormProps) {
+export function AttendanceForm({
+  classroom,
+  classrooms = [],
+  students,
+  initialRecords,
+  dateStr,
+  monthlySummary,
+}: AttendanceFormProps) {
   const router = useRouter()
   const { lastAttendanceChange } = useRealtime()
   const [pending, startTransition] = useTransition()
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "non_present">("all")
+  const [riskFilter, setRiskFilter] = useState<AttendanceRiskLevel | "all">("all")
+  const [isPrintOpen, setIsPrintOpen] = useState(false)
   const [date, setDate] = useState(dateStr)
   const [result, setResult] = useState<ActionResult<{ count: number }> | null>(null)
   const [hasExternalUpdate, setHasExternalUpdate] = useState(false)
@@ -90,11 +112,15 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
       const matchesQuery = student.name.toLocaleLowerCase("th").includes(query.toLocaleLowerCase("th"))
       if (!matchesQuery) return false
       if (statusFilter === "non_present") {
-        return entries[student.id]?.status !== "present"
+        if (entries[student.id]?.status === "present") return false
+      }
+      if (riskFilter !== "all" && monthlySummary) {
+        const item = monthlySummary.items.find((i) => i.studentId === student.id)
+        if (item?.riskLevel !== riskFilter) return false
       }
       return true
     })
-  }, [students, query, statusFilter, entries])
+  }, [students, query, statusFilter, riskFilter, monthlySummary, entries])
 
   const updateEntry = (studentId: string, patch: Partial<Entry>) =>
     setEntries((current) => ({ ...current, [studentId]: { ...current[studentId], ...patch } }))
@@ -133,7 +159,18 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
   function changeDate(nextDate: string) {
     if (dirty && !window.confirm("มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปลี่ยนวันที่หรือไม่")) return
     setDate(nextDate)
-    router.push(nextDate ? `/attendance?date=${nextDate}` : "/attendance")
+    const params = new URLSearchParams()
+    if (nextDate) params.set("date", nextDate)
+    if (classroom.id) params.set("classroomId", classroom.id)
+    router.push(`/attendance?${params.toString()}`)
+  }
+
+  function changeClassroom(nextClassroomId: string) {
+    if (dirty && !window.confirm("มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปลี่ยนห้องเรียนหรือไม่")) return
+    const params = new URLSearchParams()
+    if (date) params.set("date", date)
+    if (nextClassroomId) params.set("classroomId", nextClassroomId)
+    router.push(`/attendance?${params.toString()}`)
   }
 
   function save() {
@@ -186,6 +223,23 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          {classrooms.length > 1 && (
+            <label className="space-y-1 text-sm">
+              <span className="block text-xs font-medium text-muted-foreground">ห้องเรียน</span>
+              <select
+                aria-label="เลือกห้องเรียน"
+                value={classroom.id}
+                onChange={(event) => changeClassroom(event.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {classrooms.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="space-y-1 text-sm">
             <span className="block text-xs font-medium text-muted-foreground">วันที่</span>
             <Input type="date" value={date} onChange={(event) => changeDate(event.target.value)} />
@@ -201,6 +255,17 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
           </Button>
         </div>
       </div>
+
+      {/* Monthly Attendance Analytics & 80% Rule Bar */}
+      {monthlySummary && (
+        <AttendanceAnalyticsBar
+          monthlySummary={monthlySummary}
+          classroomName={classroom.name}
+          onOpenPrint={() => setIsPrintOpen(true)}
+          selectedRiskFilter={riskFilter}
+          onSelectRiskFilter={setRiskFilter}
+        />
+      )}
 
       <ActionFeedback result={result} />
 
@@ -312,6 +377,15 @@ export function AttendanceForm({ classroom, students, initialRecords, dateStr }:
       }) : <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">ไม่พบรายชื่อนักเรียน</div>}
     </div>
     <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-border bg-muted/30 text-xs text-muted-foreground"><tr><th className="w-14 px-4 py-3">#</th><th className="px-4 py-3">นักเรียน</th><th className="w-48 px-4 py-3">สถานะ</th><th className="w-36 px-4 py-3">เวลาเข้า</th><th className="w-64 px-4 py-3">หมายเหตุ</th></tr></thead><tbody>{filteredStudents.length ? filteredStudents.map((student, index) => { const entry = entries[student.id]; return <tr key={student.id} className="border-b border-border last:border-0"><td className="px-4 py-3 text-muted-foreground">{index + 1}</td><td className="px-4 py-3 font-medium">{student.name}</td><td className="px-4 py-2"><select aria-label={`สถานะของ ${student.name}`} value={entry.status} onChange={(event) => updateEntry(student.id, { status: event.target.value as AttendanceStatus })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></td><td className="px-4 py-2"><Input aria-label={`เวลาเข้าของ ${student.name}`} type="time" value={entry.checkInTime} onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })} /></td><td className="px-4 py-2"><Input aria-label={`หมายเหตุของ ${student.name}`} placeholder="เพิ่มหมายเหตุ" value={entry.remark} onChange={(event) => updateEntry(student.id, { remark: event.target.value })} /></td></tr> }) : <tr><td colSpan={5} className="h-24 px-4 text-center text-muted-foreground">ไม่พบรายชื่อนักเรียน</td></tr>}</tbody></table></div>
-  </section>
+
+      {monthlySummary && (
+        <AttendancePrintableDialog
+          isOpen={isPrintOpen}
+          onClose={() => setIsPrintOpen(false)}
+          classroomName={classroom.name}
+          monthlySummary={monthlySummary}
+        />
+      )}
+    </section>
   )
 }
