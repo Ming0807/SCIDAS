@@ -335,7 +335,7 @@ export default async function ScreeningHubPage() {
                     </span>
                   </div>
 
-                  <Link href={`/screening/sdq`}>
+                  <Link href={`/screening/sdq?classroomId=${room.id}&q=${encodeURIComponent(room.name)}`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1">
                       คัดกรองห้องนี้
                       <ArrowRight className="size-3" />

@@ -169,3 +169,96 @@ export function getSdqClassificationLabel(
       return { text: "มีปัญหา", color: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-950/40" }
   }
 }
+
+export function getEvaluatorTypeLabel(type: SdqEvaluatorType): string {
+  switch (type) {
+    case "teacher":
+      return "ครูประเมิน"
+    case "student":
+      return "นักเรียนประเมินตนเอง"
+    case "parent":
+      return "ผู้ปกครองประเมิน"
+  }
+}
+
+export interface SdqDimensionCutoff {
+  maxScore: number
+  normalRange: string
+  riskRange: string
+  problemRange: string
+}
+
+export const SDQ_DIMENSION_CUTOFFS: Record<SdqDimension, SdqDimensionCutoff> = {
+  emotional: {
+    maxScore: 10,
+    normalRange: "0 - 4",
+    riskRange: "5",
+    problemRange: "6 - 10",
+  },
+  conduct: {
+    maxScore: 10,
+    normalRange: "0 - 3",
+    riskRange: "4",
+    problemRange: "5 - 10",
+  },
+  hyperactivity: {
+    maxScore: 10,
+    normalRange: "0 - 5",
+    riskRange: "6",
+    problemRange: "7 - 10",
+  },
+  peer: {
+    maxScore: 10,
+    normalRange: "0 - 3",
+    riskRange: "4",
+    problemRange: "5 - 10",
+  },
+  prosocial: {
+    maxScore: 10,
+    normalRange: "6 - 10",
+    riskRange: "5",
+    problemRange: "0 - 4",
+  },
+}
+
+export const SDQ_TOTAL_DIFFICULTIES_CUTOFF: SdqDimensionCutoff = {
+  maxScore: 40,
+  normalRange: "0 - 15",
+  riskRange: "16 - 18",
+  problemRange: "19 - 40",
+}
+
+export function getSdqDefaultRecommendation(
+  classification: SdqClassification,
+  problemDimensions: SdqDimension[] = []
+): string {
+  if (classification === "normal") {
+    return "นักเรียนมีพัฒนาการทางอารมณ์ พฤติกรรม และสัมพันธภาพทางสังคมอยู่ในเกณฑ์ปกติ ควรจัดกิจกรรมส่งเสริมศักยภาพและจุดเด่นอย่างต่อเนื่อง เสริมสร้างภูมิคุ้มกันทางจิตใจและทักษะชีวิต"
+  }
+
+  const dimNames = problemDimensions.map((d) => SDQ_DIMENSIONS[d].label).join(", ")
+  if (classification === "risk") {
+    return `พบแนวโน้มความเสี่ยงใน${dimNames ? ` ${dimNames}` : "ด้านพฤติกรรมหรืออารมณ์"} ครูประจำชั้นควรดูแลใกล้ชิด จัดกิจกรรมปรับพฤติกรรมเชิงบวก ให้คำปรึกษาเบื้องต้น และประสานงานผู้ปกครองร่วมเฝ้าระวังอย่างต่อเนื่อง`
+  }
+
+  return `นักเรียนมีปัญหาพฤติกรรมหรืออารมณ์ใน${dimNames ? ` ${dimNames}` : "ระดับที่ส่งผลกระทบต่อการเรียนและการใช้ชีวิต"} ควรได้รับการช่วยเหลือเร่งด่วน โดยประสานงานครูแนะแนว จัดทำแผนพัฒนาพฤติกรรมรายบุคคล (IDP) ประสานงานผู้ปกครอง หรือพิจารณาส่งต่อผู้เชี่ยวชาญทางการแพทย์/จิตวิทยา`
+}
+
+export interface SdqPrintData {
+  studentId: string
+  studentName: string
+  studentCode: string
+  classroomLabel: string
+  studentNumber?: number | null
+  evaluatorType: SdqEvaluatorType
+  evaluatorName?: string
+  assessmentDate: string
+  semesterLabel?: string
+  academicYear?: string
+  dimensionScores: Record<SdqDimension, number>
+  dimensionClassifications: Record<SdqDimension, SdqClassification>
+  totalDifficultiesScore: number
+  overallClassification: SdqClassification
+  recommendations?: string
+  notes?: string
+}

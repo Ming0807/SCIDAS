@@ -6,6 +6,7 @@ import Link from "next/link"
 import {
   ArrowLeft,
   Loader2,
+  Printer,
   Save,
 } from "lucide-react"
 import {
@@ -20,6 +21,7 @@ import { saveSdqAssessmentAction, type SdqActionResponse } from "@/app/actions/s
 import { Button } from "@/components/ui/button"
 import { ActionFeedback } from "@/components/forms/action-feedback"
 import type { ActionResult } from "@/lib/server/action-result"
+import { SdqPrintableDialog } from "./sdq-printable-dialog"
 
 interface SdqAssessmentFormProps {
   student: {
@@ -36,6 +38,7 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [pending, startTransition] = useTransition()
   const [result, setResult] = useState<ActionResult<SdqActionResponse> | null>(null)
+  const [isPrintOpen, setIsPrintOpen] = useState(false)
 
   const answeredCount = Object.keys(answers).length
   const isComplete = answeredCount === 25
@@ -141,8 +144,20 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
               ผู้ปกครองประเมิน
             </button>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPrintOpen(true)}
+            className="gap-1.5 text-xs shrink-0"
+          >
+            <Printer className="size-3.5" />
+            <span>พิมพ์รายงาน SDQ</span>
+          </Button>
         </div>
       </div>
+
 
       <ActionFeedback result={result} />
 
@@ -286,17 +301,51 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
               : `กรุณาตอบคำถามอีก ${25 - answeredCount} ข้อ`}
           </span>
 
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={pending || !isComplete}
-            className="gap-2"
-          >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {pending ? "กำลังบันทึก..." : "บันทึกผลการประเมิน SDQ"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              onClick={() => setIsPrintOpen(true)}
+              className="gap-1.5 text-xs"
+            >
+              <Printer className="size-4" />
+              <span>พิมพ์รายงาน SDQ</span>
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={pending || !isComplete}
+              className="gap-2"
+            >
+              {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              {pending ? "กำลังบันทึก..." : "บันทึกผลการประเมิน SDQ"}
+            </Button>
+          </div>
         </div>
       </div>
+
+      <SdqPrintableDialog
+        isOpen={isPrintOpen}
+        onClose={() => setIsPrintOpen(false)}
+        data={{
+          studentId: student.id,
+          studentName: student.name,
+          studentCode: student.code,
+          classroomLabel: student.classroom ?? "-",
+          evaluatorType,
+          assessmentDate: new Date().toLocaleDateString("th-TH", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+          dimensionScores: liveResult.dimensionScores,
+          dimensionClassifications: liveResult.dimensionClassifications,
+          totalDifficultiesScore: liveResult.totalDifficultiesScore,
+          overallClassification: liveResult.overallClassification,
+        }}
+      />
     </div>
   )
 }

@@ -1,10 +1,9 @@
 import Link from "next/link"
 import {
   AlertTriangle,
-  ArrowRight,
+  ArrowLeft,
   Brain,
   CheckCircle2,
-  ClipboardList,
   Search,
   Users,
 } from "lucide-react"
@@ -12,6 +11,7 @@ import { PageHeader, PageShell } from "@/components/dashboard"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { SdqTableActions } from "./_components/sdq-table-actions"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -46,6 +46,12 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
         description="Strengths and Difficulties Questionnaire — ระบบคัดกรอง 25 ข้อ 5 ด้าน ตามมาตรฐาน สพฐ. และกรมสุขภาพจิต"
       >
         <div className="flex items-center gap-2">
+          <Link href="/screening">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+              <ArrowLeft className="size-3.5" />
+              กลับศูนย์คัดกรอง
+            </Button>
+          </Link>
           <Link href="/risk-analysis">
             <Button variant="outline" size="sm" className="gap-1.5 text-xs">
               <Brain className="size-3.5" />
@@ -104,8 +110,16 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
             <p className="text-xs text-muted-foreground mt-0.5">เลือกนักเรียนเพื่อเริ่มทำแบบประเมิน SDQ</p>
           </div>
 
-          <form method="GET" className="flex items-center gap-2 max-w-sm w-full sm:w-auto">
-            <div className="relative w-full">
+          <div className="flex items-center gap-2 max-w-sm w-full sm:w-auto">
+            {query ? (
+              <Link href="/screening/sdq">
+                <Button variant="ghost" size="sm" className="h-9 text-xs text-muted-foreground hover:text-foreground shrink-0">
+                  ล้างตัวกรอง (&ldquo;{query}&rdquo;)
+                </Button>
+              </Link>
+            ) : null}
+
+            <form method="GET" className="relative w-full">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
               <Input
                 name="q"
@@ -113,9 +127,10 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
                 placeholder="ค้นหาชื่อ, รหัส, หรือห้องเรียน..."
                 className="pl-9 h-9 text-xs"
               />
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -169,13 +184,17 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
                         {student.riskScore}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Link href={`/screening/sdq/${student.studentId}`}>
-                          <Button size="sm" variant="outline" className="gap-1 text-xs">
-                            <ClipboardList className="size-3.5" />
-                            ทำแบบประเมิน SDQ
-                            <ArrowRight className="size-3 ml-0.5" />
-                          </Button>
-                        </Link>
+                        <SdqTableActions
+                          student={{
+                            studentId: student.studentId,
+                            studentCode: student.studentCode,
+                            fullName: student.fullName,
+                            classroomName: student.classroomName,
+                            studentNumber: student.studentNumber,
+                            riskLevel: student.riskLevel,
+                            riskScore: student.riskScore,
+                          }}
+                        />
                       </td>
                     </tr>
                   )

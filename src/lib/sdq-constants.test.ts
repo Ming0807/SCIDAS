@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest"
 import {
   calculateSdqScores,
+  getEvaluatorTypeLabel,
   getSdqClassificationLabel,
+  getSdqDefaultRecommendation,
+  SDQ_DIMENSION_CUTOFFS,
   SDQ_QUESTIONS,
+  SDQ_TOTAL_DIFFICULTIES_CUTOFF,
 } from "./sdq-constants"
 
 describe("sdq-constants", () => {
@@ -75,5 +79,26 @@ describe("sdq-constants", () => {
     expect(getSdqClassificationLabel("normal").text).toBe("ปกติ")
     expect(getSdqClassificationLabel("risk").text).toBe("เสี่ยง")
     expect(getSdqClassificationLabel("problem").text).toBe("มีปัญหา")
+  })
+
+  it("returns correct labels for evaluator types", () => {
+    expect(getEvaluatorTypeLabel("teacher")).toBe("ครูประเมิน")
+    expect(getEvaluatorTypeLabel("student")).toBe("นักเรียนประเมินตนเอง")
+    expect(getEvaluatorTypeLabel("parent")).toBe("ผู้ปกครองประเมิน")
+  })
+
+  it("provides comprehensive cutoffs for all 5 dimensions and total difficulties", () => {
+    expect(SDQ_DIMENSION_CUTOFFS.emotional.maxScore).toBe(10)
+    expect(SDQ_DIMENSION_CUTOFFS.conduct.maxScore).toBe(10)
+    expect(SDQ_DIMENSION_CUTOFFS.hyperactivity.maxScore).toBe(10)
+    expect(SDQ_DIMENSION_CUTOFFS.peer.maxScore).toBe(10)
+    expect(SDQ_DIMENSION_CUTOFFS.prosocial.maxScore).toBe(10)
+    expect(SDQ_TOTAL_DIFFICULTIES_CUTOFF.maxScore).toBe(40)
+  })
+
+  it("generates appropriate recommendation text for normal, risk, and problem", () => {
+    expect(getSdqDefaultRecommendation("normal")).toContain("อยู่ในเกณฑ์ปกติ")
+    expect(getSdqDefaultRecommendation("risk", ["emotional"])).toContain("ด้านอารมณ์")
+    expect(getSdqDefaultRecommendation("problem", ["hyperactivity", "conduct"])).toContain("เร่งด่วน")
   })
 })
