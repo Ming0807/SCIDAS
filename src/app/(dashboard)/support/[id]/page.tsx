@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, CalendarDays, FilePenLine } from "lucide-react"
+import { ArrowLeft, CalendarDays } from "lucide-react"
 import { notFound } from "next/navigation"
 
 import { getSupportRecord, type SupportCase } from "@/app/actions/support.actions"
@@ -11,6 +11,9 @@ import { StudentAttachmentsPanel } from "@/components/care"
 import { Button } from "@/components/ui/button"
 import { getStudentAttachments } from "@/lib/server/student-care-read-models"
 import { formatThaiDateTime, formatThaiShortDate } from "@/lib/student-care-formatters"
+
+import { SupportDetailActions } from "./_components/support-detail-actions"
+import type { SupportPrintData } from "@/lib/support-constants"
 
 type SupportCasePageProps = {
   params: Promise<{ id: string }>
@@ -80,6 +83,36 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
     ? `${supportCase.provider.first_name} ${supportCase.provider.last_name}`
     : "ไม่พบข้อมูลผู้บันทึก"
 
+  const printData: SupportPrintData = {
+    caseId: supportCase.id,
+    title: supportCase.title,
+    description: supportCase.description,
+    supportType: supportCase.support_type,
+    status: supportCase.status,
+    priority: supportCase.priority,
+    studentName,
+    studentCode: supportCase.student?.student_code ?? null,
+    providerName,
+    semesterId: supportCase.semester_id,
+    startedAt: supportCase.started_at,
+    completedAt: supportCase.completed_at,
+    createdAt: supportCase.created_at,
+    updatedAt: supportCase.updated_at,
+    actionPlan: supportCase.action_plan,
+    providedSupport: supportCase.provided_support,
+    resourcesUsed: supportCase.resources_used,
+    externalReferral: supportCase.external_referral,
+    followups: (supportCase.followups ?? []).map((f) => ({
+      id: f.id,
+      followupDate: f.followup_date,
+      description: f.description,
+      result: f.result,
+      improvementNoted: f.improvement_noted,
+      nextAction: f.next_action,
+      followerName: f.follower ? `${f.follower.first_name} ${f.follower.last_name}` : null,
+    })),
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6 lg:py-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -93,12 +126,11 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
             <p className="mt-2 text-sm text-muted-foreground">สร้างเมื่อ {formatThaiDateTime(supportCase.created_at)}</p>
           </div>
         </div>
-        {supportCase.canEdit ? (
-          <Button nativeButton={false} variant="outline" render={<Link href={`/support/${supportCase.id}/edit`} />}>
-            <FilePenLine aria-hidden="true" />
-            แก้ไขเคส
-          </Button>
-        ) : null}
+        <SupportDetailActions
+          caseId={supportCase.id}
+          canEdit={supportCase.canEdit}
+          printData={printData}
+        />
       </header>
 
       <section className="grid gap-3 sm:grid-cols-3">

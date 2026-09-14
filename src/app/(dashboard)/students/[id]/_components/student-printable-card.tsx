@@ -14,15 +14,18 @@ import type {
   StudentCareProfile,
   StudentGuardianItem,
 } from "@/lib/server/student-care-read-models"
+import type { Tables } from "@/types/database.types"
 
 export function StudentPrintableCard({
   profile,
   guardians,
   actionItems,
+  student,
 }: {
   profile: StudentCareProfile
   guardians: StudentGuardianItem[]
   actionItems: ActionQueueItem[]
+  student?: Tables<"students"> | null
 }) {
   const handlePrint = () => {
     window.print()
@@ -63,17 +66,24 @@ export function StudentPrintableCard({
           </div>
         </div>
 
-        {/* Section 1: General Info */}
+        {/* Section 1: General Info & Health */}
         <div className="border border-black p-3 space-y-2">
-          <h2 className="font-bold underline text-xs">หมวดที่ 1: ข้อมูลทั่วไปของนักเรียน</h2>
+          <h2 className="font-bold underline text-xs">หมวดที่ 1: ข้อมูลทั่วไปและสุขภาพของนักเรียน</h2>
           <div className="grid grid-cols-3 gap-2">
             <p><strong>ชื่อ-สกุล:</strong> {profile.fullName}</p>
             <p><strong>ชื่อเล่น:</strong> {profile.nickname || "-"}</p>
             <p><strong>เลขที่:</strong> {profile.studentNumber ?? "-"}</p>
             <p><strong>เพศ:</strong> {profile.gender === "male" ? "ชาย" : profile.gender === "female" ? "หญิง" : "-"}</p>
             <p><strong>สถานะภาพ:</strong> {profile.status === "active" ? "กำลังศึกษา" : "อื่น ๆ"}</p>
-            <p><strong>การเดินทางมาโรงเรียน:</strong> {profile.travelMethod || "-"}</p>
-            <p><strong>ระยะทางถึงโรงเรียน:</strong> {profile.distanceToSchoolKm ? `${profile.distanceToSchoolKm} กม.` : "-"}</p>
+            <p><strong>หมู่โลหิต:</strong> {student?.blood_type ? `กรุ๊ป ${student.blood_type}` : "-"}</p>
+            <p><strong>การเดินทาง:</strong> {profile.travelMethod || "-"}</p>
+            <p><strong>ระยะทาง:</strong> {profile.distanceToSchoolKm ? `${profile.distanceToSchoolKm} กม.` : "-"}</p>
+            <p><strong>ศาสนา/สัญชาติ:</strong> {student?.religion || "พุทธ"} / {student?.nationality || "ไทย"}</p>
+          </div>
+          <div className="border-t border-gray-300 pt-1.5 grid grid-cols-2 gap-2 text-xs">
+            <p><strong>โรคประจำตัว/ประวัติแพ้:</strong> {student?.medical_conditions || "ไม่มี"}</p>
+            <p><strong>ความต้องการจำเป็นพิเศษ:</strong> {student?.special_needs || "ปกติ"}</p>
+            <p className="col-span-2"><strong>ที่อยู่ตามทะเบียนบ้าน:</strong> {student?.address || "-"}</p>
           </div>
         </div>
 

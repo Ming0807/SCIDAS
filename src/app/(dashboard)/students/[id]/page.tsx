@@ -53,8 +53,12 @@ import {
 } from "@/lib/server/student-care-read-models"
 import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getStudentById } from "@/app/actions/student.actions"
+import type { Tables } from "@/types/database.types"
 import { StudentGuardianManager } from "./_components/student-guardian-manager"
 import { StudentPrintableCard } from "./_components/student-printable-card"
+import { StudentCarePathway } from "./_components/student-care-pathway"
+import { StudentHealthCard } from "./_components/student-health-card"
 
 type StudentProfilePageProps = {
   params: Promise<{ id: string }>
@@ -194,6 +198,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
   let timeline: StudentTimelineItem[] = []
   let attachments: StudentAttachmentItem[] = []
   let guardians: StudentGuardianItem[] = []
+  let studentDetails: Tables<"students"> | null = null
   let loadError: string | null = null
 
   try {
@@ -204,6 +209,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       timelineData,
       attachmentData,
       guardiansData,
+      studentData,
     ] = await Promise.all([
       getStudentCareProfile(id),
       getStudentActionItems(id, { limit: 12 }),
@@ -211,6 +217,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       getStudentTimeline(id, 12),
       getStudentAttachments(id, 10),
       getStudentGuardians(id),
+      getStudentById(id).catch(() => null),
     ])
 
     profile = profileData
@@ -219,6 +226,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
     timeline = timelineData
     attachments = attachmentData
     guardians = guardiansData
+    studentDetails = studentData
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown student profile error"
   }
@@ -270,6 +278,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
               profile={profile}
               guardians={guardians}
               actionItems={actionItems}
+              student={studentDetails}
             />
             {canEdit ? <Link href={`/students/${profile.studentId}/edit`} className={cn(buttonVariants({ variant: "outline" }))}>
               <Edit2 /> แก้ไขข้อมูล
@@ -315,6 +324,8 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
           size="compact"
         />
       </div>
+
+      <StudentCarePathway profile={profile} />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
         <div className="flex min-w-0 flex-col gap-6">
@@ -389,6 +400,8 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
               />
             </div>
           </Section>
+
+          <StudentHealthCard student={studentDetails} />
 
           <StudentGuardianManager
             studentId={profile.studentId}

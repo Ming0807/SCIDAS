@@ -5,7 +5,17 @@ import { getStudents } from "@/app/actions/student.actions"
 import { SupportCaseForm } from "@/app/(dashboard)/support/_components/support-case-form"
 import { Button } from "@/components/ui/button"
 
-export default async function NewSupportCasePage() {
+type NewSupportCasePageProps = {
+  searchParams?: Promise<{
+    studentId?: string
+  }>
+}
+
+export default async function NewSupportCasePage({
+  searchParams,
+}: NewSupportCasePageProps) {
+  const params = searchParams ? await searchParams : {}
+  const preselectedStudentId = params.studentId
   const students = await getStudents()
 
   return (
@@ -20,7 +30,7 @@ export default async function NewSupportCasePage() {
         </div>
       </header>
 
-      <SupportCaseForm students={students} />
+      <SupportCaseForm students={students} defaultStudentId={preselectedStudentId} />
     </main>
   )
 }

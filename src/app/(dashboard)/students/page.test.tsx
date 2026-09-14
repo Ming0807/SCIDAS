@@ -122,6 +122,24 @@ vi.mock("@/lib/server/current-user", () => ({
   })),
 }))
 
+vi.mock("@/app/actions/student.actions", () => ({
+  getStudentById: vi.fn(async () => ({
+    id: "S001",
+    student_code: "12345",
+    first_name: "กฤษฎา",
+    last_name: "ใจดี",
+    nickname: "กฤษ",
+    gender: "male",
+    date_of_birth: "2015-01-15",
+    blood_type: "O",
+    medical_conditions: null,
+    special_needs: null,
+    address: "123 หมู่ 1",
+    status: "active",
+  })),
+  getStudents: vi.fn(async () => []),
+}))
+
 describe("Students Module", () => {
   describe("Students List Page", () => {
     it("renders the students heading and data table", async () => {

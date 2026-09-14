@@ -30,6 +30,7 @@ type SupportStudentOption = {
 type SupportCaseFormProps = {
   students: SupportStudentOption[]
   initialCase?: SupportCase
+  defaultStudentId?: string
 }
 
 const supportTypeOptions: Array<{ value: SupportType; label: string }> = [
@@ -66,7 +67,7 @@ function FieldError({
   )
 }
 
-export function SupportCaseForm({ students, initialCase }: SupportCaseFormProps) {
+export function SupportCaseForm({ students, initialCase, defaultStudentId }: SupportCaseFormProps) {
   const router = useRouter()
   const action = initialCase ? updateSupportRecord : createSupportRecord
   const [result, formAction, pending] = useActionState<ActionResult<SupportActionData> | null, FormData>(
@@ -99,7 +100,7 @@ export function SupportCaseForm({ students, initialCase }: SupportCaseFormProps)
             <label htmlFor="support-student" className="text-sm font-medium text-foreground">
               นักเรียน
             </label>
-            <Select name="student_id" defaultValue={initialCase?.student_id} required>
+            <Select name="student_id" defaultValue={initialCase?.student_id ?? defaultStudentId} required>
               <SelectTrigger id="support-student" className="w-full">
                 <SelectValue placeholder="ค้นหาและเลือกนักเรียน..." />
               </SelectTrigger>
