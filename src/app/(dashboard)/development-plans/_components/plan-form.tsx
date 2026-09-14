@@ -36,7 +36,12 @@ export type PlanSemesterOption = {
 }
 
 type PlanFormProps =
-  | { mode: "create"; students: PlanStudentOption[]; semesters: PlanSemesterOption[] }
+  | {
+      mode: "create"
+      students: PlanStudentOption[]
+      semesters: PlanSemesterOption[]
+      defaultStudentId?: string
+    }
   | { mode: "edit"; plan: DevelopmentPlan }
 
 function FieldError({ message }: { message?: string }) {
@@ -109,7 +114,14 @@ export function PlanForm(props: PlanFormProps) {
               <>
                 <div className="space-y-2 sm:col-span-2">
                   <label htmlFor="student_id" className="text-sm font-medium">นักเรียน <span className="text-destructive">*</span></label>
-                  <select id="student_id" name="student_id" required defaultValue="" className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" aria-invalid={fieldErrors?.student_id ? true : undefined}>
+                  <select
+                    id="student_id"
+                    name="student_id"
+                    required
+                    defaultValue={props.mode === "create" ? (props.defaultStudentId ?? "") : ""}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    aria-invalid={fieldErrors?.student_id ? true : undefined}
+                  >
                     <option value="" disabled>เลือกนักเรียน</option>
                     {(props.mode === "create" ? props.students : []).map((student) => <option key={student.id} value={student.id}>{formatStudent(student)}</option>)}
                   </select>

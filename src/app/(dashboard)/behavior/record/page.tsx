@@ -8,7 +8,14 @@ import { notFound } from "next/navigation"
 
 import { BehaviorRecordForm } from "./_components/behavior-record-form"
 
-export default async function RecordBehaviorPage() {
+type RecordBehaviorPageProps = {
+  searchParams?: Promise<{ studentId?: string }>
+}
+
+export default async function RecordBehaviorPage({ searchParams }: RecordBehaviorPageProps) {
+  const resolvedParams = searchParams ? await searchParams : {}
+  const defaultStudentId = resolvedParams.studentId
+
   const context = await getCurrentUserContext()
   if (!["admin", "homeroom_teacher", "subject_teacher", "counselor"].includes(context.role)) {
     notFound()
@@ -31,7 +38,10 @@ export default async function RecordBehaviorPage() {
         </div>
       </div>
 
-      <BehaviorRecordForm students={students} />
+      <BehaviorRecordForm
+        students={students}
+        defaultStudentId={defaultStudentId}
+      />
     </div>
   )
 }

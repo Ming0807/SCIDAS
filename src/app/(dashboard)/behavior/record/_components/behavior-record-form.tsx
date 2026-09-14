@@ -35,9 +35,10 @@ type StudentOption = {
 
 type BehaviorRecordFormProps = {
   students: StudentOption[]
+  defaultStudentId?: string
 }
 
-export function BehaviorRecordForm({ students }: BehaviorRecordFormProps) {
+export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecordFormProps) {
   const router = useRouter()
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
@@ -64,7 +65,7 @@ export function BehaviorRecordForm({ students }: BehaviorRecordFormProps) {
               <label htmlFor="student_id" className="text-sm font-medium">
                 นักเรียน
               </label>
-              <Select name="student_id" required>
+              <Select name="student_id" required defaultValue={defaultStudentId}>
                 <SelectTrigger id="student_id" className="w-full" aria-invalid={!!fieldErrors?.student_id}>
                   <SelectValue placeholder="เลือกนักเรียน..." />
                 </SelectTrigger>

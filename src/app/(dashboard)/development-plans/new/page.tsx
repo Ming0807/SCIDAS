@@ -51,7 +51,14 @@ async function getPlanOptions(schoolId: string) {
   }
 }
 
-export default async function NewDevelopmentPlanPage() {
+type NewDevelopmentPlanPageProps = {
+  searchParams?: Promise<{ studentId?: string }>
+}
+
+export default async function NewDevelopmentPlanPage({ searchParams }: NewDevelopmentPlanPageProps) {
+  const resolvedParams = searchParams ? await searchParams : {}
+  const defaultStudentId = resolvedParams.studentId
+
   let context: Awaited<ReturnType<typeof getCurrentUserContext>>
   try {
     context = await getCurrentUserContext()
@@ -73,7 +80,7 @@ export default async function NewDevelopmentPlanPage() {
   return (
     <PageShell>
       <PageHeader title="สร้างแผนพัฒนารายบุคคล" description="บันทึกแผนที่ช่วยให้ทีมดูแลนักเรียนติดตามเป้าหมายและผลลัพธ์ได้ต่อเนื่อง" />
-      <PlanForm mode="create" {...options} />
+      <PlanForm mode="create" {...options} defaultStudentId={defaultStudentId} />
     </PageShell>
   )
 }

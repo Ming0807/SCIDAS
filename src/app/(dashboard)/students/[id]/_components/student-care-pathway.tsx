@@ -32,7 +32,11 @@ export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
       statusTone: "normal" as const,
       description: `การเดินทาง ${profile.travelMethod ?? "ไม่ระบุ"} · ${profile.distanceToSchoolKm ? `${profile.distanceToSchoolKm} กม.` : "ไม่ระบุระยะทาง"}`,
       primaryAction: {
-        label: "ดูการเยี่ยมบ้าน",
+        label: "บันทึกเยี่ยมบ้าน",
+        href: `/home-visits/new?studentId=${profile.studentId}`,
+      },
+      secondaryAction: {
+        label: "ประวัติเยี่ยมบ้าน",
         href: `/home-visits?studentId=${profile.studentId}`,
       },
     },
@@ -62,14 +66,15 @@ export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
       statusTone: profile.activePlanCount > 0 ? ("info" as const) : ("neutral" as const),
       description: `เป้าหมายการพัฒนาและเสริมสร้างศักยภาพผู้เรียน`,
       primaryAction: {
-        label: "แผนพัฒนา IDP",
-        href: `/development-plans?studentId=${profile.studentId}`,
+        label: "สร้างแผน IDP",
+        href: `/development-plans/new?studentId=${profile.studentId}`,
       },
       secondaryAction: {
-        label: "คะแนนพฤติกรรม",
-        href: `/behavior?studentId=${profile.studentId}`,
+        label: "บันทึกพฤติกรรม",
+        href: `/behavior/record?studentId=${profile.studentId}`,
       },
     },
+
     {
       stepNumber: 4,
       title: "ป้องกัน & ช่วยเหลือ",

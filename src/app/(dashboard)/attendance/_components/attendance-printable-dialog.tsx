@@ -68,6 +68,7 @@ export function AttendancePrintableDialog({
 
         {/* Printable Paper Area */}
         <div className="flex-1 overflow-y-auto p-8 print:overflow-visible print:p-6 text-foreground bg-background">
+          <style dangerouslySetInnerHTML={{ __html: "@media print { @page { size: A4 landscape; margin: 10mm; } }" }} />
           <div className="space-y-6">
             {/* Official Thai School Document Header */}
             <div className="text-center space-y-1 border-b-2 border-primary/20 pb-4">
@@ -193,7 +194,7 @@ export function AttendancePrintableDialog({
             </div>
 
             {/* Official 3-Party Signatures Section */}
-            <div className="pt-8 border-t border-border/80">
+            <div className="pt-8 border-t border-border/80 break-inside-avoid">
               <div className="grid grid-cols-3 gap-6 text-center text-xs">
                 {/* 1. Homeroom Teacher */}
                 <div className="space-y-12">

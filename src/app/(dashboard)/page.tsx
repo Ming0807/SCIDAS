@@ -5,6 +5,7 @@ import { SummaryCards } from "./_components/summary-cards"
 import { ActionItems } from "./_components/action-items"
 import { TrackingTable } from "./_components/tracking-table"
 import { MobileDashboard } from "./_components/mobile-dashboard"
+import { QuickActionsRibbon } from "./_components/quick-actions-ribbon"
 import { PageHeader, PageShell, StatusBadge } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
 import {
@@ -62,6 +63,8 @@ export default async function DashboardPage() {
             description="ติดตามความเสี่ยง งานดูแล และนักเรียนที่ควรได้รับการช่วยเหลือก่อน"
           />
 
+          <QuickActionsRibbon />
+
           {dashboardResult.error ? (
             <ErrorState
               title="โหลดข้อมูล Dashboard ไม่ได้"
@@ -72,6 +75,7 @@ export default async function DashboardPage() {
 
           {/* Top 4 Summary Cards */}
           <SummaryCards metrics={m} />
+
 
           {/* Middle: Risk breakdown + Action Items */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

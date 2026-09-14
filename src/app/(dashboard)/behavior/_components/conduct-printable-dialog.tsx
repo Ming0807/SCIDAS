@@ -76,6 +76,7 @@ export function ConductPrintableDialog({
 
         {/* Printable Document Body */}
         <div className="p-8 overflow-y-auto flex-1 bg-white text-slate-900 print:p-0 print:m-0 font-sans leading-relaxed">
+          <style dangerouslySetInnerHTML={{ __html: "@media print { @page { size: A4 portrait; margin: 12mm; } }" }} />
           {docType === "notice" ? (
             /* Document A: Notice to Parents */
             <div className="space-y-6 text-xs text-slate-800">
@@ -110,7 +111,7 @@ export function ConductPrintableDialog({
               </div>
 
               {/* 3 Signatures */}
-              <div className="pt-8 grid grid-cols-3 gap-6 text-center text-micro text-slate-800">
+              <div className="pt-8 grid grid-cols-3 gap-6 text-center text-micro text-slate-800 break-inside-avoid">
                 <div className="space-y-12">
                   <p>ลงชื่อ....................................................</p>
                   <div>
@@ -137,7 +138,7 @@ export function ConductPrintableDialog({
               </div>
 
               {/* Tear-off slip for parents */}
-              <div className="mt-8 pt-4 border-t-2 border-dashed border-slate-400">
+              <div className="mt-8 pt-4 border-t-2 border-dashed border-slate-400 break-inside-avoid">
                 <p className="text-center font-bold text-micro text-slate-600 mb-2">
                   (ส่วนล่างสำหรับตัดส่งคืนสถานศึกษา)
                 </p>

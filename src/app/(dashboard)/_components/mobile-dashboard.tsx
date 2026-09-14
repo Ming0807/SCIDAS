@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Bell, ChevronRight, Menu, ShieldAlert, Users } from "lucide-react"
 
+import { QuickActionsRibbon } from "./quick-actions-ribbon"
 import { StatusBadge, StudentIdentity } from "@/components/dashboard"
 import { EmptyState, ErrorState } from "@/components/feedback"
 import { Sidebar } from "@/components/layout/sidebar"
@@ -121,7 +122,10 @@ export function MobileDashboard({
           </div>
         </section>
 
+        <QuickActionsRibbon />
+
         <div className="grid grid-cols-2 gap-3">
+
           <MetricTile
             label="งานเปิด"
             value={metrics.openActionItems.toLocaleString("th-TH")}

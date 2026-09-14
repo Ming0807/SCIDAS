@@ -151,6 +151,7 @@ export function GradePrintableDialog({
 
         {/* Printable Document Body */}
         <div className="p-8 overflow-y-auto flex-1 bg-white text-slate-900 print:p-0 print:m-0">
+          <style dangerouslySetInnerHTML={{ __html: "@media print { @page { size: A4 landscape; margin: 10mm; } }" }} />
           {/* Official Document Header */}
           <div className="text-center space-y-1 pb-4 border-b-2 border-slate-900">
             <h1 className="text-lg font-bold tracking-tight text-slate-900">
@@ -239,7 +240,7 @@ export function GradePrintableDialog({
           </div>
 
           {/* Official 3-Party Signature Block */}
-          <div className="mt-8 pt-4 grid grid-cols-3 gap-6 text-center text-xs text-slate-800">
+          <div className="mt-8 pt-4 grid grid-cols-3 gap-6 text-center text-xs text-slate-800 break-inside-avoid">
             <div className="space-y-12">
               <p>ลงชื่อ..........................................................</p>
               <div>

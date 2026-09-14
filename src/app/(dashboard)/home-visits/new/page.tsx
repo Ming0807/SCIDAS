@@ -8,7 +8,14 @@ import { ErrorState } from "@/components/feedback/error-state"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
 import { HomeVisitForm } from "./_components/home-visit-form"
 
-export default async function RecordHomeVisitPage() {
+type RecordHomeVisitPageProps = {
+  searchParams?: Promise<{ studentId?: string }>
+}
+
+export default async function RecordHomeVisitPage({ searchParams }: RecordHomeVisitPageProps) {
+  const resolvedParams = searchParams ? await searchParams : {}
+  const defaultStudentId = resolvedParams.studentId
+
   let students: Awaited<ReturnType<typeof getStudentWorklist>>
 
   try {
@@ -23,6 +30,7 @@ export default async function RecordHomeVisitPage() {
       </PageShell>
     )
   }
+
 
   const studentOptions = students.map((s) => ({
     id: s.studentId,
@@ -47,7 +55,11 @@ export default async function RecordHomeVisitPage() {
         </div>
       </div>
 
-      <HomeVisitForm studentOptions={studentOptions} />
+      <HomeVisitForm
+        studentOptions={studentOptions}
+        defaultStudentId={defaultStudentId}
+      />
     </PageShell>
   )
+
 }

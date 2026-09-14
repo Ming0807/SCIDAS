@@ -21,15 +21,16 @@ type StudentOption = {
 
 type HomeVisitFormProps = {
   studentOptions: StudentOption[]
+  defaultStudentId?: string
 }
 
-export function HomeVisitForm({ studentOptions }: HomeVisitFormProps) {
+export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFormProps) {
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
     FormData
   >(createHomeVisitAction, null)
 
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("")
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId ?? "")
 
   const visitCreated = state?.ok && state.data?.id
 

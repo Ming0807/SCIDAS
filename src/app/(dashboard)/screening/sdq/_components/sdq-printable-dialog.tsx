@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import {
   Brain,
@@ -100,6 +100,7 @@ export function SdqPrintableDialog({
 
         {/* Document Sheet */}
         <div className="flex-1 overflow-y-auto p-8 print:overflow-visible print:p-6 text-foreground bg-background">
+          <style dangerouslySetInnerHTML={{ __html: "@media print { @page { size: A4 portrait; margin: 12mm; } }" }} />
           <div className="space-y-6">
             {/* Official Header */}
             <div className="text-center space-y-1 border-b-2 border-primary/20 pb-4">
@@ -325,7 +326,7 @@ export function SdqPrintableDialog({
             </section>
 
             {/* Section 4: Official 3-Party Signatures */}
-            <div className="pt-8 border-t-2 border-border/80">
+            <div className="pt-8 border-t-2 border-border/80 break-inside-avoid">
               <p className="text-center text-xs font-semibold text-muted-foreground mb-8">
                 ขอรับรองว่าผลการประเมิน SDQ และการคัดกรองนี้ถูกต้องตามข้อเท็จจริงและมาตรฐานระบบดูแลช่วยเหลือนักเรียน สพฐ.
               </p>
