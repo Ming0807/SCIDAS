@@ -12,11 +12,12 @@ type AcademicsPageProps = {
 export default async function AcademicsPage({ searchParams }: AcademicsPageProps) {
   const query = await searchParams
   const semesterId = typeof query.semesterId === "string" ? query.semesterId : undefined
+  const classroomId = typeof query.classroomId === "string" ? query.classroomId : undefined
 
   let academicData: Awaited<ReturnType<typeof getClassroomAcademicData>>
 
   try {
-    academicData = await getClassroomAcademicData(semesterId)
+    academicData = await getClassroomAcademicData(semesterId, classroomId)
   } catch {
     return (
       <PageShell size="wide">
@@ -50,21 +51,24 @@ export default async function AcademicsPage({ searchParams }: AcademicsPageProps
   return (
     <PageShell size="wide" spacing="loose">
       <PageHeader
-        title="บันทึกผลการเรียน"
-        description="แก้ไขคะแนนเก็บ กลางภาค และปลายภาค พร้อมตรวจสอบคะแนนรวมและเกรดก่อนบันทึก"
+        title="บันทึกผลการเรียนและวิเคราะห์ผลสัมฤทธิ์"
+        description="ตรวจสอบคะแนนเก็บ กลางภาค ปลายภาค คำนวณเกรดเฉลี่ย GPA และเฝ้าระวังกลุ่มเสี่ยงทางวิชาการ"
         metadata={
           <>
             <span className="font-medium text-foreground">ห้อง {academicData.classroom.name}</span>
             <span aria-hidden="true">•</span>
             <span>{currentSemester?.name ?? "ยังไม่ได้เลือกภาคเรียน"}</span>
+            <span aria-hidden="true">•</span>
+            <span>นักเรียน {academicData.students.length} คน</span>
           </>
         }
       />
 
       {academicData.currentSemesterId ? (
         <AcademicForm
-          key={academicData.currentSemesterId}
+          key={`${academicData.currentSemesterId}-${academicData.classroom.id}`}
           classroom={academicData.classroom}
+          classrooms={academicData.classrooms}
           students={academicData.students}
           subjects={academicData.subjects}
           initialScores={academicData.scores}

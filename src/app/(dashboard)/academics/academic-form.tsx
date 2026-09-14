@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { ActionResult } from "@/lib/server/action-result"
 
+import { AcademicAnalyticsBar } from "./_components/academic-analytics-bar"
+import { GradePrintableDialog } from "./_components/grade-printable-dialog"
+
 type Student = {
   id: string
   name: string
@@ -39,6 +42,7 @@ type Semester = {
 
 type AcademicFormProps = {
   classroom: { id: string; name: string }
+  classrooms?: Array<{ id: string; name: string }>
   students: Student[]
   subjects: Subject[]
   initialScores: InitialScore[]
@@ -128,15 +132,19 @@ function rowSummary(entry: ScoreEntry): RowSummary {
   return { total, grade: hasEnteredScore ? gradeFromTotal(total) : "-", error: null }
 }
 
+function gradeFromScore(score: number): { grade: string; gradePoint: number } {
+  if (score >= 80) return { grade: "4", gradePoint: 4 }
+  if (score >= 75) return { grade: "3.5", gradePoint: 3.5 }
+  if (score >= 70) return { grade: "3", gradePoint: 3 }
+  if (score >= 65) return { grade: "2.5", gradePoint: 2.5 }
+  if (score >= 60) return { grade: "2", gradePoint: 2 }
+  if (score >= 55) return { grade: "1.5", gradePoint: 1.5 }
+  if (score >= 50) return { grade: "1", gradePoint: 1 }
+  return { grade: "0", gradePoint: 0 }
+}
+
 function gradeFromTotal(total: number) {
-  if (total >= 80) return "4"
-  if (total >= 75) return "3.5"
-  if (total >= 70) return "3"
-  if (total >= 65) return "2.5"
-  if (total >= 60) return "2"
-  if (total >= 55) return "1.5"
-  if (total >= 50) return "1"
-  return "0"
+  return gradeFromScore(total).grade
 }
 
 function gradeClass(grade: string) {
@@ -146,6 +154,8 @@ function gradeClass(grade: string) {
 }
 
 export function AcademicForm({
+  classroom,
+  classrooms = [],
   students,
   subjects,
   initialScores,
@@ -156,10 +166,75 @@ export function AcademicForm({
   const [isPending, startTransition] = useTransition()
   const [searchTerm, setSearchTerm] = useState("")
   const [isDirty, setIsDirty] = useState(false)
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false)
   const [result, setResult] = useState<ActionResult<{ count: number }> | null>(null)
   const [scoreData, setScoreData] = useState<Record<string, ScoreEntry>>(() =>
     createInitialScoreData(students, subjects, initialScores),
   )
+
+  const analytics = useMemo(() => {
+    let totalGradePoints = 0
+    let totalScoreCount = 0
+    const gradeCounts: Record<string, number> = {
+      "4": 0,
+      "3.5": 0,
+      "3": 0,
+      "2.5": 0,
+      "2": 0,
+      "1.5": 0,
+      "1": 0,
+      "0": 0,
+    }
+
+    let honorsCount = 0
+    let atRiskCount = 0
+
+    for (const student of students) {
+      let studentGp = 0
+      let studentSubjectCount = 0
+      let studentHasZero = false
+
+      for (const subject of subjects) {
+        const entry = scoreData[scoreKey(student.id, subject.id)]
+        if (!entry) continue
+        const c = numericScore(entry.classwork_score) ?? 0
+        const m = numericScore(entry.midterm_score) ?? 0
+        const f = numericScore(entry.final_score) ?? 0
+        const total = c + m + f
+        const hasScore = entry.classwork_score !== "" || entry.midterm_score !== "" || entry.final_score !== ""
+
+        if (hasScore) {
+          const { grade, gradePoint } = gradeFromScore(total)
+          gradeCounts[grade] = (gradeCounts[grade] ?? 0) + 1
+          studentGp += gradePoint
+          studentSubjectCount++
+          totalGradePoints += gradePoint
+          totalScoreCount++
+
+          if (total < 50 || grade === "0") {
+            studentHasZero = true
+          }
+        }
+      }
+
+      const gpa = studentSubjectCount > 0 ? studentGp / studentSubjectCount : 0
+      if (gpa >= 3.0 && !studentHasZero && studentSubjectCount > 0) {
+        honorsCount++
+      }
+      if (studentHasZero || (studentSubjectCount > 0 && gpa < 1.5)) {
+        atRiskCount++
+      }
+    }
+
+    const classGpa = totalScoreCount > 0 ? Number((totalGradePoints / totalScoreCount).toFixed(2)) : 0
+
+    return {
+      classGpa,
+      honorsCount,
+      atRiskCount,
+      gradeCounts,
+    }
+  }, [students, subjects, scoreData])
 
   const filteredStudents = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("th-TH")
@@ -187,9 +262,14 @@ export function AcademicForm({
     setResult(null)
   }
 
+  const handleClassroomChange = (classroomId: string) => {
+    if (isDirty && !window.confirm("มีคะแนนที่ยังไม่ได้บันทึก ต้องการเปลี่ยนห้องเรียนหรือไม่")) return
+    router.push(`/academics?semesterId=${encodeURIComponent(currentSemesterId)}&classroomId=${encodeURIComponent(classroomId)}`)
+  }
+
   const handleSemesterChange = (semesterId: string) => {
     if (isDirty && !window.confirm("มีคะแนนที่ยังไม่ได้บันทึก ต้องการเปลี่ยนภาคเรียนหรือไม่")) return
-    router.push(`/academics?semesterId=${encodeURIComponent(semesterId)}`)
+    router.push(`/academics?semesterId=${encodeURIComponent(semesterId)}&classroomId=${encodeURIComponent(classroom.id)}`)
   }
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
@@ -240,27 +320,58 @@ export function AcademicForm({
     : result
 
   return (
-    <form className="space-y-5" onSubmit={handleSave}>
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-sm lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="space-y-1.5">
-            <label htmlFor="academic-semester" className="text-xs font-semibold text-muted-foreground">
-              ภาคเรียน
-            </label>
-            <select
-              id="academic-semester"
-              value={currentSemesterId}
-              onChange={(event) => handleSemesterChange(event.target.value)}
-              disabled={isPending}
-              className="h-9 min-w-56 rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {semesters.map((semester) => (
-                <option key={semester.id} value={semester.id}>
-                  {semester.name}{semester.is_current ? " (ปัจจุบัน)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div className="space-y-6">
+      <AcademicAnalyticsBar
+        classGpa={analytics.classGpa}
+        honorsCount={analytics.honorsCount}
+        atRiskCount={analytics.atRiskCount}
+        totalStudents={students.length}
+        gradeCounts={analytics.gradeCounts}
+        onPrintClick={() => setIsPrintDialogOpen(true)}
+      />
+
+      <form className="space-y-5" onSubmit={handleSave}>
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end flex-wrap">
+            {classrooms.length > 1 && (
+              <div className="space-y-1.5">
+                <label htmlFor="academic-classroom" className="text-xs font-semibold text-muted-foreground">
+                  ห้องเรียน
+                </label>
+                <select
+                  id="academic-classroom"
+                  value={classroom.id}
+                  onChange={(event) => handleClassroomChange(event.target.value)}
+                  disabled={isPending}
+                  className="h-9 min-w-36 rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 font-medium"
+                >
+                  {classrooms.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label htmlFor="academic-semester" className="text-xs font-semibold text-muted-foreground">
+                ภาคเรียน
+              </label>
+              <select
+                id="academic-semester"
+                value={currentSemesterId}
+                onChange={(event) => handleSemesterChange(event.target.value)}
+                disabled={isPending}
+                className="h-9 min-w-56 rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {semesters.map((semester) => (
+                  <option key={semester.id} value={semester.id}>
+                    {semester.name}{semester.is_current ? " (ปัจจุบัน)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
 
           <div className="relative w-full sm:w-72">
             <label htmlFor="academic-student-search" className="sr-only">
@@ -464,5 +575,17 @@ export function AcademicForm({
         </>
       )}
     </form>
-  )
+
+    <GradePrintableDialog
+      isOpen={isPrintDialogOpen}
+      onClose={() => setIsPrintDialogOpen(false)}
+      classroomName={classroom.name}
+      semesterName={semesters.find((s) => s.id === currentSemesterId)?.name ?? ""}
+      students={students}
+      subjects={subjects}
+      scoreData={scoreData}
+      classGpa={analytics.classGpa}
+    />
+  </div>
+)
 }

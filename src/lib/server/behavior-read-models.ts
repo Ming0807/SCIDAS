@@ -1,7 +1,16 @@
 import type { Database } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
+import {
+  type ConductSummary,
+  type ConductTier,
+  getConductTier,
+  type StudentConductItem,
+} from "@/lib/behavior-constants"
 import { getCurrentUserContext } from "./current-user"
+
+export type { ConductSummary, ConductTier, StudentConductItem }
+export { getConductTier }
 
 export type BehaviorType = Database["public"]["Enums"]["behavior_type"]
 type SeverityLevel = Database["public"]["Enums"]["severity_level"]
@@ -44,6 +53,7 @@ export type BehaviorDashboard = {
   summary: BehaviorSummary
   recentRecords: BehaviorRecordItem[]
   leaderboard: BehaviorLeaderboardItem[]
+  conductSummary: ConductSummary
   totalRecords: number
 }
 
@@ -217,10 +227,88 @@ export async function getBehaviorDashboard(): Promise<BehaviorDashboard> {
     .sort((a, b) => b.positivePoints - a.positivePoints)
     .slice(0, 5)
 
+  // Compute Conduct Scoring per student (100 base points)
+  const studentConductMap = new Map<
+    string,
+    {
+      studentId: string
+      studentName: string
+      studentClass: string | null
+      deductedPoints: number
+      addedPoints: number
+      recordsCount: number
+    }
+  >()
+
+  for (const item of items) {
+    const existing = studentConductMap.get(item.studentId)
+    const deducted = item.behaviorType === "negative" ? item.points : 0
+    const added = item.behaviorType === "positive" ? item.points : 0
+
+    if (existing) {
+      existing.deductedPoints += deducted
+      existing.addedPoints += added
+      existing.recordsCount += 1
+    } else {
+      studentConductMap.set(item.studentId, {
+        studentId: item.studentId,
+        studentName: item.studentName,
+        studentClass: item.studentClass,
+        deductedPoints: deducted,
+        addedPoints: added,
+        recordsCount: 1,
+      })
+    }
+  }
+
+  const conductList: StudentConductItem[] = Array.from(studentConductMap.values()).map((sc) => {
+    const finalScore = Math.max(0, Math.min(100, 100 - sc.deductedPoints + sc.addedPoints))
+    const { tier, label } = getConductTier(finalScore)
+    return {
+      studentId: sc.studentId,
+      studentName: sc.studentName,
+      studentClass: sc.studentClass,
+      baseScore: 100,
+      deductedPoints: sc.deductedPoints,
+      addedPoints: sc.addedPoints,
+      finalScore,
+      tier,
+      tierLabel: label,
+      recordsCount: sc.recordsCount,
+    }
+  })
+
+  // Sort by finalScore ascending so that students who need urgent follow-up appear first
+  conductList.sort((a, b) => a.finalScore - b.finalScore)
+
+  const excellentCount = conductList.filter((c) => c.tier === "excellent").length
+  const goodCount = conductList.filter((c) => c.tier === "good").length
+  const fairCount = conductList.filter((c) => c.tier === "fair").length
+  const needsImprovementCount = conductList.filter((c) => c.tier === "needs_improvement").length
+  const averageScore =
+    conductList.length > 0
+      ? Number(
+          (
+            conductList.reduce((acc, curr) => acc + curr.finalScore, 0) /
+            conductList.length
+          ).toFixed(1),
+        )
+      : 100
+
+  const conductSummary: ConductSummary = {
+    averageScore,
+    excellentCount,
+    goodCount,
+    fairCount,
+    needsImprovementCount,
+    conductList,
+  }
+
   return {
     summary,
     recentRecords: items.slice(0, 10),
     leaderboard,
+    conductSummary,
     totalRecords: total,
   }
 }

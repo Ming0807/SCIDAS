@@ -46,9 +46,19 @@ function gradeFromScore(score: number): { grade: string; gradePoint: number } {
   return { grade: "0", gradePoint: 0 }
 }
 
-export async function getClassroomAcademicData(semesterId?: string) {
+export async function getClassroomAcademicData(semesterId?: string, classroomId?: string) {
   const context = await getCurrentUserContext()
-  if (!context.profileId) return { classroom: null, students: [], subjects: [], scores: [], semesters: [] }
+  if (!context.profileId) {
+    return {
+      classroom: null,
+      classrooms: [],
+      students: [],
+      subjects: [],
+      scores: [],
+      semesters: [],
+      currentSemesterId: "",
+    }
+  }
   const supabase = await createClient()
 
   const { data: semesterRows, error: semesterError } = await supabase
@@ -75,43 +85,89 @@ export async function getClassroomAcademicData(semesterId?: string) {
       : semesters.find((semester) => semester.is_current)?.id ?? semesters[0]?.id
 
   if (!selectedSemesterId) {
-    return { classroom: null, students: [], subjects: [], scores: [], semesters, currentSemesterId: "" }
+    return {
+      classroom: null,
+      classrooms: [],
+      students: [],
+      subjects: [],
+      scores: [],
+      semesters,
+      currentSemesterId: "",
+    }
   }
 
-  let classroomQuery = supabase
-    .from("classrooms")
-    .select("id, name")
-    .eq("school_id", context.schoolId)
-    .eq("is_active", true)
+  // Discover all accessible classrooms based on user role
+  let accessibleClassrooms: Array<{ id: string; name: string }> = []
 
-  if (context.role === "homeroom_teacher") {
-    classroomQuery = classroomQuery.eq("homeroom_teacher_id", context.profileId)
+  if (["admin", "director", "counselor"].includes(context.role)) {
+    const { data: allRooms, error: roomsError } = await supabase
+      .from("classrooms")
+      .select("id, name, grade_level, section")
+      .eq("school_id", context.schoolId)
+      .eq("is_active", true)
+      .order("grade_level", { ascending: true })
+      .order("section", { ascending: true })
+
+    if (roomsError) throw new Error(roomsError.message)
+    accessibleClassrooms = (allRooms ?? []).map((r) => ({
+      id: r.id,
+      name: r.name || `ม.${r.grade_level}/${r.section}`,
+    }))
+  } else if (context.role === "homeroom_teacher") {
+    const { data: assignedRooms, error: roomsError } = await supabase
+      .from("classrooms")
+      .select("id, name, grade_level, section")
+      .eq("school_id", context.schoolId)
+      .eq("is_active", true)
+      .or(`homeroom_teacher_id.eq.${context.profileId},co_teacher_id.eq.${context.profileId}`)
+      .order("grade_level", { ascending: true })
+      .order("section", { ascending: true })
+
+    if (roomsError) throw new Error(roomsError.message)
+    accessibleClassrooms = (assignedRooms ?? []).map((r) => ({
+      id: r.id,
+      name: r.name || `ม.${r.grade_level}/${r.section}`,
+    }))
   } else if (context.role === "subject_teacher") {
-    const { data: assignment, error: assignmentError } = await supabase
+    const { data: assignmentRows, error: assignError } = await supabase
       .from("classroom_subjects")
-      .select("classroom_id")
+      .select("classroom:classrooms!inner(id, name, grade_level, section)")
       .eq("school_id", context.schoolId)
       .eq("semester_id", selectedSemesterId)
       .eq("teacher_id", context.profileId)
-      .limit(1)
-      .maybeSingle()
-    if (assignmentError) throw new Error(assignmentError.message)
-    if (!assignment) {
-      return { classroom: null, students: [], subjects: [], scores: [], semesters, currentSemesterId: selectedSemesterId }
+
+    if (assignError) throw new Error(assignError.message)
+    type RawAssign = { classroom: { id: string; name: string; grade_level: string; section: number } }
+    const seen = new Set<string>()
+    for (const row of (assignmentRows as unknown as RawAssign[]) ?? []) {
+      if (row.classroom && !seen.has(row.classroom.id)) {
+        seen.add(row.classroom.id)
+        accessibleClassrooms.push({
+          id: row.classroom.id,
+          name: row.classroom.name || `ม.${row.classroom.grade_level}/${row.classroom.section}`,
+        })
+      }
     }
-    classroomQuery = classroomQuery.eq("id", assignment.classroom_id)
-  } else if (context.role !== "admin" && context.role !== "director") {
-    return { classroom: null, students: [], subjects: [], scores: [], semesters, currentSemesterId: selectedSemesterId }
   }
 
-  const { data: classroom, error: classroomError } = await classroomQuery
-    .order("grade_level")
-    .order("room_number")
-    .limit(1)
-    .maybeSingle()
+  if (accessibleClassrooms.length === 0) {
+    return {
+      classroom: null,
+      classrooms: [],
+      students: [],
+      subjects: [],
+      scores: [],
+      semesters,
+      currentSemesterId: selectedSemesterId,
+    }
+  }
 
-  if (classroomError) throw new Error(classroomError.message)
-  if (!classroom) return { classroom: null, students: [], subjects: [], scores: [], semesters, currentSemesterId: selectedSemesterId }
+  const selectedClassroomId =
+    classroomId && accessibleClassrooms.some((c) => c.id === classroomId)
+      ? classroomId
+      : accessibleClassrooms[0]?.id
+
+  const classroom = accessibleClassrooms.find((c) => c.id === selectedClassroomId) ?? accessibleClassrooms[0]!
 
   let subjectQuery = supabase
     .from("classroom_subjects")
@@ -172,7 +228,15 @@ export async function getClassroomAcademicData(semesterId?: string) {
     scores = data ?? []
   }
 
-  return { classroom, students, subjects, scores, semesters, currentSemesterId: selectedSemesterId }
+  return {
+    classroom,
+    classrooms: accessibleClassrooms,
+    students,
+    subjects,
+    scores,
+    semesters,
+    currentSemesterId: selectedSemesterId,
+  }
 }
 
 export async function upsertAcademicScores(

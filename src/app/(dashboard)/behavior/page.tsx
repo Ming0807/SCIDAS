@@ -19,6 +19,8 @@ import {
 import { getStudentInitials } from "@/lib/student-care-formatters"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 
+import { ConductSummaryCard } from "./_components/conduct-summary-card"
+
 export default async function BehaviorDashboardPage() {
   const context = await getCurrentUserContext()
   const canCreate = ["admin", "homeroom_teacher", "subject_teacher", "counselor"].includes(context.role)
@@ -92,6 +94,9 @@ export default async function BehaviorDashboardPage() {
           statusLabel="คน"
         />
       </div>
+
+      {/* Conduct Scoring & Merit/Demerit System */}
+      <ConductSummaryCard conductSummary={dashboard.conductSummary} />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
