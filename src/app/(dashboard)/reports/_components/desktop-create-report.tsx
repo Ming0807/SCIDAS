@@ -2,13 +2,18 @@
 
 import { useActionState, useState } from "react"
 import {
+  Award,
   CalendarCheck,
   CheckCircle2,
+  FileCheck2,
   FileSpreadsheet,
   FileText,
   GraduationCap,
+  HeartHandshake,
+  Home,
   Loader2,
   ShieldAlert,
+  Sparkles,
   XCircle,
 } from "lucide-react"
 
@@ -27,6 +32,15 @@ const reportTypeOptions = [
     iconBg: "bg-indigo-50",
     iconBorder: "border-indigo-200",
     selectedBorder: "border-indigo-300 bg-indigo-50/60",
+  },
+  {
+    value: "screening_summary",
+    label: "รายงานคัดกรอง SDQ",
+    icon: FileCheck2,
+    iconColor: "text-teal-600",
+    iconBg: "bg-teal-50",
+    iconBorder: "border-teal-200",
+    selectedBorder: "border-teal-300 bg-teal-50/60",
   },
   {
     value: "risk_report",
@@ -55,13 +69,54 @@ const reportTypeOptions = [
     iconBorder: "border-blue-200",
     selectedBorder: "border-blue-300 bg-blue-50/60",
   },
+  {
+    value: "behavior_summary",
+    label: "รายงานความประพฤติ",
+    icon: Award,
+    iconColor: "text-amber-600",
+    iconBg: "bg-amber-50",
+    iconBorder: "border-amber-200",
+    selectedBorder: "border-amber-300 bg-amber-50/60",
+  },
+  {
+    value: "home_visit_summary",
+    label: "รายงานการเยี่ยมบ้าน",
+    icon: Home,
+    iconColor: "text-sky-600",
+    iconBg: "bg-sky-50",
+    iconBorder: "border-sky-200",
+    selectedBorder: "border-sky-300 bg-sky-50/60",
+  },
+  {
+    value: "support_summary",
+    label: "รายงานการช่วยเหลือ",
+    icon: HeartHandshake,
+    iconColor: "text-rose-600",
+    iconBg: "bg-rose-50",
+    iconBorder: "border-rose-200",
+    selectedBorder: "border-rose-300 bg-rose-50/60",
+  },
+  {
+    value: "comprehensive",
+    label: "รายงานสรุปภาพรวม SAR",
+    icon: Sparkles,
+    iconColor: "text-purple-600",
+    iconBg: "bg-purple-50",
+    iconBorder: "border-purple-200",
+    selectedBorder: "border-purple-300 bg-purple-50/60",
+  },
 ]
 
 const defaultTitleByType: Record<string, string> = {
   student_summary: "รายงานสรุปรายชื่อและข้อมูลนักเรียน",
+  screening_summary: "รายงานผลการคัดกรองนักเรียน SDQ และ 5 ด้าน (สพฐ.)",
   risk_report: "รายงานคัดกรองนักเรียนกลุ่มเสี่ยง (Early Warning)",
   attendance_report: "รายงานสรุปสถิติการมาเรียน",
   academic_report: "รายงานสรุปผลการเรียนและคะแนนเก็บ",
+  behavior_summary: "รายงานคะแนนความประพฤติและวินัยนักเรียน",
+  home_visit_summary: "รายงานสรุปผลการเยี่ยมบ้านนักเรียน (สพฐ.)",
+  support_summary: "รายงานสรุปการให้คำปรึกษาและช่วยเหลือผู้เรียน",
+  comprehensive: "รายงานสรุปผลการดำเนินงานระบบดูแลช่วยเหลือ (SAR)",
 }
 
 export function DesktopCreateReport() {
@@ -96,7 +151,7 @@ export function DesktopCreateReport() {
       <h3 className="text-sm font-semibold text-slate-800 mb-4">สร้างรายงานใหม่</h3>
 
       {/* Report type cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
         {reportTypeOptions.map((opt) => {
           const Icon = opt.icon
           const isSelected = selectedType === opt.value

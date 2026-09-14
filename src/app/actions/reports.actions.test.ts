@@ -20,14 +20,19 @@ vi.mock("next/server", () => ({
 
 vi.mock("@/lib/server/report-read-models", () => ({
   reportJobTypes: [
+    "student_summary",
     "student_profile",
-    "behavior_summary",
+    "risk_report",
+    "risk_assessment",
+    "attendance_report",
     "attendance_summary",
+    "academic_report",
     "grade_report",
     "screening_summary",
     "home_visit_summary",
     "support_summary",
     "idp_summary",
+    "behavior_summary",
     "comprehensive",
   ],
   requestReportJob: vi.fn(),

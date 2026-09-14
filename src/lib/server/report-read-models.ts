@@ -45,11 +45,19 @@ export type ReportJobItem = {
 
 const knownReportTypeLabels: Record<string, string> = {
   student_summary: "รายงานสรุปนักเรียน",
+  student_profile: "รายงานระเบียนนักเรียนรายบุคคล",
   risk_report: "รายงานกลุ่มเสี่ยง",
   risk_assessment: "รายงานการประเมินความเสี่ยง",
   attendance_report: "รายงานการมาเรียน",
   attendance_summary: "รายงานสรุปการมาเรียน",
   academic_report: "รายงานผลการเรียน",
+  grade_report: "รายงานผลการเรียน",
+  screening_summary: "รายงานผลการคัดกรอง SDQ และ 5 ด้าน",
+  home_visit_summary: "รายงานสรุปการเยี่ยมบ้าน",
+  support_summary: "รายงานการให้ความช่วยเหลือ (สพฐ.)",
+  idp_summary: "รายงานแผนพัฒนารายบุคคล (IDP)",
+  behavior_summary: "รายงานคะแนนความประพฤติและวินัย",
+  comprehensive: "รายงานสรุปภาพรวมสถานศึกษา (SAR)",
 }
 
 export type ReportJobType = keyof typeof knownReportTypeLabels
