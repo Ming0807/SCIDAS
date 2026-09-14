@@ -216,7 +216,7 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
     assignmentsData = (fallbackAssignments ?? []).map((a) => ({
       ...a,
       teacher: null,
-    })) as typeof rawAssignmentsData
+    })) as unknown as typeof rawAssignmentsData
   }
 
   // 7. Teachers for assignment

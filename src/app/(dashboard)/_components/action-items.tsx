@@ -1,10 +1,17 @@
 import Link from "next/link"
-import { AlertTriangle, CalendarClock, ChevronRight, ListChecks } from "lucide-react"
+import {
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
+  ListChecks,
+} from "lucide-react"
 
-import { Section, StatusBadge } from "@/components/dashboard"
+import { StatusBadge } from "@/components/dashboard"
 import { EmptyState } from "@/components/feedback"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
 import type { ActionQueueItem } from "@/lib/server/student-care-read-models"
+import { cn } from "@/lib/utils"
 
 function getPriorityTone(priority: ActionQueueItem["priority"]) {
   if (priority === "critical" || priority === "high") return "high-risk"
@@ -23,59 +30,154 @@ function getPriorityLabel(priority: ActionQueueItem["priority"]) {
   return labels[priority]
 }
 
-export function ActionItems({ items }: { items: ActionQueueItem[] }) {
+function isPastDue(dueDateStr?: string | null) {
+  if (!dueDateStr) return false
+  const d = new Date(dueDateStr)
+  if (Number.isNaN(d.getTime())) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return d.getTime() < today.getTime()
+}
+
+export function ActionItems({
+  items,
+  className,
+}: {
+  items: ActionQueueItem[]
+  className?: string
+}) {
   return (
-    <Section
-      variant="surface"
-      className="col-span-1 lg:col-span-3"
-      title="รายการที่ต้องติดตาม"
-      description={`${items.length.toLocaleString("th-TH")} งานที่ยังเปิดอยู่`}
-      actions={
+    <div
+      className={cn(
+        "flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-xs transition-all",
+        className,
+      )}
+    >
+      <div>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border/60">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ListChecks className="size-4" />
+              </span>
+              <h3 className="text-base font-bold text-foreground tracking-tight">
+                ศูนย์ปฏิบัติการดูแล (Care Action Queue)
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {items.length > 0
+                ? `มีงานค้างดำเนินการ ${items.length.toLocaleString("th-TH")} รายการที่ต้องติดตาม`
+                : "ไม่มีงานค้างติดตามในขณะนี้"}
+            </p>
+          </div>
+          <Link
+            href="/support"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors shrink-0 group"
+          >
+            <span>ดูทั้งหมด</span>
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        {/* Content List */}
+        <div className="mt-4 space-y-2.5">
+          {items.length > 0 ? (
+            items.slice(0, 5).map((item) => {
+              const pastDue = isPastDue(item.dueDate)
+              return (
+                <div
+                  key={item.id}
+                  className="group relative flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/60 p-3.5 transition-all hover:bg-muted/40 hover:border-border hover:shadow-2xs"
+                >
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "size-2 shrink-0 rounded-full",
+                          item.priority === "critical"
+                            ? "bg-rose-600 animate-pulse"
+                            : item.priority === "high"
+                              ? "bg-rose-500"
+                              : item.priority === "medium"
+                                ? "bg-amber-500"
+                                : "bg-emerald-500",
+                        )}
+                      />
+                      <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        {item.title}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      {item.studentId ? (
+                        <Link
+                          href={`/students/${item.studentId}`}
+                          className="font-medium text-foreground hover:text-primary hover:underline truncate max-w-[140px]"
+                        >
+                          {item.studentName ?? "นักเรียน"}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-foreground truncate max-w-[140px]">
+                          {item.studentName ?? "ทั่วไป"}
+                        </span>
+                      )}
+                      <span>•</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-micro font-medium text-muted-foreground">
+                        {item.category}
+                      </span>
+                      {item.dueDate && (
+                        <>
+                          <span>•</span>
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 text-micro font-medium",
+                              pastDue ? "text-destructive font-semibold" : "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarClock className="size-3" />
+                            {pastDue ? "เลยกำหนด " : "ครบกำหนด "}
+                            {formatThaiShortDate(item.dueDate)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 pt-0.5">
+                    <StatusBadge
+                      status={getPriorityTone(item.priority)}
+                      label={getPriorityLabel(item.priority)}
+                      size="sm"
+                    />
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <EmptyState
+              icon={CheckCircle2}
+              size="compact"
+              title="ไม่มีงานค้างติดตาม"
+              description="เมื่อตรวจพบความเสี่ยงหรือสร้างเคสดูแล งานจะปรากฏตรงนี้อัตโนมัติ"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 className="size-3.5 text-muted-foreground/80" />
+          <span>ส่งต่อและติดตามความคืบหน้าแบบบูรณาการ</span>
+        </span>
         <Link
           href="/support"
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="text-micro text-primary hover:underline flex items-center font-medium"
         >
-          ดูทั้งหมด <ChevronRight className="size-3" />
+          จัดการเคส <ChevronRight className="size-3" />
         </Link>
-      }
-      contentClassName="space-y-3"
-    >
-      {items.length > 0 ? (
-        items.slice(0, 5).map((item) => (
-          <div
-            key={item.id}
-            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:bg-muted/40"
-          >
-            <div className="min-w-0 space-y-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <ListChecks aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-                <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-              </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {item.studentName ?? "ไม่ระบุนักเรียน"} / {item.category}
-              </p>
-              {item.dueDate ? (
-                <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <CalendarClock aria-hidden="true" className="size-3" />
-                  ครบกำหนด {formatThaiShortDate(item.dueDate)}
-                </p>
-              ) : null}
-            </div>
-            <StatusBadge
-              status={getPriorityTone(item.priority)}
-              label={getPriorityLabel(item.priority)}
-              size="sm"
-            />
-          </div>
-        ))
-      ) : (
-        <EmptyState
-          icon={AlertTriangle}
-          size="compact"
-          title="ยังไม่มีงานติดตามที่เปิดอยู่"
-          description="เมื่อตรวจพบความเสี่ยงหรือสร้างเคสดูแล งานจะปรากฏตรงนี้อัตโนมัติ"
-        />
-      )}
-    </Section>
+      </div>
+    </div>
   )
 }
