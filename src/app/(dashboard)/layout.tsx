@@ -13,19 +13,20 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const role = await getUserRole()
-
+  let role: Awaited<ReturnType<typeof getUserRole>> = null
   let profile: Awaited<ReturnType<typeof getUserProfile>> | null = null
   let unreadCount = 0
   let contextSchoolId: string | null = null
   let contextUserId: string | null = null
 
   try {
-    const [p, n, ctx] = await Promise.all([
-      getUserProfile(),
+    const [r, p, n, ctx] = await Promise.all([
+      getUserRole().catch(() => null),
+      getUserProfile().catch(() => null),
       getNotificationCounts().catch(() => ({ total: 0, unread: 0, byType: {} as Record<string, number> })),
       getCurrentUserContext().catch(() => null),
     ])
+    role = r ?? (ctx?.role as Awaited<ReturnType<typeof getUserRole>>) ?? null
     profile = p
     unreadCount = n.unread
     contextSchoolId = ctx?.schoolId ?? null

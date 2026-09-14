@@ -53,24 +53,30 @@ export async function getUserProfile(): Promise<UserProfileInfo> {
       phone,
       position,
       avatar_url,
-      schools!profiles_school_id_fkey (
-        name
-      )
+      school_id
     `,
     )
     .eq("id", context.profileId)
-    .single()
+    .maybeSingle()
 
   if (error || !profile) {
     throw new Error(error?.message ?? "NOT_FOUND")
+  }
+
+  let schoolName: string | null = null
+  if (profile.school_id) {
+    const { data: school } = await client
+      .from("schools")
+      .select("name")
+      .eq("id", profile.school_id)
+      .maybeSingle()
+    schoolName = school?.name ?? null
   }
 
   // Get last sign-in from auth
   const {
     data: { user },
   } = await client.auth.getUser()
-
-  const schools = profile.schools as { name: string | null } | null
 
   return {
     profileId: profile.id,
@@ -83,7 +89,7 @@ export async function getUserProfile(): Promise<UserProfileInfo> {
     email: profile.email ?? user?.email ?? null,
     phone: profile.phone ?? null,
     position: profile.position ?? null,
-    schoolName: schools?.name ?? null,
+    schoolName,
     avatarUrl: profile.avatar_url ?? user?.user_metadata?.avatar_url ?? null,
     lastSignIn: user?.last_sign_in_at ?? null,
   }
