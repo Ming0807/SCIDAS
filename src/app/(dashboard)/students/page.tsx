@@ -4,6 +4,7 @@ import { AlertTriangle, Heart, Plus, Smile, Upload, Users } from "lucide-react"
 
 import { MetricCard, PageHeader, PageShell } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
+import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
 
@@ -123,38 +124,62 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="นักเรียนทั้งหมด"
-          value={summary.total.toLocaleString("th-TH")}
-          description="ข้อมูลนักเรียนในระบบ"
-          icon={Users}
-          status="primary"
-          size="compact"
-        />
-        <MetricCard
-          title="ปกติ"
-          value={summary.normal.toLocaleString("th-TH")}
-          description="ไม่พบสัญญาณเสี่ยง"
-          icon={Smile}
-          status="normal"
-          size="compact"
-        />
-        <MetricCard
-          title="ต้องติดตาม"
-          value={summary.watch.toLocaleString("th-TH")}
-          description={`เสี่ยงสูง ${summary.highRisk.toLocaleString("th-TH")} คน`}
-          icon={AlertTriangle}
-          status="watch"
-          size="compact"
-        />
-        <MetricCard
-          title="ติดตามพิเศษ"
-          value={summary.specialCare.toLocaleString("th-TH")}
-          description="มีเคส แผน ธง หรือผู้รับผิดชอบชัดเจน"
-          icon={Heart}
-          status="info"
-          size="compact"
-        />
+        <Link href="/students" className="group block focus-visible:outline-none">
+          <MetricCard
+            title="นักเรียนทั้งหมด"
+            value={summary.total.toLocaleString("th-TH")}
+            description="แสดงรายชื่อทั้งหมดในระบบ"
+            icon={Users}
+            status="primary"
+            size="compact"
+            className={cn(
+              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-xs",
+              !filters.status && "border-primary/50 shadow-2xs",
+            )}
+          />
+        </Link>
+        <Link href="/students?status=normal" className="group block focus-visible:outline-none">
+          <MetricCard
+            title="ปกติ"
+            value={summary.normal.toLocaleString("th-TH")}
+            description="ไม่พบสัญญาณเสี่ยง"
+            icon={Smile}
+            status="normal"
+            size="compact"
+            className={cn(
+              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-emerald-500/40 group-hover:shadow-xs",
+              filters.status === "normal" && "border-emerald-500 ring-1 ring-emerald-500 shadow-xs",
+            )}
+          />
+        </Link>
+        <Link href="/students?status=watch" className="group block focus-visible:outline-none">
+          <MetricCard
+            title="ต้องติดตาม"
+            value={summary.watch.toLocaleString("th-TH")}
+            description={`เสี่ยงสูง ${summary.highRisk.toLocaleString("th-TH")} คน`}
+            icon={AlertTriangle}
+            status="watch"
+            size="compact"
+            className={cn(
+              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-amber-500/40 group-hover:shadow-xs",
+              filters.status === "watch" && "border-amber-500 ring-1 ring-amber-500 shadow-xs",
+            )}
+          />
+        </Link>
+        <Link href="/students?status=high" className="group block focus-visible:outline-none">
+          <MetricCard
+            title="ติดตามพิเศษ"
+            value={summary.specialCare.toLocaleString("th-TH")}
+            description="มีเคส แผน ธง หรือความเสี่ยงสูง"
+            icon={Heart}
+            status="info"
+            size="compact"
+            className={cn(
+              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-rose-500/40 group-hover:shadow-xs",
+              filters.status === "high" && "border-rose-500 ring-1 ring-rose-500 shadow-xs",
+            )}
+          />
+        </Link>
       </div>
 
       {loadError ? (

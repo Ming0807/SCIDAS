@@ -16,28 +16,39 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
     header: "นักเรียน",
     className: "min-w-64",
     cell: (student) => (
-      <StudentIdentity
-        avatarUrl={student.avatarUrl}
-        name={student.name}
-        studentCode={student.studentCode}
-        status={student.status}
-        statusLabel={student.statusLabel}
-        size="sm"
-      />
+      <Link
+        href={`/students/${student.id}`}
+        className="group/link block rounded-lg transition-colors hover:opacity-90"
+      >
+        <StudentIdentity
+          avatarUrl={student.avatarUrl}
+          name={
+            <span className="group-hover/link:text-primary group-hover/link:underline">
+              {student.name}
+            </span>
+          }
+          studentCode={student.studentCode}
+          status={student.status}
+          statusLabel={student.statusLabel}
+          size="sm"
+        />
+      </Link>
     ),
   },
   {
     id: "classroom",
     header: "ชั้นเรียน",
+    className: "min-w-24",
     cell: (student) => (
-      <span className="text-muted-foreground">
+      <span className="inline-flex items-center rounded-md bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground">
         {student.grade}/{student.classroom}
       </span>
     ),
   },
   {
     id: "status",
-    header: "สถานะ",
+    header: "ระดับความเสี่ยง",
+    className: "min-w-28",
     cell: (student) => (
       <StatusBadge status={student.status} label={student.statusLabel} size="sm" />
     ),
@@ -45,29 +56,35 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
   {
     id: "guardian",
     header: "ผู้ปกครอง",
-    className: "min-w-44 text-muted-foreground",
-    cell: (student) => student.guardian,
+    className: "min-w-44 text-muted-foreground text-xs",
+    cell: (student) => (
+      <span className="truncate block font-medium text-foreground">
+        {student.guardian || "-"}
+      </span>
+    ),
   },
   {
     id: "phone",
     header: "เบอร์โทร",
-    className: "text-muted-foreground",
-    cell: (student) => student.phone,
+    className: "text-muted-foreground text-xs tabular-nums",
+    cell: (student) => student.phone || "-",
   },
   {
     id: "actions",
     header: "จัดการ",
-    align: "center",
+    align: "right",
     sticky: "right",
+    className: "w-32",
     cell: (student) => (
-      <div className="flex items-center justify-center gap-1">
+      <div className="flex items-center justify-end gap-1.5">
         <Link
           aria-label={`ดูข้อมูล ${student.name}`}
           title="ดูข้อมูลนักเรียน"
           href={`/students/${student.id}`}
-          className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+          className="inline-flex items-center gap-1 rounded-lg border border-border/80 bg-background/80 px-2 py-1 text-xs font-medium text-foreground transition-all hover:bg-muted hover:border-primary/40 hover:text-primary"
         >
-          <Eye />
+          <Eye className="size-3" />
+          <span>ประวัติ</span>
         </Link>
         <Link
           aria-label={`แก้ไขข้อมูล ${student.name}`}
@@ -75,7 +92,7 @@ const columns: Array<DataTableColumn<StudentListItem>> = [
           href={`/students/${student.id}/edit`}
           className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
         >
-          <Edit2 />
+          <Edit2 className="size-3.5" />
         </Link>
       </div>
     ),
@@ -90,23 +107,23 @@ function StudentTableToolbar({
   totalFiltered: number
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-secondary px-2.5 text-xs font-medium text-secondary-foreground">
-          รายการที่แสดง
-          <span className="rounded-full bg-background px-1.5 py-0.5 text-xs">
+          แสดงอยู่
+          <span className="rounded-full bg-background px-1.5 py-0.5 text-xs font-bold tabular-nums">
             {totalFiltered.toLocaleString("th-TH")}
           </span>
         </span>
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground">
-          ต้องติดตาม
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs font-medium text-muted-foreground">
+          กลุ่มเฝ้าระวัง & เสี่ยงสูง
+          <span className="rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold px-1.5 py-0.5 text-xs tabular-nums">
             {(summary.watch + summary.highRisk).toLocaleString("th-TH")}
           </span>
         </span>
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs font-medium text-muted-foreground">
           งานเปิด
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
+          <span className="rounded-full bg-primary/10 text-primary font-semibold px-1.5 py-0.5 text-xs tabular-nums">
             {summary.openActions.toLocaleString("th-TH")}
           </span>
         </span>

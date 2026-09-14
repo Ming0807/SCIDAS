@@ -34,26 +34,26 @@ export function StudentProfilePanel({
 }) {
   if (!student) {
     return (
-      <div className="flex h-full min-h-[420px] flex-col rounded-xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+      <div className="flex h-full min-h-[420px] flex-col rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xs">
         <EmptyState
           title="เลือกนักเรียนเพื่อดูรายละเอียด"
-          description="เมื่อมีข้อมูลนักเรียน ระบบจะแสดงสรุปความเสี่ยง ผู้ปกครอง และงานติดตามด้านขวา"
+          description="เมื่อคลิกที่นักเรียนในตาราง ระบบจะแสดงสรุปความเสี่ยง ผู้ปกครอง และสัญญาณดูแลทันทีที่นี่"
         />
       </div>
     )
   }
 
   return (
-    <aside className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
-      <div className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          โปรไฟล์นักเรียน
+    <aside className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xs transition-all">
+      <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 px-5 py-3.5">
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          สรุปแฟ้มประวัติรายบุคคล
         </span>
         <StatusBadge status={student.status} label={student.statusLabel} size="sm" />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5">
-        <div className="flex flex-col gap-5 border-b border-border pb-5">
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="flex flex-col gap-3 pb-5 border-b border-border/60">
           <StudentIdentity
             avatarUrl={student.avatarUrl}
             name={student.name}
@@ -65,60 +65,78 @@ export function StudentProfilePanel({
             statusLabel={student.statusLabel}
           />
 
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex min-h-6 items-center gap-1 rounded-full border border-border bg-muted px-2 text-xs font-medium text-muted-foreground">
-              <BadgeCheck aria-hidden="true" className="size-3" />
-              Priority {student.priorityScore.toLocaleString("th-TH")}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="inline-flex min-h-6 items-center gap-1 rounded-full border border-border bg-muted/60 px-2.5 text-xs font-semibold text-foreground">
+              <BadgeCheck aria-hidden="true" className="size-3 text-primary" />
+              Priority Score: {student.priorityScore.toLocaleString("th-TH")}
             </span>
             {student.nextDueDate ? (
-              <span className="inline-flex min-h-6 items-center gap-1 rounded-full border border-border bg-muted px-2 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex min-h-6 items-center gap-1 rounded-full border border-border bg-muted/60 px-2.5 text-xs font-medium text-muted-foreground">
                 <Clock aria-hidden="true" className="size-3" />
-                นัดถัดไป {formatThaiShortDate(student.nextDueDate)}
+                นัดหมาย {formatThaiShortDate(student.nextDueDate)}
               </span>
             ) : null}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 py-5">
-          <Link
-            href={`/support/new?studentId=${student.id}`}
-            className={cn(buttonVariants({ variant: "default" }))}
-          >
-            <ShieldAlert /> สร้างเคสดูแล
-          </Link>
+        <div className="grid grid-cols-2 gap-2">
           <Link
             href={`/students/${student.id}`}
-            className={cn(buttonVariants({ variant: "outline" }))}
+            className={cn(
+              buttonVariants({ variant: "default" }),
+              "gap-1.5 font-semibold text-xs shadow-xs",
+            )}
           >
-            <FileText /> ดูประวัติ
+            <FileText className="size-3.5" /> ดูประวัติ 360°
+          </Link>
+          <Link
+            href={`/support/new?studentId=${student.id}`}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "gap-1.5 font-semibold text-xs border-border/80 hover:border-primary/40",
+            )}
+          >
+            <ShieldAlert className="size-3.5 text-rose-500" /> เปิดเคสช่วยเหลือ
           </Link>
         </div>
 
-        <div className="border-y border-border py-5">
-          <h3 className="text-sm font-semibold text-foreground">ข้อมูลเบื้องต้น</h3>
-          <dl className="mt-4 space-y-3 text-sm">
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-2.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            ข้อมูลติดต่อ & ครอบครัว
+          </h3>
+          <dl className="space-y-2 text-xs">
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">ชั้นเรียน</dt>
-              <dd className="font-medium text-foreground">
+              <dt className="text-muted-foreground">ระดับชั้น/ห้อง</dt>
+              <dd className="font-semibold text-foreground">
                 {student.grade}/{student.classroom}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">ผู้ปกครอง</dt>
-              <dd className="max-w-44 text-right font-medium text-foreground">
-                {student.guardian}
+              <dt className="text-muted-foreground">ผู้ปกครองหลัก</dt>
+              <dd className="max-w-44 text-right font-semibold text-foreground truncate">
+                {student.guardian || "-"}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">เบอร์โทร</dt>
-              <dd className="font-medium text-foreground">{student.phone}</dd>
+              <dt className="text-muted-foreground">เบอร์โทรศัพท์</dt>
+              <dd className="font-semibold text-foreground tabular-nums">
+                {student.phone ? (
+                  <a href={`tel:${student.phone}`} className="hover:text-primary hover:underline">
+                    {student.phone}
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </dd>
             </div>
           </dl>
         </div>
 
-        <div className="py-5">
-          <h3 className="text-sm font-semibold text-foreground">สัญญาณที่ต้องดูแล</h3>
-          <div className="mt-4 grid grid-cols-1 gap-3 2xl:grid-cols-2">
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+            สัญญาณและตัวชี้วัดความเสี่ยง
+          </h3>
+          <div className="grid grid-cols-2 gap-2.5">
             <CareSignal
               label="การมาเรียน 30 วัน"
               value={formatPercent(student.attendanceRate30d)}
@@ -130,14 +148,14 @@ export function StudentProfilePanel({
               detail={student.statusLabel}
             />
             <CareSignal
-              label="งานที่เปิดอยู่"
+              label="งานดูแลค้าง"
               value={student.openActionCount.toLocaleString("th-TH")}
-              detail="รายการที่ต้องมีผู้รับผิดชอบ"
+              detail="งานที่ยังเปิดอยู่"
             />
             <CareSignal
-              label="แผน/เคสดูแล"
+              label="แผน/เคสช่วยเหลือ"
               value={(student.activePlanCount + student.openSupportCount).toLocaleString("th-TH")}
-              detail="แผนและเคสที่ยังดำเนินการ"
+              detail="กำลังดำเนินการ"
             />
           </div>
         </div>

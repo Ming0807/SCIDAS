@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Users } from "lucide-react"
 
 import { Section, StatusBadge } from "@/components/dashboard"
@@ -19,7 +20,7 @@ export function ClassSummary({
     <Section
       variant="surface"
       title="จำนวนนักเรียนตามชั้นเรียน"
-      description={`รวม ${total.toLocaleString("th-TH")} คนจากข้อมูลปัจจุบัน`}
+      description={`รวม ${total.toLocaleString("th-TH")} คนจากข้อมูลปัจจุบัน · คลิกเพื่อกรองตามระดับชั้น`}
       actions={<Users aria-hidden="true" className="size-4 text-muted-foreground" />}
       contentClassName="pt-1"
     >
@@ -27,35 +28,49 @@ export function ClassSummary({
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {items.map((item) => {
             const isActive = activeGrade === item.gradeLevel
+            const href = isActive
+              ? "/students"
+              : item.gradeLevel
+                ? `/students?grade=${encodeURIComponent(item.gradeLevel)}`
+                : "/students"
 
             return (
-              <div
+              <Link
                 key={item.id}
+                href={href}
                 className={cn(
-                  "flex min-h-24 flex-col justify-between rounded-lg border border-border bg-background p-3 transition-colors",
-                  isActive && "border-primary bg-primary/5 ring-1 ring-primary",
+                  "group flex min-h-24 flex-col justify-between rounded-xl border border-border/80 bg-background p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xs",
+                  isActive && "border-primary bg-primary/5 ring-1 ring-primary shadow-xs",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span
+                    className={cn(
+                      "text-sm font-semibold transition-colors group-hover:text-primary",
+                      isActive ? "text-primary" : "text-foreground",
+                    )}
+                  >
                     {item.label}
                   </span>
                   {item.highRisk > 0 ? (
-                    <StatusBadge status="high-risk" label={item.highRisk} size="sm" />
+                    <StatusBadge status="high-risk" label={`เสี่ยง ${item.highRisk}`} size="sm" />
                   ) : item.watch > 0 ? (
-                    <StatusBadge status="watch" label={item.watch} size="sm" />
+                    <StatusBadge status="watch" label={`เฝ้าระวัง ${item.watch}`} size="sm" />
                   ) : null}
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xl font-semibold tabular-nums text-foreground">
+                <div className="space-y-1 mt-2">
+                  <div className="text-xl font-bold tabular-nums text-foreground">
                     {item.count.toLocaleString("th-TH")}
                     <span className="ml-1 text-xs font-normal text-muted-foreground">คน</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    ติดตาม {(item.watch + item.highRisk).toLocaleString("th-TH")} คน
-                  </p>
+                  <div className="flex items-center justify-between text-micro text-muted-foreground">
+                    <span>ติดตาม {(item.watch + item.highRisk).toLocaleString("th-TH")} คน</span>
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-primary font-medium">
+                      {isActive ? "ล้าง" : "กรอง"} &rarr;
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
