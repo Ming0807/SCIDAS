@@ -42,30 +42,46 @@ export default async function ScreeningHubPage() {
   }[] = []
 
   if (context.schoolId) {
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from("classrooms")
-      .select(`
-        id,
-        name,
-        grade_level,
-        section,
-        homeroom_teacher:profiles!classrooms_homeroom_teacher_id_fkey(first_name, last_name)
-      `)
-      .eq("school_id", context.schoolId)
-      .eq("is_active", true)
-      .order("grade_level", { ascending: true })
-      .order("section", { ascending: true })
+    try {
+      const supabase = await createClient()
+      const { data, error } = await supabase
+        .from("classrooms")
+        .select(`
+          id,
+          name,
+          grade_level,
+          section,
+          homeroom_teacher:profiles!classrooms_homeroom_teacher_id_fkey(first_name, last_name)
+        `)
+        .eq("school_id", context.schoolId)
+        .eq("is_active", true)
+        .order("grade_level", { ascending: true })
+        .order("section", { ascending: true })
 
-    if (data) {
-      type RawClassroom = {
-        id: string
-        name: string
-        grade_level: string
-        section: number
-        homeroom_teacher: { first_name: string; last_name: string } | null
+      if (data && !error) {
+        type RawClassroom = {
+          id: string
+          name: string
+          grade_level: string
+          section: number
+          homeroom_teacher: { first_name: string; last_name: string } | null
+        }
+        classrooms = (data as unknown as RawClassroom[]) ?? []
+      } else {
+        // Fallback without foreign key join
+        const { data: fallbackData } = await supabase
+          .from("classrooms")
+          .select("id, name, grade_level, section")
+          .eq("school_id", context.schoolId)
+          .eq("is_active", true)
+          .order("grade_level", { ascending: true })
+          .order("section", { ascending: true })
+        if (fallbackData) {
+          classrooms = fallbackData.map((c) => ({ ...c, homeroom_teacher: null }))
+        }
       }
-      classrooms = (data as unknown as RawClassroom[]) ?? []
+    } catch {
+      // Graceful fallback: preserve page functionality
     }
   }
 

@@ -125,7 +125,7 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
   }
 
   // 3. Classrooms with homeroom teacher & co-teacher
-  const { data: classroomsData, error: classroomsError } = await supabase
+  const { data: rawClassroomsData, error: classroomsError } = await supabase
     .from("classrooms")
     .select(`
       id, school_id, academic_year_id, grade_level, section, name, room_number, max_students, is_active,
@@ -138,8 +138,27 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
     .order("grade_level", { ascending: true })
     .order("section", { ascending: true })
 
-  if (classroomsError) {
-    throw new Error(`Failed to load classrooms: ${classroomsError.message}`)
+  let classroomsData = rawClassroomsData
+  if (classroomsError || !classroomsData) {
+    const { data: fallbackClassrooms, error: fallbackError } = await supabase
+      .from("classrooms")
+      .select(`
+        id, school_id, academic_year_id, grade_level, section, name, room_number, max_students, is_active,
+        homeroom_teacher_id, co_teacher_id,
+        academic_years(year)
+      `)
+      .eq("school_id", context.schoolId)
+      .order("grade_level", { ascending: true })
+      .order("section", { ascending: true })
+
+    if (fallbackError) {
+      throw new Error(`Failed to load classrooms: ${fallbackError.message}`)
+    }
+    classroomsData = (fallbackClassrooms ?? []).map((c) => ({
+      ...c,
+      homeroom_teacher: null,
+      co_teacher: null,
+    })) as typeof rawClassroomsData
   }
 
   // 4. Student counts per classroom
@@ -168,7 +187,7 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
   }
 
   // 6. Classroom Subjects assignments
-  const { data: assignmentsData, error: assignmentsError } = await supabase
+  const { data: rawAssignmentsData, error: assignmentsError } = await supabase
     .from("classroom_subjects")
     .select(`
       id, school_id, classroom_id, subject_id, teacher_id, semester_id, midterm_max_score, final_max_score, classwork_max_score,
@@ -179,8 +198,25 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
     `)
     .eq("school_id", context.schoolId)
 
-  if (assignmentsError) {
-    throw new Error(`Failed to load classroom subjects: ${assignmentsError.message}`)
+  let assignmentsData = rawAssignmentsData
+  if (assignmentsError || !assignmentsData) {
+    const { data: fallbackAssignments, error: fallbackError } = await supabase
+      .from("classroom_subjects")
+      .select(`
+        id, school_id, classroom_id, subject_id, teacher_id, semester_id, midterm_max_score, final_max_score, classwork_max_score,
+        classrooms(name, grade_level, section),
+        subjects(subject_code, name),
+        semesters(semester, academic_years(year))
+      `)
+      .eq("school_id", context.schoolId)
+
+    if (fallbackError) {
+      throw new Error(`Failed to load classroom subjects: ${fallbackError.message}`)
+    }
+    assignmentsData = (fallbackAssignments ?? []).map((a) => ({
+      ...a,
+      teacher: null,
+    })) as typeof rawAssignmentsData
   }
 
   // 7. Teachers for assignment
@@ -207,6 +243,11 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
   const safeSubjects = subjectsData ?? []
   const safeAssignments = assignmentsData ?? []
   const safeTeachers = teachersData ?? []
+
+  const teacherMap = new Map<string, { first_name: string; last_name: string; prefix: string | null }>()
+  for (const tch of safeTeachers) {
+    teacherMap.set(tch.id, tch)
+  }
 
   const academicYears: AcademicYearItem[] = safeYears.map((y) => {
     const semCount = safeSemesters.filter((s) => s.academic_year_id === y.id).length
@@ -239,8 +280,10 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
 
   const classrooms: ClassroomItem[] = safeClassrooms.map((c) => {
     const yInfo = c.academic_years as unknown as { year: number } | null
-    const hr = c.homeroom_teacher as unknown as { first_name: string; last_name: string; prefix: string | null } | null
-    const co = c.co_teacher as unknown as { first_name: string; last_name: string; prefix: string | null } | null
+    const hrFromJoin = c.homeroom_teacher as unknown as { first_name: string; last_name: string; prefix: string | null } | null
+    const coFromJoin = c.co_teacher as unknown as { first_name: string; last_name: string; prefix: string | null } | null
+    const hr = hrFromJoin ?? (c.homeroom_teacher_id ? teacherMap.get(c.homeroom_teacher_id) ?? null : null)
+    const co = coFromJoin ?? (c.co_teacher_id ? teacherMap.get(c.co_teacher_id) ?? null : null)
     return {
       id: c.id,
       schoolId: c.school_id,
@@ -278,7 +321,8 @@ export async function getAcademicAdminData(): Promise<AcademicAdminData> {
     const cl = a.classrooms as unknown as { name: string; grade_level: Database["public"]["Enums"]["grade_level"]; section: number } | null
     const su = a.subjects as unknown as { subject_code: string; name: string } | null
     const se = a.semesters as unknown as { semester: Database["public"]["Enums"]["semester_type"]; academic_years: { year: number } | null } | null
-    const t = a.teacher as unknown as { first_name: string; last_name: string; prefix: string | null } | null
+    const tFromJoin = a.teacher as unknown as { first_name: string; last_name: string; prefix: string | null } | null
+    const t = tFromJoin ?? (a.teacher_id ? teacherMap.get(a.teacher_id) ?? null : null)
 
     return {
       id: a.id,
