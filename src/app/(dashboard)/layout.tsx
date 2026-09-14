@@ -58,6 +58,7 @@ export default async function DashboardLayout({
                     roleLabel: profile.roleLabel,
                     schoolName: profile.schoolName,
                     avatarUrl: profile.avatarUrl,
+                    email: profile.email,
                   }
                 : null
             }

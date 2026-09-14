@@ -1,9 +1,11 @@
 import Link from "next/link"
 import { ArrowLeft, BookOpen, ShieldCheck } from "lucide-react"
 
-import { PageHeader, PageShell } from "@/components/dashboard"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { PageShell } from "@/components/dashboard/page-shell"
 import { Button } from "@/components/ui/button"
-import { ErrorState, PermissionState } from "@/components/feedback"
+import { ErrorState } from "@/components/feedback/error-state"
+import { PermissionState } from "@/components/feedback/permission-state"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStaffManagementData } from "@/lib/server/staff-read-models"
 

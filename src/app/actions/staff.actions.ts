@@ -66,12 +66,16 @@ export async function updateStaffRoleAction(
     const supabase = await createClient()
 
     // Fetch existing profile to log audit
-    const { data: existingProfile, error: fetchError } = await supabase
+    const profileQuery = supabase
       .from("profiles")
       .select("id, role, first_name, last_name, school_id")
       .eq("id", profileId)
       .eq("school_id", context.schoolId)
-      .single()
+
+    const { data: existingProfile, error: fetchError } =
+      typeof profileQuery.maybeSingle === "function"
+        ? await profileQuery.maybeSingle()
+        : await profileQuery.single()
 
     if (fetchError || !existingProfile) {
       return actionFail("NOT_FOUND", "ไม่พบข้อมูลบุคลากรในโรงเรียนนี้")
@@ -89,7 +93,11 @@ export async function updateStaffRoleAction(
       .eq("school_id", context.schoolId)
 
     if (updateError) {
-      return actionFail("INTERNAL_ERROR", `ไม่สามารถปรับเปลี่ยนบทบาทได้: ${updateError.message}`)
+      console.error("[staff.actions] updateStaffRoleAction error:", updateError)
+      return actionFail(
+        "INTERNAL_ERROR",
+        `ไม่สามารถปรับเปลี่ยนบทบาทได้: ${updateError.message} (กรุณาตรวจสอบว่าบัญชีของคุณมีสิทธิ์ admin ในระบบ Supabase หรือไม่)`,
+      )
     }
 
     // Log security audit for role changes
@@ -146,12 +154,16 @@ export async function updateStaffStatusAction(
 
     const supabase = await createClient()
 
-    const { data: existingProfile, error: fetchError } = await supabase
+    const statusQuery = supabase
       .from("profiles")
       .select("id, is_active, first_name, last_name")
       .eq("id", profileId)
       .eq("school_id", context.schoolId)
-      .single()
+
+    const { data: existingProfile, error: fetchError } =
+      typeof statusQuery.maybeSingle === "function"
+        ? await statusQuery.maybeSingle()
+        : await statusQuery.single()
 
     if (fetchError || !existingProfile) {
       return actionFail("NOT_FOUND", "ไม่พบข้อมูลบุคลากรในโรงเรียนนี้")

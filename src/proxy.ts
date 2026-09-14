@@ -41,9 +41,18 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Refresh user auth token safely
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  // Guard: If this is a Server Action request (has next-action header),
+  // NEVER redirect with HTML to avoid "An unexpected response was received from the server".
+  // The server action handler itself enforces role and authorization checks.
+  const isServerAction = request.headers.has('next-action')
+  if (isServerAction) {
+    return supabaseResponse
+  }
 
   // Protect dashboard and core routes
   if (
@@ -58,49 +67,53 @@ export async function proxy(request: NextRequest) {
 
   // If user is logged in, check roles and permissions
   if (user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
-    // Check if user is staff (exists in profiles)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .eq('id', user.id)
-      .single()
+    try {
+      // Check if user is staff (exists in profiles)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('id', user.id)
+        .maybeSingle()
 
-    let isStudent = false
+      let isStudent = false
 
-    if (!profile) {
-      // If not staff, check if user is a student
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', user.id)
-        .single()
+      if (!profile) {
+        // If not staff, check if user is a student
+        const { data: student } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle()
 
-      if (student) {
-        isStudent = true
+        if (student) {
+          isStudent = true
+        }
       }
-    }
 
-    if (isStudent) {
-      // Protect staff-only routes from students
-      const restrictedRoutes = [
-        '/academics',
-        '/attendance',
-        '/behavior',
-        '/support',
-        '/students',
-        '/risk-analysis',
-        '/development-plans',
-        '/home-visits'
-      ]
+      if (isStudent) {
+        // Protect staff-only routes from students
+        const restrictedRoutes = [
+          '/academics',
+          '/attendance',
+          '/behavior',
+          '/support',
+          '/students',
+          '/risk-analysis',
+          '/development-plans',
+          '/home-visits'
+        ]
 
-      const path = request.nextUrl.pathname
-      const isRestricted = restrictedRoutes.some((route) => path.startsWith(route))
+        const path = request.nextUrl.pathname
+        const isRestricted = restrictedRoutes.some((route) => path.startsWith(route))
 
-      if (isRestricted) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/'
-        return NextResponse.redirect(url)
+        if (isRestricted) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/'
+          return NextResponse.redirect(url)
+        }
       }
+    } catch {
+      // If DB check fails in proxy, do not crash; continue with supabaseResponse
     }
   }
 

@@ -63,6 +63,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
   const [statusFilter, setStatusFilter] = useState<string>("ALL")
   const [editingStaff, setEditingStaff] = useState<StaffMemberItem | null>(null)
   const [newRole, setNewRole] = useState<UserRole>("subject_teacher")
+  const [roleError, setRoleError] = useState<string | null>(null)
 
   // For assignment edits
   const [classroomAssignments, setClassroomAssignments] = useState<
@@ -111,10 +112,12 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
   const handleOpenRoleModal = (staff: StaffMemberItem) => {
     setEditingStaff(staff)
     setNewRole(staff.role)
+    setRoleError(null)
   }
 
   const handleSaveRole = () => {
     if (!editingStaff) return
+    setRoleError(null)
     startTransition(async () => {
       const res = await updateStaffRoleAction({
         profileId: editingStaff.id,
@@ -124,6 +127,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
         toast.success(res.message)
         setEditingStaff(null)
       } else {
+        setRoleError(res.message)
         toast.error(res.message)
       }
     })
@@ -590,6 +594,20 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                 กำหนดสิทธิ์การเข้าถึงข้อมูลของ <strong>{editingStaff.fullName}</strong>
               </p>
             </div>
+
+            {currentProfileId === editingStaff.id && currentUserRole === "admin" && (
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span>คุณกำลังดูบัญชีตนเอง: ระบบไม่อนุญาตให้ลดสิทธิ์ผู้ดูแลระบบ (admin) ของตนเองเพื่อความปลอดภัย</span>
+              </div>
+            )}
+
+            {roleError && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive flex items-start gap-2">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span>{roleError}</span>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="block text-xs font-medium text-foreground">
