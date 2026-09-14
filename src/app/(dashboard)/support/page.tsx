@@ -374,23 +374,26 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
         <MetricCard
           title="เคสดูแลเปิดอยู่"
           value={dashboard.metrics.openSupportCases.toLocaleString("th-TH")}
-          description="รายการที่ยังต้องติดตาม"
+          description="เคสช่วยเหลือที่กำลังดำเนินการ"
           icon={HeartHandshake}
           status="info"
           size="compact"
         />
-        <MetricCard
-          title="แผนกำลังติดตาม"
-          value={dashboard.metrics.activePlans.toLocaleString("th-TH")}
-          description="แผนรายบุคคลที่ยังดำเนินการอยู่"
-          icon={ShieldAlert}
-          status="primary"
-          size="compact"
-        />
+        <Link href="/development-plans" className="group block focus-visible:outline-none">
+          <MetricCard
+            title="แผนกำลังติดตาม"
+            value={dashboard.metrics.activePlans.toLocaleString("th-TH")}
+            description="แผนพัฒนารายบุคคล (IDP)"
+            icon={ShieldAlert}
+            status="primary"
+            size="compact"
+            className="transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-xs"
+          />
+        </Link>
         <MetricCard
           title="งานดูแลค้าง"
           value={dashboard.metrics.openActionItems.toLocaleString("th-TH")}
-          description="action_items สถานะ todo/in_progress"
+          description="งานที่ต้องมีผู้รับผิดชอบ"
           icon={ListChecks}
           status={dashboard.metrics.openActionItems > 0 ? "watch" : "normal"}
           size="compact"
@@ -398,7 +401,7 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
         <MetricCard
           title="ใกล้ครบกำหนด"
           value={actionQueue.filter((item) => item.dueDate).length.toLocaleString("th-TH")}
-          description="งานที่มีวันครบกำหนด"
+          description="มีกำหนดเส้นตายต้องดำเนินการ"
           icon={CalendarClock}
           status="watch"
           size="compact"
