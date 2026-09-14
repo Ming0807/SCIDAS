@@ -7,6 +7,7 @@ type PlanStatus = Database["public"]["Enums"]["plan_status"]
 
 export type DevelopmentPlanListItem = {
   id: string
+  studentId?: string
   title: string
   status: PlanStatus
   studentName: string
@@ -48,7 +49,9 @@ export function getPlanStatusTone(
   }
 }
 
-export async function getDevelopmentPlanList(): Promise<DevelopmentPlanListItem[]> {
+export async function getDevelopmentPlanList(filters?: {
+  studentId?: string
+}): Promise<DevelopmentPlanListItem[]> {
   const context = await getCurrentUserContext()
 
   if (!context.profileId) {
@@ -57,11 +60,12 @@ export async function getDevelopmentPlanList(): Promise<DevelopmentPlanListItem[
 
   const client = await createClient()
 
-  const { data, error } = await client
+  let query = client
     .from("development_plans")
     .select(
       `
       id,
+      student_id,
       title,
       status,
       overall_progress,
@@ -80,6 +84,12 @@ export async function getDevelopmentPlanList(): Promise<DevelopmentPlanListItem[
     `,
     )
     .eq("school_id", context.schoolId)
+
+  if (filters?.studentId) {
+    query = query.eq("student_id", filters.studentId)
+  }
+
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(50)
 
@@ -149,6 +159,7 @@ export async function getDevelopmentPlanList(): Promise<DevelopmentPlanListItem[
 
     return {
       id: row.id as string,
+      studentId: sid,
       title: row.title as string,
       status: row.status as PlanStatus,
       studentName: studentName || "ไม่ทราบชื่อ",

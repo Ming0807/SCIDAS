@@ -98,7 +98,9 @@ function toBehaviorRecordItem(row: Record<string, any>): BehaviorRecordItem {
   }
 }
 
-export async function getBehaviorDashboard(): Promise<BehaviorDashboard> {
+export async function getBehaviorDashboard(filters?: {
+  studentId?: string
+}): Promise<BehaviorDashboard> {
   const context = await getCurrentUserContext()
 
   if (!context.profileId) {
@@ -108,7 +110,7 @@ export async function getBehaviorDashboard(): Promise<BehaviorDashboard> {
   const client = await createClient()
 
   // Fetch all behavior records for this school (current semester)
-  const { data: records, error } = await client
+  let query = client
     .from("behavior_records")
     .select(
       `
@@ -135,6 +137,12 @@ export async function getBehaviorDashboard(): Promise<BehaviorDashboard> {
     `,
     )
     .eq("school_id", context.schoolId)
+
+  if (filters?.studentId) {
+    query = query.eq("student_id", filters.studentId)
+  }
+
+  const { data: records, error } = await query
     .order("date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(50)

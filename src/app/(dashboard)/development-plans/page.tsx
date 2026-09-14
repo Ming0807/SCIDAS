@@ -19,14 +19,24 @@ import { formatGradeLevel } from "@/lib/student-care-formatters"
 
 import { canEditDevelopmentPlans } from "./_lib/permissions"
 
-export default async function DevelopmentPlansPage() {
+type SearchParams = Promise<{
+  studentId?: string
+}>
+
+export default async function DevelopmentPlansPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
+  const params = searchParams ? await searchParams : {}
+  const selectedStudentId = params.studentId || ""
   let plans: Awaited<ReturnType<typeof getDevelopmentPlanList>>
   let summary: Awaited<ReturnType<typeof getPlanSummary>>
   let canCreatePlan = false
 
   try {
     const [planRows, planSummary, context] = await Promise.all([
-      getDevelopmentPlanList(),
+      getDevelopmentPlanList(selectedStudentId ? { studentId: selectedStudentId } : undefined),
       getPlanSummary(),
       getCurrentUserContext(),
     ])
@@ -103,6 +113,18 @@ export default async function DevelopmentPlansPage() {
           }
         />
       </div>
+
+      {selectedStudentId ? (
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-primary">กรองเฉพาะแผนพัฒนารายบุคคลของนักเรียน:</span>
+            <span>{plans[0]?.studentName ? `${plans[0].studentName} (${plans[0].studentCode ?? "รหัส"})` : selectedStudentId}</span>
+          </div>
+          <Link href="/development-plans" className="font-medium text-primary hover:underline">
+            ล้างตัวกรอง (แสดงทั้งหมด)
+          </Link>
+        </div>
+      ) : null}
 
       {/* Plans Table */}
       <div className="bg-card rounded-xl border border-border shadow-sm flex flex-col min-h-0">

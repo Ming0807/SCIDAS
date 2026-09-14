@@ -110,6 +110,78 @@ describe("referral.actions", () => {
         expect(result.data[1].target_agency).toBe("ห้องแนะแนว")
       }
     })
+
+    it("filters referrals by studentId", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockRows = [
+        {
+          id: "ref-1",
+          student_id: "stu-1",
+          support_type: "health",
+          title: "ส่งต่อตรวจสายตา",
+          description: "นักเรียนมองกระดานไม่ชัดเจน",
+          external_referral: "[ส่งต่อภายนอก] โรงพยาบาลศูนย์สุขภาพตำบล",
+          status: "referred",
+          priority: "medium",
+          created_at: "2026-09-01T08:00:00Z",
+          updated_at: "2026-09-01T08:00:00Z",
+          student: {
+            id: "stu-1",
+            first_name: "สมชาย",
+            last_name: "ใจดี",
+            student_code: "10001",
+            classroom: { name: "ม.1/1", grade_level: 1, section: 1 },
+          },
+          provider: { id: "prof-1", first_name: "ครูวิชัย", last_name: "ใจบุญ" },
+        },
+        {
+          id: "ref-2",
+          student_id: "stu-2",
+          support_type: "emotional",
+          title: "ส่งต่องานแนะแนวเรื่องความเครียด",
+          description: "นักเรียนเครียดกับการสอบ",
+          external_referral: "[ส่งต่อภายใน] ห้องแนะแนว",
+          status: "in_progress",
+          priority: "high",
+          created_at: "2026-09-02T08:00:00Z",
+          updated_at: "2026-09-02T08:00:00Z",
+          student: {
+            id: "stu-2",
+            first_name: "สมหญิง",
+            last_name: "รักเรียน",
+            student_code: "10002",
+            classroom: { name: "ม.2/1", grade_level: 2, section: 1 },
+          },
+          provider: { id: "prof-1", first_name: "ครูวิชัย", last_name: "ใจบุญ" },
+        },
+      ]
+
+      const mockQuery = {
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: mockRows, error: null }),
+      }
+
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue(mockQuery),
+        }),
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
+
+      const result = await getReferralsList({ studentId: "stu-1" })
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data).toHaveLength(1)
+        expect(result.data[0].student_id).toBe("stu-1")
+      }
+    })
   })
 
   describe("getReferralDetail", () => {

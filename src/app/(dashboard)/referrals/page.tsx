@@ -30,6 +30,7 @@ type SearchParams = Promise<{
   type?: string
   status?: string
   q?: string
+  studentId?: string
 }>
 
 export const metadata = {
@@ -74,11 +75,13 @@ export default async function ReferralsPage({
   const selectedType = params.type || "all"
   const selectedStatus = params.status || "all"
   const searchQuery = params.q || ""
+  const selectedStudentId = params.studentId || ""
 
   const result = await getReferralsList({
     type: selectedType as "all" | "internal" | "external",
     status: selectedStatus,
     search: searchQuery,
+    studentId: selectedStudentId || undefined,
   })
 
   const referrals = result.ok && result.data ? result.data : []
@@ -140,6 +143,18 @@ export default async function ReferralsPage({
           size="compact"
         />
       </div>
+
+      {selectedStudentId ? (
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-primary">กรองเฉพาะเคสส่งต่อของนักเรียน:</span>
+            <span>{referrals[0]?.student_name ? `${referrals[0].student_name} (${referrals[0].student_code ?? "รหัส"})` : selectedStudentId}</span>
+          </div>
+          <Link href="/referrals" className="font-medium text-primary hover:underline">
+            ล้างตัวกรอง (แสดงทั้งหมด)
+          </Link>
+        </div>
+      ) : null}
 
       {/* Filters and List */}
       <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">

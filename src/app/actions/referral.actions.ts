@@ -86,6 +86,7 @@ export type ReferralFilters = {
   type?: "all" | "internal" | "external"
   status?: string
   search?: string
+  studentId?: string
 }
 
 function parseReferralTypeAndAgency(externalReferral: string | null): {
@@ -146,14 +147,18 @@ export async function getReferralsList(
       `,
       )
       .eq("school_id", context.schoolId)
-      .or("status.eq.referred,external_referral.not.is.null")
-      .order("updated_at", { ascending: false })
+
+    if (filters?.studentId) {
+      query = query.eq("student_id", filters.studentId)
+    }
 
     if (filters?.status && filters.status !== "all") {
       query = query.eq("status", filters.status as SupportStatus)
     }
 
     const { data, error } = await query
+      .or("status.eq.referred,external_referral.not.is.null")
+      .order("updated_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching referrals:", error)
@@ -224,6 +229,9 @@ export async function getReferralsList(
         }
       })
       .filter((item) => {
+        if (filters?.studentId && item.student_id !== filters.studentId) {
+          return false
+        }
         if (filters?.type && filters.type !== "all") {
           if (item.referral_type !== filters.type) return false
         }

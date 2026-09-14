@@ -38,6 +38,7 @@ type HomeVisitsPageProps = {
 type VisitFilters = {
   q: string
   status: string
+  studentId: string
 }
 
 const emptySummary: HomeVisitSummary = {
@@ -63,6 +64,7 @@ function normalizeFilters(params: SearchParams): VisitFilters {
   return {
     q: getSearchParam(params, "q").trim(),
     status: getSearchParam(params, "status"),
+    studentId: getSearchParam(params, "studentId").trim(),
   }
 }
 
@@ -104,8 +106,9 @@ function filterVisits(records: HomeVisitRecord[], filters: VisitFilters) {
       record.visitorName.toLowerCase().includes(query) ||
       (record.address?.toLowerCase().includes(query) ?? false)
     const matchesStatus = !filters.status || record.status === filters.status
+    const matchesStudent = !filters.studentId || record.studentId === filters.studentId
 
-    return matchesQuery && matchesStatus
+    return matchesQuery && matchesStatus && matchesStudent
   })
 }
 
@@ -342,6 +345,22 @@ export default async function HomeVisitsPage({ searchParams }: HomeVisitsPagePro
           description="ตรวจสอบสิทธิ์การเข้าถึงและตาราง home_visits ใน Supabase"
           details={loadError}
         />
+      ) : null}
+
+      {filters.studentId ? (
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-primary">กรองเฉพาะประวัติเยี่ยมบ้านของนักเรียน:</span>
+            <span>
+              {records.find((r) => r.studentId === filters.studentId)?.studentName
+                ? `${records.find((r) => r.studentId === filters.studentId)!.studentName} (${records.find((r) => r.studentId === filters.studentId)!.studentCode})`
+                : filters.studentId}
+            </span>
+          </div>
+          <Link href="/home-visits" className="font-medium text-primary hover:underline">
+            ล้างตัวกรอง (แสดงทั้งหมด)
+          </Link>
+        </div>
       ) : null}
 
       <HomeVisitFilters

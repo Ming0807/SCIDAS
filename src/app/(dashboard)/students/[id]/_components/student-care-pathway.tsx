@@ -53,8 +53,8 @@ export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
         href: `/screening/sdq/${profile.studentId}`,
       },
       secondaryAction: {
-        label: "ศูนย์คัดกรอง",
-        href: `/screening?studentId=${profile.studentId}`,
+        label: "ประวัติคัดกรอง",
+        href: `/screening/sdq?studentId=${profile.studentId}`,
       },
     },
     {
@@ -70,8 +70,8 @@ export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
         href: `/development-plans/new?studentId=${profile.studentId}`,
       },
       secondaryAction: {
-        label: "บันทึกพฤติกรรม",
-        href: `/behavior/record?studentId=${profile.studentId}`,
+        label: "ดูแผน IDP",
+        href: `/development-plans?studentId=${profile.studentId}`,
       },
     },
 

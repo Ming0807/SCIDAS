@@ -22,9 +22,11 @@ interface SdqOverviewPageProps {
 export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageProps) {
   const resolvedParams = searchParams ? await searchParams : {}
   const query = typeof resolvedParams.q === "string" ? resolvedParams.q.trim().toLowerCase() : ""
+  const studentId = typeof resolvedParams.studentId === "string" ? resolvedParams.studentId.trim() : ""
 
   const worklist = await getStudentWorklist()
   const filteredStudents = worklist.filter((s) => {
+    if (studentId && s.studentId !== studentId) return false
     if (!query) return true
     return (
       s.fullName.toLowerCase().includes(query) ||
@@ -101,6 +103,18 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           <p className="text-xs text-muted-foreground mt-0.5">ต้องได้รับการช่วยเหลือเร่งด่วน</p>
         </div>
       </div>
+
+      {studentId ? (
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-primary">กรองเฉพาะนักเรียน:</span>
+            <span>{filteredStudents[0]?.fullName ? `${filteredStudents[0].fullName} (${filteredStudents[0].studentCode})` : studentId}</span>
+          </div>
+          <Link href="/screening/sdq" className="font-medium text-primary hover:underline">
+            ล้างตัวกรอง (แสดงทั้งหมด)
+          </Link>
+        </div>
+      ) : null}
 
       {/* Student List & Action Table */}
       <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">

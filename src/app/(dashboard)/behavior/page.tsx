@@ -21,14 +21,24 @@ import { getCurrentUserContext } from "@/lib/server/current-user"
 
 import { ConductSummaryCard } from "./_components/conduct-summary-card"
 
-export default async function BehaviorDashboardPage() {
+type SearchParams = Promise<{
+  studentId?: string
+}>
+
+export default async function BehaviorDashboardPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
+  const params = searchParams ? await searchParams : {}
+  const selectedStudentId = params.studentId || ""
   const context = await getCurrentUserContext()
   const canCreate = ["admin", "homeroom_teacher", "subject_teacher", "counselor"].includes(context.role)
   const canEditAll = context.role === "admin"
   let dashboard: Awaited<ReturnType<typeof getBehaviorDashboard>>
 
   try {
-    dashboard = await getBehaviorDashboard()
+    dashboard = await getBehaviorDashboard(selectedStudentId ? { studentId: selectedStudentId } : undefined)
   } catch {
     return (
       <PageShell>
@@ -55,6 +65,22 @@ export default async function BehaviorDashboardPage() {
           </Link>
         ) : undefined}
       />
+
+      {selectedStudentId ? (
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-primary">กรองเฉพาะพฤติกรรมของนักเรียน:</span>
+            <span>
+              {dashboard.recentRecords[0]?.studentName
+                ? `${dashboard.recentRecords[0].studentName} (${dashboard.recentRecords[0].studentClass ?? "นักเรียน"})`
+                : selectedStudentId}
+            </span>
+          </div>
+          <Link href="/behavior" className="font-medium text-primary hover:underline">
+            ล้างตัวกรอง (แสดงทั้งหมด)
+          </Link>
+        </div>
+      ) : null}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
