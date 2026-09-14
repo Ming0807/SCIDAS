@@ -50,6 +50,15 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
     throw new Error(`Failed to load staff profiles: ${profilesError.message}`)
   }
 
+  // Profile lookup map for classroom teacher names
+  const profileNameMap = new Map<string, string>()
+  for (const p of rawProfiles ?? []) {
+    const fullName = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim()
+    if (fullName) {
+      profileNameMap.set(p.id, fullName)
+    }
+  }
+
   // 2. Fetch all active classrooms for the school
   const { data: rawClassrooms, error: classroomsError } = await supabase
     .from("classrooms")
@@ -61,9 +70,7 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
       academic_year_id,
       is_active,
       homeroom_teacher_id,
-      co_teacher_id,
-      homeroom_teacher:profiles!classrooms_homeroom_teacher_id_fkey(first_name, last_name),
-      co_teacher:profiles!classrooms_co_teacher_id_fkey(first_name, last_name)
+      co_teacher_id
     `)
     .eq("school_id", context.schoolId)
     .eq("is_active", true)
@@ -77,14 +84,14 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
   type RawClassroomRow = {
     id: string
     name: string
-    grade_level: string
+    grade_level: string | number
     section: number
     academic_year_id: string
     is_active: boolean
     homeroom_teacher_id: string | null
     co_teacher_id: string | null
-    homeroom_teacher: { first_name: string; last_name: string } | null
-    co_teacher: { first_name: string; last_name: string } | null
+    homeroom_teacher?: { first_name: string; last_name: string } | null
+    co_teacher?: { first_name: string; last_name: string } | null
   }
 
   const classroomsData = (rawClassrooms as unknown as RawClassroomRow[]) ?? []
@@ -93,18 +100,22 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
   const classrooms: ClassroomAssignmentOption[] = classroomsData.map((c) => ({
     id: c.id,
     name: c.name || `ม.${c.grade_level}/${c.section}`,
-    gradeLevel: String(c.grade_level),
-    section: c.section,
-    academicYearId: c.academic_year_id,
+    gradeLevel: String(c.grade_level ?? ""),
+    section: c.section ?? 1,
+    academicYearId: c.academic_year_id ?? "",
     homeroomTeacherId: c.homeroom_teacher_id,
     homeroomTeacherName: c.homeroom_teacher
       ? `${c.homeroom_teacher.first_name} ${c.homeroom_teacher.last_name}`
-      : null,
+      : c.homeroom_teacher_id
+        ? profileNameMap.get(c.homeroom_teacher_id) ?? null
+        : null,
     coTeacherId: c.co_teacher_id,
     coTeacherName: c.co_teacher
       ? `${c.co_teacher.first_name} ${c.co_teacher.last_name}`
-      : null,
-    isActive: c.is_active,
+      : c.co_teacher_id
+        ? profileNameMap.get(c.co_teacher_id) ?? null
+        : null,
+    isActive: c.is_active ?? true,
   }))
 
   // Map staff profiles and assign their classrooms
@@ -133,17 +144,17 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
 
     return {
       id: p.id,
-      firstName: p.first_name,
-      lastName: p.last_name,
-      fullName: `${p.first_name} ${p.last_name}`.trim(),
-      email: p.email,
-      phone: p.phone,
-      position: p.position,
-      department: p.department,
+      firstName: p.first_name ?? "",
+      lastName: p.last_name ?? "",
+      fullName: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "ไม่ทราบชื่อ",
+      email: p.email ?? "",
+      phone: p.phone ?? null,
+      position: p.position ?? null,
+      department: p.department ?? null,
       role: p.role,
-      roleLabel: STAFF_ROLE_LABELS[p.role] ?? p.role,
-      isActive: p.is_active,
-      lastLoginAt: p.last_login_at,
+      roleLabel: (p.role && STAFF_ROLE_LABELS[p.role]) ? STAFF_ROLE_LABELS[p.role] : (p.role ?? "บุคลากร"),
+      isActive: p.is_active ?? true,
+      lastLoginAt: p.last_login_at ?? null,
       assignedClassrooms,
     }
   })
@@ -168,6 +179,7 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
     staff,
     classrooms,
     currentUserRole: context.role,
+    currentProfileId: context.profileId,
     canManage,
     metrics: {
       totalStaff,

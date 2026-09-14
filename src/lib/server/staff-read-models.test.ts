@@ -134,6 +134,7 @@ describe("staff-read-models", () => {
     expect(data.staff.length).toBe(2)
     expect(data.classrooms.length).toBe(2)
     expect(data.canManage).toBe(true)
+    expect(data.currentProfileId).toBe("p1")
     expect(data.metrics.totalStaff).toBe(2)
     expect(data.metrics.activeStaff).toBe(2)
     expect(data.metrics.teachersCount).toBe(1)

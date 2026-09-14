@@ -51,6 +51,7 @@ export type StaffManagementData = {
   staff: StaffMemberItem[]
   classrooms: ClassroomAssignmentOption[]
   currentUserRole: string
+  currentProfileId?: string | null
   canManage: boolean
   metrics: {
     totalStaff: number

@@ -42,7 +42,21 @@ const ALL_ROLES: UserRole[] = [
   "subject_teacher",
 ]
 
-export function StaffManager({ initialData }: { initialData: StaffManagementData }) {
+export function StaffManager({ initialData }: { initialData?: StaffManagementData | null }) {
+  const classrooms = useMemo(() => initialData?.classrooms ?? [], [initialData?.classrooms])
+  const staffList = useMemo(() => initialData?.staff ?? [], [initialData?.staff])
+  const metrics = initialData?.metrics ?? {
+    totalStaff: 0,
+    activeStaff: 0,
+    teachersCount: 0,
+    counselorsCount: 0,
+    leadershipCount: 0,
+    unassignedHomeroomsCount: 0,
+  }
+  const canManage = initialData?.canManage ?? false
+  const currentUserRole = initialData?.currentUserRole ?? ""
+  const currentProfileId = initialData?.currentProfileId ?? null
+
   const [activeTab, setActiveTab] = useState<"directory" | "assignments">("directory")
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("ALL")
@@ -55,7 +69,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
     Record<string, { homeroomTeacherId: string | null; coTeacherId: string | null }>
   >(() => {
     const map: Record<string, { homeroomTeacherId: string | null; coTeacherId: string | null }> = {}
-    for (const c of initialData.classrooms) {
+    for (const c of classrooms) {
       map[c.id] = {
         homeroomTeacherId: c.homeroomTeacherId,
         coTeacherId: c.coTeacherId,
@@ -68,7 +82,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
 
   // Filtered staff list
   const filteredStaff = useMemo(() => {
-    return initialData.staff.filter((s) => {
+    return staffList.filter((s) => {
       const matchesSearch =
         search === "" ||
         s.fullName.toLowerCase().includes(search.toLowerCase()) ||
@@ -84,7 +98,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
 
       return matchesSearch && matchesRole && matchesStatus
     })
-  }, [initialData.staff, search, roleFilter, statusFilter])
+  }, [staffList, search, roleFilter, statusFilter])
 
   // Handlers
   const handleOpenRoleModal = (staff: StaffMemberItem) => {
@@ -164,15 +178,15 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="บุคลากรทั้งหมด"
-          value={`${initialData.metrics.totalStaff} คน`}
-          description={`เปิดใช้งาน ${initialData.metrics.activeStaff} คน`}
+          value={`${metrics.totalStaff} คน`}
+          description={`เปิดใช้งาน ${metrics.activeStaff} คน`}
           icon={Users}
           status="normal"
           size="compact"
         />
         <MetricCard
           title="ครูผู้สอน / ครูประจำชั้น"
-          value={`${initialData.metrics.teachersCount} คน`}
+          value={`${metrics.teachersCount} คน`}
           description="รับผิดชอบการสอนและดูแลนักเรียน"
           icon={GraduationCap}
           status="normal"
@@ -180,7 +194,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
         />
         <MetricCard
           title="ครูแนะแนว (Counselors)"
-          value={`${initialData.metrics.counselorsCount} คน`}
+          value={`${metrics.counselorsCount} คน`}
           description="ดูแลการให้คำปรึกษาและเคสส่งต่อ"
           icon={UserCheck}
           status="normal"
@@ -188,14 +202,14 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
         />
         <MetricCard
           title="ห้องเรียนที่ยังไม่มีครูประจำชั้น"
-          value={`${initialData.metrics.unassignedHomeroomsCount} ห้อง`}
+          value={`${metrics.unassignedHomeroomsCount} ห้อง`}
           description={
-            initialData.metrics.unassignedHomeroomsCount > 0
+            metrics.unassignedHomeroomsCount > 0
               ? "ต้องการการมอบหมายเร่งด่วน"
               : "มอบหมายครบทุกห้องแล้ว"
           }
           icon={AlertCircle}
-          status={initialData.metrics.unassignedHomeroomsCount > 0 ? "high-risk" : "normal"}
+          status={metrics.unassignedHomeroomsCount > 0 ? "high-risk" : "normal"}
           size="compact"
         />
       </div>
@@ -212,7 +226,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
           }`}
         >
           <Users className="size-4" />
-          รายชื่อบุคลากรและสิทธิ์ ({initialData.staff.length})
+          รายชื่อบุคลากรและสิทธิ์ ({staffList.length})
         </button>
         <button
           type="button"
@@ -224,10 +238,10 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
           }`}
         >
           <Layers className="size-4" />
-          มอบหมายครูประจำชั้นรายห้อง ({initialData.classrooms.length})
-          {initialData.metrics.unassignedHomeroomsCount > 0 && (
+          มอบหมายครูประจำชั้นรายห้อง ({classrooms.length})
+          {metrics.unassignedHomeroomsCount > 0 && (
             <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-              {initialData.metrics.unassignedHomeroomsCount}
+              {metrics.unassignedHomeroomsCount}
             </span>
           )}
         </button>
@@ -287,7 +301,9 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
           ) : (
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {filteredStaff.map((staff) => {
-                const isSelf = staff.id === initialData.staff.find((s) => s.role === initialData.currentUserRole)?.id
+                const isSelf = currentProfileId
+                  ? staff.id === currentProfileId
+                  : staff.id === staffList.find((s) => s.role === currentUserRole)?.id
 
                 return (
                   <div
@@ -384,7 +400,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                     </div>
 
                     {/* Actions bar */}
-                    {initialData.canManage && (
+                    {canManage && (
                       <div className="pt-3 mt-3 border-t border-border flex items-center justify-between gap-2">
                         <Button
                           type="button"
@@ -437,16 +453,16 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                 </p>
               </div>
 
-              {initialData.metrics.unassignedHomeroomsCount > 0 && (
+              {metrics.unassignedHomeroomsCount > 0 && (
                 <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/50 font-medium">
                   <ShieldAlert className="size-4 shrink-0" />
-                  ยังขาดครูประจำชั้น {initialData.metrics.unassignedHomeroomsCount} ห้อง
+                  ยังขาดครูประจำชั้น {metrics.unassignedHomeroomsCount} ห้อง
                 </div>
               )}
             </div>
 
             <div className="divide-y divide-border mt-2">
-              {initialData.classrooms.map((room) => {
+              {classrooms.map((room) => {
                 const currentAssignment = classroomAssignments[room.id] || {
                   homeroomTeacherId: room.homeroomTeacherId,
                   coTeacherId: room.coTeacherId,
@@ -484,7 +500,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                           ครูประจำชั้น (ที่ปรึกษาหลัก)
                         </label>
                         <select
-                          disabled={!initialData.canManage || isPending}
+                          disabled={!canManage || isPending}
                           value={currentAssignment.homeroomTeacherId ?? "NONE"}
                           onChange={(e) =>
                             handleHomeroomSelectChange(room.id, "homeroomTeacherId", e.target.value)
@@ -492,7 +508,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                           className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="NONE">-- ยังไม่ระบุ --</option>
-                          {initialData.staff
+                          {staffList
                             .filter((s) => s.isActive)
                             .map((s) => (
                               <option key={s.id} value={s.id}>
@@ -508,7 +524,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                           ครูที่ปรึกษาร่วม / ครูผู้ช่วย
                         </label>
                         <select
-                          disabled={!initialData.canManage || isPending}
+                          disabled={!canManage || isPending}
                           value={currentAssignment.coTeacherId ?? "NONE"}
                           onChange={(e) =>
                             handleHomeroomSelectChange(room.id, "coTeacherId", e.target.value)
@@ -516,7 +532,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                           className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="NONE">-- ไม่มี / ไม่ระบุ --</option>
-                          {initialData.staff
+                          {staffList
                             .filter((s) => s.isActive)
                             .map((s) => (
                               <option key={s.id} value={s.id}>
@@ -528,7 +544,7 @@ export function StaffManager({ initialData }: { initialData: StaffManagementData
                     </div>
 
                     {/* Action button */}
-                    {initialData.canManage && (
+                    {canManage && (
                       <div className="flex items-center justify-end">
                         <Button
                           type="button"
