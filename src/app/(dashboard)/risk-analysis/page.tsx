@@ -14,6 +14,7 @@ import {
 } from "@/lib/server/risk-read-models"
 
 import { RecalculateButton } from "./RecalculateButton"
+import { RiskDimensionRadar } from "./_components/risk-dimension-radar"
 import { RiskFactorsChart } from "./_components/risk-factors-chart"
 import { RiskHistoryChart } from "./_components/risk-history-chart"
 import { RiskMatrix } from "./_components/risk-matrix"
@@ -108,7 +109,8 @@ export default async function RiskAnalysisPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
+            <RiskDimensionRadar benchmarks={dimensionBenchmarks} />
             <RiskFactorsChart factorDistribution={factorDistribution} />
             <RiskHistoryChart trendData={trendData} />
             <RiskRecommendations students={students} />

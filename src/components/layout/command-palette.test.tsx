@@ -17,6 +17,11 @@ vi.mock("next-themes", () => ({
   }),
 }))
 
+const mockSearchStudentsQuickAction = vi.fn().mockResolvedValue({ ok: true, data: [] })
+vi.mock("@/app/actions/student.actions", () => ({
+  searchStudentsQuickAction: (q: string) => mockSearchStudentsQuickAction(q),
+}))
+
 describe("CommandPalette", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -65,4 +70,36 @@ describe("CommandPalette", () => {
 
     expect(handleClose).toHaveBeenCalled()
   })
+
+  it("displays student search results and navigates to student profile", async () => {
+    mockSearchStudentsQuickAction.mockResolvedValueOnce({
+      ok: true,
+      data: [
+        {
+          id: "stu-99",
+          studentCode: "10999",
+          fullName: "ด.ญ. กานดา วงศ์ษา",
+          classroomName: "ม.2/2",
+          riskLevel: "high",
+          photoUrl: null,
+        },
+      ],
+    })
+
+    const handleClose = vi.fn()
+    render(<CommandPalette isOpen={true} onClose={handleClose} />)
+
+    const input = screen.getByPlaceholderText(/ค้นหาเมนู/)
+    fireEvent.change(input, { target: { value: "กานดา" } })
+
+    // Wait for debounced search and state update
+    const studentItem = await screen.findByText("ด.ญ. กานดา วงศ์ษา")
+    expect(studentItem).toBeInTheDocument()
+    expect(screen.getByText(/เสี่ยงสูง/)).toBeInTheDocument()
+
+    fireEvent.click(studentItem)
+    expect(mockPush).toHaveBeenCalledWith("/students/stu-99")
+    expect(handleClose).toHaveBeenCalled()
+  })
 })
+

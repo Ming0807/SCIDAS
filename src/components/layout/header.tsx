@@ -71,12 +71,23 @@ export function Header({
   const isAdminOrDirector = role === "admin" || role === "director"
   const canAccessStaff = isAdminOrDirector || role === "counselor"
 
-  // Shortcut Ctrl+K
+  // Shortcut Ctrl+K and /
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault()
         setPaletteOpen((prev) => !prev)
+        return
+      }
+
+      if (
+        e.key === "/" &&
+        !["INPUT", "TEXTAREA", "SELECT"].includes(
+          (document.activeElement as HTMLElement | null)?.tagName ?? ""
+        )
+      ) {
+        e.preventDefault()
+        setPaletteOpen(true)
       }
     }
     window.addEventListener("keydown", handleKeyDown)

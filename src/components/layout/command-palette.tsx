@@ -12,6 +12,7 @@ import {
   HeartHandshake,
   Home,
   House,
+  Loader2,
   Moon,
   Search,
   Settings,
@@ -19,11 +20,17 @@ import {
   ShieldCheck,
   Smile,
   Sun,
+  User,
   Users,
   X,
   Zap,
 } from "lucide-react"
 import { useTheme } from "next-themes"
+
+import {
+  searchStudentsQuickAction,
+  type QuickStudentSearchResult,
+} from "@/app/actions/student.actions"
 
 export type CommandAction = {
   id: string
@@ -45,6 +52,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const { theme, setTheme } = useTheme()
   const [query, setQuery] = useState("")
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [studentResults, setStudentResults] = useState<QuickStudentSearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
@@ -264,6 +273,34 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     [router, theme, setTheme]
   )
 
+  // Live student search with debounce
+  useEffect(() => {
+    const trimmed = query.trim()
+    if (!trimmed || trimmed.length < 1) {
+      setStudentResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await searchStudentsQuickAction(trimmed)
+        if (res.ok && res.data) {
+          setStudentResults(res.data)
+        } else {
+          setStudentResults([])
+        }
+      } catch {
+        setStudentResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 180)
+
+    return () => clearTimeout(timeoutId)
+  }, [query])
+
   const filteredActions = useMemo(() => {
     if (!query.trim()) return actions
     const q = query.toLowerCase().trim()
@@ -275,7 +312,44 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     })
   }, [actions, query])
 
-  const safeIndex = selectedIndex >= filteredActions.length ? 0 : selectedIndex
+  type UnifiedItem =
+    | {
+        type: "student"
+        id: string
+        title: string
+        subtitle: string
+        riskLevel: string
+        perform: () => void
+      }
+    | {
+        type: "action"
+        id: string
+        title: string
+        subtitle?: string
+        category: "navigation" | "action"
+        icon: typeof Home
+        perform: () => void
+      }
+
+  const unifiedItems: UnifiedItem[] = useMemo(() => {
+    const studentItems: UnifiedItem[] = studentResults.map((s) => ({
+      type: "student",
+      id: `student-${s.id}`,
+      title: s.fullName,
+      subtitle: `รหัส ${s.studentCode} • ชั้น ${s.classroomName ?? "ไม่ระบุ"}`,
+      riskLevel: s.riskLevel,
+      perform: () => router.push(`/students/${s.id}`),
+    }))
+
+    const actionItems: UnifiedItem[] = filteredActions.map((a) => ({
+      type: "action",
+      ...a,
+    }))
+
+    return [...studentItems, ...actionItems]
+  }, [studentResults, filteredActions, router])
+
+  const safeIndex = selectedIndex >= unifiedItems.length ? 0 : selectedIndex
 
   // Focus input when opened
   useEffect(() => {
@@ -288,6 +362,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const handleClose = useCallback(() => {
     setQuery("")
     setSelectedIndex(0)
+    setStudentResults([])
     onClose()
   }, [onClose])
 
@@ -296,15 +371,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     (e: React.KeyboardEvent) => {
       if (e.key === "ArrowDown") {
         e.preventDefault()
-        setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredActions.length))
+        setSelectedIndex((prev) => (prev + 1) % Math.max(1, unifiedItems.length))
       } else if (e.key === "ArrowUp") {
         e.preventDefault()
         setSelectedIndex((prev) =>
-          prev <= 0 ? filteredActions.length - 1 : prev - 1
+          prev <= 0 ? unifiedItems.length - 1 : prev - 1
         )
       } else if (e.key === "Enter") {
         e.preventDefault()
-        const selected = filteredActions[safeIndex]
+        const selected = unifiedItems[safeIndex]
         if (selected) {
           selected.perform()
           handleClose()
@@ -314,7 +389,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         handleClose()
       }
     },
-    [filteredActions, safeIndex, handleClose]
+    [unifiedItems, safeIndex, handleClose]
   )
 
   if (!isOpen) return null
@@ -333,7 +408,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       >
         {/* Search Input Box */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
-          <Search className="size-5 text-muted-foreground shrink-0" />
+          {isSearching ? (
+            <Loader2 className="size-5 text-primary animate-spin shrink-0" />
+          ) : (
+            <Search className="size-5 text-muted-foreground shrink-0" />
+          )}
           <input
             ref={inputRef}
             type="text"
@@ -343,7 +422,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               setSelectedIndex(0)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="ค้นหาเมนู, คำสั่งด่วน, หรือหน้าจอ..."
+            placeholder="ค้นหาเมนู, คำสั่งด่วน, หรือชื่อนักเรียน..."
             className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           {query ? (
@@ -352,8 +431,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               onClick={() => {
                 setQuery("")
                 setSelectedIndex(0)
+                setStudentResults([])
               }}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <X className="size-4" />
             </button>
@@ -368,25 +448,98 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         <ul
           ref={listRef}
           role="listbox"
-          className="max-h-80 overflow-y-auto p-2 text-sm focus:outline-none divide-y divide-border/30"
+          className="max-h-80 overflow-y-auto p-2 text-sm focus:outline-none space-y-1"
         >
-          {filteredActions.length === 0 ? (
+          {unifiedItems.length === 0 ? (
             <li className="py-8 text-center text-sm text-muted-foreground">
-              ไม่พบรายการที่ตรงกับคำค้นหา &ldquo;{query}&rdquo;
+              {isSearching ? "กำลังค้นหา..." : `ไม่พบรายการที่ตรงกับคำค้นหา “${query}”`}
             </li>
           ) : (
-            filteredActions.map((action, index) => {
-              const Icon = action.icon
+            unifiedItems.map((item, index) => {
               const isSelected = index === safeIndex
+
+              if (item.type === "student") {
+                const isWatch = item.riskLevel === "watch"
+                const isHigh = item.riskLevel === "high" || item.riskLevel === "critical"
+                const riskBadgeClass = isHigh
+                  ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
+                  : isWatch
+                    ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                const riskBadgeText = isHigh ? "เสี่ยงสูง" : isWatch ? "เฝ้าระวัง" : "ปกติ"
+
+                return (
+                  <li
+                    key={item.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    onClick={() => {
+                      item.perform()
+                      handleClose()
+                    }}
+                    className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${
+                          isSelected
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : "bg-primary/10 text-primary"
+                        }`}
+                      >
+                        <User className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-sm">{item.title}</p>
+                        <p
+                          className={`truncate text-xs ${
+                            isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                          }`}
+                        >
+                          {item.subtitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-md border font-medium ${
+                          isSelected
+                            ? "bg-primary-foreground/20 text-primary-foreground border-transparent"
+                            : riskBadgeClass
+                        }`}
+                      >
+                        {riskBadgeText}
+                      </span>
+                      <span
+                        className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                          isSelected
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        Student
+                      </span>
+                    </div>
+                  </li>
+                )
+              }
+
+              const Icon = item.icon
 
               return (
                 <li
-                  key={action.id}
+                  key={item.id}
                   role="option"
                   aria-selected={isSelected}
                   onMouseEnter={() => setSelectedIndex(index)}
                   onClick={() => {
-                    action.perform()
+                    item.perform()
                     handleClose()
                   }}
                   className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors ${
@@ -406,8 +559,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       <Icon className="size-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{action.title}</p>
-                      {action.subtitle ? (
+                      <p className="truncate font-medium">{item.title}</p>
+                      {item.subtitle ? (
                         <p
                           className={`truncate text-xs ${
                             isSelected
@@ -415,7 +568,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               : "text-muted-foreground"
                           }`}
                         >
-                          {action.subtitle}
+                          {item.subtitle}
                         </p>
                       ) : null}
                     </div>
@@ -428,7 +581,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {action.category === "action" ? "Action" : "Page"}
+                    {item.category === "action" ? "Action" : "Page"}
                   </span>
                 </li>
               )
@@ -455,7 +608,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               ดำเนินการ
             </span>
           </div>
-          <span className="font-sans">SCIDAS Command Palette</span>
+          <span className="font-sans">SCIDAS Command Center</span>
         </div>
       </div>
     </div>

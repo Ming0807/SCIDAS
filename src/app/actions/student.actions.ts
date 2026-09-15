@@ -507,3 +507,66 @@ export async function deleteStudentGuardianAction(
     return getActionFailure(err)
   }
 }
+
+export type QuickStudentSearchResult = {
+  id: string
+  studentCode: string
+  fullName: string
+  classroomName: string | null
+  riskLevel: string
+  photoUrl: string | null
+}
+
+export async function searchStudentsQuickAction(
+  query: string,
+): Promise<ActionResult<QuickStudentSearchResult[]>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.schoolId) {
+      return actionOk("ค้นหาสำเร็จ", { data: [] })
+    }
+
+    const trimmed = query.trim()
+    if (!trimmed) {
+      return actionOk("ค้นหาสำเร็จ", { data: [] })
+    }
+
+    const client = await createClient()
+    const clean = trimmed.replace(/[%_,]/g, "")
+
+    let dbQuery = client
+      .from("v_student_worklist")
+      .select("student_id, student_code, full_name, classroom_name, risk_level, photo_url")
+      .eq("school_id", context.schoolId)
+      .or(`full_name.ilike.%${clean}%,student_code.ilike.%${clean}%,classroom_name.ilike.%${clean}%`)
+      .order("priority_score", { ascending: false })
+      .limit(8)
+
+    if (context.role === "student" && context.studentId) {
+      dbQuery = dbQuery.eq("student_id", context.studentId)
+    }
+
+    const { data, error } = await dbQuery
+
+    if (error) {
+      console.error("Quick search students error:", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถค้นหารายชื่อนักเรียนได้")
+    }
+
+    const results: QuickStudentSearchResult[] = (data ?? [])
+      .map((row) => ({
+        id: row.student_id ?? "",
+        studentCode: row.student_code ?? "-",
+        fullName: row.full_name ?? "-",
+        classroomName: row.classroom_name ?? null,
+        riskLevel: row.risk_level ?? "normal",
+        photoUrl: row.photo_url ?? null,
+      }))
+      .filter((r) => Boolean(r.id))
+
+    return actionOk("ค้นหาสำเร็จ", { data: results })
+  } catch (err) {
+    return getActionFailure(err)
+  }
+}
+
