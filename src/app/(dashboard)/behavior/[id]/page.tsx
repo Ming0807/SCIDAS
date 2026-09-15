@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Pencil, User } from "lucide-react"
 
 import { PageShell } from "@/components/dashboard/page-shell"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { StudentIdentity } from "@/components/dashboard/student-identity"
 import { ErrorState } from "@/components/feedback/error-state"
 import {
   getBehaviorRecordById,
@@ -12,7 +13,7 @@ import {
   getBehaviorTypeLabel,
   type BehaviorRecordItem,
 } from "@/lib/server/behavior-read-models"
-import { formatGradeLevel, getStudentInitials } from "@/lib/student-care-formatters"
+import { formatGradeLevel } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 
@@ -51,7 +52,6 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
   const isPositive = record.behaviorType === "positive"
   const isNegative = record.behaviorType === "negative"
   const statusTone = isPositive ? "success" : isNegative ? "danger" : "neutral"
-  const initials = getStudentInitials(record.studentName)
 
   return (
     <PageShell>
@@ -67,31 +67,21 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
       {/* Record detail card */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-6 mb-6">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <span
-              className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
-                isPositive
-                  ? "bg-emerald-100 text-emerald-700"
-                  : isNegative
-                    ? "bg-red-100 text-red-700"
-                    : "bg-muted text-muted-foreground",
-              )}
-              aria-hidden="true"
-            >
-              {initials}
-            </span>
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">
+          <StudentIdentity
+            name={
+              <Link
+                href={`/students/${record.studentId}`}
+                className="text-xl font-semibold text-foreground hover:underline"
+              >
                 {record.studentName}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {record.studentClass
-                  ? `ชั้น ${record.studentClass}`
-                  : formatGradeLevel("ไม่ระบุ")}
-              </p>
-            </div>
-          </div>
+              </Link>
+            }
+            classroom={
+              record.studentClass
+                ? `ชั้น ${record.studentClass}`
+                : formatGradeLevel("ไม่ระบุ")
+            }
+          />
           <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
             <StatusBadge
               status={statusTone}
@@ -112,22 +102,22 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <span className="text-muted-foreground">วันที่:</span>
-            <span className="font-medium text-foreground">{record.date}</span>
+            <span className="font-medium text-foreground font-mono tabular-nums">{record.date}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">คะแนน:</span>
             <span
               className={cn(
-                "font-semibold",
+                "font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md text-xs",
                 record.points > 0
-                  ? "text-emerald-600"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                   : record.points < 0
-                    ? "text-red-600"
-                    : "text-muted-foreground",
+                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                    : "text-muted-foreground bg-muted/40",
               )}
             >
               {record.points > 0 ? "+" : ""}
-              {record.points}
+              {record.points} คะแนน
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm">

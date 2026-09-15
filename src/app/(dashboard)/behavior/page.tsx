@@ -6,6 +6,7 @@ import { PageShell } from "@/components/dashboard/page-shell"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { StudentIdentity } from "@/components/dashboard/student-identity"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
 import { cn } from "@/lib/utils"
@@ -16,7 +17,6 @@ import {
   type BehaviorRecordItem,
   type BehaviorLeaderboardItem,
 } from "@/lib/server/behavior-read-models"
-import { getStudentInitials } from "@/lib/student-care-formatters"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 
 import { ConductSummaryCard } from "./_components/conduct-summary-card"
@@ -156,9 +156,10 @@ export default async function BehaviorDashboardPage({
                 <thead>
                   <tr className="border-b border-border text-xs font-semibold text-muted-foreground bg-muted/30">
                     <th className="py-3 px-5 whitespace-nowrap">นักเรียน</th>
-                    <th className="py-3 px-5 whitespace-nowrap">ประเภท</th>
-                    <th className="py-3 px-5 whitespace-nowrap">พฤติกรรม</th>
-                    <th className="py-3 px-5 hidden md:table-cell whitespace-nowrap">
+                    <th className="py-3 px-4 whitespace-nowrap">ประเภท</th>
+                    <th className="py-3 px-4 whitespace-nowrap">พฤติกรรม</th>
+                    <th className="py-3 px-3 text-center whitespace-nowrap">คะแนน</th>
+                    <th className="py-3 px-4 hidden md:table-cell whitespace-nowrap">
                       วันที่
                     </th>
                     <th className="py-3 px-5 text-center whitespace-nowrap">
@@ -225,50 +226,59 @@ function BehaviorTableRow({ record, profileId, canEditAll }: { record: BehaviorR
   const isPositive = record.behaviorType === "positive"
   const isNegative = record.behaviorType === "negative"
   const statusTone = isPositive ? "success" : isNegative ? "danger" : "neutral"
-  const initials = getStudentInitials(record.studentName)
 
   return (
-    <tr className="border-b border-border hover:bg-muted/30 transition-colors">
+    <tr className={cn(
+      "border-b border-border transition-colors hover:bg-muted/30",
+      isPositive ? "hover:bg-emerald-50/20 dark:hover:bg-emerald-950/10" : isNegative ? "hover:bg-rose-50/20 dark:hover:bg-rose-950/10" : ""
+    )}>
       <td className="py-3 px-5 whitespace-nowrap">
-        <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-              isPositive
-                ? "bg-emerald-100 text-emerald-700"
-                : isNegative
-                  ? "bg-red-100 text-red-700"
-                  : "bg-muted text-muted-foreground",
-            )}
-            aria-hidden="true"
-          >
-            {initials}
-          </span>
-          <div>
-            <div className="font-semibold text-foreground">{record.studentName}</div>
-            {record.studentClass ? (
-              <div className="text-xs text-muted-foreground">ชั้น {record.studentClass}</div>
-            ) : null}
-          </div>
-        </div>
+        <StudentIdentity
+          name={
+            <Link
+              href={`/students/${record.studentId}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              {record.studentName}
+            </Link>
+          }
+          classroom={record.studentClass ? `ชั้น ${record.studentClass}` : undefined}
+          size="sm"
+        />
       </td>
-      <td className="py-3 px-5 whitespace-nowrap">
+      <td className="py-3 px-4 whitespace-nowrap">
         <StatusBadge status={statusTone} label={getBehaviorTypeLabel(record.behaviorType)} size="sm" />
       </td>
-      <td className="py-3 px-5 text-foreground font-medium whitespace-nowrap max-w-48 truncate">
+      <td className="py-3 px-4 text-foreground font-medium whitespace-nowrap max-w-48 truncate">
         {record.description}
       </td>
-      <td className="py-3 px-5 text-muted-foreground hidden md:table-cell whitespace-nowrap">
+      <td className="py-3 px-3 text-center whitespace-nowrap">
+        <span
+          className={cn(
+            "font-mono text-xs font-semibold tabular-nums px-2 py-0.5 rounded-md",
+            record.points > 0
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+              : record.points < 0
+                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                : "text-muted-foreground bg-muted/40"
+          )}
+        >
+          {record.points > 0 ? `+${record.points}` : record.points}
+        </span>
+      </td>
+      <td className="py-3 px-4 text-muted-foreground hidden md:table-cell whitespace-nowrap text-xs">
         {formatRelativeTime(record.date)}
       </td>
       <td className="py-3 px-5 text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-2">
-          {(canEditAll || Boolean(profileId && record.reportedById === profileId)) ? <Link
-            href={`/behavior/${record.id}`}
-            className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 hover:text-primary/80"
-          >
-            ดูข้อมูล
-          </Link> : null}
+          {(canEditAll || Boolean(profileId && record.reportedById === profileId)) ? (
+            <Link
+              href={`/behavior/${record.id}`}
+              className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 hover:text-primary/80"
+            >
+              ดูข้อมูล
+            </Link>
+          ) : null}
           <Link
             href={`/behavior/${record.id}/edit`}
             className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
@@ -289,27 +299,40 @@ function LeaderboardRow({
   student: BehaviorLeaderboardItem
   rank: number
 }) {
+  const rankBadges = [
+    "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800",
+    "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700",
+    "bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900",
+  ]
+  const badgeStyle = rank <= 3 ? rankBadges[rank - 1] : "bg-muted text-muted-foreground border border-border"
+
   return (
-    <div className="flex items-center justify-between p-2 -mx-2 rounded-lg hover:bg-muted/30 transition-colors">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between p-2.5 -mx-2 rounded-lg hover:bg-muted/30 transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
         <span
-          className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center shrink-0"
+          className={cn(
+            "size-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 tabular-nums",
+            badgeStyle
+          )}
           aria-hidden="true"
         >
           {rank}
         </span>
-        <div>
-          <div className="font-semibold text-foreground text-sm line-clamp-1 break-all">
+        <div className="min-w-0">
+          <Link
+            href={`/students/${student.studentId}`}
+            className="font-medium text-foreground text-sm line-clamp-1 break-all hover:underline"
+          >
             {student.studentName}
-          </div>
+          </Link>
           {student.studentClass ? (
             <div className="text-xs text-muted-foreground">ชั้น {student.studentClass}</div>
           ) : null}
         </div>
       </div>
       <div className="flex flex-col items-end shrink-0 pl-2">
-        <span className="text-sm font-semibold text-emerald-600">
-          {student.positivePoints}
+        <span className="text-sm font-semibold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+          +{student.positivePoints}
         </span>
         <span className="text-xs text-muted-foreground">ครั้ง</span>
       </div>

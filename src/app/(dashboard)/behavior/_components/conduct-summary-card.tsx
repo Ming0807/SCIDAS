@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   AlertCircle,
   Award,
@@ -123,20 +124,25 @@ export function ConductSummaryCard({
                   return (
                     <tr key={student.studentId} className="hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4 font-medium text-foreground">
-                        {student.studentName}
+                        <Link
+                          href={`/students/${student.studentId}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {student.studentName}
+                        </Link>
                       </td>
                       <td className="py-3 px-4 text-muted-foreground hidden sm:table-cell">
                         {student.studentClass || "ไม่ระบุ"}
                       </td>
-                      <td className="py-3 px-4 text-center font-semibold text-rose-600 dark:text-rose-400">
+                      <td className="py-3 px-4 text-center font-semibold font-mono tabular-nums text-rose-600 dark:text-rose-400">
                         {student.deductedPoints > 0 ? `-${student.deductedPoints}` : "0"}
                       </td>
-                      <td className="py-3 px-4 text-center font-semibold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-3 px-4 text-center font-semibold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
                         {student.addedPoints > 0 ? `+${student.addedPoints}` : "0"}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span
-                          className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold font-mono tabular-nums ${
                             isLow
                               ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
                               : isHigh
