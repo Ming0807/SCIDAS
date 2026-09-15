@@ -140,6 +140,39 @@ export function AttendanceForm({
   })))
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(entries))
   const dirty = JSON.stringify(entries) !== savedSnapshot
+  const draftKey = `scidas_att_draft_${classroom.id}_${date}`
+  const [hasDraft, setHasDraft] = useState(false)
+
+  // Check for local draft on mount or when classroom/date changes
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem(draftKey)
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (JSON.stringify(parsed) !== savedSnapshot) {
+            setHasDraft(true)
+          }
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [draftKey, savedSnapshot])
+
+  // Auto-save draft locally whenever dirty
+  useEffect(() => {
+    if (dirty) {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(draftKey, JSON.stringify(entries))
+        }
+      } catch {
+        // ignore quota errors
+      }
+    }
+  }, [entries, dirty, draftKey])
+
   const [prevInitialRecords, setPrevInitialRecords] = useState(initialRecords)
   if (prevInitialRecords !== initialRecords) {
     setPrevInitialRecords(initialRecords)
@@ -258,6 +291,14 @@ export function AttendanceForm({
       const nextResult = await upsertAttendance(classroom.id, date, records)
       setResult(nextResult)
       if (nextResult.ok) {
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(draftKey)
+          }
+        } catch {
+          // ignore
+        }
+        setHasDraft(false)
         setSavedSnapshot(JSON.stringify(entries))
         setHasExternalUpdate(false)
         router.refresh()
@@ -267,6 +308,48 @@ export function AttendanceForm({
 
   return (
     <section className="space-y-4" aria-labelledby="attendance-editor-title">
+      {hasDraft && !dirty ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/80 dark:bg-blue-950/40 p-4 text-xs text-blue-950 dark:text-blue-200 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Save className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>พบข้อมูลเช็คชื่อฉบับร่างที่บันทึกไว้ในเครื่องนี้ (ออฟไลน์)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const stored = localStorage.getItem(draftKey)
+                  if (stored) {
+                    setEntries(JSON.parse(stored))
+                    setHasDraft(false)
+                  }
+                } catch {
+                  // ignore
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1 font-semibold text-white hover:bg-blue-700 transition text-xs shadow-xs"
+            >
+              กู้คืนข้อมูลร่าง
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem(draftKey)
+                } catch {
+                  // ignore
+                }
+                setHasDraft(false)
+              }}
+              className="rounded-md border border-blue-300 dark:border-blue-800 px-2.5 py-1 font-medium text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition text-xs"
+            >
+              ละทิ้ง
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {hasExternalUpdate && dirty ? (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-sm">
           <div className="flex items-center gap-2">
