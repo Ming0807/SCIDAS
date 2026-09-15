@@ -32,7 +32,14 @@ const columns: Array<DataTableColumn<StudentWorklistItem>> = [
     cell: (student) => (
       <StudentIdentity
         avatarUrl={student.photoUrl ?? ""}
-        name={student.fullName}
+        name={
+          <Link
+            href={`/students/${student.studentId}`}
+            className="font-medium text-foreground hover:underline"
+          >
+            {student.fullName}
+          </Link>
+        }
         studentCode={student.studentCode}
         grade={formatGradeLevel(student.gradeLevel)}
         classroom={formatClassroomSection(student.section)}
