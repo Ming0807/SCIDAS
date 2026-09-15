@@ -88,7 +88,7 @@ export function SupportCaseForm({ students, initialCase, defaultStudentId }: Sup
       {initialCase ? <input type="hidden" name="id" value={initialCase.id} /> : null}
       {initialCase ? <input type="hidden" name="semester_id" value={initialCase.semester_id} /> : null}
 
-      <Card>
+      <Card className="rounded-2xl border-border shadow-xs">
         <CardHeader>
           <CardTitle>{isEdit ? "แก้ไขข้อมูลเคส" : "ข้อมูลเคส"}</CardTitle>
           <CardDescription>

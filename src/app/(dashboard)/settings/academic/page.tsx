@@ -123,7 +123,7 @@ export default async function AcademicManagementPage() {
       </div>
 
       {/* Main Tabs and Content Area */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6">
         <AcademicTabsClient data={data} />
       </div>
     </PageShell>

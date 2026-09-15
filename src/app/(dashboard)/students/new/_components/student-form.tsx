@@ -64,7 +64,7 @@ export function StudentForm({ mode, student }: StudentFormProps) {
 
       <form action={formAction}>
         {isEdit ? <input type="hidden" name="student_id" value={student.id} /> : null}
-        <Card className="border-border shadow-sm">
+        <Card className="rounded-2xl border-border shadow-xs">
           <CardHeader>
             <CardTitle>ข้อมูลนักเรียน</CardTitle>
             <CardDescription>
@@ -236,7 +236,7 @@ export function StudentForm({ mode, student }: StudentFormProps) {
       </form>
 
       {isEdit ? (
-        <Card className="border-destructive/30 shadow-sm">
+        <Card className="rounded-2xl border-destructive/30 shadow-xs">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Archive className="size-4" />

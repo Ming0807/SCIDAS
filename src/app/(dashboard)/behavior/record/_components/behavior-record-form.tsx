@@ -54,7 +54,7 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
 
   return (
     <form action={formAction} className="w-full">
-      <Card>
+      <Card className="rounded-2xl border-border shadow-xs">
         <CardHeader>
           <CardTitle>รายละเอียดพฤติกรรม</CardTitle>
           <CardDescription>กรอกข้อมูลที่ต้องการบันทึกให้ครบถ้วน</CardDescription>

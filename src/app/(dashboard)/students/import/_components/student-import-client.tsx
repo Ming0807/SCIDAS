@@ -190,7 +190,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   return (
     <div className="space-y-6">
       {/* 1. Header Options & Template Download */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>
             <h3 className="text-base font-semibold">ขั้นตอนที่ 1: กำหนดห้องเรียนและดาวน์โหลดแบบฟอร์ม</h3>
@@ -202,7 +202,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             <button
               type="button"
               onClick={handleDownloadCsvTemplate}
-              className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3.5 py-2 text-xs font-medium hover:bg-muted shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-medium hover:bg-muted shadow-xs transition-colors"
             >
               <FileText className="size-4 text-primary" />
               แบบฟอร์ม CSV
@@ -210,9 +210,9 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             <button
               type="button"
               onClick={handleDownloadXlsxTemplate}
-              className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 px-3.5 py-2 text-xs font-medium hover:bg-emerald-100 shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-3.5 py-2 text-xs font-medium hover:bg-emerald-500/20 shadow-xs transition-colors"
             >
-              <FileSpreadsheet className="size-4 text-emerald-600" />
+              <FileSpreadsheet className="size-4 text-emerald-600 dark:text-emerald-400" />
               แบบฟอร์ม Excel (.xlsx)
             </button>
           </div>
@@ -258,14 +258,14 @@ export function StudentImportClient({ context }: { context: ImportContextData })
       </div>
 
       {/* 2. File Upload Dropzone */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6">
         <h3 className="text-base font-semibold">ขั้นตอนที่ 2: อัปโหลดไฟล์รายชื่อนักเรียน (CSV หรือ Excel)</h3>
         <p className="mt-0.5 text-sm text-muted-foreground">
           รองรับไฟล์นามสกุล .csv และ .xlsx ขนาดไม่เกิน 5 MB และไม่เกิน 500 รายชื่อต่อครั้ง
         </p>
 
         {isParsing ? (
-          <div className="mt-4 flex items-center justify-center gap-3 rounded-xl border border-border bg-muted/30 p-8 text-center">
+          <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-8 text-center">
             <Loader2 className="size-6 animate-spin text-primary" />
             <p className="text-sm font-medium text-muted-foreground">กำลังอ่านและตรวจสอบโครงสร้างไฟล์...</p>
           </div>
@@ -278,7 +278,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             onDragOver={(event) => event.preventDefault()}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleFileDrop}
-            className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition ${
+            className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition ${
               isDragging
                 ? "border-primary bg-primary/10"
                 : "border-border bg-muted/30 hover:bg-muted/50"
@@ -290,7 +290,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               onChange={handleFileChange}
               className="sr-only"
             />
-            <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3">
               <Upload className="size-7" />
             </div>
             <p className="text-sm font-semibold">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
@@ -299,14 +299,14 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </p>
           </label>
         ) : (
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-border bg-muted/40 p-4">
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-border bg-muted/40 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
                 <FileSpreadsheet className="size-5" />
               </div>
               <div>
                 <p className="text-sm font-semibold">{file.name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground font-mono tabular-nums">
                   {(file.size / 1024).toFixed(1)} KB &bull; ตรวจสอบพบทั้งหมด {parseResult?.totalRows || 0} รายการ
                 </p>
               </div>
@@ -314,7 +314,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             <button
               type="button"
               onClick={handleClearFile}
-              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="inline-flex size-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
               title="ลบไฟล์"
               aria-label="ลบไฟล์ที่เลือก"
             >
@@ -326,12 +326,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
       {/* 3. Validation Summary & Preview Table */}
       {parseResult && (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-muted/20 px-5 py-4 sm:px-6">
             <div>
               <h3 className="text-base font-semibold">ขั้นตอนที่ 3: ตรวจสอบความถูกต้องและยืนยันการนำเข้า</h3>
               <p className="text-sm text-muted-foreground">
-                พร้อมนำเข้า {parseResult.summary.validCount} คน &bull; พบข้อผิดพลาด {parseResult.summary.invalidCount} รายการ
+                พร้อมนำเข้า <span className="font-mono tabular-nums font-medium">{parseResult.summary.validCount}</span> คน &bull; พบข้อผิดพลาด <span className="font-mono tabular-nums font-medium">{parseResult.summary.invalidCount}</span> รายการ
               </p>
             </div>
 
@@ -344,14 +344,14 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 aria-selected={activeTab === "valid"}
                 aria-controls="valid-import-panel"
                 onClick={() => setActiveTab("valid")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "valid"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <CheckCircle2 className="size-3.5 text-emerald-600" />
-                ข้อมูลถูกต้อง ({parseResult.summary.validCount})
+                <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                ข้อมูลถูกต้อง (<span className="font-mono tabular-nums">{parseResult.summary.validCount}</span>)
               </button>
 
               <button
@@ -489,7 +489,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 type="button"
                 onClick={handleClearFile}
                 disabled={isImporting}
-                className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
               >
                 ยกเลิก
               </button>
@@ -498,7 +498,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 type="button"
                 onClick={handleConfirmImport}
                 disabled={isImporting || parseResult.validRows.length === 0}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {isImporting ? (
                   <>
@@ -508,7 +508,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 ) : (
                   <>
                     <UserCheck className="size-4" />
-                    ยืนยันนำเข้า ({parseResult.validRows.length} คน)
+                    ยืนยันนำเข้า (<span className="font-mono tabular-nums">{parseResult.validRows.length}</span> คน)
                   </>
                 )}
               </button>
@@ -519,20 +519,20 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
       {/* 5. Success Banner */}
       {importSuccessCount !== null && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-950 shadow-sm">
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-foreground shadow-xs">
           <div className="flex items-start gap-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="size-6" />
             </div>
             <div className="flex-1">
-              <h4 className="text-base font-semibold">นำเข้าข้อมูลนักเรียนเสร็จสมบูรณ์</h4>
-              <p className="mt-1 text-sm text-emerald-800">
-                เพิ่มนักเรียนจำนวน {importSuccessCount} คน เข้าสู่ห้องเรียน {selectedClassroom?.name} เรียบร้อยแล้ว
+              <h4 className="text-base font-semibold text-emerald-700 dark:text-emerald-300">นำเข้าข้อมูลนักเรียนเสร็จสมบูรณ์</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                เพิ่มนักเรียนจำนวน <span className="font-mono tabular-nums font-semibold text-foreground">{importSuccessCount}</span> คน เข้าสู่ห้องเรียน <span className="font-medium text-foreground">{selectedClassroom?.name}</span> เรียบร้อยแล้ว
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   href="/students"
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 transition"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition"
                 >
                   <Users className="size-4" />
                   ไปยังหน้ารายชื่อนักเรียน
@@ -540,7 +540,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 <button
                   type="button"
                   onClick={handleClearFile}
-                  className="rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100 transition"
+                  className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted transition"
                 >
                   นำเข้าไฟล์อื่นเพิ่มเติม
                 </button>

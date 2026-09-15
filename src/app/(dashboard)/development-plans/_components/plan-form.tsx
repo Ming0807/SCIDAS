@@ -91,7 +91,7 @@ export function PlanForm(props: PlanFormProps) {
 
       <form action={formAction} className="space-y-6">
         {isEdit ? <input type="hidden" name="id" value={editPlan.id} /> : null}
-        <Card>
+        <Card className="rounded-2xl border-border shadow-xs">
           <CardHeader>
             <CardTitle>ข้อมูลหลักของแผน</CardTitle>
             <CardDescription>ข้อมูลนักเรียนและภาคเรียนใช้กำหนดขอบเขตของแผนนี้</CardDescription>

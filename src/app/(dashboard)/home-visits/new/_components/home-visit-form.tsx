@@ -38,19 +38,19 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
   if (visitCreated && selectedStudentId) {
     return (
       <div className="space-y-6">
-        <Card className="shadow-sm border-emerald-200 bg-emerald-50">
+        <Card className="rounded-2xl border-emerald-500/30 bg-emerald-500/10 shadow-xs">
           <CardContent className="p-6 flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-emerald-900">
+              <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
                 บันทึกการเยี่ยมบ้านสำเร็จ
               </p>
-              <p className="text-xs text-emerald-700">{state?.message}</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">{state?.message}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-border">
+        <Card className="rounded-2xl border-border shadow-xs">
           <CardHeader>
             <CardTitle>หลักฐาน</CardTitle>
             <CardDescription>อัปโหลดรูปภาพหรือเอกสาร</CardDescription>
@@ -82,7 +82,7 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Left: Visit Details */}
         <div className="md:col-span-2 space-y-6">
-          <Card className="shadow-sm border-border">
+          <Card className="rounded-2xl border-border shadow-xs">
             <CardHeader>
               <CardTitle>รายละเอียดการเยี่ยมบ้าน</CardTitle>
               <CardDescription>กรอกข้อมูลพื้นฐานเกี่ยวกับการเยี่ยมบ้าน</CardDescription>
@@ -215,13 +215,13 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
         {/* Right: Submit */}
         <div className="space-y-6">
           {selectedStudentId ? (
-            <Card className="shadow-sm border-border bg-muted/30">
+            <Card className="rounded-2xl border-border bg-muted/30 shadow-xs">
               <CardContent className="p-6 text-center text-sm text-muted-foreground">
                 บันทึกการเยี่ยมบ้านก่อนเพื่ออัปโหลดหลักฐาน
               </CardContent>
             </Card>
           ) : (
-            <Card className="shadow-sm border-border bg-muted/30">
+            <Card className="rounded-2xl border-border bg-muted/30 shadow-xs">
               <CardContent className="p-6 text-center text-sm text-muted-foreground">
                 เลือกนักเรียนก่อนเพื่ออัปโหลดหลักฐาน
               </CardContent>
@@ -229,12 +229,12 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
           )}
 
           {/* Submit */}
-          <Card className="shadow-sm border-border bg-primary/5">
+          <Card className="rounded-2xl border-border bg-primary/5 shadow-xs">
             <CardContent className="p-6">
               <Button
                 type="submit"
                 disabled={pending || !selectedStudentId}
-                className="w-full gap-2"
+                className="w-full gap-2 rounded-xl"
                 size="lg"
               >
                 {pending ? (
@@ -251,7 +251,7 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
           {state && !state.ok ? (
             <div
               aria-live="polite"
-              className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
             >
               {state.message}
             </div>
