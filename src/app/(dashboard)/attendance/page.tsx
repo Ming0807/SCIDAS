@@ -1,9 +1,9 @@
-import { PageHeader, PageShell, MetricCard } from "@/components/dashboard"
+import Link from "next/link"
+import { PageHeader, PageShell, MetricCard, StatusBadge, StudentIdentity } from "@/components/dashboard"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
 import {
   getAttendanceDashboard,
-  getAttendanceStatusLabel,
   getClassroomMonthlyAttendance,
   type MonthlyAttendanceSummary,
 } from "@/lib/server/attendance-read-models"
@@ -132,9 +132,9 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="border-b border-border p-5">
-            <h2 className="font-semibold">ภาพรวมการมาเรียน</h2>
+            <h2 className="font-semibold text-foreground">ภาพรวมการมาเรียนทั้งโรงเรียน</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              ยังไม่มีห้องเรียนที่คุณสามารถบันทึกได้
+              รายการบันทึกการมาเรียนประจำวันที่ {dateLabel}
             </p>
           </div>
           {records.length === 0 ? (
@@ -154,5 +154,70 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
 }
 
 function Overview({ records }: { records: Awaited<ReturnType<typeof getAttendanceDashboard>>["records"] }) {
-  return <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b border-border bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-4 py-3">นักเรียน</th><th className="px-4 py-3">ห้อง</th><th className="px-4 py-3">สถานะ</th><th className="px-4 py-3">เวลา</th><th className="px-4 py-3">หมายเหตุ</th></tr></thead><tbody>{records.map((record) => <tr key={record.id} className="border-b border-border last:border-0"><td className="px-4 py-3 font-medium">{record.studentName}</td><td className="px-4 py-3 text-muted-foreground">{record.classroomName ?? "-"}</td><td className="px-4 py-3">{getAttendanceStatusLabel(record.status)}</td><td className="px-4 py-3 text-muted-foreground">{record.checkInTime ?? "-"}</td><td className="px-4 py-3 text-muted-foreground">{record.remark ?? "-"}</td></tr>)}</tbody></table></div>
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[680px] text-left text-sm">
+        <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+          <tr>
+            <th className="px-5 py-3 font-medium">นักเรียน</th>
+            <th className="px-4 py-3 font-medium">ห้องเรียน</th>
+            <th className="px-4 py-3 font-medium">สถานะ</th>
+            <th className="px-4 py-3 font-medium">เวลาเข้า</th>
+            <th className="px-5 py-3 font-medium">หมายเหตุ / ผู้บันทึก</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {records.map((record) => {
+            const statusVariant =
+              record.status === "present"
+                ? "success"
+                : record.status === "absent"
+                  ? "danger"
+                  : record.status === "late"
+                    ? "warning"
+                    : "info"
+
+            return (
+              <tr key={record.id} className="transition-colors hover:bg-muted/30">
+                <td className="px-5 py-3">
+                  <StudentIdentity
+                    name={
+                      <Link
+                        href={`/students/${record.studentId}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {record.studentName}
+                      </Link>
+                    }
+                    studentCode={record.studentCode ?? undefined}
+                    size="sm"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {record.classroomName ?? "-"}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={statusVariant} label={record.statusLabel} />
+                </td>
+                <td className="px-4 py-3 font-mono text-xs tabular-nums text-muted-foreground">
+                  {record.checkInTime ?? "-"}
+                </td>
+                <td className="px-5 py-3 text-xs text-muted-foreground">
+                  {record.remark ? (
+                    <span>{record.remark}</span>
+                  ) : record.recordedByName ? (
+                    <span className="text-muted-foreground/80">โดย {record.recordedByName}</span>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
 }

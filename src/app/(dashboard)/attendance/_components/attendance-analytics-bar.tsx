@@ -84,7 +84,7 @@ export function AttendanceAnalyticsBar({
             <Clock className="size-4 text-primary" />
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
+            <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
               {averageAttendanceRate}%
             </span>
             <span className="text-xs text-muted-foreground">ทั้งห้อง</span>
@@ -111,7 +111,7 @@ export function AttendanceAnalyticsBar({
             <Calendar className="size-4 text-sky-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
+            <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
               {totalSchoolDays}
             </span>
             <span className="text-xs text-muted-foreground">วัน</span>
@@ -131,21 +131,21 @@ export function AttendanceAnalyticsBar({
           }
           className={`rounded-lg border p-3.5 text-left transition-all ${
             criticalRiskCount > 0
-              ? "border-rose-200 bg-rose-50/50 hover:bg-rose-50"
+              ? "border-rose-200 bg-rose-50/50 hover:bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/30"
               : "border-border bg-background"
           } ${selectedRiskFilter === "critical" ? "ring-2 ring-rose-500" : ""}`}
         >
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium text-rose-700">เสี่ยง มส. (&lt; 80%)</span>
-            <ShieldAlert className="size-4 text-rose-600" />
+            <span className="text-xs font-medium text-rose-700 dark:text-rose-400">เสี่ยง มส. (&lt; 80%)</span>
+            <ShieldAlert className="size-4 text-rose-600 dark:text-rose-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-rose-700">
+            <span className="text-2xl font-bold tracking-tight text-rose-700 dark:text-rose-400 tabular-nums">
               {criticalRiskCount}
             </span>
-            <span className="text-xs text-rose-600">คน</span>
+            <span className="text-xs text-rose-600 dark:text-rose-400">คน</span>
           </div>
-          <p className="mt-1 text-xs text-rose-600">
+          <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
             {criticalRiskCount > 0 ? "เวลาเรียนไม่พอสอบ" : "ไม่มีนักเรียนเสี่ยง"}
           </p>
         </button>
@@ -160,21 +160,21 @@ export function AttendanceAnalyticsBar({
           }
           className={`rounded-lg border p-3.5 text-left transition-all ${
             perfectAttendanceCount > 0
-              ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
+              ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30"
               : "border-border bg-background"
           } ${selectedRiskFilter === "normal" ? "ring-2 ring-emerald-500" : ""}`}
         >
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium text-emerald-700">มาเรียน 100%</span>
-            <Award className="size-4 text-emerald-600" />
+            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">มาเรียน 100%</span>
+            <Award className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-emerald-700">
+            <span className="text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums">
               {perfectAttendanceCount}
             </span>
-            <span className="text-xs text-emerald-600">คน</span>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">คน</span>
           </div>
-          <p className="mt-1 text-xs text-emerald-600">ไม่เคยขาด/ลา/สาย</p>
+          <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">ไม่เคยขาด/ลา/สาย</p>
         </button>
       </div>
 

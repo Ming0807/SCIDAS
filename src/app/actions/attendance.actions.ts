@@ -15,6 +15,7 @@ type StudentSummary = {
   first_name: string
   last_name: string
   prefix: string | null
+  student_code: string | null
 }
 
 type ClassroomStudentJoin = {
@@ -76,6 +77,7 @@ export async function getClassroomStudents(classroomId?: string) {
         first_name,
         last_name,
         prefix,
+        student_code,
         school_id
       )
     `)
@@ -92,6 +94,7 @@ export async function getClassroomStudents(classroomId?: string) {
     .map((student) => ({
       id: student.id,
       name: `${student.prefix ?? ""}${student.first_name} ${student.last_name}`,
+      studentCode: student.student_code ?? undefined,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "th"))
 

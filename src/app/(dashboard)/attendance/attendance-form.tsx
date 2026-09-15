@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   AlertTriangle,
@@ -11,6 +12,7 @@ import {
   Search,
 } from "lucide-react"
 import { upsertAttendance, type AttendanceInput } from "@/app/actions/attendance.actions"
+import { StudentIdentity } from "@/components/dashboard"
 import { ActionFeedback } from "@/components/forms/action-feedback"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +28,7 @@ import type {
 import { AttendanceAnalyticsBar } from "./_components/attendance-analytics-bar"
 import { AttendancePrintableDialog } from "./_components/attendance-printable-dialog"
 
-type Student = { id: string; name: string }
+type Student = { id: string; name: string; studentCode?: string }
 type InitialRecord = { student_id: string; status: AttendanceStatus; check_in_time: string | null; remark: string | null }
 type AttendanceFormProps = {
   classroom: { id: string; name: string }
@@ -38,9 +40,81 @@ type AttendanceFormProps = {
 }
 type Entry = { status: AttendanceStatus; checkInTime: string; remark: string }
 
-const statusOptions: { value: AttendanceStatus; label: string }[] = [
-  { value: "present", label: "มาเรียน" }, { value: "absent", label: "ขาดเรียน" }, { value: "late", label: "มาสาย" }, { value: "leave", label: "ลา" }, { value: "sick", label: "ป่วย" },
-]
+function AttendanceStatusButtons({
+  studentName,
+  value,
+  onChange,
+  size = "default",
+}: {
+  studentName: string
+  value: AttendanceStatus
+  onChange: (status: AttendanceStatus) => void
+  size?: "default" | "sm"
+}) {
+  const configs: Array<{
+    status: AttendanceStatus
+    label: string
+    activeClass: string
+    inactiveClass: string
+  }> = [
+    {
+      status: "present",
+      label: "มา",
+      activeClass: "bg-emerald-600 text-white font-semibold shadow-xs",
+      inactiveClass: "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300",
+    },
+    {
+      status: "absent",
+      label: "ขาด",
+      activeClass: "bg-rose-600 text-white font-semibold shadow-xs",
+      inactiveClass: "text-muted-foreground hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300",
+    },
+    {
+      status: "late",
+      label: "สาย",
+      activeClass: "bg-amber-600 text-white font-semibold shadow-xs",
+      inactiveClass: "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-300",
+    },
+    {
+      status: "leave",
+      label: "ลา",
+      activeClass: "bg-sky-600 text-white font-semibold shadow-xs",
+      inactiveClass: "text-muted-foreground hover:bg-sky-500/10 hover:text-sky-700 dark:hover:text-sky-300",
+    },
+    {
+      status: "sick",
+      label: "ป่วย",
+      activeClass: "bg-purple-600 text-white font-semibold shadow-xs",
+      inactiveClass: "text-muted-foreground hover:bg-purple-500/10 hover:text-purple-700 dark:hover:text-purple-300",
+    },
+  ]
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label={`สถานะของ ${studentName}`}
+      className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5"
+    >
+      {configs.map((c) => {
+        const isSelected = value === c.status
+        return (
+          <button
+            key={c.status}
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            onClick={() => onChange(c.status)}
+            className={`rounded-md transition-all ${
+              size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-xs"
+            } ${isSelected ? c.activeClass : c.inactiveClass}`}
+          >
+            {c.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 export function AttendanceForm({
   classroom,
@@ -274,21 +348,21 @@ export function AttendanceForm({
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
             <span className="size-2 rounded-full bg-emerald-500" />
-            มาเรียน: <strong className="font-semibold">{counters.present}</strong>
+            มาเรียน: <strong className="font-semibold tabular-nums">{counters.present}</strong>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
             <span className="size-2 rounded-full bg-rose-500" />
-            ขาดเรียน: <strong className="font-semibold">{counters.absent}</strong>
+            ขาดเรียน: <strong className="font-semibold tabular-nums">{counters.absent}</strong>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
             <span className="size-2 rounded-full bg-amber-500" />
-            มาสาย: <strong className="font-semibold">{counters.late}</strong>
+            มาสาย: <strong className="font-semibold tabular-nums">{counters.late}</strong>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
             <span className="size-2 rounded-full bg-sky-500" />
-            ลา/ป่วย: <strong className="font-semibold">{counters.leave + counters.sick}</strong>
+            ลา/ป่วย: <strong className="font-semibold tabular-nums">{counters.leave + counters.sick}</strong>
           </span>
-          <span className="text-muted-foreground ml-1">
+          <span className="text-muted-foreground ml-1 tabular-nums">
             (รวม {counters.total} คน)
           </span>
         </div>
@@ -329,7 +403,7 @@ export function AttendanceForm({
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
-            ทั้งหมด ({counters.total})
+            ทั้งหมด <span className="tabular-nums">({counters.total})</span>
           </button>
           <button
             type="button"
@@ -340,43 +414,201 @@ export function AttendanceForm({
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
-            เฉพาะขาด/สาย/ลา ({counters.absent + counters.late + counters.leave + counters.sick})
+            เฉพาะขาด/สาย/ลา <span className="tabular-nums">({counters.absent + counters.late + counters.leave + counters.sick})</span>
           </button>
         </div>
       </div>
-    <div className="space-y-3 md:hidden">
-      {filteredStudents.length ? filteredStudents.map((student, index) => {
-        const entry = entries[student.id]
-        return (
-          <article key={student.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">ลำดับ {index + 1}</p>
-                <h3 className="truncate font-medium text-foreground">{student.name}</h3>
-              </div>
-              <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{date}</span>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1.5 text-sm">
-                <span className="block text-xs font-medium text-muted-foreground">สถานะ</span>
-                <select aria-label={`สถานะของ ${student.name}`} value={entry.status} onChange={(event) => updateEntry(student.id, { status: event.target.value as AttendanceStatus })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-                  {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </label>
-              <label className="space-y-1.5 text-sm">
-                <span className="block text-xs font-medium text-muted-foreground">เวลาเข้า</span>
-                <Input aria-label={`เวลาเข้าของ ${student.name}`} type="time" value={entry.checkInTime} onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })} className="h-10" />
-              </label>
-            </div>
-            <label className="mt-3 block space-y-1.5 text-sm">
-              <span className="block text-xs font-medium text-muted-foreground">หมายเหตุ</span>
-              <Input aria-label={`หมายเหตุของ ${student.name}`} placeholder="เพิ่มหมายเหตุ" value={entry.remark} onChange={(event) => updateEntry(student.id, { remark: event.target.value })} className="h-10" />
-            </label>
-          </article>
-        )
-      }) : <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">ไม่พบรายชื่อนักเรียน</div>}
-    </div>
-    <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-border bg-muted/30 text-xs text-muted-foreground"><tr><th className="w-14 px-4 py-3">#</th><th className="px-4 py-3">นักเรียน</th><th className="w-48 px-4 py-3">สถานะ</th><th className="w-36 px-4 py-3">เวลาเข้า</th><th className="w-64 px-4 py-3">หมายเหตุ</th></tr></thead><tbody>{filteredStudents.length ? filteredStudents.map((student, index) => { const entry = entries[student.id]; return <tr key={student.id} className="border-b border-border last:border-0"><td className="px-4 py-3 text-muted-foreground">{index + 1}</td><td className="px-4 py-3 font-medium">{student.name}</td><td className="px-4 py-2"><select aria-label={`สถานะของ ${student.name}`} value={entry.status} onChange={(event) => updateEntry(student.id, { status: event.target.value as AttendanceStatus })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></td><td className="px-4 py-2"><Input aria-label={`เวลาเข้าของ ${student.name}`} type="time" value={entry.checkInTime} onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })} /></td><td className="px-4 py-2"><Input aria-label={`หมายเหตุของ ${student.name}`} placeholder="เพิ่มหมายเหตุ" value={entry.remark} onChange={(event) => updateEntry(student.id, { remark: event.target.value })} /></td></tr> }) : <tr><td colSpan={5} className="h-24 px-4 text-center text-muted-foreground">ไม่พบรายชื่อนักเรียน</td></tr>}</tbody></table></div>
+
+      {/* Mobile Student List View */}
+      <div className="space-y-3 md:hidden">
+        {filteredStudents.length ? (
+          filteredStudents.map((student, index) => {
+            const entry = entries[student.id]
+            const isAbsent = entry.status === "absent"
+            const isLate = entry.status === "late"
+            const isLeaveOrSick = entry.status === "leave" || entry.status === "sick"
+
+            return (
+              <article
+                key={student.id}
+                className={`rounded-xl border p-4 shadow-xs transition-colors ${
+                  isAbsent
+                    ? "border-rose-200 bg-rose-50/30 dark:border-rose-900/40 dark:bg-rose-950/20"
+                    : isLate
+                      ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/40 dark:bg-amber-950/20"
+                      : isLeaveOrSick
+                        ? "border-sky-200 bg-sky-50/25 dark:border-sky-900/40 dark:bg-sky-950/15"
+                        : "border-border bg-card"
+                }`}
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium tabular-nums text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <StudentIdentity
+                      name={
+                        <Link
+                          href={`/students/${student.id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {student.name}
+                        </Link>
+                      }
+                      studentCode={student.studentCode}
+                      size="sm"
+                    />
+                  </div>
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                    {date}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      สถานะการมาเรียน
+                    </span>
+                    <AttendanceStatusButtons
+                      studentName={student.name}
+                      value={entry.status}
+                      onChange={(status) => updateEntry(student.id, { status })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {entry.status === "late" ? (
+                      <label className="space-y-1 text-sm">
+                        <span className="block text-xs font-medium text-muted-foreground">เวลาเข้า</span>
+                        <Input
+                          aria-label={`เวลาเข้าของ ${student.name}`}
+                          type="time"
+                          value={entry.checkInTime}
+                          onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })}
+                          className="h-9 font-mono tabular-nums text-xs"
+                        />
+                      </label>
+                    ) : null}
+                    <label className="space-y-1 text-sm flex-1">
+                      <span className="block text-xs font-medium text-muted-foreground">หมายเหตุ</span>
+                      <Input
+                        aria-label={`หมายเหตุของ ${student.name}`}
+                        placeholder={
+                          entry.status === "sick"
+                            ? "อาการป่วย..."
+                            : entry.status === "leave"
+                              ? "เหตุผลการลา..."
+                              : "ระบุหมายเหตุ (ถ้ามี)"
+                        }
+                        value={entry.remark}
+                        onChange={(event) => updateEntry(student.id, { remark: event.target.value })}
+                        className="h-9 text-xs"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </article>
+            )
+          })
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            ไม่พบรายชื่อนักเรียน
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Attendance Table */}
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-xs md:block">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+            <tr>
+              <th className="w-12 px-4 py-3 font-medium">#</th>
+              <th className="px-4 py-3 font-medium">นักเรียน</th>
+              <th className="w-72 px-4 py-3 font-medium">สถานะ</th>
+              <th className="w-32 px-4 py-3 font-medium">เวลาเข้า</th>
+              <th className="px-4 py-3 font-medium">หมายเหตุ</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filteredStudents.length ? (
+              filteredStudents.map((student, index) => {
+                const entry = entries[student.id]
+                const isAbsent = entry.status === "absent"
+                const isLate = entry.status === "late"
+                const isLeaveOrSick = entry.status === "leave" || entry.status === "sick"
+
+                const rowBg = isAbsent
+                  ? "bg-rose-50/30 hover:bg-rose-50/50 dark:bg-rose-950/20"
+                  : isLate
+                    ? "bg-amber-50/30 hover:bg-amber-50/50 dark:bg-amber-950/20"
+                    : isLeaveOrSick
+                      ? "bg-sky-50/20 hover:bg-sky-50/35 dark:bg-sky-950/15"
+                      : "hover:bg-muted/30"
+
+                return (
+                  <tr key={student.id} className={`transition-colors ${rowBg}`}>
+                    <td className="px-4 py-3 font-mono text-xs tabular-nums text-muted-foreground">
+                      {index + 1}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StudentIdentity
+                        name={
+                          <Link
+                            href={`/students/${student.id}`}
+                            className="font-medium text-foreground hover:underline"
+                          >
+                            {student.name}
+                          </Link>
+                        }
+                        studentCode={student.studentCode}
+                        size="sm"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <AttendanceStatusButtons
+                        studentName={student.name}
+                        value={entry.status}
+                        onChange={(status) => updateEntry(student.id, { status })}
+                        size="sm"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <Input
+                        aria-label={`เวลาเข้าของ ${student.name}`}
+                        type="time"
+                        value={entry.checkInTime}
+                        onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })}
+                        className="h-8 font-mono text-xs tabular-nums"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <Input
+                        aria-label={`หมายเหตุของ ${student.name}`}
+                        placeholder={
+                          entry.status === "sick"
+                            ? "อาการป่วย..."
+                            : entry.status === "leave"
+                              ? "เหตุผลการลา..."
+                              : "เพิ่มหมายเหตุ"
+                        }
+                        value={entry.remark}
+                        onChange={(event) => updateEntry(student.id, { remark: event.target.value })}
+                        className="h-8 text-xs"
+                      />
+                    </td>
+                  </tr>
+                )
+              })
+            ) : (
+              <tr>
+                <td colSpan={5} className="h-24 px-4 text-center text-muted-foreground">
+                  ไม่พบรายชื่อนักเรียน
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {monthlySummary && (
         <AttendancePrintableDialog
