@@ -144,12 +144,19 @@ export function ActionItems({
                     </div>
                   </div>
 
-                  <div className="shrink-0 pt-0.5">
+                  <div className="flex items-center gap-2 shrink-0 pt-0.5">
                     <StatusBadge
                       status={getPriorityTone(item.priority)}
                       label={getPriorityLabel(item.priority)}
                       size="sm"
                     />
+                    <Link
+                      href={item.studentId ? `/students/${item.studentId}` : "/support"}
+                      className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-2xs"
+                    >
+                      <span>จัดการเคส</span>
+                      <ChevronRight className="size-3" />
+                    </Link>
                   </div>
                 </div>
               )

@@ -15,6 +15,75 @@ import { cn } from "@/lib/utils"
 
 type DashboardMetrics = StudentCareDashboard["metrics"]
 
+function ConcentricRadialGauge({
+  normalPct,
+  watchPct,
+  highRiskPct,
+}: {
+  normalPct: number
+  watchPct: number
+  highRiskPct: number
+}) {
+  const cOuter = 2 * Math.PI * 52
+  const cMiddle = 2 * Math.PI * 40
+  const cInner = 2 * Math.PI * 28
+
+  const strokeNormal = Math.max(0, Math.min(cOuter, (normalPct / 100) * cOuter))
+  const strokeWatch = Math.max(0, Math.min(cMiddle, (watchPct / 100) * cMiddle))
+  const strokeHighRisk = Math.max(0, Math.min(cInner, (highRiskPct / 100) * cInner))
+
+  return (
+    <div className="relative flex size-32 shrink-0 items-center justify-center">
+      <svg className="size-full -rotate-90" viewBox="0 0 130 130">
+        {/* Track backgrounds */}
+        <circle cx="65" cy="65" r="52" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
+        <circle cx="65" cy="65" r="40" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
+        <circle cx="65" cy="65" r="28" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
+
+        {/* Active colored rings */}
+        <circle
+          cx="65"
+          cy="65"
+          r="52"
+          fill="none"
+          stroke="#10b981"
+          strokeWidth="6.5"
+          strokeDasharray={`${strokeNormal} ${cOuter}`}
+          strokeLinecap="round"
+          className="transition-all duration-700"
+        />
+        <circle
+          cx="65"
+          cy="65"
+          r="40"
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth="6.5"
+          strokeDasharray={`${strokeWatch} ${cMiddle}`}
+          strokeLinecap="round"
+          className="transition-all duration-700"
+        />
+        <circle
+          cx="65"
+          cy="65"
+          r="28"
+          fill="none"
+          stroke="#f43f5e"
+          strokeWidth="6.5"
+          strokeDasharray={`${strokeHighRisk} ${cInner}`}
+          strokeLinecap="round"
+          className="transition-all duration-700"
+        />
+      </svg>
+      {/* Center Label */}
+      <div className="absolute flex flex-col items-center justify-center text-center">
+        <span className="text-micro font-medium text-muted-foreground leading-none">ระดับ</span>
+        <span className="text-xs font-bold text-foreground leading-tight mt-0.5">นักเรียน</span>
+      </div>
+    </div>
+  )
+}
+
 export function RiskOverviewCard({
   metrics,
   className,
@@ -63,43 +132,63 @@ export function RiskOverviewCard({
           </Link>
         </div>
 
-        {/* Visual Segmented Distribution Bar */}
-        <div className="my-5">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-            <span className="font-medium text-foreground">สัดส่วนประชากรนักเรียน ({total.toLocaleString("th-TH")} คน)</span>
-            <span className="tabular-nums">
-              เสี่ยงรวม <strong className="text-foreground">{formatPercent(watchPct + highRiskPct)}</strong>
-            </span>
-          </div>
-          <div className="h-3.5 w-full overflow-hidden rounded-full bg-muted/60 p-0.5 flex gap-0.5">
-            {normalPct > 0 && (
-              <div
-                style={{ width: `${normalPct}%` }}
-                className="h-full rounded-l-full bg-emerald-500 transition-all duration-500"
-                title={`ปกติ: ${normal} คน (${formatPercent(normalPct)})`}
-              />
-            )}
-            {watchPct > 0 && (
-              <div
-                style={{ width: `${watchPct}%` }}
-                className={cn(
-                  "h-full bg-amber-500 transition-all duration-500",
-                  normalPct === 0 && "rounded-l-full",
-                  highRiskPct === 0 && "rounded-r-full"
-                )}
-                title={`เฝ้าระวัง: ${watch} คน (${formatPercent(watchPct)})`}
-              />
-            )}
-            {highRiskPct > 0 && (
-              <div
-                style={{ width: `${highRiskPct}%` }}
-                className="h-full rounded-r-full bg-rose-600 transition-all duration-500"
-                title={`เสี่ยงสูง: ${highRisk} คน (${formatPercent(highRiskPct)})`}
-              />
-            )}
-            {total === 0 && (
-              <div className="h-full w-full rounded-full bg-muted" />
-            )}
+        {/* Visual Gauge + Category Highlights */}
+        <div className="my-5 flex flex-col sm:flex-row items-center gap-5 p-3 rounded-2xl bg-muted/20 border border-border/50">
+          <ConcentricRadialGauge
+            normalPct={normalPct}
+            watchPct={watchPct}
+            highRiskPct={highRiskPct}
+          />
+          <div className="flex-1 w-full space-y-2.5">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">
+                สัดส่วนประชากรนักเรียน ({total.toLocaleString("th-TH")} คน)
+              </span>
+              <span className="tabular-nums text-xs">
+                เสี่ยงรวม <strong className="text-foreground">{formatPercent(watchPct + highRiskPct)}</strong>
+              </span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/70 p-0.5 flex gap-0.5">
+              {normalPct > 0 && (
+                <div
+                  style={{ width: `${normalPct}%` }}
+                  className="h-full rounded-l-full bg-emerald-500 transition-all duration-500"
+                  title={`ปกติ: ${normal} คน (${formatPercent(normalPct)})`}
+                />
+              )}
+              {watchPct > 0 && (
+                <div
+                  style={{ width: `${watchPct}%` }}
+                  className={cn(
+                    "h-full bg-amber-500 transition-all duration-500",
+                    normalPct === 0 && "rounded-l-full",
+                    highRiskPct === 0 && "rounded-r-full"
+                  )}
+                  title={`เฝ้าระวัง: ${watch} คน (${formatPercent(watchPct)})`}
+                />
+              )}
+              {highRiskPct > 0 && (
+                <div
+                  style={{ width: `${highRiskPct}%` }}
+                  className="h-full rounded-r-full bg-rose-600 transition-all duration-500"
+                  title={`เสี่ยงสูง: ${highRisk} คน (${formatPercent(highRiskPct)})`}
+                />
+              )}
+            </div>
+            <div className="flex items-center justify-between text-micro text-muted-foreground pt-1">
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                ปกติ ({normal})
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-amber-500" />
+                เฝ้าระวัง ({watch})
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-rose-600" />
+                เสี่ยงสูง ({highRisk})
+              </span>
+            </div>
           </div>
         </div>
 

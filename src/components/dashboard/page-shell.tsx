@@ -33,7 +33,7 @@ export function PageShell({
     <main
       data-slot="page-shell"
       className={cn(
-        "mx-auto flex min-h-dvh w-full flex-col bg-background px-4 pb-24 sm:px-6 lg:px-8 lg:pb-8",
+        "mx-auto flex min-h-dvh w-full flex-col px-4 pb-24 sm:px-6 lg:px-8 lg:pb-8",
         sizeClassNames[size],
         spacingClassNames[spacing],
         className

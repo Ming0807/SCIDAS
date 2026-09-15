@@ -61,11 +61,22 @@ const columns: Array<DataTableColumn<StudentWorklistItem>> = [
     id: "classroom",
     header: "ชั้น/ห้อง",
     className: "min-w-24",
-    cell: (student) => (
-      <span className="inline-flex items-center rounded-md bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground">
-        {formatGradeLevel(student.gradeLevel)}/{formatClassroomSection(student.section)}
-      </span>
-    ),
+    cell: (student) => {
+      const grade = Number(student.gradeLevel) || 0
+      const isSenior = grade >= 4
+      return (
+        <span
+          className={cn(
+            "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold",
+            isSenior
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+              : "bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20"
+          )}
+        >
+          {formatGradeLevel(student.gradeLevel)}/{formatClassroomSection(student.section)}
+        </span>
+      )
+    },
   },
   {
     id: "risk",
@@ -89,20 +100,32 @@ const columns: Array<DataTableColumn<StudentWorklistItem>> = [
     id: "attendance",
     header: "มาเรียน 30 วัน",
     align: "center",
-    className: "min-w-28 tabular-nums text-xs",
+    className: "min-w-32 tabular-nums text-xs",
     cell: (student) => {
       const rate = student.attendanceRate30d
       if (rate == null) return <span className="text-muted-foreground">-</span>
       const isLow = rate < 80
+      const clamped = Math.max(0, Math.min(100, rate))
       return (
-        <span
-          className={cn(
-            "font-semibold",
-            isLow ? "text-destructive" : "text-foreground",
-          )}
-        >
-          {formatPercent(rate)}
-        </span>
+        <div className="flex flex-col items-center gap-1">
+          <span
+            className={cn(
+              "font-semibold text-xs",
+              isLow ? "text-destructive" : "text-foreground",
+            )}
+          >
+            {formatPercent(rate)}
+          </span>
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+            <div
+              style={{ width: `${clamped}%` }}
+              className={cn(
+                "h-full rounded-full transition-all",
+                isLow ? "bg-rose-500" : rate >= 90 ? "bg-emerald-500" : "bg-teal-500"
+              )}
+            />
+          </div>
+        </div>
       )
     },
   },
