@@ -337,6 +337,7 @@ export function ReferralDetailView({
 
       {/* Printable Thai OBEC Referral Slip (Official Layout for Print) */}
       <div className="hidden print:block font-serif bg-white text-black p-8 max-w-3xl mx-auto space-y-6 text-sm leading-relaxed">
+        <style dangerouslySetInnerHTML={{ __html: "@media print { @page { size: A4 portrait; margin: 12mm; } }" }} />
         <div className="text-center space-y-1 border-b-2 border-black pb-4">
           <h2 className="text-lg font-bold">แบบบันทึกการส่งต่อนักเรียน (Referral Form)</h2>
           <p className="text-sm">ระบบการดูแลช่วยเหลือนักเรียน สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน (สพฐ.)</p>
@@ -386,7 +387,7 @@ export function ReferralDetailView({
         ) : null}
 
         {/* Signatures */}
-        <div className="grid grid-cols-3 gap-4 pt-8 text-center text-xs">
+        <div className="grid grid-cols-3 gap-4 pt-8 text-center text-xs break-inside-avoid">
           <div className="space-y-6">
             <div className="border-b border-black w-32 mx-auto pt-8"></div>
             <div>
@@ -416,7 +417,7 @@ export function ReferralDetailView({
         </div>
 
         {/* Tear-off acknowledgment section */}
-        <div className="border-t-2 border-dashed border-black pt-4 mt-6 text-xs space-y-2">
+        <div className="border-t-2 border-dashed border-black pt-4 mt-6 text-xs space-y-2 break-inside-avoid">
           <p className="font-bold text-center underline">แบบตอบรับการส่งต่อนักเรียน (สำหรับหน่วยงานปลายทางส่งคืนสถานศึกษา)</p>
           <p>เรียน ผู้อำนวยการสถานศึกษา</p>
           <p>

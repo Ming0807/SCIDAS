@@ -55,6 +55,7 @@ export function StudentPrintableCard({
 
       {/* Printable Sheet (Displayed ONLY when printing) */}
       <div className="hidden print:block font-serif bg-white text-black p-6 max-w-4xl mx-auto space-y-4 text-xs leading-relaxed">
+        <style dangerouslySetInnerHTML={{ __html: "@media print { @page { size: A4 portrait; margin: 12mm; } }" }} />
         {/* Header */}
         <div className="text-center space-y-0.5 border-b-2 border-black pb-3">
           <h1 className="text-base font-bold">ระเบียนข้อมูลนักเรียนและสรุปการดูแลช่วยเหลือรายบุคคล (ปพ.8 ย่อ)</h1>
@@ -133,7 +134,7 @@ export function StudentPrintableCard({
         </div>
 
         {/* Signatures */}
-        <div className="grid grid-cols-3 gap-4 pt-6 text-center text-xs">
+        <div className="grid grid-cols-3 gap-4 pt-6 text-center text-xs break-inside-avoid">
           <div className="space-y-6">
             <div className="border-b border-black w-32 mx-auto pt-8"></div>
             <div>
