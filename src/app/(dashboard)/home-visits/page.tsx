@@ -201,7 +201,14 @@ function HomeVisitCard({ visit }: { visit: HomeVisitRecord }) {
       <div className="space-y-4 p-4">
         <StudentIdentity
           avatarUrl={visit.studentPhotoUrl ?? ""}
-          name={visit.studentName}
+          name={
+            <Link
+              href={`/students/${visit.studentId}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              {visit.studentName}
+            </Link>
+          }
           studentCode={visit.studentCode}
           description={`ผู้เยี่ยม ${visit.visitorName}`}
           size="sm"
@@ -210,43 +217,43 @@ function HomeVisitCard({ visit }: { visit: HomeVisitRecord }) {
         <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar aria-hidden="true" className="size-4" />
-            <span>{formatThaiShortDate(visit.visitDate)}</span>
+            <span className="font-mono text-xs tabular-nums">{formatThaiShortDate(visit.visitDate)}</span>
             {visit.visitTime ? (
               <>
                 <Clock aria-hidden="true" className="ml-2 size-4" />
-                <span>{visit.visitTime}</span>
+                <span className="font-mono text-xs tabular-nums">{visit.visitTime}</span>
               </>
             ) : null}
           </div>
           <div className="flex items-start gap-2">
             <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span className="line-clamp-2">{visit.address ?? "ไม่ระบุที่อยู่"}</span>
+            <span className="line-clamp-2 text-xs">{visit.address ?? "ไม่ระบุที่อยู่"}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-muted/30 p-3 text-xs">
+        <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-muted/30 p-2.5 text-xs">
           <div>
-            <p className="text-muted-foreground">สภาพบ้าน</p>
-            <p className="mt-1 font-medium text-foreground">
+            <p className="text-muted-foreground text-micro">สภาพบ้าน</p>
+            <p className="mt-0.5 font-medium text-foreground">
               {getHousingLabel(visit.housingCondition)}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">ครอบครัว</p>
-            <p className="mt-1 font-medium text-foreground">
+            <p className="text-muted-foreground text-micro">ครอบครัว</p>
+            <p className={cn("mt-0.5 font-medium", visit.hasFamilyProblem ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-foreground")}>
               {visit.hasFamilyProblem ? "มีประเด็น" : "ปกติ"}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">เดินทาง</p>
-            <p className="mt-1 font-medium text-foreground">
+            <p className="text-muted-foreground text-micro">การเดินทาง</p>
+            <p className={cn("mt-0.5 font-medium", visit.travelDifficulty ? "text-amber-600 dark:text-amber-400 font-semibold" : "text-foreground")}>
               {visit.travelDifficulty ? "ลำบาก" : "ปกติ"}
             </p>
           </div>
         </div>
 
         {visit.overallAssessment ? (
-          <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
+          <p className="line-clamp-3 text-xs leading-5 text-muted-foreground">
             {visit.overallAssessment}
           </p>
         ) : null}
@@ -305,38 +312,49 @@ export default async function HomeVisitsPage({ searchParams }: HomeVisitsPagePro
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="เยี่ยมบ้านทั้งหมด"
-          value={summary.total.toLocaleString("th-TH")}
-          description={`ล่าสุด ${formatThaiShortDate(summary.latestVisitDate)}`}
-          icon={Home}
-          status="primary"
-          size="compact"
-        />
-        <MetricCard
-          title="ต้องติดตาม"
-          value={summary.followUpNeeded.toLocaleString("th-TH")}
-          description="มีรายละเอียด follow-up"
-          icon={Calendar}
-          status="watch"
-          size="compact"
-        />
-        <MetricCard
-          title="เร่งดูแล"
-          value={summary.urgent.toLocaleString("th-TH")}
-          description={`ครอบครัว ${summary.familyProblems.toLocaleString("th-TH")} ราย`}
-          icon={AlertTriangle}
-          status="high-risk"
-          size="compact"
-        />
-        <MetricCard
-          title="เดินทางลำบาก"
-          value={summary.travelDifficulty.toLocaleString("th-TH")}
-          description="อาจต้องประสานการช่วยเหลือ"
-          icon={Route}
-          status="info"
-          size="compact"
-        />
+        <Link href="/home-visits" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="เยี่ยมบ้านทั้งหมด"
+            value={summary.total.toLocaleString("th-TH")}
+            description={`ล่าสุด ${formatThaiShortDate(summary.latestVisitDate)}`}
+            icon={Home}
+            status="primary"
+            size="compact"
+            className={filters.status === "" ? "ring-2 ring-primary" : undefined}
+          />
+        </Link>
+        <Link href="/home-visits?status=follow_up" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="ต้องติดตาม"
+            value={summary.followUpNeeded.toLocaleString("th-TH")}
+            description="มีรายละเอียด follow-up"
+            icon={Calendar}
+            status="watch"
+            size="compact"
+            className={filters.status === "follow_up" ? "ring-2 ring-amber-500" : undefined}
+          />
+        </Link>
+        <Link href="/home-visits?status=urgent" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="เร่งดูแล"
+            value={summary.urgent.toLocaleString("th-TH")}
+            description={`ครอบครัว ${summary.familyProblems.toLocaleString("th-TH")} ราย`}
+            icon={AlertTriangle}
+            status="high-risk"
+            size="compact"
+            className={filters.status === "urgent" ? "ring-2 ring-rose-500" : undefined}
+          />
+        </Link>
+        <div className="block text-left">
+          <MetricCard
+            title="เดินทางลำบาก"
+            value={summary.travelDifficulty.toLocaleString("th-TH")}
+            description="อาจต้องประสานการช่วยเหลือ"
+            icon={Route}
+            status="info"
+            size="compact"
+          />
+        </div>
       </div>
 
       {loadError ? (

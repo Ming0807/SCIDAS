@@ -148,7 +148,12 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">รายละเอียดการเยี่ยมบ้าน</p>
           <h1 className="mt-1 break-words text-2xl font-semibold tracking-tight text-foreground">
-            {record.studentName}
+            <Link
+              href={`/students/${record.studentId}`}
+              className="hover:underline hover:text-primary transition-colors"
+            >
+              {record.studentName}
+            </Link>
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">รหัสนักเรียน {record.studentCode}</p>
         </div>
