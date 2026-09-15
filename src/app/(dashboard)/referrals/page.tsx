@@ -110,38 +110,50 @@ export default async function ReferralsPage({
 
       {/* Metrics Row */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="เคสส่งต่อทั้งหมด"
-          value={`${total} เคส`}
-          description="ในภาคเรียนปัจจุบัน"
-          icon={Share2}
-          status="normal"
-          size="compact"
-        />
-        <MetricCard
-          title="ส่งต่อภายในสถานศึกษา"
-          value={`${internalCount} เคส`}
-          description="เช่น งานแนะแนว ฝ่ายปกครอง"
-          icon={Building2}
-          status="info"
-          size="compact"
-        />
-        <MetricCard
-          title="ส่งต่อหน่วยงานภายนอก"
-          value={`${externalCount} เคส`}
-          description="เช่น โรงพยาบาล รพ.สต. พมจ."
-          icon={Hospital}
-          status="watch"
-          size="compact"
-        />
-        <MetricCard
-          title="ตอบรับ/ส่งต่อสำเร็จ"
-          value={`${completedCount} เคส`}
-          description={total > 0 ? `${Math.round((completedCount / total) * 100)}% ของเคสทั้งหมด` : "ยังไม่มีเคสส่งต่อ"}
-          icon={CheckCircle2}
-          status="normal"
-          size="compact"
-        />
+        <Link href="/referrals" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="เคสส่งต่อทั้งหมด"
+            value={`${total} เคส`}
+            description="ในภาคเรียนปัจจุบัน"
+            icon={Share2}
+            status="normal"
+            size="compact"
+            className={selectedType === "all" && selectedStatus === "all" ? "ring-2 ring-primary" : undefined}
+          />
+        </Link>
+        <Link href="/referrals?type=internal" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="ส่งต่อภายในสถานศึกษา"
+            value={`${internalCount} เคส`}
+            description="เช่น งานแนะแนว ฝ่ายปกครอง"
+            icon={Building2}
+            status="info"
+            size="compact"
+            className={selectedType === "internal" ? "ring-2 ring-blue-500" : undefined}
+          />
+        </Link>
+        <Link href="/referrals?type=external" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="ส่งต่อหน่วยงานภายนอก"
+            value={`${externalCount} เคส`}
+            description="เช่น โรงพยาบาล รพ.สต. พมจ."
+            icon={Hospital}
+            status="watch"
+            size="compact"
+            className={selectedType === "external" ? "ring-2 ring-purple-500" : undefined}
+          />
+        </Link>
+        <Link href="/referrals?status=completed" className="block text-left transition-transform hover:-translate-y-0.5">
+          <MetricCard
+            title="ตอบรับ/ส่งต่อสำเร็จ"
+            value={`${completedCount} เคส`}
+            description={total > 0 ? `${Math.round((completedCount / total) * 100)}% ของเคสทั้งหมด` : "ยังไม่มีเคสส่งต่อ"}
+            icon={CheckCircle2}
+            status="normal"
+            size="compact"
+            className={selectedStatus === "completed" ? "ring-2 ring-emerald-500" : undefined}
+          />
+        </Link>
       </div>
 
       {selectedStudentId ? (
@@ -282,7 +294,12 @@ export default async function ReferralsPage({
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground pt-1">
                       <span className="flex items-center gap-1 font-medium text-foreground">
                         <Users className="size-3 text-muted-foreground" />
-                        {item.student_name}
+                        <Link
+                          href={`/students/${item.student_id}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {item.student_name}
+                        </Link>
                         {item.classroom_name ? ` (${item.classroom_name})` : ""}
                       </span>
 
@@ -291,7 +308,7 @@ export default async function ReferralsPage({
                         ปลายทาง: <strong className="text-foreground">{item.target_agency}</strong>
                       </span>
 
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 font-mono tabular-nums">
                         <Clock className="size-3" />
                         บันทึกเมื่อ: {formatThaiShortDate(item.created_at)}
                       </span>
