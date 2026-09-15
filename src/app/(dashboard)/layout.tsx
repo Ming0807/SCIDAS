@@ -42,7 +42,7 @@ export default async function DashboardLayout({
       userId={contextUserId}
     >
       <div className="flex h-screen overflow-hidden bg-slate-50/70 dark:bg-zinc-950">
-        <div className="hidden md:block">
+        <div className="hidden md:block h-full shrink-0">
           <Sidebar role={role} schoolName={profile?.schoolName ?? null} />
         </div>
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

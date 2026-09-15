@@ -41,28 +41,28 @@ export function Sidebar({
   }
 
   return (
-    <aside className="w-[280px] h-full flex-shrink-0 bg-brand-deep-blue text-slate-300 flex flex-col">
+    <aside className="w-[280px] h-full flex-shrink-0 bg-brand-deep-blue text-slate-300 flex flex-col select-none">
       {/* Brand */}
-      <div className="py-6 px-6 border-b border-white/5 flex flex-row items-center gap-4">
-        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 border-[3px] border-amber-400">
-          <BookMarked className="h-6 w-6 text-brand-deep-blue" />
+      <div className="py-4.5 px-5 border-b border-white/5 flex flex-row items-center gap-3.5 shrink-0">
+        <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center shrink-0 border-[2.5px] border-amber-400 shadow-xs">
+          <BookMarked className="h-5.5 w-5.5 text-brand-deep-blue" />
         </div>
-        <div className="flex flex-col">
-          <span className="font-bold text-sm text-white leading-tight">
+        <div className="flex flex-col min-w-0">
+          <span className="font-bold text-sm text-white leading-tight truncate">
             ระบบวิเคราะห์และดูแล
           </span>
-          <span className="font-bold text-sm text-white leading-tight">
+          <span className="font-bold text-sm text-white leading-tight truncate">
             ช่วยเหลือนักเรียนรายบุคคล
           </span>
-          <span className="text-micro text-slate-300 mt-1">
+          <span className="text-micro text-slate-300 mt-0.5 truncate">
             สำหรับโรงเรียนขนาดเล็ก
           </span>
         </div>
       </div>
 
       {/* Nav Links */}
-      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-        <nav className="space-y-1">
+      <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-3 px-3 space-y-0.5">
+        <nav className="space-y-0.5">
           {currentNavItems.map((item) => {
             const Icon = item.icon
             const isActive = isNavigationItemActive(pathname, item.href)
@@ -73,19 +73,19 @@ export function Sidebar({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium group",
+                  "flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-150 text-xs sm:text-sm font-medium group",
                   isActive
-                    ? "bg-brand-bright-blue text-white shadow-sm"
+                    ? "bg-brand-bright-blue text-white shadow-xs font-semibold"
                     : "text-slate-300 hover:bg-white/10 hover:text-white",
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-5 w-5 transition-transform duration-200",
-                    isActive ? "scale-110" : "group-hover:scale-110",
+                    "h-4.5 w-4.5 shrink-0 transition-transform duration-150",
+                    isActive ? "scale-105" : "group-hover:scale-105",
                   )}
                 />
-                {item.label}
+                <span className="truncate">{item.label}</span>
               </Link>
             )
           })}
@@ -93,7 +93,7 @@ export function Sidebar({
       </div>
 
       {/* School footer & quick logout */}
-      <div className="p-4 border-t border-white/5 flex flex-col gap-2">
+      <div className="p-3.5 border-t border-white/5 flex flex-col gap-2 shrink-0">
         <div className="flex flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="w-8 h-8 rounded-md bg-white/10 flex items-center justify-center shrink-0">

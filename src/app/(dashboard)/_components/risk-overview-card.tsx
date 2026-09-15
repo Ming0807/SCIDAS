@@ -1,6 +1,7 @@
 import Link from "next/link"
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowRight,
   Brain,
   CheckCircle2,
@@ -267,6 +268,45 @@ export function RiskOverviewCard({
                 </span>
               </div>
             </div>
+          </Link>
+        </div>
+
+        {/* Early Warning & Care Action Directive - fills vertical space with tactical domain insight */}
+        <div className="mt-3 rounded-xl border border-border/60 bg-muted/25 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={cn(
+                "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                highRisk > 0
+                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+              )}
+            >
+              {highRisk > 0 ? (
+                <AlertTriangle className="size-4" />
+              ) : (
+                <ShieldCheck className="size-4" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground truncate leading-tight">
+                {highRisk > 0
+                  ? `พบสัญญาณความเสี่ยงสูง ${highRisk.toLocaleString("th-TH")} คน ที่ต้องได้รับการดูแลเร่งด่วน`
+                  : "ไม่พบสัญญาณความเสี่ยงสูงที่ต้องเปิดเคสเร่งด่วน"}
+              </p>
+              <p className="text-micro text-muted-foreground truncate mt-0.5 leading-tight">
+                {highRisk > 0
+                  ? "ประสานครูประจำชั้นเพื่อเปิดเคสช่วยเหลือรายบุคคลตามแนวทาง สพฐ."
+                  : "นักเรียนทุกคนอยู่ในเกณฑ์ปลอดภัยและได้รับการติดตามตามแผนงานปกติ"}
+              </p>
+            </div>
+          </div>
+          <Link
+            href={highRisk > 0 ? "/risk-analysis" : "/students"}
+            className="inline-flex items-center gap-1 font-semibold text-primary hover:underline text-xs shrink-0 self-end sm:self-center"
+          >
+            <span>{highRisk > 0 ? "วิเคราะห์รายคน" : "ดูทะเบียนนักเรียน"}</span>
+            <ChevronRight className="size-3" />
           </Link>
         </div>
       </div>
