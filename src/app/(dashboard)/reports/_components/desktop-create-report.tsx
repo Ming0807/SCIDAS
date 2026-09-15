@@ -147,8 +147,8 @@ export function DesktopCreateReport() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
-      <h3 className="text-sm font-semibold text-slate-800 mb-4">สร้างรายงานใหม่</h3>
+    <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 border border-border shadow-xs mb-6">
+      <h3 className="text-sm font-semibold text-foreground mb-4">สร้างรายงานใหม่</h3>
 
       {/* Report type cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
@@ -162,8 +162,8 @@ export function DesktopCreateReport() {
               className={cn(
                 "rounded-xl p-3 border flex flex-col items-center justify-center text-center cursor-pointer transition-colors",
                 isSelected
-                  ? opt.selectedBorder
-                  : "bg-slate-50/80 border-slate-100 hover:bg-indigo-50 hover:border-indigo-100",
+                  ? "border-primary/50 bg-primary/5 dark:bg-primary/10 shadow-xs"
+                  : "bg-muted/30 border-border hover:bg-muted/50 hover:border-primary/30",
               )}
             >
               <input
@@ -178,16 +178,16 @@ export function DesktopCreateReport() {
                 className={cn(
                   "w-10 h-10 rounded-full border flex items-center justify-center mb-2 transition-colors",
                   isSelected
-                    ? `${opt.iconBg} ${opt.iconBorder}`
-                    : "bg-white border-slate-100",
+                    ? "bg-primary/15 border-primary/30"
+                    : "bg-card border-border",
                 )}
               >
-                <Icon className={cn("w-4 h-4", opt.iconColor)} />
+                <Icon className={cn("w-4 h-4", isSelected ? "text-primary" : "text-muted-foreground")} />
               </div>
               <span
                 className={cn(
                   "text-xs font-semibold transition-colors",
-                  isSelected ? "text-slate-800" : "text-slate-700",
+                  isSelected ? "text-primary" : "text-foreground",
                 )}
               >
                 {opt.label}
@@ -205,7 +205,7 @@ export function DesktopCreateReport() {
 
       {/* Format Selector (PDF vs XLSX) */}
       <div className="mb-4">
-        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
           รูปแบบไฟล์เอกสาร
         </label>
         <div className="flex items-center gap-3">
@@ -213,8 +213,8 @@ export function DesktopCreateReport() {
             className={cn(
               "flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-colors",
               selectedFormat === "pdf"
-                ? "bg-red-50 border-red-200 text-red-700"
-                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-300 shadow-xs"
+                : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/50"
             )}
           >
             <input
@@ -225,7 +225,7 @@ export function DesktopCreateReport() {
               onChange={() => setSelectedFormat("pdf")}
               className="sr-only"
             />
-            <FileText className="w-4 h-4 text-red-600" />
+            <FileText className="w-4 h-4 text-rose-600 dark:text-rose-400" />
             <span>PDF Document (.pdf)</span>
           </label>
 
@@ -233,8 +233,8 @@ export function DesktopCreateReport() {
             className={cn(
               "flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-colors",
               selectedFormat === "xlsx"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300 shadow-xs"
+                : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/50"
             )}
           >
             <input
@@ -245,7 +245,7 @@ export function DesktopCreateReport() {
               onChange={() => setSelectedFormat("xlsx")}
               className="sr-only"
             />
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Excel Spreadsheet (.xlsx)</span>
           </label>
         </div>
@@ -253,7 +253,7 @@ export function DesktopCreateReport() {
 
       {/* Title input */}
       <div className="mb-4">
-        <label htmlFor="report-title" className="block text-xs font-medium text-slate-600 mb-1.5">
+        <label htmlFor="report-title" className="block text-xs font-medium text-muted-foreground mb-1.5">
           ชื่อรายงาน
         </label>
         <Input

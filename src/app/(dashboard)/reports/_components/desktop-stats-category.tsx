@@ -22,7 +22,7 @@ export function DesktopStatsCategory({
 
   if (factors.length === 0 || totalCount === 0) {
     return (
-      <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+      <div className="bg-card rounded-2xl p-5 border border-border shadow-xs h-full flex flex-col">
         <h3 className="text-sm font-semibold text-foreground mb-4">สถิติจำแนกตามด้านความเสี่ยง</h3>
         <div className="flex-1 flex items-center justify-center p-4">
           <EmptyState
@@ -58,7 +58,7 @@ export function DesktopStatsCategory({
   })
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+    <div className="bg-card rounded-2xl p-5 border border-border shadow-xs h-full flex flex-col">
       <h3 className="text-sm font-semibold text-foreground mb-4">สถิติจำแนกตามด้านความเสี่ยง</h3>
       
       <div className="flex flex-col xl:flex-row gap-6 items-center justify-center flex-1">
@@ -82,7 +82,7 @@ export function DesktopStatsCategory({
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
             <span className="text-micro font-medium text-muted-foreground">พบความเสี่ยง</span>
-            <span className="text-xs font-bold text-foreground leading-tight">รวม {totalStudents} คน</span>
+            <span className="text-xs font-bold text-foreground leading-tight font-mono tabular-nums">รวม {totalStudents} คน</span>
           </div>
         </div>
 
@@ -100,8 +100,8 @@ export function DesktopStatsCategory({
                       </span>
                     </div>
                   </td>
-                  <td className="py-2 text-right font-bold text-foreground shrink-0">{s.count}</td>
-                  <td className="py-2 pl-2 text-right text-muted-foreground shrink-0">{s.percent.toFixed(1)}%</td>
+                  <td className="py-2 text-right font-bold font-mono tabular-nums text-foreground shrink-0">{s.count}</td>
+                  <td className="py-2 pl-2 text-right font-mono tabular-nums text-muted-foreground shrink-0">{s.percent.toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>

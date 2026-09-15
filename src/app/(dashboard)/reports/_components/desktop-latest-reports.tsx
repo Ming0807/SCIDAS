@@ -59,11 +59,11 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
   }
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+    <div className="bg-card rounded-2xl p-5 border border-border shadow-xs h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-foreground">รายงานล่าสุด</h3>
         {jobs.length > 0 && (
-          <span className="text-xs text-muted-foreground">{jobs.length} รายการ</span>
+          <span className="text-xs text-muted-foreground font-mono tabular-nums">{jobs.length} รายการ</span>
         )}
       </div>
 
@@ -89,7 +89,7 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
               {jobs.map((job) => {
                 const badge = statusLabels[job.status] ?? {
                   label: job.status,
-                  class: "bg-slate-100 text-slate-700 border-slate-200",
+                  class: "bg-muted text-muted-foreground border-border",
                 }
 
                 return (
@@ -105,7 +105,7 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                     <td className="px-5 py-3.5 text-xs text-muted-foreground whitespace-nowrap">
                       {job.reportType}
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground whitespace-nowrap font-mono tabular-nums">
                       {formatThaiShortDate(job.requestedAt)}
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">

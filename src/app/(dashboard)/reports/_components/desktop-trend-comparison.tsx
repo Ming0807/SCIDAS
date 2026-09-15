@@ -11,7 +11,7 @@ export function DesktopTrendComparison({
 
   if (points.length === 0) {
     return (
-      <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+      <div className="bg-card rounded-2xl p-5 border border-border shadow-xs h-full flex flex-col">
         <h3 className="text-sm font-semibold text-foreground mb-4">แนวโน้มเปรียบเทียบ</h3>
         <div className="flex-1 flex items-center justify-center p-4">
           <EmptyState
@@ -42,10 +42,10 @@ export function DesktopTrendComparison({
   const normalPath = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(1)},${c.yNormal.toFixed(1)}`).join(" ")
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+    <div className="bg-card rounded-2xl p-5 border border-border shadow-xs h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-foreground">แนวโน้มเปรียบเทียบ</h3>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground font-mono tabular-nums">
           {points.length} ช่วงเวลา
         </span>
       </div>
@@ -66,7 +66,7 @@ export function DesktopTrendComparison({
       </div>
 
       <div className="flex-1 relative min-h-[160px] pb-6 ml-6 mt-1">
-        <div className="absolute -left-7 top-0 bottom-6 flex flex-col justify-between py-0 w-6 items-end pr-1 text-micro text-muted-foreground">
+        <div className="absolute -left-7 top-0 bottom-6 flex flex-col justify-between py-0 w-6 items-end pr-1 text-micro font-mono tabular-nums text-muted-foreground">
           <span>{maxVal}</span>
           <span>{Math.round(maxVal / 2)}</span>
           <span>0</span>

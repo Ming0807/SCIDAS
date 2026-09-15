@@ -12,7 +12,7 @@ export function MobileTrendChart({
   if (points.length === 0) {
     return (
       <div className="px-4 mb-6">
-        <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
+        <div className="bg-card rounded-2xl p-5 border border-border shadow-xs">
           <h3 className="text-sm font-semibold text-foreground mb-3">แนวโน้มย้อนหลัง</h3>
           <EmptyState
             title="ยังไม่มีข้อมูลแนวโน้มย้อนหลัง"
@@ -39,10 +39,10 @@ export function MobileTrendChart({
 
   return (
     <div className="px-4 mb-6">
-      <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
+      <div className="bg-card rounded-2xl p-5 border border-border shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">แนวโน้มย้อนหลัง</h3>
-          <span className="text-xs text-muted-foreground">{points.length} ช่วงเวลา</span>
+          <span className="text-xs text-muted-foreground font-mono tabular-nums">{points.length} ช่วงเวลา</span>
         </div>
 
         <div className="flex items-center gap-4 mb-4 flex-wrap">
@@ -61,7 +61,7 @@ export function MobileTrendChart({
         </div>
 
         <div className="relative h-[150px] pb-6 ml-6">
-          <div className="absolute -left-6 top-0 bottom-6 flex flex-col justify-between py-0 w-5 items-end pr-1 text-micro text-muted-foreground">
+          <div className="absolute -left-6 top-0 bottom-6 flex flex-col justify-between py-0 w-5 items-end pr-1 text-micro font-mono tabular-nums text-muted-foreground">
             <span>{maxVal}</span>
             <span>{Math.round(maxVal / 2)}</span>
             <span>0</span>

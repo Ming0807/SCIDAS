@@ -21,7 +21,7 @@ export function DesktopOverviewStats({
   const m = metrics
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm mb-6">
+    <div className="bg-card rounded-2xl p-5 border border-border shadow-xs mb-6">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-sm font-semibold text-foreground">
           ภาพรวมข้อมูลนักเรียน
