@@ -39,6 +39,30 @@ function isPastDue(dueDateStr?: string | null) {
   return d.getTime() < today.getTime()
 }
 
+function formatActionTitle(title: string) {
+  if (title === "Review high-risk student") return "ทบทวนแผนช่วยเหลือนักเรียนกลุ่มเสี่ยงสูง"
+  if (title === "Review watch student") return "ทบทวนการติดตามนักเรียนกลุ่มเฝ้าระวัง"
+  if (title.startsWith("Review ")) {
+    return title.replace("Review ", "ทบทวน ").replace("student", "นักเรียน")
+  }
+  return title
+}
+
+function formatActionCategory(category: string) {
+  const map: Record<string, string> = {
+    risk_follow_up: "ติดตามความเสี่ยง",
+    home_visit: "เยี่ยมบ้าน",
+    support: "การช่วยเหลือ",
+    support_case: "เคสช่วยเหลือ",
+    academic: "วิชาการ",
+    attendance: "เวลาเรียน",
+    behavior: "พฤติกรรม",
+    sdq: "คัดกรอง SDQ",
+    counseling: "ให้คำปรึกษา",
+  }
+  return map[category] ?? category
+}
+
 export function ActionItems({
   items,
   className,
@@ -49,13 +73,13 @@ export function ActionItems({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-xs transition-all",
+        "flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all",
         className,
       )}
     >
       <div>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/60">
           <div>
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -65,7 +89,7 @@ export function ActionItems({
                 ศูนย์ปฏิบัติการดูแล (Care Action Queue)
               </h3>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {items.length > 0
                 ? `มีงานค้างดำเนินการ ${items.length.toLocaleString("th-TH")} รายการที่ต้องติดตาม`
                 : "ไม่มีงานค้างติดตามในขณะนี้"}
@@ -81,16 +105,16 @@ export function ActionItems({
         </div>
 
         {/* Content List */}
-        <div className="mt-4 space-y-2.5">
+        <div className="mt-3 space-y-2">
           {items.length > 0 ? (
             items.slice(0, 5).map((item) => {
               const pastDue = isPastDue(item.dueDate)
               return (
                 <div
                   key={item.id}
-                  className="group relative flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/60 p-3.5 transition-all hover:bg-muted/40 hover:border-border hover:shadow-2xs"
+                  className="group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/50 p-2.5 sm:p-3 transition-all hover:bg-muted/40 hover:border-primary/20 hover:shadow-2xs"
                 >
-                  <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <span
                         className={cn(
@@ -104,38 +128,38 @@ export function ActionItems({
                                 : "bg-emerald-500",
                         )}
                       />
-                      <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                        {item.title}
+                      <p className="truncate text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
+                        {formatActionTitle(item.title)}
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-1.5 text-micro sm:text-xs text-muted-foreground">
                       {item.studentId ? (
                         <Link
                           href={`/students/${item.studentId}`}
-                          className="font-medium text-foreground hover:text-primary hover:underline truncate max-w-[140px]"
+                          className="font-medium text-foreground hover:text-primary hover:underline truncate max-w-[130px]"
                         >
                           {item.studentName ?? "นักเรียน"}
                         </Link>
                       ) : (
-                        <span className="font-medium text-foreground truncate max-w-[140px]">
+                        <span className="font-medium text-foreground truncate max-w-[130px]">
                           {item.studentName ?? "ทั่วไป"}
                         </span>
                       )}
-                      <span>•</span>
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-micro font-medium text-muted-foreground">
-                        {item.category}
+                      <span className="text-muted-foreground/40">•</span>
+                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-micro font-medium text-muted-foreground">
+                        {formatActionCategory(item.category)}
                       </span>
                       {item.dueDate && (
                         <>
-                          <span>•</span>
+                          <span className="text-muted-foreground/40">•</span>
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1 text-micro font-medium",
+                              "inline-flex items-center gap-1 text-micro font-medium whitespace-nowrap",
                               pastDue ? "text-destructive font-semibold" : "text-muted-foreground",
                             )}
                           >
-                            <CalendarClock className="size-3" />
+                            <CalendarClock className="size-3 shrink-0" />
                             {pastDue ? "เลยกำหนด " : "ครบกำหนด "}
                             {formatThaiShortDate(item.dueDate)}
                           </span>
@@ -144,7 +168,7 @@ export function ActionItems({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <StatusBadge
                       status={getPriorityTone(item.priority)}
                       label={getPriorityLabel(item.priority)}
@@ -152,9 +176,9 @@ export function ActionItems({
                     />
                     <Link
                       href={item.studentId ? `/students/${item.studentId}` : "/support"}
-                      className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-2xs"
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-2xs"
                     >
-                      <span>จัดการเคส</span>
+                      <span className="hidden sm:inline">จัดการ</span>
                       <ChevronRight className="size-3" />
                     </Link>
                   </div>

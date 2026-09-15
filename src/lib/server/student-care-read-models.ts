@@ -559,14 +559,56 @@ export async function getStudentActionItems(
   return (data ?? []).map((row) => mapActionRow(row, studentsById))
 }
 
+async function fetchActionItemStudents(
+  client: Awaited<ReturnType<typeof createClient>>,
+  studentIds: string[],
+): Promise<Map<string, StudentWorklistItem>> {
+  const studentsById = new Map<string, StudentWorklistItem>()
+  if (studentIds.length === 0) return studentsById
+
+  const { data: studentsData } = await client
+    .from("students")
+    .select("id, student_code, prefix, first_name, last_name, photo_url")
+    .in("id", studentIds)
+
+  for (const s of studentsData ?? []) {
+    const fullName = `${s.prefix ?? ""}${s.first_name ?? ""} ${s.last_name ?? ""}`.trim()
+    studentsById.set(s.id, {
+      studentId: s.id,
+      studentCode: s.student_code ?? "-",
+      fullName: fullName || s.student_code || "ไม่ระบุชื่อนักเรียน",
+      photoUrl: s.photo_url,
+      classroomName: null,
+      gradeLevel: null,
+      section: null,
+      studentNumber: null,
+      primaryGuardianName: null,
+      primaryGuardianPhone: null,
+      riskLevel: "normal",
+      riskScore: 0,
+      riskTrend: null,
+      openSupportCount: 0,
+      activePlanCount: 0,
+      openActionCount: 0,
+      activeFlagCount: 0,
+      nextDueDate: null,
+      absentDays30d: 0,
+      lateDays30d: 0,
+      recordedDays30d: 0,
+      attendanceRate30d: null,
+      priorityScore: 0,
+    })
+  }
+
+  return studentsById
+}
+
 export async function getActionQueue(
   options: ActionQueueOptions = {},
 ): Promise<ActionQueueItem[]> {
   const context = await getCurrentUserContext()
   const client = await createClient()
   const statuses = options.statuses ?? ["todo", "in_progress"]
-  const studentRows = await getStudentWorklist({ limit: 500 })
-  const studentsById = new Map(studentRows.map((student) => [student.studentId, student]))
 
   let query = client
     .from("action_items")
@@ -595,7 +637,13 @@ export async function getActionQueue(
     throw new Error(error.message)
   }
 
-  return (data ?? []).map((row) => mapActionRow(row, studentsById))
+  const rows = data ?? []
+  const studentIds = Array.from(
+    new Set(rows.map((row) => row.student_id).filter((id): id is string => Boolean(id))),
+  )
+  const studentsById = await fetchActionItemStudents(client, studentIds)
+
+  return rows.map((row) => mapActionRow(row, studentsById))
 }
 
 export async function getStudentTimeline(
@@ -843,13 +891,64 @@ export async function createStudentNote(input: {
 
 export async function getStudentCareDashboard(): Promise<StudentCareDashboard> {
   const context = await getCurrentUserContext()
-  const [currentSemesterId, worklist, actionQueue] = await Promise.all([
+  const client = await createClient()
+
+  const [
+    currentSemesterId,
+    priorityStudents,
+    actionQueue,
+    studentsCountRes,
+    highRiskCountRes,
+    watchCountRes,
+    supportCountRes,
+    plansCountRes,
+    actionItemsCountRes,
+  ] = await Promise.all([
     getCurrentSemesterId(context.schoolId),
-    getStudentWorklist({ limit: 500 }),
-    getActionQueue({ limit: 12 }),
+    getStudentWorklist({ limit: 8 }),
+    getActionQueue({ limit: 10 }),
+    client
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .eq("status", "active"),
+    client
+      .from("v_student_latest_risk")
+      .select("student_id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .eq("risk_level", "high"),
+    client
+      .from("v_student_latest_risk")
+      .select("student_id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .eq("risk_level", "watch"),
+    client
+      .from("support_records")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .in("status", ["pending", "in_progress"]),
+    client
+      .from("development_plans")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .eq("status", "active"),
+    client
+      .from("action_items")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .in("status", ["todo", "in_progress"]),
   ])
 
-  const attendanceRates = worklist
+  let totalStudents = studentsCountRes.count ?? 0
+  if (totalStudents === 0) {
+    const { count } = await client
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+    totalStudents = count ?? priorityStudents.length
+  }
+
+  const attendanceRates = priorityStudents
     .map((student) => student.attendanceRate30d)
     .filter((rate): rate is number => rate !== null)
 
@@ -864,18 +963,15 @@ export async function getStudentCareDashboard(): Promise<StudentCareDashboard> {
   return {
     currentSemesterId,
     metrics: {
-      totalStudents: worklist.length,
-      highRiskStudents: worklist.filter((student) => student.riskLevel === "high").length,
-      watchStudents: worklist.filter((student) => student.riskLevel === "watch").length,
-      openSupportCases: worklist.reduce(
-        (total, student) => total + student.openSupportCount,
-        0,
-      ),
-      activePlans: worklist.reduce((total, student) => total + student.activePlanCount, 0),
-      openActionItems: worklist.reduce((total, student) => total + student.openActionCount, 0),
+      totalStudents,
+      highRiskStudents: highRiskCountRes.count ?? 0,
+      watchStudents: watchCountRes.count ?? 0,
+      openSupportCases: supportCountRes.count ?? 0,
+      activePlans: plansCountRes.count ?? 0,
+      openActionItems: actionItemsCountRes.count ?? 0,
       averageAttendance30d,
     },
-    priorityStudents: worklist.slice(0, 8),
+    priorityStudents,
     actionQueue,
   }
 }
@@ -907,8 +1003,9 @@ export async function updateActionItemStatus(
     throw new Error(error.message)
   }
 
-  const students = await getStudentWorklist({ limit: 500 })
-  const studentsById = new Map(students.map((student) => [student.studentId, student]))
+  const studentsById = data.student_id
+    ? await fetchActionItemStudents(client, [data.student_id])
+    : new Map<string, StudentWorklistItem>()
 
   return mapActionRow(data, studentsById)
 }

@@ -33,7 +33,7 @@ function ConcentricRadialGauge({
   const strokeHighRisk = Math.max(0, Math.min(cInner, (highRiskPct / 100) * cInner))
 
   return (
-    <div className="relative flex size-32 shrink-0 items-center justify-center">
+    <div className="relative flex size-28 shrink-0 items-center justify-center">
       <svg className="size-full -rotate-90" viewBox="0 0 130 130">
         {/* Track backgrounds */}
         <circle cx="65" cy="65" r="52" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
@@ -103,13 +103,13 @@ export function RiskOverviewCard({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-xs transition-all",
+        "flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all",
         className,
       )}
     >
       {/* Header */}
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/60">
           <div>
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -119,7 +119,7 @@ export function RiskOverviewCard({
                 ภาพรวมระดับความเสี่ยงนักเรียน
               </h3>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5">
               ระบบคัดกรอง 5 ด้าน สพฐ. และการแจ้งเตือนสัญญาณเสี่ยงล่วงหน้า (Early Warning System)
             </p>
           </div>
@@ -133,13 +133,13 @@ export function RiskOverviewCard({
         </div>
 
         {/* Visual Gauge + Category Highlights */}
-        <div className="my-5 flex flex-col sm:flex-row items-center gap-5 p-3 rounded-2xl bg-muted/20 border border-border/50">
+        <div className="my-3.5 flex flex-col sm:flex-row items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/50">
           <ConcentricRadialGauge
             normalPct={normalPct}
             watchPct={watchPct}
             highRiskPct={highRiskPct}
           />
-          <div className="flex-1 w-full space-y-2.5">
+          <div className="flex-1 w-full space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">
                 สัดส่วนประชากรนักเรียน ({total.toLocaleString("th-TH")} คน)
@@ -175,7 +175,7 @@ export function RiskOverviewCard({
                 />
               )}
             </div>
-            <div className="flex items-center justify-between text-micro text-muted-foreground pt-1">
+            <div className="flex items-center justify-between text-micro text-muted-foreground pt-0.5">
               <span className="flex items-center gap-1">
                 <span className="size-2 rounded-full bg-emerald-500" />
                 ปกติ ({normal})
@@ -193,11 +193,11 @@ export function RiskOverviewCard({
         </div>
 
         {/* 3 Detailed Category Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {/* Normal */}
           <Link
             href="/students"
-            className="group flex flex-col justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-4 transition-all hover:bg-emerald-500/[0.08] hover:border-emerald-500/40"
+            className="group flex flex-col justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-3 transition-all hover:bg-emerald-500/[0.08] hover:border-emerald-500/40"
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
@@ -206,11 +206,11 @@ export function RiskOverviewCard({
               </span>
               <ShieldCheck className="size-4 text-emerald-600/70" />
             </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold tabular-nums text-foreground tracking-tight">
+            <div className="mt-2">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground tracking-tight">
                 {normal.toLocaleString("th-TH")}
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-0.5">
                 <span>{formatPercent(normalPct)}</span>
                 <span className="text-micro text-emerald-600 group-hover:underline flex items-center">
                   ดูรายชื่อ <ChevronRight className="size-3" />
@@ -222,7 +222,7 @@ export function RiskOverviewCard({
           {/* Watch */}
           <Link
             href="/risk-analysis"
-            className="group flex flex-col justify-between rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4 transition-all hover:bg-amber-500/[0.08] hover:border-amber-500/40"
+            className="group flex flex-col justify-between rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-3 transition-all hover:bg-amber-500/[0.08] hover:border-amber-500/40"
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
@@ -231,11 +231,11 @@ export function RiskOverviewCard({
               </span>
               <AlertCircle className="size-4 text-amber-600/70" />
             </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold tabular-nums text-foreground tracking-tight">
+            <div className="mt-2">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground tracking-tight">
                 {watch.toLocaleString("th-TH")}
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-0.5">
                 <span>{formatPercent(watchPct)}</span>
                 <span className="text-micro text-amber-600 group-hover:underline flex items-center">
                   คัดกรอง <ChevronRight className="size-3" />
@@ -247,7 +247,7 @@ export function RiskOverviewCard({
           {/* High Risk */}
           <Link
             href="/risk-analysis"
-            className="group flex flex-col justify-between rounded-xl border border-rose-500/20 bg-rose-500/[0.03] p-4 transition-all hover:bg-rose-500/[0.08] hover:border-rose-500/40"
+            className="group flex flex-col justify-between rounded-xl border border-rose-500/20 bg-rose-500/[0.03] p-3 transition-all hover:bg-rose-500/[0.08] hover:border-rose-500/40"
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
@@ -256,11 +256,11 @@ export function RiskOverviewCard({
               </span>
               <ShieldAlert className="size-4 text-rose-600/70" />
             </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold tabular-nums text-destructive tracking-tight">
+            <div className="mt-2">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-destructive tracking-tight">
                 {highRisk.toLocaleString("th-TH")}
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-0.5">
                 <span>{formatPercent(highRiskPct)}</span>
                 <span className="text-micro text-rose-600 group-hover:underline flex items-center font-medium">
                   ช่วยเหลือด่วน <ChevronRight className="size-3" />
@@ -272,7 +272,7 @@ export function RiskOverviewCard({
       </div>
 
       {/* Summary Footer Advice */}
-      <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-3.5 pt-2.5 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <CheckCircle2 className="size-3.5 text-emerald-500" />
           <span>ข้อมูลอัปเดตอัตโนมัติตามเวลาเรียนและพฤติกรรมล่าสุด</span>
