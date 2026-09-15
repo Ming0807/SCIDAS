@@ -14,41 +14,16 @@ function getPercent(count: number, total: number) {
   return formatPercent((count / total) * 100)
 }
 
-function MiniSparkline({
-  data,
-  color,
-}: {
-  data: number[]
-  color: string
-}) {
-  const min = Math.min(...data)
-  const max = Math.max(...data)
-  const range = max - min || 1
-  const points = data
-    .map((val, idx) => {
-      const x = (idx / (data.length - 1)) * 90 + 5
-      const y = 26 - ((val - min) / range) * 20
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    })
-    .join(" ")
 
-  return (
-    <svg viewBox="0 0 100 32" className="w-20 h-7 overflow-visible">
-      <polyline
-        fill="none"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={points}
-      />
-    </svg>
-  )
-}
 
 export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
   const attendanceRate = metrics.averageAttendance30d ?? 0
   const isAttendanceGood = attendanceRate >= 80
+  const total = metrics.totalStudents || 0
+  const highRisk = metrics.highRiskStudents || 0
+  const watch = metrics.watchStudents || 0
+  const normal = Math.max(0, total - highRisk - watch)
+  const normalPct = total > 0 ? (normal / total) * 100 : 0
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -58,7 +33,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
         className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
       >
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-muted-foreground">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             นักเรียนทั้งหมดในระบบ
           </span>
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
@@ -71,14 +46,11 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
             <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono tabular-nums">
               {metrics.totalStudents.toLocaleString("th-TH")}
             </span>
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-              Primary
-            </span>
+            <span className="text-xs text-muted-foreground font-medium">คน</span>
           </div>
-          <MiniSparkline
-            data={[45, 47, 48, 49, 48, 50, 51]}
-            color="var(--color-primary, #2563eb)"
-          />
+          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+            ปกติ {normalPct.toFixed(0)}%
+          </span>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
@@ -96,7 +68,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
                 : "bg-destructive/10 text-destructive"
             )}
           >
-            {isAttendanceGood ? "ปกติ" : "เฝ้าระวัง มส."}
+            {isAttendanceGood ? "ผ่านเกณฑ์ มส." : "เฝ้าระวัง มส."}
           </span>
         </div>
       </Link>
@@ -107,8 +79,8 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
         className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20"
       >
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-muted-foreground">
-            กลุ่มเฝ้าระวัง (Watch)
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            กลุ่มเฝ้าระวังพฤติกรรม/การเรียน
           </span>
           <span className="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-colors group-hover:bg-amber-500/20">
             <Users className="size-4.5" />
@@ -120,26 +92,22 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
             <span className="text-3xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 font-mono tabular-nums">
               {metrics.watchStudents.toLocaleString("th-TH")}
             </span>
-            <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
-              Watch
-            </span>
+            <span className="text-xs text-muted-foreground font-medium">คน</span>
           </div>
-          <MiniSparkline
-            data={[12, 14, 13, 16, 15, 14, 15]}
-            color="#f59e0b"
-          />
+          <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+            {getPercent(metrics.watchStudents, metrics.totalStudents)}
+          </span>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
           <span>
-            สัดส่วน:{" "}
+            สัดส่วนของทั้งโรงเรียน:{" "}
             <strong className="font-semibold text-foreground tabular-nums">
-              {getPercent(metrics.watchStudents, metrics.totalStudents)}
-            </strong>{" "}
-            ของทั้งโรงเรียน
+              {metrics.watchStudents} / {metrics.totalStudents}
+            </strong>
           </span>
           <span className="inline-flex items-center rounded-md bg-amber-500/10 px-1.5 py-0.5 text-micro font-medium text-amber-700 dark:text-amber-400">
-            เฝ้าระวัง
+            เฝ้าระวังใกล้ชิด
           </span>
         </div>
       </Link>
@@ -150,8 +118,8 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
         className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20"
       >
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-muted-foreground">
-            กลุ่มเสี่ยงสูง (Critical/High)
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            กลุ่มเสี่ยงสูง (เร่งด่วน)
           </span>
           <span className="flex size-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors group-hover:bg-rose-500/20">
             {metrics.highRiskStudents > 0 ? (
@@ -167,19 +135,21 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
             <span className="text-3xl font-extrabold tracking-tight text-rose-600 dark:text-rose-400 font-mono tabular-nums">
               {metrics.highRiskStudents.toLocaleString("th-TH")}
             </span>
-            <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
-              High risk
-            </span>
+            <span className="text-xs text-muted-foreground font-medium">คน</span>
           </div>
-          <MiniSparkline
-            data={[8, 7, 9, 8, 7, 6, 6]}
-            color="#f43f5e"
-          />
+          <span className={cn(
+            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+            metrics.highRiskStudents > 0
+              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+          )}>
+            {metrics.highRiskStudents > 0 ? "ต้องช่วยเหลือด่วน" : "ไม่พบเคสวิกฤต"}
+          </span>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
           <span>
-            สัดส่วน:{" "}
+            สัดส่วนความเสี่ยง:{" "}
             <strong className="font-semibold text-foreground tabular-nums">
               {getPercent(metrics.highRiskStudents, metrics.totalStudents)}
             </strong>
@@ -192,7 +162,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
                 : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
             )}
           >
-            {metrics.highRiskStudents > 0 ? "ต้องช่วยเหลือ" : "ไม่มีเคสเสี่ยง"}
+            {metrics.highRiskStudents > 0 ? `${metrics.highRiskStudents} เคสเร่งด่วน` : "ปกติเรียบร้อย"}
           </span>
         </div>
       </Link>
@@ -203,7 +173,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
         className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-sky-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20"
       >
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-muted-foreground">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             ภารกิจดูแลที่เปิดอยู่
           </span>
           <span className="flex size-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 transition-colors group-hover:bg-sky-500/20">
@@ -220,19 +190,16 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
             <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono tabular-nums">
               {(metrics.openSupportCases + metrics.openActionItems).toLocaleString("th-TH")}
             </span>
-            <span className="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
-              Info
-            </span>
+            <span className="text-xs text-muted-foreground font-medium">รายการ</span>
           </div>
-          <MiniSparkline
-            data={[28, 30, 31, 29, 32, 33, 33]}
-            color="#0ea5e9"
-          />
+          <span className="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
+            รอดำเนินการ
+          </span>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
           <span>
-            แผนพัฒนาติดตาม:{" "}
+            แผน IDP ที่กำลังติดตาม:{" "}
             <strong className="font-semibold text-foreground tabular-nums">
               {metrics.activePlans.toLocaleString("th-TH")}
             </strong>{" "}

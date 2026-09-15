@@ -16,70 +16,83 @@ import { cn } from "@/lib/utils"
 
 type DashboardMetrics = StudentCareDashboard["metrics"]
 
-function ConcentricRadialGauge({
+function RiskPopulationDonut({
   normalPct,
   watchPct,
   highRiskPct,
+  total,
 }: {
   normalPct: number
   watchPct: number
   highRiskPct: number
+  total: number
 }) {
-  const cOuter = 2 * Math.PI * 52
-  const cMiddle = 2 * Math.PI * 40
-  const cInner = 2 * Math.PI * 28
+  const r = 40
+  const c = 2 * Math.PI * r // ~251.327
+  const strokeNormal = Math.max(0, (normalPct / 100) * c)
+  const strokeWatch = Math.max(0, (watchPct / 100) * c)
+  const strokeHighRisk = Math.max(0, (highRiskPct / 100) * c)
 
-  const strokeNormal = Math.max(0, Math.min(cOuter, (normalPct / 100) * cOuter))
-  const strokeWatch = Math.max(0, Math.min(cMiddle, (watchPct / 100) * cMiddle))
-  const strokeHighRisk = Math.max(0, Math.min(cInner, (highRiskPct / 100) * cInner))
+  const offsetWatch = -strokeNormal
+  const offsetHighRisk = -(strokeNormal + strokeWatch)
 
   return (
-    <div className="relative flex size-28 shrink-0 items-center justify-center">
-      <svg className="size-full -rotate-90" viewBox="0 0 130 130">
-        {/* Track backgrounds */}
-        <circle cx="65" cy="65" r="52" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
-        <circle cx="65" cy="65" r="40" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
-        <circle cx="65" cy="65" r="28" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-muted/30" />
+    <div className="relative flex size-24 shrink-0 items-center justify-center">
+      <svg className="size-full -rotate-90" viewBox="0 0 100 100">
+        {/* Background track */}
+        <circle cx="50" cy="50" r={r} fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/30" />
 
-        {/* Active colored rings */}
-        <circle
-          cx="65"
-          cy="65"
-          r="52"
-          fill="none"
-          stroke="#10b981"
-          strokeWidth="6.5"
-          strokeDasharray={`${strokeNormal} ${cOuter}`}
-          strokeLinecap="round"
-          className="transition-all duration-700"
-        />
-        <circle
-          cx="65"
-          cy="65"
-          r="40"
-          fill="none"
-          stroke="#f59e0b"
-          strokeWidth="6.5"
-          strokeDasharray={`${strokeWatch} ${cMiddle}`}
-          strokeLinecap="round"
-          className="transition-all duration-700"
-        />
-        <circle
-          cx="65"
-          cy="65"
-          r="28"
-          fill="none"
-          stroke="#f43f5e"
-          strokeWidth="6.5"
-          strokeDasharray={`${strokeHighRisk} ${cInner}`}
-          strokeLinecap="round"
-          className="transition-all duration-700"
-        />
+        {/* Normal segment */}
+        {normalPct > 0 && (
+          <circle
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="8"
+            strokeDasharray={`${strokeNormal} ${c}`}
+            strokeDashoffset={0}
+            className="transition-all duration-500"
+          />
+        )}
+
+        {/* Watch segment */}
+        {watchPct > 0 && (
+          <circle
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth="8"
+            strokeDasharray={`${strokeWatch} ${c}`}
+            strokeDashoffset={offsetWatch}
+            className="transition-all duration-500"
+          />
+        )}
+
+        {/* High risk segment */}
+        {highRiskPct > 0 && (
+          <circle
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke="#f43f5e"
+            strokeWidth="8"
+            strokeDasharray={`${strokeHighRisk} ${c}`}
+            strokeDashoffset={offsetHighRisk}
+            className="transition-all duration-500"
+          />
+        )}
       </svg>
       {/* Center Label */}
       <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-micro font-medium text-muted-foreground leading-none">ระดับ</span>
-        <span className="text-xs font-bold text-foreground leading-tight mt-0.5">นักเรียน</span>
+        <span className="text-xs font-black text-foreground font-mono tabular-nums leading-none">
+          {total > 0 ? `${normalPct.toFixed(0)}%` : "0%"}
+        </span>
+        <span className="text-xs text-muted-foreground font-medium mt-0.5 leading-none">ปกติ</span>
       </div>
     </div>
   )
@@ -135,10 +148,11 @@ export function RiskOverviewCard({
 
         {/* Visual Gauge + Category Highlights */}
         <div className="my-3.5 flex flex-col sm:flex-row items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/50">
-          <ConcentricRadialGauge
+          <RiskPopulationDonut
             normalPct={normalPct}
             watchPct={watchPct}
             highRiskPct={highRiskPct}
+            total={total}
           />
           <div className="flex-1 w-full space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">

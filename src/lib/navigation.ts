@@ -180,6 +180,43 @@ export function getSidebarNavigation(role?: string | null) {
   );
 }
 
+export type NavigationSection = {
+  key: string;
+  title: string;
+  items: NavigationItem[];
+};
+
+export function getGroupedSidebarNavigation(role?: string | null): NavigationSection[] {
+  const items = getSidebarNavigation(role);
+  if (role === "student") {
+    return [
+      { key: "student-main", title: "เมนูหลัก", items },
+    ];
+  }
+
+  const coreKeys = ["overview", "attendance", "behavior"];
+  const careKeys = [
+    "students",
+    "screening",
+    "support",
+    "home-visits",
+    "development-plans",
+    "referrals",
+    "risk-analysis",
+  ];
+  const adminKeys = ["academics", "reports", "settings"];
+
+  const coreItems = items.filter((i) => coreKeys.includes(i.key));
+  const careItems = items.filter((i) => careKeys.includes(i.key));
+  const adminItems = items.filter((i) => adminKeys.includes(i.key));
+
+  return [
+    { key: "core", title: "งานประจำวัน", items: coreItems },
+    { key: "care", title: "ระบบดูแลช่วยเหลือ", items: careItems },
+    { key: "admin", title: "ผลการเรียนและบริหาร", items: adminItems },
+  ].filter((section) => section.items.length > 0);
+}
+
 export function getMobilePrimaryNavigation() {
   return mobilePrimaryNavItems;
 }

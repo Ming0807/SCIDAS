@@ -7,6 +7,7 @@ import {
   getNavigationLabel,
   getNavItemsForRole,
   getSidebarNavigation,
+  getGroupedSidebarNavigation,
   isActivePath,
 } from "./navigation"
 
@@ -98,6 +99,20 @@ describe("Navigation Configuration and Helpers", () => {
         isCurrent: true,
         isLast: true,
       })
+    })
+
+    it("groups sidebar navigation into 3 clear enterprise sections for staff", () => {
+      const sections = getGroupedSidebarNavigation("admin")
+      expect(sections.map((s) => s.key)).toEqual(["core", "care", "admin"])
+      expect(sections[0].title).toBe("งานประจำวัน")
+      expect(sections[1].title).toBe("ระบบดูแลช่วยเหลือ")
+      expect(sections[2].title).toBe("ผลการเรียนและบริหาร")
+    })
+
+    it("returns single student-main group for student role", () => {
+      const sections = getGroupedSidebarNavigation("student")
+      expect(sections).toHaveLength(1)
+      expect(sections[0].key).toBe("student-main")
     })
   })
 })

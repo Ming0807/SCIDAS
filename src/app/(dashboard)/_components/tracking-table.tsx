@@ -1,3 +1,6 @@
+"use client"
+
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowRight, ChevronRight, UserCheck } from "lucide-react"
 
@@ -170,16 +173,46 @@ export function TrackingTable({
   students: StudentWorklistItem[]
   className?: string
 }) {
+  const [activeTab, setActiveTab] = useState<"all" | "high" | "absent" | "actions">("all")
+
+  const highCount = useMemo(() => students.filter((s) => s.riskLevel === "high").length, [students])
+  const absentCount = useMemo(() => students.filter((s) => s.absentDays30d > 0).length, [students])
+  const actionCount = useMemo(
+    () => students.filter((s) => s.openActionCount > 0 || s.openSupportCount > 0).length,
+    [students],
+  )
+
+  const filteredStudents = useMemo(() => {
+    if (activeTab === "high") {
+      return students.filter((s) => s.riskLevel === "high")
+    }
+    if (activeTab === "absent") {
+      return students.filter((s) => s.absentDays30d > 0)
+    }
+    if (activeTab === "actions") {
+      return students.filter((s) => s.openActionCount > 0 || s.openSupportCount > 0)
+    }
+    return students
+  }, [students, activeTab])
+
   return (
     <DataTable
       className={cn("rounded-2xl border border-border shadow-xs", className)}
       columns={columns}
-      data={students}
+      data={filteredStudents}
       emptyState={
         <EmptyState
           icon={UserCheck}
           size="compact"
-          title="ยังไม่มีนักเรียนที่ต้องติดตามเร่งด่วน"
+          title={
+            activeTab === "all"
+              ? "ยังไม่มีนักเรียนที่ต้องติดตามเร่งด่วน"
+              : activeTab === "high"
+              ? "ไม่พบนักเรียนกลุ่มเสี่ยงสูงในลำดับแรก"
+              : activeTab === "absent"
+              ? "ไม่พบนักเรียนที่มีประวัติขาดเรียนใน 30 วันล่าสุด"
+              : "ไม่พบงานดูแลที่คั่งค้างสำหรับนักเรียนกลุ่มนี้"
+          }
           description="เมื่อตรวจพบความเสี่ยง ระบบจะเรียงรายชื่อที่ควรดูแลก่อนให้ตรงนี้"
         />
       }
@@ -190,22 +223,76 @@ export function TrackingTable({
           : "hover:bg-muted/40"
       }
       toolbar={
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-1">
-          <div className="min-w-0 space-y-0.5">
-            <h3 className="text-base font-bold text-foreground tracking-tight">
-              นักเรียนที่ควรติดตามเป็นลำดับแรก (Priority Worklist)
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              จัดลำดับตามระดับความเสี่ยง สถิติการขาดเรียน และงานติดตามคั่งค้าง
-            </p>
+        <div className="flex flex-col gap-3 py-1">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-0.5">
+              <h3 className="text-base font-bold text-foreground tracking-tight">
+                นักเรียนที่ควรติดตามเป็นลำดับแรก (Priority Worklist)
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                จัดลำดับตามระดับความเสี่ยง สถิติการขาดเรียน และงานติดตามคั่งค้าง
+              </p>
+            </div>
+            <Link
+              href="/students?status=high"
+              className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors group"
+            >
+              <span>ดูรายชื่อนักเรียนทั้งหมด</span>
+              <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
-          <Link
-            href="/students?status=high"
-            className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors group"
-          >
-            <span>ดูรายชื่อนักเรียนทั้งหมด</span>
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+
+          {/* Quick Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/50">
+            <button
+              type="button"
+              onClick={() => setActiveTab("all")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                activeTab === "all"
+                  ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              ทั้งหมด ({students.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("high")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                activeTab === "high"
+                  ? "bg-rose-600 text-white font-semibold shadow-2xs"
+                  : "bg-muted/50 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+              )}
+            >
+              กลุ่มเสี่ยงสูง ({highCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("absent")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                activeTab === "absent"
+                  ? "bg-amber-600 text-white font-semibold shadow-2xs"
+                  : "bg-muted/50 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
+              )}
+            >
+              ขาดเรียน ({absentCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("actions")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                activeTab === "actions"
+                  ? "bg-sky-600 text-white font-semibold shadow-2xs"
+                  : "bg-muted/50 text-muted-foreground hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-400"
+              )}
+            >
+              มีงานค้าง ({actionCount})
+            </button>
+          </div>
         </div>
       }
     />
