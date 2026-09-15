@@ -60,25 +60,25 @@ export function DesktopNotificationSidebar({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="relative overflow-hidden rounded-xl bg-primary p-5 text-primary-foreground shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl bg-primary p-5 text-primary-foreground shadow-xs">
         <h3 className="relative z-10 mb-1 text-sm font-semibold">ภาพรวมการแจ้งเตือน</h3>
         <div className="relative z-10 mb-1 flex items-baseline gap-2">
-          <span className="text-3xl font-bold leading-none">{counts.unread}</span>
+          <span className="text-3xl font-bold leading-none font-mono tabular-nums">{counts.unread}</span>
           <span className="text-xs opacity-80">รายการที่ยังไม่ได้อ่าน</span>
         </div>
-        <div className="relative z-10 text-xs opacity-80">ทั้งหมด {counts.total} รายการ</div>
+        <div className="relative z-10 text-xs opacity-80 font-mono tabular-nums">ทั้งหมด {counts.total} รายการ</div>
 
         <div className="absolute -bottom-4 -right-4 rotate-12 opacity-20">
           <Bell className="h-32 w-32" fill="currentColor" />
         </div>
         {counts.unread > 0 ? (
-          <div className="absolute right-4 top-4 z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary bg-red-500 text-xs font-bold">
+          <div className="absolute right-4 top-4 z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary bg-rose-500 text-xs font-bold font-mono tabular-nums">
             {counts.unread}
           </div>
         ) : null}
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-xs">
         <div className="flex flex-col gap-1">
           <Link
             href={buildNotificationHref({ status: currentStatus })}
@@ -92,7 +92,7 @@ export function DesktopNotificationSidebar({
               <LayoutGrid className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">ทั้งหมด</span>
             </div>
-            <span className="text-xs font-bold text-muted-foreground">{counts.total}</span>
+            <span className="text-xs font-bold font-mono tabular-nums text-muted-foreground">{counts.total}</span>
           </Link>
 
           <Link
@@ -103,7 +103,7 @@ export function DesktopNotificationSidebar({
               <MessageSquare className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold">ยังไม่ได้อ่าน</span>
             </div>
-            <span className="text-xs font-bold text-primary">{counts.unread}</span>
+            <span className="text-xs font-bold font-mono tabular-nums text-primary">{counts.unread}</span>
           </Link>
 
           {typeRows.map(([type, count]) => {

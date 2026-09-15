@@ -90,14 +90,14 @@ function NotificationRow({ item }: { item: NotificationItem }) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="text-sm font-semibold text-slate-800 truncate">{item.title}</h4>
-          <span className="text-xs text-slate-500 shrink-0 ml-2">
+          <h4 className="text-sm font-semibold text-foreground truncate">{item.title}</h4>
+          <span className="text-xs text-muted-foreground font-mono tabular-nums shrink-0 ml-2">
             {formatRelativeTime(item.createdAt)}
           </span>
         </div>
-        <p className="text-xs text-slate-600 mb-2 truncate">{item.message}</p>
+        <p className="text-xs text-muted-foreground mb-2 truncate">{item.message}</p>
         <div className="flex items-center gap-2">
-          <span className={`w-max px-2 py-0.5 rounded text-xs font-medium ${visual.bgClass} ${visual.textClass}`}>
+          <span className={`w-max px-2 py-0.5 rounded-md text-micro font-medium ${visual.bgClass} ${visual.textClass}`}>
             {getNotificationTypeLabel(item.type)}
           </span>
         </div>
@@ -108,12 +108,12 @@ function NotificationRow({ item }: { item: NotificationItem }) {
   return (
     <div
       className={cn(
-        "flex items-start gap-4 p-4 rounded-xl border transition-colors group",
-        item.isRead ? "border-border/60 bg-muted/40" : `${visual.borderClass} bg-card`,
+        "flex items-start gap-4 p-4 rounded-2xl border transition-colors group",
+        item.isRead ? "border-border/60 bg-muted/30" : `${visual.borderClass} bg-card shadow-xs`,
       )}
     >
       {hasLink && item.link ? (
-        <Link href={item.link} className="flex min-w-0 flex-1 items-start gap-4 hover:bg-muted/50 rounded-lg p-1 -m-1 transition-colors">
+        <Link href={item.link} className="flex min-w-0 flex-1 items-start gap-4 hover:bg-muted/50 rounded-xl p-1 -m-1 transition-colors">
           {body}
         </Link>
       ) : (
@@ -142,9 +142,9 @@ export function DesktopNotificationList({
   currentType,
 }: DesktopNotificationListProps) {
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm flex flex-col h-full">
+    <div className="bg-card rounded-2xl p-5 border border-border shadow-xs flex flex-col h-full">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-        <h3 className="text-sm font-bold text-foreground">ทั้งหมด {totalCount} รายการ</h3>
+        <h3 className="text-sm font-bold text-foreground font-mono tabular-nums">ทั้งหมด {totalCount} รายการ</h3>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">จัดเรียงตาม</span>
           <span className="rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">

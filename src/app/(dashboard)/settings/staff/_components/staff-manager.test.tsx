@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { StaffManager } from "./staff-manager"
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}))
+
 vi.mock("@/app/actions/staff.actions", () => ({
   assignHomeroomTeacherAction: vi.fn(),
   updateStaffRoleAction: vi.fn(),

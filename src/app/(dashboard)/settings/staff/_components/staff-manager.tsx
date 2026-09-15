@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import {
   AlertCircle,
   Briefcase,
@@ -43,6 +44,7 @@ const ALL_ROLES: UserRole[] = [
 ]
 
 export function StaffManager({ initialData }: { initialData?: StaffManagementData | null }) {
+  const router = useRouter()
   const classrooms = useMemo(() => initialData?.classrooms ?? [], [initialData?.classrooms])
   const staffList = useMemo(() => initialData?.staff ?? [], [initialData?.staff])
   const metrics = initialData?.metrics ?? {
@@ -101,7 +103,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
       const matchesRole = roleFilter === "ALL" || s.role === roleFilter
       const matchesStatus =
         statusFilter === "ALL" ||
-        (statusFilter === "ACTIVE" && Boolean(s.isActive)) ||
+        (statusFilter === "ACTIVE" && s.isActive) ||
         (statusFilter === "INACTIVE" && !s.isActive)
 
       return matchesSearch && matchesRole && matchesStatus
@@ -126,6 +128,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
       if (res.ok) {
         toast.success(res.message)
         setEditingStaff(null)
+        router.refresh()
       } else {
         setRoleError(res.message)
         toast.error(res.message)
@@ -144,6 +147,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
       })
       if (res.ok) {
         toast.success(res.message)
+        router.refresh()
       } else {
         toast.error(res.message)
       }
@@ -162,6 +166,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
       })
       if (res.ok) {
         toast.success(res.message)
+        router.refresh()
       } else {
         toast.error(res.message)
       }

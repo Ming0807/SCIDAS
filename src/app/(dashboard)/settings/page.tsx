@@ -7,7 +7,7 @@ import { PageShell } from "@/components/dashboard/page-shell"
 import { formatThaiDateTime } from "@/lib/student-care-formatters"
 import { getUserProfile } from "@/lib/server/settings-read-models"
 
-import { ProfileSettingsForm } from "./settings-forms"
+import { LogoutButton, ProfileSettingsForm } from "./settings-forms"
 
 export default async function SettingsPage() {
   const profile = await loadUserProfile()
@@ -33,7 +33,7 @@ export default async function SettingsPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
           <section
-            className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6"
+            className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6"
             aria-labelledby="profile-settings-title"
           >
             <div className="mb-5">
@@ -49,7 +49,7 @@ export default async function SettingsPage() {
 
           {isLeadership && (
             <section
-              className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6"
+              className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6"
               aria-labelledby="admin-settings-title"
             >
               <div className="mb-4">
@@ -122,7 +122,7 @@ export default async function SettingsPage() {
 
         <aside className="space-y-6">
           <section
-            className="rounded-xl border border-border bg-card p-5 shadow-sm"
+            className="rounded-2xl border border-border bg-card p-5 shadow-xs"
             aria-labelledby="account-summary-title"
           >
             <h2 id="account-summary-title" className="text-base font-semibold">
@@ -147,6 +147,9 @@ export default async function SettingsPage() {
             <p className="mt-5 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
               บทบาท โรงเรียน และสถานะการใช้งานเปลี่ยนได้โดยผู้ดูแลระบบเท่านั้น
             </p>
+            <div className="mt-4 pt-3 border-t border-border">
+              <LogoutButton />
+            </div>
           </section>
         </aside>
       </div>
