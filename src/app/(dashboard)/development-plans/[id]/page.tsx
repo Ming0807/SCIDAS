@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getPlanStatusLabel, getPlanStatusTone } from "@/lib/server/idp-read-models"
+import { cn } from "@/lib/utils"
 
 import { ActivityForm } from "../_components/activity-form"
 import { DeleteControl } from "../_components/delete-controls"
@@ -113,10 +114,73 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="ข้อมูลสรุปแผน">
-        <Card size="sm"><CardContent className="flex items-start gap-3"><UserRound className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div><p className="text-xs text-muted-foreground">นักเรียน</p><p className="mt-1 text-sm font-medium">{displayName(student)}</p><p className="text-xs text-muted-foreground">{student?.student_code ?? "ไม่ระบุรหัส"}</p></div></CardContent></Card>
-        <Card size="sm"><CardContent className="flex items-start gap-3"><CalendarDays className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div><p className="text-xs text-muted-foreground">ช่วงเวลา</p><p className="mt-1 text-sm font-medium">{formatDate(plan.start_date)} - {formatDate(plan.end_date)}</p><p className="text-xs text-muted-foreground">{plan.semester?.semester === "semester_1" ? "ภาคเรียนที่ 1" : plan.semester?.semester === "semester_2" ? "ภาคเรียนที่ 2" : "ไม่ระบุภาคเรียน"}</p></div></CardContent></Card>
-        <Card size="sm"><CardContent className="flex items-start gap-3"><FileText className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div><p className="text-xs text-muted-foreground">ผู้จัดทำ</p><p className="mt-1 text-sm font-medium">{displayName(creator)}</p><p className="text-xs text-muted-foreground">สร้างเมื่อ {formatDate(plan.created_at)}</p></div></CardContent></Card>
-        <Card size="sm"><CardContent className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">ความก้าวหน้า</p><span className="text-sm font-semibold">{totalProgress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={totalProgress} aria-valuemin={0} aria-valuemax={100} aria-label="ความก้าวหน้าโดยรวม"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${totalProgress}%` }} /></div></div></CardContent></Card>
+        <Card size="sm">
+          <CardContent className="flex items-start gap-3">
+            <UserRound className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+            <div>
+              <p className="text-xs text-muted-foreground">นักเรียน</p>
+              <p className="mt-1 text-sm font-medium">
+                {plan.student_id ? (
+                  <Link
+                    href={`/students/${plan.student_id}`}
+                    className="hover:underline text-foreground hover:text-primary transition-colors"
+                  >
+                    {displayName(student)}
+                  </Link>
+                ) : (
+                  displayName(student)
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground font-mono tabular-nums">
+                {student?.student_code ?? "ไม่ระบุรหัส"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card size="sm">
+          <CardContent className="flex items-start gap-3">
+            <CalendarDays className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+            <div>
+              <p className="text-xs text-muted-foreground">ช่วงเวลา</p>
+              <p className="mt-1 text-sm font-medium font-mono tabular-nums">{formatDate(plan.start_date)} - {formatDate(plan.end_date)}</p>
+              <p className="text-xs text-muted-foreground">{plan.semester?.semester === "semester_1" ? "ภาคเรียนที่ 1" : plan.semester?.semester === "semester_2" ? "ภาคเรียนที่ 2" : "ไม่ระบุภาคเรียน"}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card size="sm">
+          <CardContent className="flex items-start gap-3">
+            <FileText className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+            <div>
+              <p className="text-xs text-muted-foreground">ผู้จัดทำ</p>
+              <p className="mt-1 text-sm font-medium">{displayName(creator)}</p>
+              <p className="text-xs text-muted-foreground">สร้างเมื่อ {formatDate(plan.created_at)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card size="sm">
+          <CardContent className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">ความก้าวหน้า</p>
+                <span className="text-sm font-semibold font-mono tabular-nums">{totalProgress}%</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={totalProgress} aria-valuemin={0} aria-valuemax={100} aria-label="ความก้าวหน้าโดยรวม">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width]",
+                    totalProgress >= 75
+                      ? "bg-emerald-500"
+                      : totalProgress >= 40
+                        ? "bg-amber-500"
+                        : "bg-primary"
+                  )}
+                  style={{ width: `${totalProgress}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       <Tabs defaultValue="goals" className="w-full">

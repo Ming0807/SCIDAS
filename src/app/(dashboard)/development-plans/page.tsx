@@ -6,8 +6,10 @@ import { PageShell } from "@/components/dashboard/page-shell"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { StudentIdentity } from "@/components/dashboard/student-identity"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
+import { cn } from "@/lib/utils"
 import {
   getDevelopmentPlanList,
   getPlanSummary,
@@ -180,10 +182,13 @@ export default async function DevelopmentPlansPage({
                       className="border-b border-border hover:bg-muted/30 transition-colors"
                     >
                       <td className="py-3 px-5 whitespace-nowrap">
-                        <div className="font-semibold text-foreground">
+                        <Link
+                          href={`/development-plans/${plan.id}`}
+                          className="font-semibold text-foreground hover:underline"
+                        >
                           {plan.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
+                        </Link>
+                        <div className="text-xs text-muted-foreground font-mono tabular-nums">
                           {new Intl.DateTimeFormat("th-TH", {
                             day: "numeric",
                             month: "short",
@@ -199,13 +204,19 @@ export default async function DevelopmentPlansPage({
                         </div>
                       </td>
                       <td className="py-3 px-5 whitespace-nowrap">
-                        <div className="font-medium text-foreground">
-                          {plan.studentName}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatGradeLevel(plan.gradeLevel)}
-                          {plan.studentCode ? ` · ${plan.studentCode}` : ""}
-                        </div>
+                        <StudentIdentity
+                          name={
+                            <Link
+                              href={`/students/${plan.studentId}`}
+                              className="font-medium text-foreground hover:underline"
+                            >
+                              {plan.studentName}
+                            </Link>
+                          }
+                          studentCode={plan.studentCode ?? undefined}
+                          classroom={formatGradeLevel(plan.gradeLevel)}
+                          size="sm"
+                        />
                       </td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         <StatusBadge
@@ -214,29 +225,36 @@ export default async function DevelopmentPlansPage({
                           size="sm"
                         />
                       </td>
-                      <td className="py-3 px-5 whitespace-nowrap text-muted-foreground">
+                      <td className="py-3 px-5 whitespace-nowrap text-muted-foreground font-mono tabular-nums text-xs">
                         {plan.completedGoalCount}/{plan.goalCount}
                       </td>
                       <td className="py-3 px-5 hidden md:table-cell whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-primary rounded-full transition-all"
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                plan.overallProgress >= 75
+                                  ? "bg-emerald-500"
+                                  : plan.overallProgress >= 40
+                                    ? "bg-amber-500"
+                                    : "bg-primary"
+                              )}
                               style={{ width: `${plan.overallProgress}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground w-8 text-right">
+                          <span className="text-xs font-mono tabular-nums font-medium text-muted-foreground w-8 text-right">
                             {plan.overallProgress}%
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-5 hidden lg:table-cell whitespace-nowrap text-muted-foreground">
+                      <td className="py-3 px-5 hidden lg:table-cell whitespace-nowrap text-muted-foreground text-xs">
                         {plan.creatorName ?? "-"}
                       </td>
                       <td className="py-3 px-5 text-center whitespace-nowrap">
                         <Link
                           href={`/development-plans/${plan.id}`}
-                          className="text-primary hover:text-primary/80 font-semibold text-xs bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/15 transition-colors inline-block"
+                          className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 hover:text-primary/80"
                         >
                           ดูรายละเอียด
                         </Link>
