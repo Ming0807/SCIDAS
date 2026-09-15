@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
+import Link from "next/link"
 import { Loader2, Save, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -148,9 +149,10 @@ function gradeFromTotal(total: number) {
 }
 
 function gradeClass(grade: string) {
-  if (grade === "-" || grade === "0") return "text-muted-foreground"
-  if (grade === "4" || grade === "3.5" || grade === "3") return "text-emerald-700"
-  return "text-amber-700"
+  if (grade === "-") return "text-muted-foreground"
+  if (grade === "0") return "text-rose-600 font-bold dark:text-rose-400"
+  if (grade === "4" || grade === "3.5" || grade === "3") return "text-emerald-600 font-bold dark:text-emerald-400"
+  return "text-amber-600 font-semibold dark:text-amber-400"
 }
 
 export function AcademicForm({
@@ -413,13 +415,18 @@ export function AcademicForm({
                 ไม่พบรายชื่อนักเรียนที่ค้นหา
               </div>
             ) : filteredStudents.map((student, studentIndex) => (
-              <article key={student.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <article key={student.id} className="rounded-2xl border border-border bg-card p-4 shadow-xs">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">นักเรียนลำดับ {studentIndex + 1}</p>
-                    <h3 className="truncate font-medium text-foreground">{student.name}</h3>
+                    <p className="text-micro text-muted-foreground">นักเรียนลำดับ {studentIndex + 1}</p>
+                    <Link
+                      href={`/students/${student.id}`}
+                      className="truncate font-semibold text-foreground hover:text-primary hover:underline block"
+                    >
+                      {student.name}
+                    </Link>
                   </div>
-                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{subjects.length} วิชา</span>
+                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-micro font-medium text-muted-foreground">{subjects.length} วิชา</span>
                 </div>
                 <div className="space-y-4">
                   {subjects.map((subject, subjectIndex) => {
@@ -485,12 +492,12 @@ export function AcademicForm({
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block">
+          <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-xs md:block">
           <table className="w-full min-w-[1180px] border-collapse text-sm">
             <caption className="sr-only">ตารางบันทึกผลการเรียนรายนักเรียนและรายวิชา</caption>
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold text-muted-foreground">
-                <th className="w-14 px-4 py-3 text-center">#</th>
+                <th className="w-14 px-4 py-3 text-center font-mono">#</th>
                 <th className="min-w-56 px-4 py-3">นักเรียน</th>
                 <th className="min-w-48 px-4 py-3">วิชา</th>
                 {scoreFields.map((field) => (
@@ -517,12 +524,19 @@ export function AcademicForm({
                     const rowNumber = studentIndex * subjects.length + subjectIndex + 1
 
                     return (
-                      <tr key={key} className="border-b border-border align-top last:border-0 hover:bg-muted/20">
-                        <td className="px-4 py-3 text-center text-xs text-muted-foreground">{rowNumber}</td>
-                        <td className="px-4 py-3 font-medium text-foreground">{student.name}</td>
+                      <tr key={key} className="border-b border-border align-middle last:border-0 hover:bg-muted/25 transition-colors">
+                        <td className="px-4 py-3 text-center text-xs font-mono tabular-nums text-muted-foreground">{rowNumber}</td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/students/${student.id}`}
+                            className="font-medium text-foreground hover:text-primary transition-colors hover:underline"
+                          >
+                            {student.name}
+                          </Link>
+                        </td>
                         <td className="px-4 py-3">
                           <div className="font-medium text-foreground">{subject.name}</div>
-                          <div className="mt-0.5 text-xs text-muted-foreground">{subject.code}</div>
+                          <div className="mt-0.5 text-micro font-mono text-muted-foreground">{subject.code}</div>
                         </td>
                         {scoreFields.map((field) => {
                           const inputId = `${key}-${field.key}`

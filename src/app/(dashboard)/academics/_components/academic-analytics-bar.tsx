@@ -104,7 +104,7 @@ export function AcademicAnalyticsBar({
             return (
               <div
                 key={grade}
-                className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium ${
+                className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium tabular-nums ${
                   isFailing && count > 0
                     ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300"
                     : isTop && count > 0
@@ -113,7 +113,7 @@ export function AcademicAnalyticsBar({
                 }`}
               >
                 <span>เกรด {grade}:</span>
-                <span className="font-semibold text-foreground">{count}</span>
+                <span className="font-semibold text-foreground font-mono">{count}</span>
               </div>
             )
           })}
