@@ -23,7 +23,8 @@ export type AppRole =
   | "homeroom_teacher"
   | "counselor"
   | "subject_teacher"
-  | "student";
+  | "student"
+  | "parent";
 
 export type NavigationGroup = "core" | "care" | "insight" | "system";
 export type NavigationPlacement = "sidebar" | "mobilePrimary" | "moduleMenu";
@@ -162,6 +163,19 @@ export const studentNavItems = dashboardNavItems.filter(
   (item) => item.studentVisible,
 );
 
+export const parentNavItems: NavigationItem[] = [
+  {
+    key: "parent-home",
+    label: "บุตรหลาน",
+    mobileLabel: "บุตรหลาน",
+    href: "/parent",
+    icon: Users,
+    group: "core",
+    placements: ["sidebar", "mobilePrimary", "moduleMenu"],
+  },
+  ...dashboardNavItems.filter((item) => item.key === "settings"),
+];
+
 export const mobilePrimaryNavItems = dashboardNavItems.filter(
   (item) => item.placements.includes("mobilePrimary"),
 );
@@ -171,7 +185,9 @@ export const moduleNavItems = dashboardNavItems.filter(
 );
 
 export function getNavItemsForRole(role?: string | null) {
-  return role === "student" ? studentNavItems : dashboardNavItems;
+  if (role === "student") return studentNavItems
+  if (role === "parent") return parentNavItems
+  return dashboardNavItems
 }
 
 export function getSidebarNavigation(role?: string | null) {

@@ -35,17 +35,11 @@ import type {
   ClassroomAssignmentOption,
   StaffManagementData,
   StaffMemberItem,
-  UserRole,
+  StaffRole,
 } from "@/lib/staff-constants"
-import { STAFF_ROLE_LABELS } from "@/lib/staff-constants"
+import { STAFF_ROLE_LABELS, STAFF_ROLES } from "@/lib/staff-constants"
 
-const ALL_ROLES: UserRole[] = [
-  "admin",
-  "director",
-  "counselor",
-  "homeroom_teacher",
-  "subject_teacher",
-]
+const ALL_ROLES: StaffRole[] = [...STAFF_ROLES]
 
 export function StaffManager({ initialData }: { initialData?: StaffManagementData | null }) {
   const router = useRouter()
@@ -68,7 +62,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
   const [roleFilter, setRoleFilter] = useState<string>("ALL")
   const [statusFilter, setStatusFilter] = useState<string>("ALL")
   const [editingStaff, setEditingStaff] = useState<StaffMemberItem | null>(null)
-  const [newRole, setNewRole] = useState<UserRole>("subject_teacher")
+  const [newRole, setNewRole] = useState<StaffRole>("subject_teacher")
   const [roleError, setRoleError] = useState<string | null>(null)
 
   // Invite form state
@@ -76,7 +70,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteFirstName, setInviteFirstName] = useState("")
   const [inviteLastName, setInviteLastName] = useState("")
-  const [inviteRole, setInviteRole] = useState<UserRole>("subject_teacher")
+  const [inviteRole, setInviteRole] = useState<StaffRole>("subject_teacher")
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteResult, setInviteResult] = useState<{ tempPassword: string } | null>(null)
   const isAdmin = currentUserRole === "admin"
@@ -127,7 +121,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
   // Handlers
   const handleOpenRoleModal = (staff: StaffMemberItem) => {
     setEditingStaff(staff)
-    setNewRole(staff.role)
+    setNewRole(ALL_ROLES.includes(staff.role as StaffRole) ? (staff.role as StaffRole) : "subject_teacher")
     setRoleError(null)
   }
 
@@ -350,7 +344,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                       <span className="text-xs font-medium text-foreground">บทบาทสิทธิ์</span>
                       <select
                         value={inviteRole}
-                        onChange={(e) => setInviteRole(e.target.value as UserRole)}
+                        onChange={(e) => setInviteRole(e.target.value as StaffRole)}
                         disabled={isPending}
                         className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       >
@@ -777,7 +771,7 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
               </label>
               <select
                 value={newRole}
-                onChange={(e) => setNewRole(e.target.value as UserRole)}
+                onChange={(e) => setNewRole(e.target.value as StaffRole)}
                 className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {ALL_ROLES.map((r) => (

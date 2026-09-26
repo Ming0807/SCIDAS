@@ -1344,6 +1344,7 @@ export type Database = {
           prefix: string | null
           school_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -1362,6 +1363,7 @@ export type Database = {
           prefix?: string | null
           school_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -1380,6 +1382,7 @@ export type Database = {
           prefix?: string | null
           school_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -3545,6 +3548,7 @@ export type Database = {
         | "homeroom_teacher"
         | "counselor"
         | "subject_teacher"
+        | "parent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3768,6 +3772,7 @@ export const Constants = {
         "homeroom_teacher",
         "counselor",
         "subject_teacher",
+        "parent",
       ],
     },
   },

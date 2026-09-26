@@ -28,7 +28,8 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
 
   const supabase = await createClient()
 
-  // 1. Fetch all profiles for the school
+  // 1. Fetch all staff profiles for the school (parents live in the
+  // parent portal, never in the staff directory).
   const { data: rawProfiles, error: profilesError } = await supabase
     .from("profiles")
     .select(`
@@ -44,6 +45,7 @@ export async function getStaffManagementData(): Promise<StaffManagementData> {
       last_login_at
     `)
     .eq("school_id", context.schoolId)
+    .neq("role", "parent")
     .order("first_name", { ascending: true })
 
   if (profilesError) {

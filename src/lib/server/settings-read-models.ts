@@ -26,6 +26,7 @@ const roleLabels: Record<UserRole, string> = {
   homeroom_teacher: "ครูที่ปรึกษา",
   counselor: "ครูแนะแนว",
   subject_teacher: "ครูประจำวิชา",
+  parent: "ผู้ปกครอง",
 }
 
 export function getRoleLabel(role: UserRole): string {

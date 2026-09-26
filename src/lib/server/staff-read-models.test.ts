@@ -99,10 +99,12 @@ describe("staff-read-models", () => {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
-                order: vi.fn().mockResolvedValue({
-                  data: mockProfiles,
-                  error: null,
-                }),
+                neq: vi.fn(() => ({
+                  order: vi.fn().mockResolvedValue({
+                    data: mockProfiles,
+                    error: null,
+                  }),
+                })),
               })),
             })),
           }

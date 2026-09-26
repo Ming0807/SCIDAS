@@ -20,6 +20,7 @@ import {
 } from "@/app/actions/student.actions"
 import { EmptyState } from "@/components/feedback/empty-state"
 import type { StudentGuardianItem } from "@/lib/server/student-care-read-models"
+import { GuardianAccountControl } from "./guardian-account-control"
 
 type StudentGuardianManagerProps = {
   studentId: string
@@ -355,6 +356,13 @@ export function StudentGuardianManager({
                   </div>
                 )}
               </div>
+              {canEdit ? (
+                <GuardianAccountControl
+                  guardianId={g.guardianId}
+                  guardianName={g.fullName}
+                  hasAccount={g.hasAccount}
+                />
+              ) : null}
             </div>
           ))}
         </div>

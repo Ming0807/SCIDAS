@@ -1032,6 +1032,7 @@ export type StudentGuardianItem = {
   canPickup: boolean
   occupation: string | null
   monthlyIncome: number | null
+  hasAccount: boolean
 }
 
 export async function getStudentGuardians(
@@ -1059,7 +1060,7 @@ export async function getStudentGuardians(
     .from("student_guardians")
     .select(`
       id, student_id, guardian_id, relation, is_primary, can_pickup,
-      guardians(id, prefix, first_name, last_name, phone, occupation, monthly_income)
+      guardians(id, prefix, first_name, last_name, phone, occupation, monthly_income, user_id)
     `)
     .eq("student_id", studentId)
     .eq("school_id", context.schoolId)
@@ -1078,6 +1079,7 @@ export async function getStudentGuardians(
       phone: string | null
       occupation: string | null
       monthly_income: number | null
+      user_id: string | null
     } | null
 
     const firstName = g?.first_name || ""
@@ -1101,6 +1103,7 @@ export async function getStudentGuardians(
       canPickup: Boolean(item.can_pickup),
       occupation: g?.occupation || null,
       monthlyIncome: g?.monthly_income ? Number(g.monthly_income) : null,
+      hasAccount: Boolean(g?.user_id),
     }
   })
 }

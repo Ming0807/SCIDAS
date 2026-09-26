@@ -8,6 +8,7 @@ import { getUserRole } from "@/utils/supabase/server"
 import { getUserProfile } from "@/lib/server/settings-read-models"
 import { getNotificationCounts } from "@/lib/server/notification-read-models"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { redirect } from "next/navigation"
 
 export default async function DashboardLayout({
   children,
@@ -34,6 +35,10 @@ export default async function DashboardLayout({
     contextUserId = ctx?.userId ?? null
   } catch {
     // fallback
+  }
+
+  if (role === "parent") {
+    redirect("/parent")
   }
 
   return (

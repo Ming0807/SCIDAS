@@ -2,12 +2,23 @@ import type { Database } from "@/types/database.types"
 
 export type UserRole = Database["public"]["Enums"]["user_role"]
 
+export type StaffRole = Exclude<UserRole, "parent">
+
+export const STAFF_ROLES: StaffRole[] = [
+  "admin",
+  "director",
+  "counselor",
+  "homeroom_teacher",
+  "subject_teacher",
+]
+
 export const STAFF_ROLE_LABELS: Record<UserRole, string> = {
   admin: "ผู้ดูแลระบบ",
   director: "ผู้อำนวยการ",
   counselor: "ครูแนะแนว",
   homeroom_teacher: "ครูที่ปรึกษา / ครูประจำชั้น",
   subject_teacher: "ครูประจำวิชา",
+  parent: "ผู้ปกครอง",
 }
 
 export type StaffClassroomAssignment = {
