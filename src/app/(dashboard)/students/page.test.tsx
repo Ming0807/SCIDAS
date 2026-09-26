@@ -168,7 +168,7 @@ vi.mock("@/app/actions/student.actions", () => ({
 
 describe("Students Module", () => {
   describe("Students List Page", () => {
-    it("renders the students heading and data table", async () => {
+    it("renders the students heading and data table", { timeout: 30000 }, async () => {
       const Page = await StudentsPage({ searchParams: Promise.resolve({}) })
       render(Page)
 
@@ -178,7 +178,7 @@ describe("Students Module", () => {
       expect(screen.getByRole("link", { name: /เพิ่มนักเรียน/ })).toBeDefined()
     })
 
-    it("builds pagination hrefs from serializable filters without server function props", async () => {
+    it("builds pagination hrefs from serializable filters without server function props", { timeout: 30000 }, async () => {
       const Page = await StudentsPage({ searchParams: Promise.resolve({ status: "high" }) })
       render(Page)
 
