@@ -60,6 +60,7 @@ import { StudentGuardianManager } from "./_components/student-guardian-manager"
 import { StudentPrintableCard } from "./_components/student-printable-card"
 import { StudentCarePathway } from "./_components/student-care-pathway"
 import { StudentHealthCard } from "./_components/student-health-card"
+import { StudentPhotoEditor } from "./_components/student-photo-editor"
 import { TeacherFlagControl } from "./_components/teacher-flag-control"
 
 type StudentProfilePageProps = {
@@ -375,6 +376,12 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
                 ) : null}
               </div>
             </div>
+            <StudentPhotoEditor
+              studentId={profile.studentId}
+              studentName={profile.fullName}
+              hasPhoto={Boolean(profile.photoUrl)}
+              canEdit={canEdit}
+            />
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <DetailItem icon={UserRound} label="เพศ" value={getGenderLabel(profile.gender)} />
