@@ -4,19 +4,37 @@ import { ChevronRight, Download, FileText } from "lucide-react"
 import type { ReportJobItem } from "@/lib/server/report-read-models"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
 
-export function MobileDownloadReports({ jobs }: { jobs: ReportJobItem[] }) {
+export function MobileDownloadReports({
+  jobs,
+  activeType,
+}: {
+  jobs: ReportJobItem[]
+  activeType?: string | null
+}) {
   const downloadable = jobs.filter(
-    (j) => j.status === "completed" && j.downloadUrl,
+    (j) =>
+      j.status === "completed" &&
+      j.downloadUrl &&
+      (!activeType || j.reportType === activeType),
   )
 
   return (
     <div className="px-4 mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">ดาวน์โหลดรายงาน</h3>
-        <Link href="/reports" className="flex items-center gap-0.5 text-xs font-semibold text-primary">
-          ดูทั้งหมด
-          <ChevronRight className="w-3.5 h-3.5" />
-        </Link>
+        <h3 className="text-sm font-semibold text-foreground">
+          ดาวน์โหลดรายงาน{activeType ? ` • ${activeType}` : ""}
+        </h3>
+        <div className="flex items-center gap-2">
+          {activeType ? (
+            <Link href="/reports" className="text-xs font-semibold text-primary">
+              ล้างตัวกรอง
+            </Link>
+          ) : null}
+          <Link href="/reports" className="flex items-center gap-0.5 text-xs font-semibold text-primary">
+            ดูทั้งหมด
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
       {downloadable.length === 0 ? (

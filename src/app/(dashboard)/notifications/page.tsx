@@ -7,6 +7,7 @@ import { MobileNotificationProfile } from "./_components/mobile/mobile-notificat
 import { ChevronRight, Bell } from "lucide-react"
 import { ErrorState } from "@/components/feedback"
 import { getNotifications, getNotificationCounts } from "@/lib/server/notification-read-models"
+import { getAcademicAdminData } from "@/lib/server/academic-admin-read-models"
 import type { NotificationStatusFilter, NotificationType } from "@/lib/server/notification-read-models"
 import { markAllAsReadFormAction } from "@/app/actions/notifications.actions"
 
@@ -53,12 +54,31 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
   let notifications: Awaited<ReturnType<typeof getNotifications>>
   let counts: Awaited<ReturnType<typeof getNotificationCounts>>
   let loadError: string | null = null
+  let semesterLabel = "ภาคเรียนปัจจุบัน"
 
   try {
     ;[notifications, counts] = await Promise.all([
       getNotifications({ status, type, page, limit }),
       getNotificationCounts(),
     ])
+    try {
+      const academic = await getAcademicAdminData()
+      if (academic.currentSemester) {
+        const semNum =
+          academic.currentSemester.semester === "semester_1"
+            ? "1"
+            : academic.currentSemester.semester === "semester_2"
+              ? "2"
+              : academic.currentSemester.semester === "semester_3"
+                ? "3"
+                : String(academic.currentSemester.semester)
+        semesterLabel = `ภาคเรียนที่ ${semNum}/${academic.currentSemester.academicYear}`
+      } else if (academic.currentAcademicYear) {
+        semesterLabel = `ปีการศึกษา ${academic.currentAcademicYear.year}`
+      }
+    } catch {
+      // keep fallback label when academic config is unavailable
+    }
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load notifications"
   }
@@ -123,7 +143,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm">
-              <span className="text-sm font-medium text-slate-700">ภาคเรียนที่ 1/2567</span>
+              <span className="text-sm font-medium text-slate-700">{semesterLabel}</span>
             </div>
             
             <form action={markAllAsReadFormAction}>

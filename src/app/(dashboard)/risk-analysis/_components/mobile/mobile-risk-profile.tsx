@@ -14,6 +14,7 @@ import { MobileRiskBenchmark } from "./mobile-risk-benchmark"
 import { MobileRiskSpiderChart } from "./mobile-risk-spider-chart"
 import { MobileRiskFactors } from "./mobile-risk-factors"
 import { MobileRiskGuidelines } from "./mobile-risk-guidelines"
+import { RecalculateButton } from "../../RecalculateButton"
 
 type MobileRiskProfileProps = {
   students: StudentWorklistItem[]
@@ -70,6 +71,9 @@ export function MobileRiskProfile({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <RecalculateButton />
           </div>
         </div>
 

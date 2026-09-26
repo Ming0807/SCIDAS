@@ -15,13 +15,13 @@ export function RecalculateButton() {
     try {
       const res = await recalculateAllRiskScores()
       if (res?.success) {
-        toast.success("Recalculated all risk scores successfully.")
+        toast.success("คำนวณคะแนนความเสี่ยงใหม่เรียบร้อยแล้ว")
         router.refresh()
       } else {
-        toast.error("Failed to recalculate.")
+        toast.error("คำนวณคะแนนใหม่ไม่สำเร็จ กรุณาลองอีกครั้ง")
       }
     } catch (e) {
-      toast.error((e as Error).message || "An error occurred")
+      toast.error((e as Error).message || "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง")
     } finally {
       setLoading(false)
     }
@@ -29,7 +29,7 @@ export function RecalculateButton() {
 
   return (
     <Button onClick={handleRecalculate} disabled={loading}>
-      {loading ? "Recalculating..." : "Recalculate All"}
+      {loading ? "กำลังคำนวณ..." : "คำนวณความเสี่ยงใหม่"}
     </Button>
   )
 }

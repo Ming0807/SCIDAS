@@ -1,6 +1,7 @@
 import React from "react"
 import type { ReportJobItem } from "@/lib/server/report-read-models"
 import type { RiskTrendPoint } from "@/lib/server/risk-read-models"
+import { DesktopCreateReport } from "../desktop-create-report"
 import { MobileReportHeader } from "./mobile-report-header"
 import { MobileSummaryCards } from "./mobile-summary-cards"
 import { MobileTrendChart } from "./mobile-trend-chart"
@@ -21,10 +22,12 @@ export function MobileReportProfile({
   jobs,
   metrics,
   trendData,
+  activeType,
 }: {
   jobs: ReportJobItem[]
   metrics?: MobileMetrics | null
   trendData?: RiskTrendPoint[] | null
+  activeType?: string | null
 }) {
   return (
     <div className="bg-background min-h-screen relative pb-6">
@@ -33,8 +36,11 @@ export function MobileReportProfile({
       <div className="max-w-md mx-auto pt-2">
         <MobileSummaryCards metrics={metrics} />
         <MobileTrendChart trendData={trendData} />
-        <MobileCategoryReports />
-        <MobileDownloadReports jobs={jobs} />
+        <MobileCategoryReports activeType={activeType} />
+        <div className="px-4 mb-6">
+          <DesktopCreateReport />
+        </div>
+        <MobileDownloadReports jobs={jobs} activeType={activeType} />
       </div>
     </div>
   )

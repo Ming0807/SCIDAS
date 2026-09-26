@@ -2,7 +2,7 @@ import React from "react"
 
 import { ErrorState } from "@/components/feedback"
 import { PageHeader, PageShell } from "@/components/dashboard"
-import { getReportJobs, getPopularReportTypes, type ReportJobItem } from "@/lib/server/report-read-models"
+import { getReportJobs, getPopularReportTypes, isReportJobType, type ReportJobItem } from "@/lib/server/report-read-models"
 import { getStudentCareDashboard } from "@/lib/server/student-care-read-models"
 import {
   getRiskFactorDistribution,
@@ -20,7 +20,15 @@ import { DesktopInsights } from "./_components/desktop-insights"
 import { ProcessReportButton } from "./_components/process-report-button"
 import { MobileReportProfile } from "./_components/mobile/mobile-report-profile"
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = searchParams ? await searchParams : {}
+  const rawType = typeof params.type === "string" ? params.type : Array.isArray(params.type) ? params.type[0] : ""
+  const activeType = rawType && isReportJobType(rawType) ? rawType : null
+
   let jobs: ReportJobItem[] = []
   let popularTypes: Awaited<ReturnType<typeof getPopularReportTypes>> = []
   let loadError: string | null = null
@@ -63,6 +71,7 @@ export default async function ReportsPage() {
           jobs={jobs}
           metrics={dashboardMetrics}
           trendData={trendData}
+          activeType={activeType}
         />
       </div>
 

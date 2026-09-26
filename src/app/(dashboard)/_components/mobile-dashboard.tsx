@@ -67,8 +67,8 @@ export function MobileDashboard({
           <p className="text-xs text-muted-foreground">ข้อมูลล่าสุดจากระบบ</p>
         </div>
 
-        <button
-          type="button"
+        <Link
+          href="/notifications"
           aria-label="การแจ้งเตือน"
           className="relative rounded-lg p-2 hover:bg-muted"
         >
@@ -76,7 +76,7 @@ export function MobileDashboard({
           {metrics.openActionItems > 0 ? (
             <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" />
           ) : null}
-        </button>
+        </Link>
       </header>
 
       <main className="flex flex-1 flex-col gap-5 px-4 py-5">

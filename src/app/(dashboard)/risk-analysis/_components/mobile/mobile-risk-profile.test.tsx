@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
 import type {
@@ -9,6 +9,16 @@ import type {
 } from "@/lib/server/risk-read-models"
 
 import { MobileRiskProfile } from "./mobile-risk-profile"
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}))
+
+vi.mock("@/app/actions/risk.actions", () => ({
+  recalculateAllRiskScores: vi.fn(),
+}))
 
 const students: StudentWorklistItem[] = [
   {

@@ -41,20 +41,22 @@ function MobileStudentRow({
 
           <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <span className="truncate">{student.guardian}</span>
-            {canEdit ? <Link
+            <Link
               href={`/students/${student.id}`}
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
               ดูข้อมูล <ChevronRight />
-            </Link> : null}
-            <Link
-              href={`/students/${student.id}/edit`}
-              aria-label={`แก้ไขข้อมูล ${student.name}`}
-              title="แก้ไขข้อมูลนักเรียน"
-              className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-            >
-              <Edit2 />
             </Link>
+            {canEdit ? (
+              <Link
+                href={`/students/${student.id}/edit`}
+                aria-label={`แก้ไขข้อมูล ${student.name}`}
+                title="แก้ไขข้อมูลนักเรียน"
+                className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+              >
+                <Edit2 />
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

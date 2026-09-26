@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen } from "@testing-library/react"
 import { describe, it, expect } from "vitest"
 import { SdqTableActions } from "./sdq-table-actions"
 
@@ -13,30 +13,22 @@ describe("SdqTableActions", () => {
     riskScore: 17,
   }
 
-  it("renders action buttons including assessment link and print trigger", () => {
+  it("renders assessment link with honest print guidance", () => {
     render(<SdqTableActions student={student} />)
 
     expect(screen.getByText("ทำแบบประเมิน SDQ")).toBeInTheDocument()
-    expect(screen.getByTitle("พิมพ์รายงาน SDQ (ฉบับทางการ)")).toBeInTheDocument()
+    expect(
+      screen.getByText("พิมพ์รายงานได้หลังบันทึกผลประเมิน"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: /ทำแบบประเมิน SDQ/ }),
+    ).toHaveAttribute("href", "/screening/sdq/s-001")
   })
 
-  it("opens SDQ printable dialog when print button is clicked", () => {
-    render(<SdqTableActions student={student} />)
+  it("does not render synthetic score preview", () => {
+    const { container } = render(<SdqTableActions student={student} />)
 
-    // Initially modal is closed
-    expect(
-      screen.queryByText("แบบรายงานสรุปผลการประเมินพฤติกรรมและอารมณ์เด็ก (SDQ)")
-    ).not.toBeInTheDocument()
-
-    // Click print button
-    const printButton = screen.getByTitle("พิมพ์รายงาน SDQ (ฉบับทางการ)")
-    fireEvent.click(printButton)
-
-    // Modal is now open
-    expect(
-      screen.getByText("แบบรายงานสรุปผลการประเมินพฤติกรรมและอารมณ์เด็ก (SDQ)")
-    ).toBeInTheDocument()
-    expect(screen.getByText("กิตติพงษ์ เรียนดี")).toBeInTheDocument()
-    expect(screen.getByText("STD-101")).toBeInTheDocument()
+    // No estimated dimension scores derived from riskScore may remain
+    expect(container.textContent).not.toMatch(/โดยประมาณ/)
   })
 })

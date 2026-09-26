@@ -52,18 +52,6 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
-  function fillSampleAnswers(mode: "normal" | "risk") {
-    const nextAnswers: Record<number, number> = {}
-    for (const q of SDQ_QUESTIONS) {
-      if (mode === "normal") {
-        nextAnswers[q.id] = q.isReversed || q.dimension === "prosocial" ? 2 : 0
-      } else {
-        nextAnswers[q.id] = q.isReversed ? 1 : 1
-      }
-    }
-    setAnswers(nextAnswers)
-  }
-
   function handleSubmit() {
     const formData = new FormData()
     formData.set("student_id", student.id)
@@ -179,13 +167,9 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
           </div>
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
             <span>{isComplete ? "ตอบครบถ้วนแล้ว" : "ยังตอบไม่ครบทุกข้อ"}</span>
-            <button
-              type="button"
-              onClick={() => fillSampleAnswers("normal")}
-              className="text-primary hover:underline text-xs"
-            >
-              กรอกตัวอย่างปกติ
-            </button>
+            <span className="text-xs text-muted-foreground">
+              {answeredCount}/25 ข้อ
+            </span>
           </div>
         </div>
 
