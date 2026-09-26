@@ -13,8 +13,10 @@ import {
   Search,
   Shield,
   ShieldAlert,
+  Trash2,
   UserCheck,
   UserCog,
+  UserPlus,
   Users,
   UserX,
 } from "lucide-react"
@@ -22,6 +24,8 @@ import { toast } from "sonner"
 
 import {
   assignHomeroomTeacherAction,
+  inviteStaffAction,
+  removeStaffAction,
   updateStaffRoleAction,
   updateStaffStatusAction,
 } from "@/app/actions/staff.actions"
@@ -66,6 +70,16 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
   const [editingStaff, setEditingStaff] = useState<StaffMemberItem | null>(null)
   const [newRole, setNewRole] = useState<UserRole>("subject_teacher")
   const [roleError, setRoleError] = useState<string | null>(null)
+
+  // Invite form state
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteFirstName, setInviteFirstName] = useState("")
+  const [inviteLastName, setInviteLastName] = useState("")
+  const [inviteRole, setInviteRole] = useState<UserRole>("subject_teacher")
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [inviteResult, setInviteResult] = useState<{ tempPassword: string } | null>(null)
+  const isAdmin = currentUserRole === "admin"
 
   // For assignment edits
   const [classroomAssignments, setClassroomAssignments] = useState<
@@ -145,6 +159,44 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
         profileId: staff.id,
         isActive: !staff.isActive,
       })
+      if (res.ok) {
+        toast.success(res.message)
+        router.refresh()
+      } else {
+        toast.error(res.message)
+      }
+    })
+  }
+
+  const handleInvite = () => {
+    setInviteError(null)
+    setInviteResult(null)
+    startTransition(async () => {
+      const res = await inviteStaffAction({
+        email: inviteEmail,
+        firstName: inviteFirstName,
+        lastName: inviteLastName,
+        role: inviteRole,
+      })
+      if (res.ok && res.data) {
+        toast.success(res.message)
+        setInviteResult({ tempPassword: res.data.tempPassword })
+        setInviteEmail("")
+        setInviteFirstName("")
+        setInviteLastName("")
+        router.refresh()
+      } else {
+        setInviteError(res.message)
+        toast.error(res.message)
+      }
+    })
+  }
+
+  const handleRemove = (staff: StaffMemberItem) => {
+    if (!confirm(`ยืนยันการลบบัญชีของ ${staff.fullName}? บัญชีจะเข้าไม่ได้อีก แต่ประวัติการทำงานเดิมยังอยู่`)) return
+
+    startTransition(async () => {
+      const res = await removeStaffAction({ profileId: staff.id })
       if (res.ok) {
         toast.success(res.message)
         router.refresh()
@@ -266,6 +318,96 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
       {/* Tab 1: Staff Directory */}
       {activeTab === "directory" && (
         <div className="space-y-4">
+          {canManage ? (
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setShowInvite((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 text-left"
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <UserPlus className="size-4 text-primary" />
+                  เพิ่มบุคลากรใหม่
+                </span>
+                <span className="text-xs text-muted-foreground">{showInvite ? "ซ่อนฟอร์ม" : "แสดงฟอร์ม"}</span>
+              </button>
+
+              {showInvite ? (
+                <div className="mt-3 space-y-3 border-t border-border pt-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-foreground">อีเมล <span className="text-destructive">*</span></span>
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="teacher@school.ac.th"
+                        disabled={isPending}
+                        className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </label>
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-foreground">บทบาทสิทธิ์</span>
+                      <select
+                        value={inviteRole}
+                        onChange={(e) => setInviteRole(e.target.value as UserRole)}
+                        disabled={isPending}
+                        className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {ALL_ROLES.map((r) => (
+                          <option key={r} value={r}>
+                            {STAFF_ROLE_LABELS[r]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-foreground">ชื่อ <span className="text-destructive">*</span></span>
+                      <input
+                        type="text"
+                        value={inviteFirstName}
+                        onChange={(e) => setInviteFirstName(e.target.value)}
+                        placeholder="เช่น สมชาย"
+                        disabled={isPending}
+                        className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </label>
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-foreground">นามสกุล <span className="text-destructive">*</span></span>
+                      <input
+                        type="text"
+                        value={inviteLastName}
+                        onChange={(e) => setInviteLastName(e.target.value)}
+                        placeholder="เช่น ใจดี"
+                        disabled={isPending}
+                        className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </label>
+                  </div>
+
+                  {inviteError ? (
+                    <p role="alert" className="text-xs font-medium text-destructive">
+                      {inviteError}
+                    </p>
+                  ) : null}
+
+                  {inviteResult ? (
+                    <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                      <p className="font-semibold">สร้างบัญชีเรียบร้อย — รหัสผ่านชั่วคราว (แสดงครั้งเดียว):</p>
+                      <p className="mt-1 font-mono text-sm font-bold tracking-wider">{inviteResult.tempPassword}</p>
+                      <p className="mt-1">แจ้งให้เจ้าตัวเข้าสู่ระบบแล้วเปลี่ยนรหัสผ่านทันที</p>
+                    </div>
+                  ) : null}
+
+                  <Button type="button" size="sm" disabled={isPending} onClick={handleInvite} className="gap-1.5">
+                    <UserPlus className="size-3.5" />
+                    {isPending ? "กำลังสร้างบัญชี..." : "สร้างบัญชีบุคลากร"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Filter Toolbar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
@@ -445,6 +587,21 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
                         >
                           {staff.isActive ? "ระงับ" : "เปิดใช้"}
                         </Button>
+
+                        {isAdmin && !isSelf ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={isPending}
+                            onClick={() => handleRemove(staff)}
+                            className="text-xs h-8 px-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="ลบบัญชีผู้ใช้ (เฉพาะผู้ดูแลระบบ)"
+                          >
+                            <Trash2 className="size-3.5" />
+                            ลบ
+                          </Button>
+                        ) : null}
                       </div>
                     )}
                   </div>

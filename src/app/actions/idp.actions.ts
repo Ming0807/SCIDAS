@@ -60,6 +60,14 @@ function integer(formData: FormData, name: string, fallback = 0): number {
   return Number(value)
 }
 
+function optionalScore(formData: FormData, name: string): number | null | undefined {
+  const value = text(formData, name)
+  if (!value) return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return undefined
+  return Math.round(parsed * 100) / 100
+}
+
 function failFromError(error: unknown, message: string): ActionResult<CrudId> {
   if (error instanceof Error && error.message === "UNAUTHORIZED") {
     return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
@@ -576,6 +584,11 @@ export async function createDevelopmentEvaluationAction(
     if (!planId || !validDate(evaluationDate) || !Number.isInteger(evaluationRound) || evaluationRound < 1 || !overallResult) {
       return actionFail("VALIDATION_ERROR", "ข้อมูลการประเมินไม่ถูกต้อง")
     }
+    const preScore = optionalScore(formData, "pre_score")
+    const postScore = optionalScore(formData, "post_score")
+    if (preScore === undefined || postScore === undefined) {
+      return actionFail("VALIDATION_ERROR", "คะแนนก่อน/หลังต้องเป็นตัวเลขระหว่าง 0-100")
+    }
     const client = await createClient()
     const plan = await getPlan(client, planId, context.schoolId)
     if (!plan) return actionFail("NOT_FOUND", "ไม่พบแผนพัฒนา")
@@ -588,6 +601,8 @@ export async function createDevelopmentEvaluationAction(
         evaluation_date: evaluationDate,
         evaluation_round: evaluationRound,
         overall_result: overallResult,
+        pre_score: preScore,
+        post_score: postScore,
         strengths: optionalText(formData, "strengths"),
         areas_for_improvement: optionalText(formData, "areas_for_improvement"),
         recommendations: optionalText(formData, "recommendations"),
@@ -622,6 +637,11 @@ export async function updateDevelopmentEvaluationAction(
     if (!id || !validDate(evaluationDate) || !Number.isInteger(evaluationRound) || evaluationRound < 1 || !overallResult) {
       return actionFail("VALIDATION_ERROR", "ข้อมูลการประเมินไม่ถูกต้อง")
     }
+    const preScore = optionalScore(formData, "pre_score")
+    const postScore = optionalScore(formData, "post_score")
+    if (preScore === undefined || postScore === undefined) {
+      return actionFail("VALIDATION_ERROR", "คะแนนก่อน/หลังต้องเป็นตัวเลขระหว่าง 0-100")
+    }
 
     const client = await createClient()
     const { data: evaluation } = await client
@@ -641,6 +661,8 @@ export async function updateDevelopmentEvaluationAction(
         evaluation_date: evaluationDate,
         evaluation_round: evaluationRound,
         overall_result: overallResult,
+        pre_score: preScore,
+        post_score: postScore,
         strengths: optionalText(formData, "strengths"),
         areas_for_improvement: optionalText(formData, "areas_for_improvement"),
         recommendations: optionalText(formData, "recommendations"),

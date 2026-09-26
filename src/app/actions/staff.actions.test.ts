@@ -16,12 +16,19 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }))
 
+vi.mock("@/lib/server/admin-client", () => ({
+  createAdminClient: vi.fn(),
+}))
+
 import { logAudit } from "@/lib/server/audit-logger"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { createAdminClient } from "@/lib/server/admin-client"
 import { createClient } from "@/utils/supabase/server"
 
 import {
   assignHomeroomTeacherAction,
+  inviteStaffAction,
+  removeStaffAction,
   updateStaffRoleAction,
   updateStaffStatusAction,
 } from "./staff.actions"
@@ -265,6 +272,221 @@ describe("staff.actions", () => {
           recordId: classId,
         }),
       )
+    })
+  })
+
+  describe("inviteStaffAction", () => {
+    const validInput = {
+      email: "new.teacher@school.ac.th",
+      firstName: "สมชาย",
+      lastName: "ใจดี",
+      role: "subject_teacher" as const,
+    }
+
+    it("fails with FORBIDDEN if caller is not leadership", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await inviteStaffAction(validInput)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("FORBIDDEN")
+    })
+
+    it("fails with VALIDATION_ERROR for malformed email", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await inviteStaffAction({ ...validInput, email: "not-an-email" })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("fails with CONFLICT when email already exists in school", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockClient = {
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: "prof-x" }, error: null }),
+              }),
+            }),
+          }),
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient as never)
+
+      const result = await inviteStaffAction(validInput)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("CONFLICT")
+    })
+
+    it("creates auth user plus profile and returns temp password", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
+              insert: vi.fn().mockResolvedValue({ error: null }),
+            }
+          }
+          return {}
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient as never)
+
+      const mockCreateUser = vi.fn().mockResolvedValue({
+        data: { user: { id: "new-user-1" } },
+        error: null,
+      })
+      vi.mocked(createAdminClient).mockReturnValueOnce({
+        auth: { admin: { createUser: mockCreateUser, deleteUser: vi.fn() } },
+      } as never)
+
+      const result = await inviteStaffAction(validInput)
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.profileId).toBe("new-user-1")
+        expect(result.data.tempPassword).toHaveLength(12)
+      }
+      expect(mockCreateUser).toHaveBeenCalledWith(
+        expect.objectContaining({ email: "new.teacher@school.ac.th", email_confirm: true }),
+      )
+    })
+  })
+
+  describe("removeStaffAction", () => {
+    it("fails with FORBIDDEN for director (admin only)", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "director",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await removeStaffAction({ profileId: "c3d6c7b0-8c2d-4b8c-8f9d-123456789abc" })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("FORBIDDEN")
+    })
+
+    it("fails with CONFLICT when removing self", async () => {
+      const selfId = "c3d6c7b0-8c2d-4b8c-8f9d-123456789abc"
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: selfId,
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: selfId,
+        studentId: null,
+      })
+
+      const result = await removeStaffAction({ profileId: selfId })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("CONFLICT")
+    })
+
+    it("fails with CONFLICT when removing the last active admin", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const chain: Record<string, unknown> = {}
+      chain.eq = vi.fn().mockReturnValue(chain)
+      chain.maybeSingle = vi.fn().mockResolvedValue({
+        data: { id: "prof-last", role: "admin", is_active: true },
+        error: null,
+      })
+      chain.neq = vi.fn().mockResolvedValue({ count: 0, error: null })
+      const mockClient = {
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue(chain),
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient as never)
+
+      const result = await removeStaffAction({ profileId: "c3d6c7b0-8c2d-4b8c-8f9d-123456789abc" })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("CONFLICT")
+    })
+
+    it("deletes auth user and deactivates profile", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            const chain = {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({
+                      data: { id: "prof-2", role: "subject_teacher", is_active: true },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+              update: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({ eq: mockUpdateEq }),
+              }),
+            }
+            return chain
+          }
+          return {}
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient as never)
+
+      const mockDeleteUser = vi.fn().mockResolvedValue({ error: null })
+      vi.mocked(createAdminClient).mockReturnValueOnce({
+        auth: { admin: { createUser: vi.fn(), deleteUser: mockDeleteUser } },
+      } as never)
+
+      const result = await removeStaffAction({ profileId: "c3d6c7b0-8c2d-4b8c-8f9d-123456789abc" })
+      expect(result.ok).toBe(true)
+      expect(mockDeleteUser).toHaveBeenCalled()
     })
   })
 })

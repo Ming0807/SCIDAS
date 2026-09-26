@@ -1056,6 +1056,8 @@ export type Database = {
           overall_result: string
           parent_feedback: string | null
           plan_id: string
+          post_score: number | null
+          pre_score: number | null
           recommendations: string | null
           school_id: string
           strengths: string | null
@@ -1073,6 +1075,8 @@ export type Database = {
           overall_result: string
           parent_feedback?: string | null
           plan_id: string
+          post_score?: number | null
+          pre_score?: number | null
           recommendations?: string | null
           school_id?: string
           strengths?: string | null
@@ -1090,6 +1094,8 @@ export type Database = {
           overall_result?: string
           parent_feedback?: string | null
           plan_id?: string
+          post_score?: number | null
+          pre_score?: number | null
           recommendations?: string | null
           school_id?: string
           strengths?: string | null
