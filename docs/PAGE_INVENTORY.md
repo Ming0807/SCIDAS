@@ -15,6 +15,8 @@
 |---|---|---|---|---|:---:|
 | `/` | Server Component | ทุกบทบาท (Scoped) | `getStudentCareDashboard()`, `v_student_worklist` | Loading, Empty, Content, Error | **เสร็จสมบูรณ์** |
 | `/login` | Public Client | ทุกผู้ใช้งาน | Supabase Auth (OAuth & Email) | Idle, Submitting, Error | **เสร็จสมบูรณ์** |
+| `/login/forgot` | Public Client | ทุกผู้ใช้งาน | Supabase Auth `resetPasswordForEmail` | Idle, Submitting, Sent | **เสร็จสมบูรณ์** |
+| `/auth/reset` | Public Client | ผู้ถือลิงก์รีเซ็ต | Supabase Auth `updateUser` | Form, Saving, Done | **เสร็จสมบูรณ์** |
 | `/auth/callback` | Route Handler | ทุกผู้ใช้งาน | Supabase Auth Code Exchange | Redirecting | **เสร็จสมบูรณ์** |
 | `/students` | Server Component | `admin`, `director`, `homeroom_teacher`, `counselor`, `subject_teacher` | `getStudentWorklist()`, `v_student_worklist` | Filter, Table, Mobile, Empty, Pagination | **เสร็จสมบูรณ์** |
 | `/students/new` | Server Component + Action | `admin`, `homeroom_teacher` | `createStudentActionState`, `classrooms` | Form, Validating, Submit, Error | **เสร็จสมบูรณ์** |

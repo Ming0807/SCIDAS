@@ -137,7 +137,7 @@ export const dashboardNavItems: NavigationItem[] = [
     href: "/notifications",
     icon: Bell,
     group: "system",
-    placements: ["mobilePrimary", "moduleMenu"],
+    placements: ["sidebar", "mobilePrimary", "moduleMenu"],
   },
   {
     key: "reports",
@@ -194,9 +194,8 @@ export function getGroupedSidebarNavigation(role?: string | null): NavigationSec
     ];
   }
 
-  const coreKeys = ["overview", "attendance", "behavior"];
+  const coreKeys = ["overview", "students", "attendance", "academics", "behavior"];
   const careKeys = [
-    "students",
     "screening",
     "support",
     "home-visits",
@@ -204,7 +203,7 @@ export function getGroupedSidebarNavigation(role?: string | null): NavigationSec
     "referrals",
     "risk-analysis",
   ];
-  const adminKeys = ["academics", "reports", "settings"];
+  const adminKeys = ["reports", "notifications", "settings"];
 
   const coreItems = items.filter((i) => coreKeys.includes(i.key));
   const careItems = items.filter((i) => careKeys.includes(i.key));
@@ -213,7 +212,7 @@ export function getGroupedSidebarNavigation(role?: string | null): NavigationSec
   return [
     { key: "core", title: "งานประจำวัน", items: coreItems },
     { key: "care", title: "ระบบดูแลช่วยเหลือ", items: careItems },
-    { key: "admin", title: "ผลการเรียนและบริหาร", items: adminItems },
+    { key: "admin", title: "รายงานและตั้งค่าระบบ", items: adminItems },
   ].filter((section) => section.items.length > 0);
 }
 

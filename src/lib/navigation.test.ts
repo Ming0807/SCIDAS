@@ -106,7 +106,19 @@ describe("Navigation Configuration and Helpers", () => {
       expect(sections.map((s) => s.key)).toEqual(["core", "care", "admin"])
       expect(sections[0].title).toBe("งานประจำวัน")
       expect(sections[1].title).toBe("ระบบดูแลช่วยเหลือ")
-      expect(sections[2].title).toBe("ผลการเรียนและบริหาร")
+      expect(sections[2].title).toBe("รายงานและตั้งค่าระบบ")
+      expect(sections[0].items.map((i) => i.key)).toEqual([
+        "overview",
+        "students",
+        "attendance",
+        "academics",
+        "behavior",
+      ])
+      expect(sections[2].items.map((i) => i.key)).toEqual([
+        "notifications",
+        "reports",
+        "settings",
+      ])
     })
 
     it("returns single student-main group for student role", () => {

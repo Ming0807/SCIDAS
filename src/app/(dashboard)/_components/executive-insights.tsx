@@ -69,7 +69,11 @@ export function ExecutiveInsights({ insights }: { insights: ExecutiveInsights })
         <Section
           variant="surface"
           title="ผลการเรียนต่ำ 10 อันดับแรก"
-          description="เกรดเฉลี่ยต่ำสุดภาคเรียนปัจจุบัน"
+          description={
+            insights.gpaSemesterLabel
+              ? `เกรดเฉลี่ยต่ำสุด${insights.gpaSemesterLabel} · ความเสี่ยง/มาเรียนเป็นข้อมูลปัจจุบัน`
+              : "เกรดเฉลี่ยต่ำสุดภาคเรียนปัจจุบัน"
+          }
           actions={<GraduationCap aria-hidden="true" className="size-4 text-muted-foreground" />}
         >
           {insights.topLowGpa.length === 0 ? (

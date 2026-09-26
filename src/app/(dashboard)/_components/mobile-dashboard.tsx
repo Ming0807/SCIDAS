@@ -17,6 +17,7 @@ import {
 import type { StudentCareDashboard } from "@/lib/server/student-care-read-models"
 import type {
   ClassroomOption,
+  SemesterOption,
   TopAbsentStudent,
   TopLowGpaStudent,
 } from "@/lib/server/executive-read-models"
@@ -47,6 +48,8 @@ export function MobileDashboard({
   topLowGpa = [],
   classroomOptions = [],
   activeClassroomId = null,
+  semesterOptions = [],
+  activeSemesterId = null,
 }: {
   role?: string | null
   dashboard: StudentCareDashboard
@@ -55,6 +58,8 @@ export function MobileDashboard({
   topLowGpa?: TopLowGpaStudent[]
   classroomOptions?: ClassroomOption[]
   activeClassroomId?: string | null
+  semesterOptions?: SemesterOption[]
+  activeSemesterId?: string | null
 }) {  const metrics = dashboard.metrics
 
   return (
@@ -137,7 +142,12 @@ export function MobileDashboard({
 
         <QuickActionsRibbon />
 
-        <DashboardClassroomFilter options={classroomOptions} activeClassroomId={activeClassroomId} />
+        <DashboardClassroomFilter
+          options={classroomOptions}
+          activeClassroomId={activeClassroomId}
+          semesterOptions={semesterOptions}
+          activeSemesterId={activeSemesterId}
+        />
 
         <div className="grid grid-cols-2 gap-3">
 

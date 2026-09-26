@@ -163,7 +163,7 @@ export function MobileBottomNav() {
             ) : (
               <LogOut className="h-4 w-4 text-destructive" />
             )}
-            <span>{isLoggingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ (Log Out)"}</span>
+            <span>{isLoggingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}</span>
           </button>
         </div>
       </SheetContent>

@@ -362,7 +362,7 @@ export function Header({
                 ) : (
                   <LogOut className="size-4 text-destructive" />
                 )}
-                <span>{isLoggingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ (Log Out)"}</span>
+                <span>{isLoggingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}</span>
               </button>
             </div>
           )}

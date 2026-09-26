@@ -34,25 +34,37 @@ export type ClassroomOption = {
   name: string
 }
 
+export type SemesterOption = {
+  id: string
+  name: string
+  isCurrent: boolean
+}
+
 export type ExecutiveInsights = {
   topAbsence: TopAbsentStudent[]
   topLowGpa: TopLowGpaStudent[]
+  gpaSemesterLabel: string | null
   factors: RiskFactorCount[]
   factorsTotalStudents: number
   classrooms: ClassroomRiskItem[]
   classroomOptions: ClassroomOption[]
   activeClassroomId: string | null
+  semesterOptions: SemesterOption[]
+  activeSemesterId: string | null
   trend: RiskTrendPoint[]
 }
 
 const emptyInsights: ExecutiveInsights = {
   topAbsence: [],
   topLowGpa: [],
+  gpaSemesterLabel: null,
   factors: [],
   factorsTotalStudents: 0,
   classrooms: [],
   classroomOptions: [],
   activeClassroomId: null,
+  semesterOptions: [],
+  activeSemesterId: null,
   trend: [],
 }
 
@@ -76,15 +88,56 @@ export async function getClassroomOptions(): Promise<ClassroomOption[]> {
 
 const uuidShape = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+export async function getSemesterOptions(): Promise<SemesterOption[]> {
+  try {
+    const context = await getCurrentUserContext()
+    const client = await createClient()
+    const { data, error } = await client
+      .from("semesters")
+      .select("id, semester, is_current, academic_years(year)")
+      .eq("school_id", context.schoolId)
+      .order("start_date", { ascending: false })
+      .limit(10)
+    if (error || !data) return []
+    type Row = {
+      id: string
+      semester: string
+      is_current: boolean
+      academic_years: { year: number } | Array<{ year: number }> | null
+    }
+    return ((data ?? []) as Row[]).map((row) => {
+      const year = Array.isArray(row.academic_years) ? row.academic_years[0]?.year : row.academic_years?.year
+      const semNum = row.semester === "semester_1" ? "1" : row.semester === "semester_2" ? "2" : row.semester
+      return {
+        id: row.id,
+        name: `ภาคเรียนที่ ${semNum}/${year ?? "-"}`,
+        isCurrent: row.is_current,
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
 export async function getExecutiveInsights(options?: {
   classroomId?: string
+  semesterId?: string
 }): Promise<ExecutiveInsights> {
   const rawClassroomId = options?.classroomId?.trim() || null
   const classroomId = rawClassroomId && uuidShape.test(rawClassroomId) ? rawClassroomId : null
+  const rawSemesterId = options?.semesterId?.trim() || null
+  const requestedSemesterId = rawSemesterId && uuidShape.test(rawSemesterId) ? rawSemesterId : null
   try {
-    const [worklist, academic, factors, classrooms, trend, classroomOptions] = await Promise.all([
+    const [worklist, semesterOptions] = await Promise.all([
       getStudentWorklist({ limit: 500, classroomId: classroomId ?? undefined }).catch(() => []),
-      getAcademicDashboard().catch(() => null),
+      getSemesterOptions(),
+    ])
+    const activeSemester = requestedSemesterId
+      ? (semesterOptions.find((s) => s.id === requestedSemesterId) ?? null)
+      : (semesterOptions.find((s) => s.isCurrent) ?? semesterOptions[0] ?? null)
+    const activeSemesterId = activeSemester?.id ?? null
+    const [academic, factors, classrooms, trend, classroomOptions] = await Promise.all([
+      getAcademicDashboard(activeSemesterId ?? undefined).catch(() => null),
       getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
       getClassroomRiskBreakdown().catch(() => []),
       getRiskTrendHistory().catch(() => []),
@@ -137,6 +190,7 @@ export async function getExecutiveInsights(options?: {
     return {
       topAbsence,
       topLowGpa,
+      gpaSemesterLabel: activeSemester?.name ?? null,
       factors: factors.factors.slice(0, 6),
       factorsTotalStudents: factors.totalStudents,
       classrooms: [...classrooms]
@@ -147,6 +201,8 @@ export async function getExecutiveInsights(options?: {
         .slice(0, 12),
       classroomOptions,
       activeClassroomId: classroomId,
+      semesterOptions,
+      activeSemesterId,
       trend: trend.slice(-6),
     }
   } catch {

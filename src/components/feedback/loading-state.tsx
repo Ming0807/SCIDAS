@@ -14,7 +14,7 @@ export interface LoadingStateProps
 }
 
 export function LoadingState({
-  label = "Loading",
+  label = "กำลังโหลด",
   description,
   rows = 3,
   variant = "surface",

@@ -34,7 +34,7 @@ export type AcademicDashboard = {
   students: AcademicScoreItem[]
 }
 
-export async function getAcademicDashboard(): Promise<AcademicDashboard> {
+export async function getAcademicDashboard(semesterId?: string): Promise<AcademicDashboard> {
   const context = await getCurrentUserContext()
 
   if (!context.profileId) {
@@ -42,9 +42,12 @@ export async function getAcademicDashboard(): Promise<AcademicDashboard> {
   }
 
   const client = await createClient()
-  const semesterId = await getCurrentSemesterId(context.schoolId)
+  const resolvedSemesterId =
+    semesterId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(semesterId)
+      ? semesterId
+      : await getCurrentSemesterId(context.schoolId)
 
-  if (!semesterId) {
+  if (!resolvedSemesterId) {
     return { summary: emptySummary(), students: [] }
   }
 
@@ -76,7 +79,7 @@ export async function getAcademicDashboard(): Promise<AcademicDashboard> {
     `,
     )
     .eq("school_id", context.schoolId)
-    .eq("semester_id", semesterId)
+    .eq("semester_id", resolvedSemesterId)
     .order("total_score", { ascending: false })
     .limit(200)
 

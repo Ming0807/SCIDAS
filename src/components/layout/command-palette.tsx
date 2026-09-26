@@ -71,7 +71,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       },
       {
         id: "nav-students",
-        title: "รายชื่อนักเรียน (Students)",
+        title: "รายชื่อนักเรียน",
         subtitle: "ค้นหา ดูข้อมูล และจัดการระเบียนนักเรียน",
         category: "navigation",
         icon: Users,
@@ -527,7 +527,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        Student
+                        นักเรียน
                       </span>
                     </div>
                   </li>
@@ -585,7 +585,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {item.category === "action" ? "Action" : "Page"}
+                    {item.category === "action" ? "คำสั่ง" : "หน้า"}
                   </span>
                 </li>
               )
@@ -612,7 +612,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               ดำเนินการ
             </span>
           </div>
-          <span className="font-sans">SCIDAS Command Center</span>
+          <span className="font-sans">ศูนย์บัญชาการ SCIDAS</span>
         </div>
       </div>
     </div>

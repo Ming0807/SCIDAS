@@ -42,6 +42,7 @@ export default async function DashboardPage({
 }) {
   const params = searchParams ? await searchParams : {}
   const rawClassroom = typeof params.classroom === "string" ? params.classroom : ""
+  const rawSemester = typeof params.semester === "string" ? params.semester : ""
   const [role, dashboardResult, insights] = await Promise.all([
     getUserRole(),
     getStudentCareDashboard()
@@ -50,15 +51,21 @@ export default async function DashboardPage({
         data: emptyDashboard,
         error: error instanceof Error ? error.message : "Unknown dashboard data error",
       })),
-    getExecutiveInsights({ classroomId: rawClassroom || undefined }).catch(
+    getExecutiveInsights({
+      classroomId: rawClassroom || undefined,
+      semesterId: rawSemester || undefined,
+    }).catch(
       (): ExecutiveInsightsData => ({
         topAbsence: [],
         topLowGpa: [],
+        gpaSemesterLabel: null,
         factors: [],
         factorsTotalStudents: 0,
         classrooms: [],
         classroomOptions: [],
         activeClassroomId: null,
+        semesterOptions: [],
+        activeSemesterId: null,
         trend: [],
       }),
     ),
@@ -82,6 +89,8 @@ export default async function DashboardPage({
           topLowGpa={insights.topLowGpa}
           classroomOptions={insights.classroomOptions}
           activeClassroomId={insights.activeClassroomId}
+          semesterOptions={insights.semesterOptions}
+          activeSemesterId={insights.activeSemesterId}
         />
       </div>
 
@@ -90,7 +99,7 @@ export default async function DashboardPage({
         <PageShell size="wide" spacing="default" className="min-h-screen">
           <PageHeader
             title="ภาพรวมดูแลนักเรียน"
-            description="ศูนย์บัญชาการติดตามความเสี่ยง งานดูแล และการช่วยเหลือนักเรียนรายบุคคล (Student Care Command Center)"
+            description="ศูนย์บัญชาการติดตามความเสี่ยง งานดูแล และการช่วยเหลือนักเรียนรายบุคคล"
           />
 
           <QuickActionsRibbon />
@@ -120,6 +129,8 @@ export default async function DashboardPage({
           <DashboardClassroomFilter
             options={insights.classroomOptions}
             activeClassroomId={insights.activeClassroomId}
+            semesterOptions={insights.semesterOptions}
+            activeSemesterId={insights.activeSemesterId}
           />
 
           {/* Executive Analytics: Top lists, factors, classrooms, trend */}

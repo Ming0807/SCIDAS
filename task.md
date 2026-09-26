@@ -1,5 +1,19 @@
 # Task Progress
 
+## 2026-09-26 Phase 0-1D + Dashboard Completion (370 Tests, 66 Suites)
+
+Status: done. Closed all P0 functional gaps vs REQUIREMENTS plus executive dashboard:
+1. **Phase 0 (mobile/honesty fixes)**: notification bell link, student edit gate parity, report category deep-links + mobile create, real semester badge, removed SDQ sample filler + synthetic print, mobile risk recalculate.
+2. **Phase 1A (auth)**: Email+password login alongside Google OAuth, `/login/forgot` reset link, `/auth/reset` new password.
+3. **Phase 1B (missing Must data)**: `basic_skills` read model + upsert + form on `/academics`; `assignment_submissions` read model + create/status actions + panel on `/behavior`.
+4. **Phase 1C (risk engine)**: manual teacher flags; migration 0019 repaired the broken 0018 RPC against the real schema (verified on local DB: 45 watch, weights respected, trigger auto-recalc, no recursion); `risk_weights` + admin editor; auto-recalculate triggers.
+5. **Phase 1D**: IDP pre/post scores (migration 0020 + comparison card); admin invite/remove staff via service-role client with last-admin guard.
+6. **Storage repairs**: migration 0021 relaxed attachment UUID pattern (seed ids broke uploads); migration 0022 public student-photos bucket + photo upload/remove with client compression.
+7. **Crash fix**: `/students` passed a server closure to client components; moved href building client-side with regression tests.
+8. **Executive dashboard**: Top10 absence/GPA, factor bars, classroom compare, monthly trend, classroom + semester filters (desktop + mobile).
+9. **Foundations**: dark mode ThemeProvider, LINE Messaging provider (unconfigured-safe, bind later), 30-min idle auto-logout, Thai language cleanup, sidebar notifications + regrouped menu, SDQ history + delete + real active flags.
+10. Verification: `tsc`, `eslint` (0 errors), `vitest` 66 files / 370 tests, `next build` 33 routes.
+
 ## 2026-09-13 100% Server Action Test Coverage Achieved (208 Tests, 34 Suites)
 
 Status: done. Completed exhaustive automated integration and validation test coverage across 100% of all Server Actions in `src/app/actions/`, enforcing permissions, data invariants, error states, and cache revalidations:

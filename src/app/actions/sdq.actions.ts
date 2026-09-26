@@ -96,17 +96,25 @@ export async function saveSdqAssessmentAction(
       return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกผลการประเมินได้")
     }
 
-    // If risk or problem, log a student flag
+    // If risk or problem, log a student flag (upsert: re-assessments refresh it).
     if (sdqResult.overallClassification !== "normal") {
-      await client.from("student_flags").insert({
-        student_id: studentId,
-        school_id: context.schoolId,
-        flag_key: sdqResult.overallClassification === "problem" ? "sdq_problem" : "sdq_risk",
-        label: `SDQ แจ้งเตือน: ${sdqResult.overallClassification === "problem" ? "กลุ่มมีปัญหา" : "กลุ่มเสี่ยง"}`,
-        severity: sdqResult.overallClassification === "problem" ? "high" : "medium",
-        description: summaryText,
-        status: "open",
-      })
+      const { error: flagError } = await client.from("student_flags").upsert(
+        {
+          student_id: studentId,
+          school_id: context.schoolId,
+          flag_key: sdqResult.overallClassification === "problem" ? "sdq_problem" : "sdq_risk",
+          label: `SDQ แจ้งเตือน: ${sdqResult.overallClassification === "problem" ? "กลุ่มมีปัญหา" : "กลุ่มเสี่ยง"}`,
+          severity: sdqResult.overallClassification === "problem" ? "high" : "medium",
+          description: summaryText,
+          status: "active",
+          owner_id: context.profileId,
+          created_by: context.profileId,
+        },
+        { onConflict: "school_id,student_id,flag_key" },
+      )
+      if (flagError) {
+        console.error("Failed to upsert SDQ student flag:", flagError)
+      }
     }
 
     revalidatePath("/screening/sdq")
@@ -123,6 +131,113 @@ export async function saveSdqAssessmentAction(
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการประเมิน SDQ"
+    return actionFail("INTERNAL_ERROR", msg)
+  }
+}
+
+export type SdqHistoryItem = {
+  id: string
+  studentId: string
+  assessmentDate: string | null
+  riskLevel: RiskLevel
+  riskScore: number | null
+  summary: string | null
+}
+
+export async function getSdqAssessments(studentId: string): Promise<SdqHistoryItem[]> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId || context.role === "student") return []
+
+    const client = await createClient()
+    const { data: student } = await client
+      .from("students")
+      .select("id")
+      .eq("id", studentId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+    if (!student) return []
+
+    const { data, error } = await client
+      .from("risk_assessments")
+      .select("id, student_id, risk_level, risk_score, summary, assessed_at")
+      .eq("school_id", context.schoolId)
+      .eq("student_id", studentId)
+      .ilike("summary", "แบบประเมิน SDQ%")
+      .order("assessed_at", { ascending: false })
+      .limit(20)
+
+    if (error || !data) return []
+    return data.map((row) => ({
+      id: row.id,
+      studentId: row.student_id,
+      assessmentDate: row.assessed_at,
+      riskLevel: row.risk_level,
+      riskScore: row.risk_score,
+      summary: row.summary,
+    }))
+  } catch {
+    return []
+  }
+}
+
+export async function deleteSdqAssessmentAction(
+  assessmentId: string,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId || context.role === "student") {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ลบผลการประเมิน SDQ")
+    }
+
+    const client = await createClient()
+    const { data: assessment } = await client
+      .from("risk_assessments")
+      .select("id, student_id, semester_id")
+      .eq("id", assessmentId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+
+    if (!assessment) return actionFail("NOT_FOUND", "ไม่พบผลการประเมิน")
+    const studentId = assessment.student_id as string
+
+    const { error: deleteError } = await client
+      .from("risk_assessments")
+      .delete()
+      .eq("id", assessmentId)
+      .eq("school_id", context.schoolId)
+
+    if (deleteError) {
+      console.error("Failed to delete SDQ assessment:", deleteError)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบผลการประเมินได้")
+    }
+
+    // If no concerning SDQ result remains, resolve the SDQ flags.
+    const { data: remaining } = await client
+      .from("risk_assessments")
+      .select("id")
+      .eq("school_id", context.schoolId)
+      .eq("student_id", studentId)
+      .ilike("summary", "แบบประเมิน SDQ%")
+      .neq("risk_level", "normal")
+      .limit(1)
+
+    if (!remaining || remaining.length === 0) {
+      await client
+        .from("student_flags")
+        .update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: context.profileId })
+        .eq("school_id", context.schoolId)
+        .eq("student_id", studentId)
+        .in("flag_key", ["sdq_risk", "sdq_problem"])
+        .eq("status", "active")
+    }
+
+    revalidatePath("/screening/sdq")
+    revalidatePath(`/screening/sdq/${studentId}`)
+    revalidatePath(`/students/${studentId}`)
+    return actionOk("ลบผลการประเมินเรียบร้อยแล้ว", { data: { id: assessmentId } })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการลบผลการประเมิน"
     return actionFail("INTERNAL_ERROR", msg)
   }
 }
