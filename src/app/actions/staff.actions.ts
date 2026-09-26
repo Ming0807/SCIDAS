@@ -459,9 +459,13 @@ export async function removeStaffAction(
     }
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(profileId)
+    let authRemoved = !deleteError
     if (deleteError && !/not found/i.test(deleteError.message)) {
+      // Staff with history (e.g. audit_logs) cannot be hard-deleted due to
+      // foreign keys. Fall back to deactivating the profile, which locks
+      // them out of the app while preserving history.
       console.error("[staff.actions] removeStaffAction deleteUser error:", deleteError)
-      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบบัญชีผู้ใช้ได้ กรุณาลองใหม่")
+      authRemoved = false
     }
 
     // Keep the profile row for historical references, but deactivate it.
@@ -487,7 +491,12 @@ export async function removeStaffAction(
 
     revalidatePath("/settings/staff")
 
-    return actionOk("ลบบัญชีบุคลากรเรียบร้อยแล้ว", { data: { profileId } })
+    return actionOk(
+      authRemoved
+        ? "ลบบัญชีบุคลากรเรียบร้อยแล้ว"
+        : "ปิดการใช้งานบัญชีเรียบร้อยแล้ว (คงประวัติการทำงานเดิมไว้จึงลบถาวรไม่ได้)",
+      { data: { profileId } },
+    )
   } catch (error) {
     console.error("Error in removeStaffAction:", error)
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการลบบัญชีบุคลากร")

@@ -182,9 +182,12 @@ export async function removeParentAccessAction(
     }
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(guardian.user_id)
+    let authRemoved = !deleteError
     if (deleteError && !/not found/i.test(deleteError.message)) {
+      // Referenced rows (e.g. audit logs) can block hard deletes; fall back
+      // to deactivating the profile so the account cannot sign in.
       console.error("[parent.actions] removeParentAccessAction deleteUser error:", deleteError)
-      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบบัญชีผู้ใช้ได้ กรุณาลองใหม่")
+      authRemoved = false
     }
 
     const { error: unlinkError } = await supabase
@@ -214,7 +217,12 @@ export async function removeParentAccessAction(
 
     revalidatePath(`/students`)
 
-    return actionOk("ปิดบัญชีผู้ปกครองเรียบร้อยแล้ว", { data: { guardianId } })
+    return actionOk(
+      authRemoved
+        ? "ปิดบัญชีผู้ปกครองเรียบร้อยแล้ว"
+        : "ปิดการใช้งานบัญชีเรียบร้อยแล้ว (คงประวัติเดิมไว้จึงลบถาวรไม่ได้)",
+      { data: { guardianId } },
+    )
   } catch (error) {
     console.error("Error in removeParentAccessAction:", error)
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการปิดบัญชีผู้ปกครอง")

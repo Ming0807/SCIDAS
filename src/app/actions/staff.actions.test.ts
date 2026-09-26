@@ -488,5 +488,56 @@ describe("staff.actions", () => {
       expect(result.ok).toBe(true)
       expect(mockDeleteUser).toHaveBeenCalled()
     })
+
+    it("deactivates the profile when history blocks hard delete", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({
+                      data: { id: "prof-2", role: "subject_teacher", is_active: true },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+              update: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({ eq: mockUpdateEq }),
+              }),
+            }
+          }
+          return {}
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient as never)
+
+      vi.mocked(createAdminClient).mockReturnValueOnce({
+        auth: {
+          admin: {
+            createUser: vi.fn(),
+            deleteUser: vi.fn().mockResolvedValue({ error: new Error("Database error deleting user") }),
+          },
+        },
+      } as never)
+
+      const result = await removeStaffAction({ profileId: "c3d6c7b0-8c2d-4b8c-8f9d-123456789abc" })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.message).toContain("คงประวัติ")
+      }
+      expect(mockUpdateEq).toHaveBeenCalled()
+    })
   })
 })
