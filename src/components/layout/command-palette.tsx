@@ -273,19 +273,23 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     [router, theme, setTheme]
   )
 
-  // Live student search with debounce
-  useEffect(() => {
-    const trimmed = query.trim()
-    if (!trimmed || trimmed.length < 1) {
-      setStudentResults([])
-      setIsSearching(false)
-      return
-    }
+  // Live student search with debounce.
+  // Reset on query change during render (instead of setState in an effect),
+  // then debounce the server lookup in the effect below.
+  const trimmedQuery = query.trim()
+  const [prevQuery, setPrevQuery] = useState(query)
+  if (prevQuery !== query) {
+    setPrevQuery(query)
+    setStudentResults([])
+    setIsSearching(trimmedQuery.length > 0)
+  }
 
-    setIsSearching(true)
+  useEffect(() => {
+    if (!trimmedQuery) return
+
     const timeoutId = setTimeout(async () => {
       try {
-        const res = await searchStudentsQuickAction(trimmed)
+        const res = await searchStudentsQuickAction(trimmedQuery)
         if (res.ok && res.data) {
           setStudentResults(res.data)
         } else {
@@ -299,7 +303,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     }, 180)
 
     return () => clearTimeout(timeoutId)
-  }, [query])
+  }, [trimmedQuery])
 
   const filteredActions = useMemo(() => {
     if (!query.trim()) return actions

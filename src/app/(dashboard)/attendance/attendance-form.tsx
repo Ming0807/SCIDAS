@@ -141,24 +141,35 @@ export function AttendanceForm({
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(entries))
   const dirty = JSON.stringify(entries) !== savedSnapshot
   const draftKey = `scidas_att_draft_${classroom.id}_${date}`
-  const [hasDraft, setHasDraft] = useState(false)
-
-  // Check for local draft on mount or when classroom/date changes
-  useEffect(() => {
+  const [hasDraft, setHasDraft] = useState<boolean>(() => {
     try {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(draftKey)
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (JSON.stringify(parsed) !== savedSnapshot) {
-            setHasDraft(true)
-          }
-        }
-      }
+      if (typeof window === "undefined") return false
+      const stored = localStorage.getItem(draftKey)
+      if (!stored) return false
+      return JSON.stringify(JSON.parse(stored)) !== savedSnapshot
     } catch {
-      // ignore storage errors
+      return false
     }
-  }, [draftKey, savedSnapshot])
+  })
+
+  // Re-check local draft on mount and when classroom/date (or the saved
+  // baseline) changes. Uses lazy init plus the render-time adjustment
+  // pattern (same as below) instead of setState inside an effect body.
+  const readStoredDraftDiffers = () => {
+    try {
+      if (typeof window === "undefined") return false
+      const stored = localStorage.getItem(draftKey)
+      if (!stored) return false
+      return JSON.stringify(JSON.parse(stored)) !== savedSnapshot
+    } catch {
+      return false
+    }
+  }
+  const [draftCheck, setDraftCheck] = useState({ key: draftKey, snapshot: savedSnapshot })
+  if (draftCheck.key !== draftKey || draftCheck.snapshot !== savedSnapshot) {
+    setDraftCheck({ key: draftKey, snapshot: savedSnapshot })
+    setHasDraft(readStoredDraftDiffers())
+  }
 
   // Auto-save draft locally whenever dirty
   useEffect(() => {
