@@ -11,7 +11,8 @@ import { EmptyState } from "@/components/feedback"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import type { StudentListItem, StudentSummary } from "./student-data"
+import type { StudentFilterState, StudentListItem, StudentSummary } from "./student-data"
+import { createStudentPageHref } from "./student-data"
 
 export function StudentTable({
   students,
@@ -20,7 +21,7 @@ export function StudentTable({
   page,
   totalPages,
   pageSize,
-  getPageHref,
+  filters,
   canEdit,
 }: {
   students: StudentListItem[]
@@ -29,11 +30,12 @@ export function StudentTable({
   page: number
   totalPages: number
   pageSize: number
-  getPageHref: (page: number) => string
+  filters: StudentFilterState
   canEdit: boolean
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isCompact, setIsCompact] = useState(false)
+  const getPageHref = createStudentPageHref(filters)
 
   const isAllSelected = students.length > 0 && students.every((s) => selectedIds.has(s.id))
   const isSomeSelected = students.some((s) => selectedIds.has(s.id)) && !isAllSelected

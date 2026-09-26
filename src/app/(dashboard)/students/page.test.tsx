@@ -109,6 +109,32 @@ vi.mock("@/lib/server/student-care-read-models", () => ({
       attendanceRate30d: 100,
       priorityScore: 2,
     },
+    // Extra high-risk rows so filtered pagination spans multiple pages.
+    ...Array.from({ length: 24 }, (_, i) => ({
+      studentId: `S1${String(i).padStart(2, "0")}`,
+      studentCode: `200${i}`,
+      fullName: `นักเรียนเสี่ยงสูง ${i + 1}`,
+      photoUrl: "",
+      classroomName: "ป.5/1",
+      gradeLevel: "p5",
+      section: 1,
+      studentNumber: 10 + i,
+      primaryGuardianName: "ผู้ปกครอง",
+      primaryGuardianPhone: "089-000-0000",
+      riskLevel: "high",
+      riskScore: 80,
+      riskTrend: null,
+      openSupportCount: 1,
+      activePlanCount: 0,
+      openActionCount: 0,
+      activeFlagCount: 0,
+      nextDueDate: null,
+      absentDays30d: 5,
+      lateDays30d: 0,
+      recordedDays30d: 20,
+      attendanceRate30d: 75,
+      priorityScore: 80,
+    })),
   ]),
 }))
 
@@ -150,6 +176,21 @@ describe("Students Module", () => {
       expect(screen.getAllByPlaceholderText("ค้นหาชื่อนักเรียน, เลขประจำตัว, ผู้ปกครอง...").length).toBeGreaterThan(0)
       expect(screen.getAllByText("เด็กชายกฤษฎา ใจดี").length).toBeGreaterThan(0)
       expect(screen.getByRole("link", { name: /เพิ่มนักเรียน/ })).toBeDefined()
+    })
+
+    it("builds pagination hrefs from serializable filters without server function props", async () => {
+      const Page = await StudentsPage({ searchParams: Promise.resolve({ status: "high" }) })
+      render(Page)
+
+      // 24 high-risk rows span 2 pages, so "ไปหน้า 2" renders as links
+      // in both desktop table and mobile list pagination.
+      const nextPageLinks = screen.getAllByRole("link", { name: "ไปหน้า 2" })
+      expect(nextPageLinks.length).toBeGreaterThan(0)
+      for (const link of nextPageLinks) {
+        const href = link.getAttribute("href") ?? ""
+        expect(href).toContain("status=high")
+        expect(href).toContain("page=2")
+      }
     })
   })
 

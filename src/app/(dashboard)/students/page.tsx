@@ -58,21 +58,6 @@ function getCurrentPage(params: SearchParams, totalPages: number) {
   return Math.min(safePage, Math.max(totalPages, 1))
 }
 
-function createPageHref(filters: StudentFilterState) {
-  return (page: number) => {
-    const params = new URLSearchParams()
-
-    if (filters.q) params.set("q", filters.q)
-    if (filters.grade) params.set("grade", filters.grade)
-    if (filters.classroom) params.set("classroom", filters.classroom)
-    if (filters.status) params.set("status", filters.status)
-    if (page > 1) params.set("page", String(page))
-
-    const query = params.toString()
-    return query ? `/students?${query}` : "/students"
-  }
-}
-
 export default async function StudentsPage({ searchParams }: StudentsPageProps) {
   const params = searchParams ? await searchParams : {}
   const context = await getCurrentUserContext()
@@ -96,7 +81,6 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
   const pageStart = (currentPage - 1) * PAGE_SIZE
   const pagedStudents = filteredStudents.slice(pageStart, pageStart + PAGE_SIZE)
   const selectedStudent = pickFeaturedStudent(filteredStudents)
-  const getPageHref = createPageHref(filters)
 
   return (
     <PageShell size="wide" spacing="default">
@@ -207,7 +191,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
               page={currentPage}
               totalPages={totalPages}
               pageSize={PAGE_SIZE}
-              getPageHref={getPageHref}
+              filters={filters}
               canEdit={canEdit}
             />
           </div>
@@ -218,7 +202,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
               page={currentPage}
               totalPages={totalPages}
               pageSize={PAGE_SIZE}
-              getPageHref={getPageHref}
+              filters={filters}
               canEdit={canEdit}
             />
           </div>

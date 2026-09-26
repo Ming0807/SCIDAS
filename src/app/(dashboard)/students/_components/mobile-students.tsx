@@ -7,7 +7,8 @@ import { EmptyState } from "@/components/feedback"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import type { StudentListItem } from "./student-data"
+import type { StudentFilterState, StudentListItem } from "./student-data"
+import { createStudentPageHref } from "./student-data"
 
 function MobileStudentRow({
   student,
@@ -70,7 +71,7 @@ export function MobileStudents({
   page,
   totalPages,
   pageSize,
-  getPageHref,
+  filters,
   canEdit,
 }: {
   students: StudentListItem[]
@@ -78,9 +79,10 @@ export function MobileStudents({
   page: number
   totalPages: number
   pageSize: number
-  getPageHref: (page: number) => string
+  filters: StudentFilterState
   canEdit: boolean
 }) {
+  const getPageHref = createStudentPageHref(filters)
   return (
     <MobileList
       items={students}

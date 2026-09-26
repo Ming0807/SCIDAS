@@ -229,3 +229,18 @@ export function filterStudentRows(
 export function pickFeaturedStudent(students: StudentListItem[]) {
   return students[0] ?? null
 }
+
+export function createStudentPageHref(filters: StudentFilterState) {
+  return (page: number) => {
+    const params = new URLSearchParams()
+
+    if (filters.q) params.set("q", filters.q)
+    if (filters.grade) params.set("grade", filters.grade)
+    if (filters.classroom) params.set("classroom", filters.classroom)
+    if (filters.status) params.set("status", filters.status)
+    if (page > 1) params.set("page", String(page))
+
+    const query = params.toString()
+    return query ? `/students?${query}` : "/students"
+  }
+}
