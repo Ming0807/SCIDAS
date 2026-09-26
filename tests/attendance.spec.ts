@@ -30,8 +30,15 @@ test.describe('Attendance save flow', () => {
     }
 
     // Mobile and desktop lists both mount (CSS hides one); scope to visible.
+    // Toggle away from whichever status is active so the form is always
+    // dirty (reruns find yesterday's saved value as the initial state).
     const firstGroup = page.locator('[role="radiogroup"]:visible').first();
-    await firstGroup.getByRole('radio', { name: 'ขาด' }).click();
+    const absentRadio = firstGroup.getByRole('radio', { name: 'ขาด' });
+    if ((await absentRadio.getAttribute('aria-checked')) === 'true') {
+      await firstGroup.getByRole('radio', { name: 'มา' }).click();
+    } else {
+      await absentRadio.click();
+    }
     await saveButton.click();
 
     await expect(page.getByText('บันทึกการมาเรียนเรียบร้อยแล้ว')).toBeVisible({

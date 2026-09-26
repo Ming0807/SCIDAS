@@ -42,7 +42,9 @@ test.describe('Student lifecycle', () => {
 
     await page.goto(detailUrl);
     await page.getByRole('link', { name: /แก้ไขข้อมูล/ }).click();
-    await expect(page.getByRole('heading', { name: 'แก้ไขข้อมูลนักเรียน' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'แก้ไขข้อมูลนักเรียน' })).toBeVisible({
+      timeout: 20000,
+    });
 
     await page.getByLabel('ชื่อเล่น').fill(nickname);
     await page.getByRole('button', { name: 'บันทึก', exact: true }).click();

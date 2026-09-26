@@ -25,7 +25,7 @@ export default defineConfig({
     {
       name: 'chromium-authenticated',
       use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
-      testMatch: ['**/dashboard.spec.ts', '**/students-crud.spec.ts', '**/attendance.spec.ts', '**/behavior.spec.ts'],
+      testMatch: ['**/dashboard.spec.ts', '**/students-crud.spec.ts', '**/attendance.spec.ts', '**/behavior.spec.ts', '**/support.spec.ts'],
       dependencies: ['setup'],
     },
     {
@@ -42,12 +42,12 @@ export default defineConfig({
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
-      testIgnore: ['**/*.setup.ts', '**/dashboard.spec.ts', '**/students-crud.spec.ts', '**/attendance.spec.ts', '**/behavior.spec.ts'],
+      testIgnore: ['**/*.setup.ts', '**/dashboard.spec.ts', '**/students-crud.spec.ts', '**/attendance.spec.ts', '**/behavior.spec.ts', '**/support.spec.ts'],
     },
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
-      testIgnore: ['**/*.setup.ts', '**/dashboard.spec.ts', '**/students-crud.spec.ts', '**/attendance.spec.ts', '**/behavior.spec.ts'],
+      testIgnore: ['**/*.setup.ts', '**/dashboard.spec.ts', '**/students-crud.spec.ts', '**/attendance.spec.ts', '**/behavior.spec.ts', '**/support.spec.ts'],
     },
   ],
 
