@@ -4,10 +4,15 @@ import { SummaryCards } from "./_components/summary-cards"
 import { RiskOverviewCard } from "./_components/risk-overview-card"
 import { ActionItems } from "./_components/action-items"
 import { TrackingTable } from "./_components/tracking-table"
+import { ExecutiveInsights } from "./_components/executive-insights"
 import { MobileDashboard } from "./_components/mobile-dashboard"
 import { QuickActionsRibbon } from "./_components/quick-actions-ribbon"
 import { PageHeader, PageShell } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
+import {
+  getExecutiveInsights,
+  type ExecutiveInsights as ExecutiveInsightsData,
+} from "@/lib/server/executive-read-models"
 import {
   getStudentCareDashboard,
   type StudentCareDashboard,
@@ -30,7 +35,7 @@ const emptyDashboard: StudentCareDashboard = {
 }
 
 export default async function DashboardPage() {
-  const [role, dashboardResult] = await Promise.all([
+  const [role, dashboardResult, insights] = await Promise.all([
     getUserRole(),
     getStudentCareDashboard()
       .then((data) => ({ data, error: null }))
@@ -38,6 +43,16 @@ export default async function DashboardPage() {
         data: emptyDashboard,
         error: error instanceof Error ? error.message : "Unknown dashboard data error",
       })),
+    getExecutiveInsights().catch(
+      (): ExecutiveInsightsData => ({
+        topAbsence: [],
+        topLowGpa: [],
+        factors: [],
+        factorsTotalStudents: 0,
+        classrooms: [],
+        trend: [],
+      }),
+    ),
   ])
   const dashboard = dashboardResult.data
   const m = dashboard.metrics
@@ -50,6 +65,8 @@ export default async function DashboardPage() {
           role={role}
           dashboard={dashboard}
           loadError={dashboardResult.error}
+          topAbsence={insights.topAbsence}
+          topLowGpa={insights.topLowGpa}
         />
       </div>
 
@@ -84,6 +101,9 @@ export default async function DashboardPage() {
           <div className="w-full">
             <TrackingTable students={dashboard.priorityStudents} />
           </div>
+
+          {/* Executive Analytics: Top lists, factors, classrooms, trend */}
+          <ExecutiveInsights insights={insights} />
         </PageShell>
       </div>
     </>

@@ -14,6 +14,10 @@ import {
   getStudentRiskTone,
 } from "@/lib/student-care-formatters"
 import type { StudentCareDashboard } from "@/lib/server/student-care-read-models"
+import type {
+  TopAbsentStudent,
+  TopLowGpaStudent,
+} from "@/lib/server/executive-read-models"
 
 function MetricTile({
   label,
@@ -37,10 +41,14 @@ export function MobileDashboard({
   role,
   dashboard,
   loadError,
+  topAbsence = [],
+  topLowGpa = [],
 }: {
   role?: string | null
   dashboard: StudentCareDashboard
   loadError: string | null
+  topAbsence?: TopAbsentStudent[]
+  topLowGpa?: TopLowGpaStudent[]
 }) {
   const metrics = dashboard.metrics
 
@@ -232,6 +240,68 @@ export function MobileDashboard({
             />
           )}
         </section>
+
+        {topAbsence.length > 0 ? (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-foreground">ขาดเรียนบ่อยสุด</h2>
+              <Link
+                href="/attendance"
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+              >
+                การมาเรียน <ChevronRight className="size-4" />
+              </Link>
+            </div>
+            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+              {topAbsence.slice(0, 5).map((student) => (
+                <Link
+                  key={student.studentId}
+                  href={`/students/${student.studentId}`}
+                  className="flex items-center justify-between gap-3 p-3 transition-colors hover:bg-muted/40"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{student.fullName}</p>
+                    <p className="truncate text-xs text-muted-foreground">{student.classroomName ?? "ไม่ระบุห้อง"}</p>
+                  </div>
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-rose-600 dark:text-rose-400">
+                    ขาด {student.absentDays30d.toLocaleString("th-TH")} วัน
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {topLowGpa.length > 0 ? (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-foreground">ผลการเรียนต่ำสุด</h2>
+              <Link
+                href="/academics"
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+              >
+                ผลการเรียน <ChevronRight className="size-4" />
+              </Link>
+            </div>
+            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+              {topLowGpa.slice(0, 5).map((student) => (
+                <Link
+                  key={student.studentId}
+                  href={`/students/${student.studentId}`}
+                  className="flex items-center justify-between gap-3 p-3 transition-colors hover:bg-muted/40"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{student.fullName}</p>
+                    <p className="truncate text-xs text-muted-foreground">{student.classroomName ?? "ไม่ระบุห้อง"}</p>
+                  </div>
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                    GPA {student.averageGpa.toLocaleString("th-TH")}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </div>
   )
