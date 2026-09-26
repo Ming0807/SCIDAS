@@ -7,6 +7,12 @@ import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/current-user"
 import { createClient } from "@/utils/supabase/server"
+import {
+  RISK_WEIGHT_DEFAULTS,
+  RISK_WEIGHT_FACTOR_KEYS,
+  RISK_WEIGHT_LABELS,
+  type RiskWeightFactorKey,
+} from "@/lib/risk-weight-constants"
 
 const uuidSchema = z.string().uuid("รหัสไม่ถูกต้อง")
 
@@ -139,7 +145,7 @@ export async function getRiskAssessments() {
     .from("risk_assessments")
     .select(`
       id,
-      overall_score,
+      risk_score,
       risk_level,
       student_id,
       students (
@@ -150,11 +156,102 @@ export async function getRiskAssessments() {
       )
     `)
     .eq("school_id", context.schoolId)
-    .order("overall_score", { ascending: false })
+    .order("risk_score", { ascending: false })
 
   if (error) {
     console.error(error)
     return []
   }
   return data
+}
+
+export type { RiskWeightFactorKey }
+
+const riskWeightKeySet = new Set<string>(RISK_WEIGHT_FACTOR_KEYS)
+const weightManagerRoles = new Set(["admin", "director"])
+
+export type RiskWeightItem = {
+  factorKey: string
+  label: string
+  weight: number
+}
+
+export async function getRiskWeightsAction(): Promise<ActionResult<RiskWeightItem[]>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId) return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดูน้ำหนักความเสี่ยง")
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("risk_weights")
+      .select("factor_key, weight")
+      .eq("school_id", context.schoolId)
+
+    if (error) {
+      console.error("Risk weights load failed", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถโหลดน้ำหนักความเสี่ยงได้")
+    }
+
+    const byKey = new Map((data ?? []).map((row) => [row.factor_key, row.weight]))
+    const items: RiskWeightItem[] = RISK_WEIGHT_FACTOR_KEYS.map((key) => ({
+      factorKey: key,
+      label: RISK_WEIGHT_LABELS[key],
+      weight: byKey.get(key) ?? RISK_WEIGHT_DEFAULTS[key] ?? 0,
+    }))
+
+    return actionOk("โหลดน้ำหนักความเสี่ยงเรียบร้อยแล้ว", { data: items })
+  } catch (error) {
+    console.error("Risk weights action failed", error)
+    return actionFail("INTERNAL_ERROR", "ไม่สามารถโหลดน้ำหนักความเสี่ยงได้")
+  }
+}
+
+export async function updateRiskWeightsAction(
+  weights: Array<{ factor_key: string; weight: number }>,
+): Promise<ActionResult<{ count: number }>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!weightManagerRoles.has(context.role)) {
+      return actionFail("FORBIDDEN", "เฉพาะผู้บริหารที่ปรับน้ำหนักความเสี่ยงได้")
+    }
+    if (!context.profileId) return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนบันทึก")
+    if (!weights.length) return actionFail("VALIDATION_ERROR", "ไม่มีข้อมูลน้ำหนักให้บันทึก")
+
+    const invalid = weights.some(
+      (item) =>
+        !riskWeightKeySet.has(item.factor_key) ||
+        !Number.isInteger(item.weight) ||
+        item.weight < 0 ||
+        item.weight > 100,
+    )
+    if (invalid) {
+      return actionFail("VALIDATION_ERROR", "น้ำหนักต้องเป็นจำนวนเต็มตั้งแต่ 0 ถึง 100")
+    }
+
+    const supabase = await createClient()
+    const payload = weights.map((item) => ({
+      school_id: context.schoolId,
+      factor_key: item.factor_key,
+      weight: item.weight,
+      updated_by: context.profileId,
+    }))
+
+    const { error } = await supabase
+      .from("risk_weights")
+      .upsert(payload, { onConflict: "school_id,factor_key" })
+
+    if (error) {
+      console.error("Risk weights save failed", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกน้ำหนักได้ กรุณาลองใหม่")
+    }
+
+    revalidatePath("/risk-analysis")
+    return actionOk("บันทึกน้ำหนักความเสี่ยงเรียบร้อยแล้ว การคำนวณครั้งถัดไปจะใช้น้ำหนักใหม่", {
+      data: { count: payload.length },
+      revalidated: ["/risk-analysis"],
+    })
+  } catch (error) {
+    console.error("Risk weights update failed", error)
+    return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกน้ำหนักได้ กรุณาลองใหม่")
+  }
 }

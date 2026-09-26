@@ -5,6 +5,8 @@ import {
   calculateRiskScore,
   recalculateAllRiskScores,
   getRiskAssessments,
+  getRiskWeightsAction,
+  updateRiskWeightsAction,
 } from "./risk.actions"
 
 vi.mock("next/cache", () => ({
@@ -281,6 +283,133 @@ describe("risk.actions", () => {
       const result = await getRiskAssessments()
       expect(result).toHaveLength(2)
       expect((result[0] as unknown as { overall_score: number }).overall_score).toBe(90)
+    })
+  })
+
+  describe("getRiskWeightsAction", () => {
+    it("fails with UNAUTHORIZED when profileId is missing", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: null,
+        studentId: null,
+      })
+
+      const result = await getRiskWeightsAction()
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("UNAUTHORIZED")
+    })
+
+    it("returns all 8 factors with database weights", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "director",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockClient = {
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [
+                { factor_key: "frequent_absence", weight: 25 },
+                { factor_key: "teacher_flagged", weight: 5 },
+              ],
+              error: null,
+            }),
+          }),
+        }),
+      }
+      // @ts-expect-error mock supabase client
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient)
+
+      const result = await getRiskWeightsAction()
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data).toHaveLength(8)
+        expect(result.data.find((w) => w.factorKey === "frequent_absence")?.weight).toBe(25)
+        expect(result.data.find((w) => w.factorKey === "teacher_flagged")?.weight).toBe(5)
+        // Missing rows fall back to REQUIREMENTS defaults
+        expect(result.data.find((w) => w.factorKey === "low_grades")?.weight).toBe(20)
+      }
+    })
+  })
+
+  describe("updateRiskWeightsAction", () => {
+    it("fails with FORBIDDEN for homeroom_teacher", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await updateRiskWeightsAction([{ factor_key: "frequent_absence", weight: 20 }])
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("FORBIDDEN")
+    })
+
+    it("fails with VALIDATION_ERROR for out-of-range weight", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await updateRiskWeightsAction([{ factor_key: "frequent_absence", weight: 150 }])
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("fails with VALIDATION_ERROR for unknown factor key", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await updateRiskWeightsAction([{ factor_key: "mystery", weight: 10 }])
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("upserts weights and revalidates /risk-analysis", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockUpsert = vi.fn().mockResolvedValue({ error: null })
+      const mockClient = {
+        from: vi.fn().mockReturnValue({ upsert: mockUpsert }),
+      }
+      // @ts-expect-error mock supabase client
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient)
+
+      const result = await updateRiskWeightsAction([
+        { factor_key: "frequent_absence", weight: 20 },
+        { factor_key: "teacher_flagged", weight: 10 },
+      ])
+      expect(result.ok).toBe(true)
+      expect(mockUpsert).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({ school_id: "sch-1", factor_key: "frequent_absence", weight: 20 }),
+          expect.objectContaining({ school_id: "sch-1", factor_key: "teacher_flagged", weight: 10 }),
+        ],
+        { onConflict: "school_id,factor_key" },
+      )
+      expect(revalidatePath).toHaveBeenCalledWith("/risk-analysis")
     })
   })
 })

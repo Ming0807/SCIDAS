@@ -12,8 +12,11 @@ import {
   getRiskTrendHistory,
   getStudentRiskFactorsByStudentIds,
 } from "@/lib/server/risk-read-models"
+import { getRiskWeightsAction } from "@/app/actions/risk.actions"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 
 import { RecalculateButton } from "./RecalculateButton"
+import { RiskWeightsForm } from "./risk-weights-form"
 import { RiskDimensionRadar } from "./_components/risk-dimension-radar"
 import { RiskFactorsChart } from "./_components/risk-factors-chart"
 import { RiskHistoryChart } from "./_components/risk-history-chart"
@@ -33,6 +36,22 @@ export default async function RiskAnalysisPage() {
   let trendData: Awaited<ReturnType<typeof getRiskTrendHistory>> = []
   let dimensionBenchmarks: Awaited<ReturnType<typeof getRiskDimensionBenchmarks>> = []
   let studentRiskFactors: Awaited<ReturnType<typeof getStudentRiskFactorsByStudentIds>> = {}
+  let riskWeights: Awaited<ReturnType<typeof getRiskWeightsAction>> = {
+    ok: false,
+    code: "INTERNAL_ERROR",
+    message: "",
+  }
+  let canManageWeights = false
+
+  try {
+    const role = (await getCurrentUserContext().catch(() => null))?.role
+    canManageWeights = role === "admin" || role === "director"
+    if (canManageWeights) {
+      riskWeights = await getRiskWeightsAction().catch(() => riskWeights)
+    }
+  } catch {
+    canManageWeights = false
+  }
 
   try {
     const [worklistResult, factorResult, trendResult, benchmarkResult] = await Promise.all([
@@ -115,6 +134,10 @@ export default async function RiskAnalysisPage() {
             <RiskHistoryChart trendData={trendData} />
             <RiskRecommendations students={students} />
           </div>
+
+          {canManageWeights && riskWeights.ok && riskWeights.data ? (
+            <RiskWeightsForm initialWeights={riskWeights.data} />
+          ) : null}
         </PageShell>
       </div>
     </div>

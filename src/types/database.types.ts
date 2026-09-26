@@ -1989,6 +1989,48 @@ export type Database = {
           },
         ]
       }
+      risk_weights: {
+        Row: {
+          created_at: string
+          factor_key: string
+          school_id: string
+          updated_at: string
+          updated_by: string | null
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          factor_key: string
+          school_id: string
+          updated_at?: string
+          updated_by?: string | null
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          factor_key?: string
+          school_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_weights_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_weights_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schools: {
         Row: {
           address: string | null
@@ -3318,6 +3360,10 @@ export type Database = {
           watch_risk_count: number
         }[]
       }
+      get_risk_weight: {
+        Args: { p_factor_key: string; p_school_id: string }
+        Returns: number
+      }
       get_school_risk_trend: {
         Args: { p_school_id?: string }
         Returns: {
@@ -3720,3 +3766,4 @@ export const Constants = {
     },
   },
 } as const
+
