@@ -220,6 +220,13 @@ export async function addStudentAttachment(
         })
       }
 
+      if (/row-level security/i.test(error.message)) {
+        return actionFail(
+          "INTERNAL_ERROR",
+          "อัปโหลดไม่สำเร็จ: ฐานข้อมูลปฏิเสธสิทธิ์ (RLS) กรุณาตรวจสอบว่า migration 0009 ถูก apply บน Supabase แล้ว และ bucket documents มีอยู่",
+        )
+      }
+
       return actionFail("INTERNAL_ERROR", error.message)
     }
 
