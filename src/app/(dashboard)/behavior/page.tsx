@@ -20,6 +20,7 @@ import {
 import { getCurrentUserContext } from "@/lib/server/current-user"
 
 import { ConductSummaryCard } from "./_components/conduct-summary-card"
+import { AssignmentPanel } from "./_components/assignment-panel"
 
 type SearchParams = Promise<{
   studentId?: string
@@ -123,6 +124,9 @@ export default async function BehaviorDashboardPage({
 
       {/* Conduct Scoring & Merit/Demerit System */}
       <ConductSummaryCard conductSummary={dashboard.conductSummary} />
+
+      {/* Assignment Tracking */}
+      <AssignmentPanel />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

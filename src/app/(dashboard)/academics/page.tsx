@@ -2,8 +2,10 @@ import { PageHeader, PageShell } from "@/components/dashboard"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
 import { getClassroomAcademicData } from "@/app/actions/academic.actions"
+import { getBasicSkillsData } from "@/lib/server/basic-skills-read-models"
 
 import { AcademicForm } from "./academic-form"
+import { BasicSkillsForm } from "./basic-skills-form"
 
 type AcademicsPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -15,9 +17,18 @@ export default async function AcademicsPage({ searchParams }: AcademicsPageProps
   const classroomId = typeof query.classroomId === "string" ? query.classroomId : undefined
 
   let academicData: Awaited<ReturnType<typeof getClassroomAcademicData>>
+  let basicSkills: Awaited<ReturnType<typeof getBasicSkillsData>> | null = null
 
   try {
     academicData = await getClassroomAcademicData(semesterId, classroomId)
+    try {
+      basicSkills = await getBasicSkillsData(
+        academicData.currentSemesterId || undefined,
+        academicData.classroom?.id,
+      )
+    } catch {
+      basicSkills = null
+    }
   } catch {
     return (
       <PageShell size="wide">
@@ -65,16 +76,26 @@ export default async function AcademicsPage({ searchParams }: AcademicsPageProps
       />
 
       {academicData.currentSemesterId ? (
-        <AcademicForm
-          key={`${academicData.currentSemesterId}-${academicData.classroom.id}`}
-          classroom={academicData.classroom}
-          classrooms={academicData.classrooms}
-          students={academicData.students}
-          subjects={academicData.subjects}
-          initialScores={academicData.scores}
-          semesters={academicData.semesters}
-          currentSemesterId={academicData.currentSemesterId}
-        />
+        <>
+          <AcademicForm
+            key={`${academicData.currentSemesterId}-${academicData.classroom.id}`}
+            classroom={academicData.classroom}
+            classrooms={academicData.classrooms}
+            students={academicData.students}
+            subjects={academicData.subjects}
+            initialScores={academicData.scores}
+            semesters={academicData.semesters}
+            currentSemesterId={academicData.currentSemesterId}
+          />
+          {basicSkills ? (
+            <BasicSkillsForm
+              students={basicSkills.students}
+              initialSkills={basicSkills.skills}
+              semesterId={basicSkills.semesterId || academicData.currentSemesterId}
+              semesters={basicSkills.semesters}
+            />
+          ) : null}
+        </>
       ) : (
         <EmptyState
           title="ยังไม่มีภาคเรียนให้บันทึกคะแนน"
