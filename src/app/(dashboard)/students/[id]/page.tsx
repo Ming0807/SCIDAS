@@ -54,11 +54,13 @@ import {
 import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentById } from "@/app/actions/student.actions"
+import { getTeacherFlag } from "@/app/actions/flag.actions"
 import type { Tables } from "@/types/database.types"
 import { StudentGuardianManager } from "./_components/student-guardian-manager"
 import { StudentPrintableCard } from "./_components/student-printable-card"
 import { StudentCarePathway } from "./_components/student-care-pathway"
 import { StudentHealthCard } from "./_components/student-health-card"
+import { TeacherFlagControl } from "./_components/teacher-flag-control"
 
 type StudentProfilePageProps = {
   params: Promise<{ id: string }>
@@ -200,6 +202,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
   let guardians: StudentGuardianItem[] = []
   let studentDetails: Tables<"students"> | null = null
   let loadError: string | null = null
+  let teacherFlag = { flagged: false, reason: null as string | null, flaggedAt: null as string | null }
 
   try {
     const [
@@ -210,6 +213,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       attachmentData,
       guardiansData,
       studentData,
+      flagData,
     ] = await Promise.all([
       getStudentCareProfile(id),
       getStudentActionItems(id, { limit: 12 }),
@@ -218,6 +222,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       getStudentAttachments(id, 10),
       getStudentGuardians(id),
       getStudentById(id).catch(() => null),
+      getTeacherFlag(id).catch(() => ({ flagged: false, reason: null, flaggedAt: null })),
     ])
 
     profile = profileData
@@ -227,6 +232,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
     attachments = attachmentData
     guardians = guardiansData
     studentDetails = studentData
+    teacherFlag = flagData
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown student profile error"
   }
@@ -326,6 +332,16 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       </div>
 
       <StudentCarePathway profile={profile} />
+
+      {(canEdit || teacherFlag.flagged) ? (
+        <TeacherFlagControl
+          studentId={profile.studentId}
+          studentName={profile.fullName}
+          initialFlagged={teacherFlag.flagged}
+          initialReason={teacherFlag.reason}
+          canFlag={canEdit}
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
         <div className="flex min-w-0 flex-col gap-6">
