@@ -131,50 +131,50 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
         {/* Header Area */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">การแจ้งเตือน</h1>
-            <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
-              <Link href="/" className="hover:text-indigo-600 transition-colors">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">การแจ้งเตือน</h1>
+            <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+              <Link href="/" className="transition-colors hover:text-primary">
                 หน้าหลัก
               </Link>
               <ChevronRight className="w-3.5 h-3.5" />
-              <span className="font-bold text-slate-800">การแจ้งเตือน</span>
+              <span className="font-bold text-foreground">การแจ้งเตือน</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm">
-              <span className="text-sm font-medium text-slate-700">{semesterLabel}</span>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 shadow-sm">
+              <span className="text-sm font-medium text-foreground">{semesterLabel}</span>
             </div>
-            
+
             <form action={markAllAsReadFormAction}>
               <button
                 type="submit"
                 disabled={markAllReadDisabled}
                 className={
                   markAllReadDisabled
-                    ? "cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-500"
-                    : "rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-600 transition-colors hover:bg-indigo-100"
+                    ? "cursor-not-allowed rounded-xl border border-border bg-muted px-4 py-2 text-sm font-bold text-muted-foreground"
+                    : "rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
                 }
               >
                 ทำเครื่องหมายว่าอ่านแล้วทั้งหมด
               </button>
             </form>
-            
-            <div className="w-px h-8 bg-slate-200"></div>
-            
-            <div className="relative p-2 text-slate-400">
+
+            <div className="w-px h-8 bg-border"></div>
+
+            <div className="relative p-2 text-muted-foreground">
               <Bell className="w-5 h-5" />
               {safeCounts.unread > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
               )}
             </div>
             <div className="flex items-center gap-3 ml-2">
-              <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-slate-400" />
+              <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center">
+                <Bell className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-800">การแจ้งเตือน</span>
-                <span className="text-xs text-slate-500">{safeCounts.total} รายการ</span>
+                <span className="text-sm font-bold text-foreground">การแจ้งเตือน</span>
+                <span className="text-xs text-muted-foreground">{safeCounts.total} รายการ</span>
               </div>
             </div>
           </div>

@@ -132,7 +132,7 @@ export function Sidebar({
             disabled={isLoggingOut}
             title="ออกจากระบบ"
             aria-label="ออกจากระบบ"
-            className="p-1.5 rounded-md text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
+            className="p-1.5 rounded-md text-slate-300 hover:text-rose-300 hover:bg-white/10 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
           >
             {isLoggingOut ? (
               <Loader2 className="size-3.5 animate-spin text-rose-300" />

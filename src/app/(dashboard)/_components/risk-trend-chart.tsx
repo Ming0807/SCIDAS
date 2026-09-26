@@ -62,7 +62,7 @@ export function RiskTrendChart({ data }: RiskTrendChartProps) {
           />
           <Tooltip 
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
-            labelStyle={{ fontWeight: 'bold', color: '#0f172a' }}
+            labelStyle={{ fontWeight: 'bold', color: '#64748b' }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [`${value}%`, 'อัตราความเสี่ยง (ขาดเรียน)']}
           />

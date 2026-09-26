@@ -50,7 +50,7 @@ export function RiskProportionChart({ total, risk }: RiskProportionChartProps) {
           </Pie>
           <Tooltip 
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
-            itemStyle={{ color: '#0f172a', fontWeight: 500 }}
+            itemStyle={{ color: '#64748b', fontWeight: 500 }}
           />
           <Legend verticalAlign="bottom" height={36} iconType="circle" />
         </PieChart>

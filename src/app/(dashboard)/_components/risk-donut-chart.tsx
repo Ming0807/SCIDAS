@@ -51,7 +51,7 @@ export function RiskDonutChart({ total, risk }: RiskDonutChartProps) {
           </Pie>
           <Tooltip 
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            labelStyle={{ fontWeight: 'bold', color: '#374151' }}
+            labelStyle={{ fontWeight: 'bold', color: '#64748b' }}
           />
           <Legend 
             verticalAlign="bottom" 
