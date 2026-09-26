@@ -26,6 +26,7 @@ const students: StudentWorklistItem[] = [
     studentCode: "S001",
     fullName: "สมชาย ใจดี",
     photoUrl: null,
+    classroomId: "class-1",
     classroomName: "ม.1/1",
     gradeLevel: "m1",
     section: 1,

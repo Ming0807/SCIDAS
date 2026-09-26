@@ -36,6 +36,7 @@ export type StudentWorklistItem = {
   studentCode: string
   fullName: string
   photoUrl: string | null
+  classroomId: string | null
   classroomName: string | null
   gradeLevel: GradeLevel | null
   section: number | null
@@ -169,6 +170,7 @@ export type StudentCareProfile = {
 
 type StudentWorklistOptions = {
   limit?: number
+  classroomId?: string
 }
 
 type ActionQueueOptions = {
@@ -211,6 +213,7 @@ function mapWorklistRow(row: StudentWorklistViewRow): StudentWorklistItem | null
     studentCode: row.student_code ?? "-",
     fullName: row.full_name ?? row.student_code ?? "ไม่ระบุชื่อนักเรียน",
     photoUrl: row.photo_url,
+    classroomId: row.classroom_id ?? null,
     classroomName: row.classroom_name,
     gradeLevel: row.grade_level,
     section: row.section,
@@ -460,6 +463,10 @@ export async function getStudentWorklist(
     query = query.limit(options.limit)
   }
 
+  if (options.classroomId) {
+    query = query.eq("classroom_id", options.classroomId)
+  }
+
   const { data, error } = await query
 
   if (error) {
@@ -578,6 +585,7 @@ async function fetchActionItemStudents(
       studentCode: s.student_code ?? "-",
       fullName: fullName || s.student_code || "ไม่ระบุชื่อนักเรียน",
       photoUrl: s.photo_url,
+      classroomId: null,
       classroomName: null,
       gradeLevel: null,
       section: null,

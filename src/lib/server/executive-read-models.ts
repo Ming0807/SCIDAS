@@ -1,5 +1,7 @@
 import "server-only"
 
+import { createClient } from "@/utils/supabase/server"
+import { getCurrentUserContext } from "./current-user"
 import { getAcademicDashboard } from "./academic-read-models"
 import {
   getClassroomRiskBreakdown,
@@ -27,12 +29,19 @@ export type TopLowGpaStudent = {
   subjectCount: number
 }
 
+export type ClassroomOption = {
+  id: string
+  name: string
+}
+
 export type ExecutiveInsights = {
   topAbsence: TopAbsentStudent[]
   topLowGpa: TopLowGpaStudent[]
   factors: RiskFactorCount[]
   factorsTotalStudents: number
   classrooms: ClassroomRiskItem[]
+  classroomOptions: ClassroomOption[]
+  activeClassroomId: string | null
   trend: RiskTrendPoint[]
 }
 
@@ -42,17 +51,44 @@ const emptyInsights: ExecutiveInsights = {
   factors: [],
   factorsTotalStudents: 0,
   classrooms: [],
+  classroomOptions: [],
+  activeClassroomId: null,
   trend: [],
 }
 
-export async function getExecutiveInsights(): Promise<ExecutiveInsights> {
+export async function getClassroomOptions(): Promise<ClassroomOption[]> {
   try {
-    const [worklist, academic, factors, classrooms, trend] = await Promise.all([
-      getStudentWorklist({ limit: 500 }).catch(() => []),
+    const context = await getCurrentUserContext()
+    const client = await createClient()
+    const { data, error } = await client
+      .from("classrooms")
+      .select("id, name")
+      .eq("school_id", context.schoolId)
+      .eq("is_active", true)
+      .order("grade_level", { ascending: true })
+      .order("section", { ascending: true })
+    if (error || !data) return []
+    return data.map((c) => ({ id: c.id, name: c.name ?? "-" }))
+  } catch {
+    return []
+  }
+}
+
+const uuidShape = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export async function getExecutiveInsights(options?: {
+  classroomId?: string
+}): Promise<ExecutiveInsights> {
+  const rawClassroomId = options?.classroomId?.trim() || null
+  const classroomId = rawClassroomId && uuidShape.test(rawClassroomId) ? rawClassroomId : null
+  try {
+    const [worklist, academic, factors, classrooms, trend, classroomOptions] = await Promise.all([
+      getStudentWorklist({ limit: 500, classroomId: classroomId ?? undefined }).catch(() => []),
       getAcademicDashboard().catch(() => null),
       getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
       getClassroomRiskBreakdown().catch(() => []),
       getRiskTrendHistory().catch(() => []),
+      getClassroomOptions(),
     ])
 
     const topAbsence: TopAbsentStudent[] = [...worklist]
@@ -71,8 +107,12 @@ export async function getExecutiveInsights(): Promise<ExecutiveInsights> {
       string,
       { fullName: string; classroomName: string | null; total: number; count: number }
     >()
+    const activeClassroomName = classroomId
+      ? (classroomOptions.find((c) => c.id === classroomId)?.name ?? null)
+      : null
     for (const row of academic?.students ?? []) {
       if (row.gradePoint === null || row.gradePoint === undefined) continue
+      if (activeClassroomName && row.classroomName !== activeClassroomName) continue
       const entry = gpaByStudent.get(row.studentId) ?? {
         fullName: row.studentName,
         classroomName: row.classroomName,
@@ -105,6 +145,8 @@ export async function getExecutiveInsights(): Promise<ExecutiveInsights> {
             b.highRiskCount + b.watchRiskCount - (a.highRiskCount + a.watchRiskCount),
         )
         .slice(0, 12),
+      classroomOptions,
+      activeClassroomId: classroomId,
       trend: trend.slice(-6),
     }
   } catch {

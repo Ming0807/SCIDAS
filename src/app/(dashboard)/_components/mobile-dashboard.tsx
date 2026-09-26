@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Bell, ChevronRight, Menu, ShieldAlert, Users } from "lucide-react"
 
 import { QuickActionsRibbon } from "./quick-actions-ribbon"
+import { DashboardClassroomFilter } from "./dashboard-classroom-filter"
 import { StatusBadge, StudentIdentity } from "@/components/dashboard"
 import { EmptyState, ErrorState } from "@/components/feedback"
 import { Sidebar } from "@/components/layout/sidebar"
@@ -15,6 +16,7 @@ import {
 } from "@/lib/student-care-formatters"
 import type { StudentCareDashboard } from "@/lib/server/student-care-read-models"
 import type {
+  ClassroomOption,
   TopAbsentStudent,
   TopLowGpaStudent,
 } from "@/lib/server/executive-read-models"
@@ -43,14 +45,17 @@ export function MobileDashboard({
   loadError,
   topAbsence = [],
   topLowGpa = [],
+  classroomOptions = [],
+  activeClassroomId = null,
 }: {
   role?: string | null
   dashboard: StudentCareDashboard
   loadError: string | null
   topAbsence?: TopAbsentStudent[]
   topLowGpa?: TopLowGpaStudent[]
-}) {
-  const metrics = dashboard.metrics
+  classroomOptions?: ClassroomOption[]
+  activeClassroomId?: string | null
+}) {  const metrics = dashboard.metrics
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-24">
@@ -131,6 +136,8 @@ export function MobileDashboard({
         </section>
 
         <QuickActionsRibbon />
+
+        <DashboardClassroomFilter options={classroomOptions} activeClassroomId={activeClassroomId} />
 
         <div className="grid grid-cols-2 gap-3">
 

@@ -30,6 +30,7 @@ function worklistStudent(overrides: Partial<StudentWorklistItem> = {}): StudentW
     studentCode: "S001",
     fullName: "นักเรียน ทดสอบ",
     photoUrl: null,
+    classroomId: "class-1",
     classroomName: "ป.4/1",
     gradeLevel: "p4",
     section: 1,
@@ -105,5 +106,31 @@ describe("getExecutiveInsights", () => {
     expect(result.factors).toEqual([])
     expect(result.classrooms).toEqual([])
     expect(result.trend).toEqual([])
+  })
+
+  it("scopes the worklist query to the selected classroom", async () => {
+    vi.mocked(getStudentWorklist).mockResolvedValueOnce([])
+    vi.mocked(getAcademicDashboard).mockResolvedValueOnce(null as never)
+    vi.mocked(getRiskFactorDistribution).mockResolvedValueOnce({ factors: [], totalStudents: 0 })
+    vi.mocked(getClassroomRiskBreakdown).mockResolvedValueOnce([])
+    vi.mocked(getRiskTrendHistory).mockResolvedValueOnce([])
+
+    const result = await getExecutiveInsights({ classroomId: "99999999-9999-4999-8999-999999999999" })
+
+    expect(getStudentWorklist).toHaveBeenCalledWith({ limit: 500, classroomId: "99999999-9999-4999-8999-999999999999" })
+    expect(result.activeClassroomId).toBe("99999999-9999-4999-8999-999999999999")
+  })
+
+  it("ignores malformed classroom ids", async () => {
+    vi.mocked(getStudentWorklist).mockResolvedValueOnce([])
+    vi.mocked(getAcademicDashboard).mockResolvedValueOnce(null as never)
+    vi.mocked(getRiskFactorDistribution).mockResolvedValueOnce({ factors: [], totalStudents: 0 })
+    vi.mocked(getClassroomRiskBreakdown).mockResolvedValueOnce([])
+    vi.mocked(getRiskTrendHistory).mockResolvedValueOnce([])
+
+    const result = await getExecutiveInsights({ classroomId: "not-a-uuid" })
+
+    expect(getStudentWorklist).toHaveBeenCalledWith({ limit: 500, classroomId: undefined })
+    expect(result.activeClassroomId).toBeNull()
   })
 })

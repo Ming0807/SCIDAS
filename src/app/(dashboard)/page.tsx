@@ -4,6 +4,7 @@ import { SummaryCards } from "./_components/summary-cards"
 import { RiskOverviewCard } from "./_components/risk-overview-card"
 import { ActionItems } from "./_components/action-items"
 import { TrackingTable } from "./_components/tracking-table"
+import { DashboardClassroomFilter } from "./_components/dashboard-classroom-filter"
 import { ExecutiveInsights } from "./_components/executive-insights"
 import { MobileDashboard } from "./_components/mobile-dashboard"
 import { QuickActionsRibbon } from "./_components/quick-actions-ribbon"
@@ -34,7 +35,13 @@ const emptyDashboard: StudentCareDashboard = {
   actionQueue: [],
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = searchParams ? await searchParams : {}
+  const rawClassroom = typeof params.classroom === "string" ? params.classroom : ""
   const [role, dashboardResult, insights] = await Promise.all([
     getUserRole(),
     getStudentCareDashboard()
@@ -43,18 +50,24 @@ export default async function DashboardPage() {
         data: emptyDashboard,
         error: error instanceof Error ? error.message : "Unknown dashboard data error",
       })),
-    getExecutiveInsights().catch(
+    getExecutiveInsights({ classroomId: rawClassroom || undefined }).catch(
       (): ExecutiveInsightsData => ({
         topAbsence: [],
         topLowGpa: [],
         factors: [],
         factorsTotalStudents: 0,
         classrooms: [],
+        classroomOptions: [],
+        activeClassroomId: null,
         trend: [],
       }),
     ),
   ])
   const dashboard = dashboardResult.data
+  const activeClassroomId = insights.activeClassroomId
+  const trackedStudents = activeClassroomId
+    ? dashboard.priorityStudents.filter((s) => s.classroomId === activeClassroomId)
+    : dashboard.priorityStudents
   const m = dashboard.metrics
 
   return (
@@ -63,10 +76,12 @@ export default async function DashboardPage() {
       <div className="md:hidden block">
         <MobileDashboard
           role={role}
-          dashboard={dashboard}
+          dashboard={{ ...dashboard, priorityStudents: trackedStudents }}
           loadError={dashboardResult.error}
           topAbsence={insights.topAbsence}
           topLowGpa={insights.topLowGpa}
+          classroomOptions={insights.classroomOptions}
+          activeClassroomId={insights.activeClassroomId}
         />
       </div>
 
@@ -99,8 +114,13 @@ export default async function DashboardPage() {
 
           {/* Priority Worklist: Immediate Student Interventions */}
           <div className="w-full">
-            <TrackingTable students={dashboard.priorityStudents} />
+            <TrackingTable students={trackedStudents} />
           </div>
+
+          <DashboardClassroomFilter
+            options={insights.classroomOptions}
+            activeClassroomId={insights.activeClassroomId}
+          />
 
           {/* Executive Analytics: Top lists, factors, classrooms, trend */}
           <ExecutiveInsights insights={insights} />
