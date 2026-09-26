@@ -14,25 +14,40 @@ export default defineConfig({
 
   projects: [
     {
+      name: 'setup',
+      testMatch: '**/*.setup.ts',
+    },
+    {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/*.setup.ts',
+    },
+    {
+      name: 'chromium-authenticated',
+      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
+      testMatch: '**/dashboard.spec.ts',
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: '**/*.setup.ts',
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: '**/*.setup.ts',
     },
     /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: ['**/*.setup.ts', '**/dashboard.spec.ts'],
     },
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
+      testIgnore: ['**/*.setup.ts', '**/dashboard.spec.ts'],
     },
   ],
 
