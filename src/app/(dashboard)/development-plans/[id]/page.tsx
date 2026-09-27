@@ -14,6 +14,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getPlanStatusLabel, getPlanStatusTone } from "@/lib/server/idp-read-models"
+import { getStudentAttachments } from "@/lib/server/student-care-read-models"
+import { StudentAttachmentsPanel } from "@/components/care"
 import { cn } from "@/lib/utils"
 
 import { ActivityForm } from "../_components/activity-form"
@@ -80,6 +82,12 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
   const isFrozen = plan.status === "completed" || plan.status === "cancelled"
   const canMutatePlan = !isFrozen && canEditDevelopmentPlans(context.role)
   const canMutateEvaluations = !isFrozen && canEditDevelopmentEvaluations(context.role)
+  const attachments = plan.student_id
+    ? await getStudentAttachments(plan.student_id, 20, {
+        referenceTable: "development_plans",
+        referenceId: id,
+      }).catch(() => [])
+    : []
 
   const semesterName =
     plan.semester?.semester === "semester_1"
@@ -205,6 +213,22 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
           {evaluations.length === 0 ? <EmptyState icon={FileText} title="ยังไม่มีการประเมิน" description={canMutateEvaluations ? "เพิ่มการประเมินเมื่อมีข้อมูลผลการดำเนินงานเพียงพอ" : isFrozen ? "แผนนี้ถูกล็อก จึงไม่สามารถเพิ่มการประเมินได้" : "คุณไม่มีสิทธิ์เพิ่มการประเมินในแผนนี้"} size="compact" /> : <div className="space-y-3">{evaluations.map((evaluation) => <Card key={evaluation.id}><CardHeader className="gap-3 border-b border-border"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">รอบที่ {evaluation.evaluation_round} · {formatDate(evaluation.evaluation_date)}</CardTitle><CardDescription className="mt-1">ผู้ประเมิน: {evaluatorName(evaluation)}</CardDescription></div><div className="flex items-center gap-2"><Badge variant={evaluation.continue_plan ? "default" : "outline"}>{evaluation.continue_plan ? "ดำเนินแผนต่อ" : "ปิดแผน"}</Badge>{canMutateEvaluations ? <DeleteControl kind="evaluation" id={evaluation.id} /> : null}</div></div></CardHeader><CardContent className="space-y-4"><EvaluationScoreComparison evaluation={evaluation} /><div><p className="text-xs font-medium text-muted-foreground">ผลการประเมินโดยรวม</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6">{evaluation.overall_result}</p></div><div className="grid gap-4 text-sm sm:grid-cols-3"><div><p className="text-xs text-muted-foreground">จุดแข็ง</p><p className="mt-1 whitespace-pre-wrap">{evaluation.strengths ?? "ไม่ระบุ"}</p></div><div><p className="text-xs text-muted-foreground">สิ่งที่ควรพัฒนา</p><p className="mt-1 whitespace-pre-wrap">{evaluation.areas_for_improvement ?? "ไม่ระบุ"}</p></div><div><p className="text-xs text-muted-foreground">ข้อเสนอแนะ</p><p className="mt-1 whitespace-pre-wrap">{evaluation.recommendations ?? "ไม่ระบุ"}</p></div></div>{canMutateEvaluations ? <details><summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:underline">แก้ไขการประเมิน</summary><div className="mt-3"><EvaluationForm planId={id} evaluation={evaluation} /></div></details> : null}</CardContent></Card>)}</div>}
         </TabsContent>
       </Tabs>
+
+      {plan.student_id ? (
+        <Card>
+          <CardContent className="pt-6">
+            <StudentAttachmentsPanel
+              studentId={plan.student_id}
+              attachments={attachments}
+              title="หลักฐาน/รูปภาพผลงาน"
+              description="แนบผลงาน ชิ้นงาน หรือรูปภาพประกอบการพัฒนาในแผนนี้"
+              referenceTable="development_plans"
+              referenceId={id}
+              showForm={canMutatePlan}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
     </PageShell>
   )
 }

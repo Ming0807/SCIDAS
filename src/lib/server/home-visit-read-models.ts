@@ -19,9 +19,20 @@ type HomeVisitQueryRow = {
   visit_time: string | null
   address_visited: string | null
   housing_condition: HousingCondition | null
+  housing_type: string | null
+  housing_ownership: string | null
+  family_members_count: number | null
+  family_income: number | null
+  family_situation: string | null
+  student_behavior_at_home: string | null
+  environment_safety: string | null
+  has_study_space: boolean | null
+  has_internet: boolean | null
+  co_visitors: string[] | null
   follow_up_needed: boolean | null
   has_family_problem: boolean | null
   travel_difficulty: boolean | null
+  travel_difficulty_detail: string | null
   overall_assessment: string | null
   family_problem_detail: string | null
   suggestions: string | null
@@ -64,9 +75,20 @@ export type HomeVisitRecord = {
   visitTime: string | null
   address: string | null
   housingCondition: HousingCondition | null
+  housingType: string | null
+  housingOwnership: string | null
+  familyMembersCount: number | null
+  familyIncome: number | null
+  familySituation: string | null
+  studentBehaviorAtHome: string | null
+  environmentSafety: string | null
+  hasStudySpace: boolean
+  hasInternet: boolean
+  coVisitors: string[]
   followUpNeeded: boolean
   hasFamilyProblem: boolean
   travelDifficulty: boolean
+  travelDifficultyDetail: string | null
   overallAssessment: string | null
   familyProblemDetail: string | null
   suggestions: string | null
@@ -143,9 +165,22 @@ function mapHomeVisitRow(
     visitTime: row.visit_time,
     address: row.address_visited,
     housingCondition: row.housing_condition,
+    housingType: row.housing_type,
+    housingOwnership: row.housing_ownership,
+    familyMembersCount: row.family_members_count,
+    familyIncome: row.family_income !== null && row.family_income !== undefined
+      ? Number(row.family_income)
+      : null,
+    familySituation: row.family_situation,
+    studentBehaviorAtHome: row.student_behavior_at_home,
+    environmentSafety: row.environment_safety,
+    hasStudySpace: Boolean(row.has_study_space),
+    hasInternet: Boolean(row.has_internet),
+    coVisitors: row.co_visitors ?? [],
     followUpNeeded: Boolean(row.follow_up_needed),
     hasFamilyProblem: Boolean(row.has_family_problem),
     travelDifficulty: Boolean(row.travel_difficulty),
+    travelDifficultyDetail: row.travel_difficulty_detail,
     overallAssessment: row.overall_assessment,
     familyProblemDetail: row.family_problem_detail,
     suggestions: row.suggestions,
@@ -186,9 +221,20 @@ export async function getHomeVisitDashboard(limit = 120): Promise<HomeVisitDashb
       visit_time,
       address_visited,
       housing_condition,
+      housing_type,
+      housing_ownership,
+      family_members_count,
+      family_income,
+      family_situation,
+      student_behavior_at_home,
+      environment_safety,
+      has_study_space,
+      has_internet,
+      co_visitors,
       follow_up_needed,
       has_family_problem,
       travel_difficulty,
+      travel_difficulty_detail,
       overall_assessment,
       family_problem_detail,
       suggestions,
@@ -239,9 +285,20 @@ export async function getHomeVisitById(id: string): Promise<HomeVisitRecord | nu
       visit_time,
       address_visited,
       housing_condition,
+      housing_type,
+      housing_ownership,
+      family_members_count,
+      family_income,
+      family_situation,
+      student_behavior_at_home,
+      environment_safety,
+      has_study_space,
+      has_internet,
+      co_visitors,
       follow_up_needed,
       has_family_problem,
       travel_difficulty,
+      travel_difficulty_detail,
       overall_assessment,
       family_problem_detail,
       suggestions,
@@ -274,9 +331,20 @@ export type CreateHomeVisitInput = {
   visitTime?: string
   addressVisited?: string
   housingCondition?: HousingCondition
+  housingType?: string
+  housingOwnership?: string
+  familyMembersCount?: number | null
+  familyIncome?: number | null
+  familySituation?: string
+  studentBehaviorAtHome?: string
+  environmentSafety?: string
+  hasStudySpace?: boolean
+  hasInternet?: boolean
+  coVisitors?: string[]
   followUpNeeded?: boolean
   hasFamilyProblem?: boolean
   travelDifficulty?: boolean
+  travelDifficultyDetail?: string
   overallAssessment?: string
   familyProblemDetail?: string
   suggestions?: string
@@ -336,9 +404,20 @@ export async function createHomeVisit(
       visitor_id: context.profileId,
       address_visited: input.addressVisited ?? null,
       housing_condition: input.housingCondition ?? null,
+      housing_type: input.housingType ?? null,
+      housing_ownership: input.housingOwnership ?? null,
+      family_members_count: input.familyMembersCount ?? null,
+      family_income: input.familyIncome ?? null,
+      family_situation: input.familySituation ?? null,
+      student_behavior_at_home: input.studentBehaviorAtHome ?? null,
+      environment_safety: input.environmentSafety ?? null,
+      has_study_space: input.hasStudySpace ?? false,
+      has_internet: input.hasInternet ?? false,
+      co_visitors: input.coVisitors ?? null,
       follow_up_needed: input.followUpNeeded ?? false,
       has_family_problem: input.hasFamilyProblem ?? false,
       travel_difficulty: input.travelDifficulty ?? false,
+      travel_difficulty_detail: input.travelDifficultyDetail ?? null,
       overall_assessment: input.overallAssessment ?? null,
       family_problem_detail: input.familyProblemDetail ?? null,
       suggestions: input.suggestions ?? null,

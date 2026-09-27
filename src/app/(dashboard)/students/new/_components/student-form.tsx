@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { ActionResult } from "@/lib/server/action-result"
+import { familyStatusOptions } from "@/lib/student-constants"
 
 type StudentFormProps =
   | { mode: "create"; student?: never }
@@ -194,6 +195,166 @@ export function StudentForm({ mode, student }: StudentFormProps) {
                 defaultValue={student?.address ?? ""}
                 placeholder="ที่อยู่ตามทะเบียนบ้าน"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="subdistrict" className="text-sm font-medium">
+                  ตำบล/แขวง
+                </label>
+                <Input
+                  id="subdistrict"
+                  name="subdistrict"
+                  defaultValue={student?.subdistrict ?? ""}
+                  placeholder="ตำบล"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="district" className="text-sm font-medium">
+                  อำเภอ/เขต
+                </label>
+                <Input
+                  id="district"
+                  name="district"
+                  defaultValue={student?.district ?? ""}
+                  placeholder="อำเภอ"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="province" className="text-sm font-medium">
+                  จังหวัด
+                </label>
+                <Input
+                  id="province"
+                  name="province"
+                  defaultValue={student?.province ?? ""}
+                  placeholder="จังหวัด"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="postal_code" className="text-sm font-medium">
+                  รหัสไปรษณีย์
+                </label>
+                <Input
+                  id="postal_code"
+                  name="postal_code"
+                  inputMode="numeric"
+                  maxLength={5}
+                  defaultValue={student?.postal_code ?? ""}
+                  placeholder="เช่น 36110"
+                  aria-invalid={fieldErrors?.postal_code ? true : undefined}
+                />
+                <FieldError message={fieldErrors?.postal_code?.[0]} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="travel_method" className="text-sm font-medium">
+                  วิธีเดินทางมาโรงเรียน
+                </label>
+                <Input
+                  id="travel_method"
+                  name="travel_method"
+                  defaultValue={student?.travel_method ?? ""}
+                  placeholder="เช่น เดิน, จักรยาน, รถรับส่ง"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="distance_to_school_km" className="text-sm font-medium">
+                  ระยะทางมาโรงเรียน (กม.)
+                </label>
+                <Input
+                  id="distance_to_school_km"
+                  name="distance_to_school_km"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={student?.distance_to_school_km ?? ""}
+                  placeholder="เช่น 2.5"
+                  aria-invalid={fieldErrors?.distance_to_school_km ? true : undefined}
+                />
+                <FieldError message={fieldErrors?.distance_to_school_km?.[0]} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="national_id" className="text-sm font-medium">
+                  เลขบัตรประชาชน (13 หลัก)
+                </label>
+                <Input
+                  id="national_id"
+                  name="national_id"
+                  inputMode="numeric"
+                  maxLength={13}
+                  defaultValue={student?.national_id ?? ""}
+                  placeholder="เช่น 1369900123456"
+                  aria-invalid={fieldErrors?.national_id ? true : undefined}
+                />
+                <FieldError message={fieldErrors?.national_id?.[0]} />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="blood_type" className="text-sm font-medium">
+                  หมู่โลหิต
+                </label>
+                <select
+                  id="blood_type"
+                  name="blood_type"
+                  defaultValue={student?.blood_type ?? ""}
+                  className="h-8 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="">ไม่ระบุ</option>
+                  {["A", "B", "AB", "O", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+                <FieldError message={fieldErrors?.blood_type?.[0]} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="medical_conditions" className="text-sm font-medium">
+                โรคประจำตัว / ประวัติการแพ้
+              </label>
+              <Input
+                id="medical_conditions"
+                name="medical_conditions"
+                defaultValue={student?.medical_conditions ?? ""}
+                placeholder="เช่น หอบหืด, แพ้ถั่ว"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="special_needs" className="text-sm font-medium">
+                ความต้องการจำเป็นพิเศษ
+              </label>
+              <Input
+                id="special_needs"
+                name="special_needs"
+                defaultValue={student?.special_needs ?? ""}
+                placeholder="เช่น ต้องการที่นั่งหน้าชั้น"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="family_status" className="text-sm font-medium">
+                สถานะครอบครัว
+              </label>
+              <select
+                id="family_status"
+                name="family_status"
+                defaultValue={student?.family_status ?? ""}
+                className="h-8 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="">ไม่ระบุ</option>
+                {familyStatusOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <FieldError message={fieldErrors?.family_status?.[0]} />
             </div>
 
             {isEdit ? (

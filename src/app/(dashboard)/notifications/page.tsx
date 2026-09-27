@@ -6,10 +6,11 @@ import { DesktopNotificationFilters } from "./_components/desktop-notification-f
 import { MobileNotificationProfile } from "./_components/mobile/mobile-notification-profile"
 import { ChevronRight, Bell } from "lucide-react"
 import { ErrorState } from "@/components/feedback"
-import { getNotifications, getNotificationCounts } from "@/lib/server/notification-read-models"
+import { getNotifications, getNotificationCounts, getMutedNotificationTypes } from "@/lib/server/notification-read-models"
 import { getAcademicAdminData } from "@/lib/server/academic-admin-read-models"
 import type { NotificationStatusFilter, NotificationType } from "@/lib/server/notification-read-models"
 import { markAllAsReadFormAction } from "@/app/actions/notifications.actions"
+import { NotificationPreferences } from "./_components/notification-preferences"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -53,6 +54,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
 
   let notifications: Awaited<ReturnType<typeof getNotifications>>
   let counts: Awaited<ReturnType<typeof getNotificationCounts>>
+  let mutedTypes: Awaited<ReturnType<typeof getMutedNotificationTypes>> = []
   let loadError: string | null = null
   let semesterLabel = "ภาคเรียนปัจจุบัน"
 
@@ -61,6 +63,11 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
       getNotifications({ status, type, page, limit }),
       getNotificationCounts(),
     ])
+    try {
+      mutedTypes = await getMutedNotificationTypes().catch(() => [])
+    } catch {
+      mutedTypes = []
+    }
     try {
       const academic = await getAcademicAdminData()
       if (academic.currentSemester) {
@@ -123,6 +130,9 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
           currentStatus={status}
           currentType={type}
         />
+        <div className="px-4 pb-6">
+          <NotificationPreferences initialMuted={mutedTypes} />
+        </div>
       </div>
 
       {/* ---------------- DESKTOP VIEW (>= 1024px) ---------------- */}
@@ -207,12 +217,13 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
           </div>
 
           {/* Right Column (Filters) */}
-          <div className="xl:w-[320px] shrink-0 min-w-0">
+          <div className="xl:w-[320px] shrink-0 min-w-0 space-y-6">
             <DesktopNotificationFilters
               counts={safeCounts}
               currentStatus={status}
               currentType={type}
             />
+            <NotificationPreferences initialMuted={mutedTypes} />
           </div>
 
         </div>

@@ -172,6 +172,15 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
           <DetailItem label="แผนดำเนินการ" value={supportCase.action_plan} />
           <DetailItem label="การช่วยเหลือที่ดำเนินการแล้ว" value={supportCase.provided_support} />
           <DetailItem label="การส่งต่อภายนอก" value={supportCase.external_referral} />
+          <DetailItem label="แหล่งที่มาของทุน/การช่วยเหลือ" value={supportCase.funding_source} />
+          <DetailItem
+            label="งบประมาณ/มูลค่า (บาท)"
+            value={
+              supportCase.budget_amount !== null && supportCase.budget_amount !== undefined
+                ? Number(supportCase.budget_amount).toLocaleString("th-TH", { minimumFractionDigits: 2 })
+                : null
+            }
+          />
         </dl>
       </section>
 

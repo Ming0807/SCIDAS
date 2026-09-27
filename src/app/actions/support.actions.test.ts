@@ -237,6 +237,105 @@ describe("support.actions", () => {
       expect(revalidatePath).toHaveBeenCalledWith("/support/supp-1")
       expect(revalidatePath).toHaveBeenCalledWith("/students/stu-1")
     })
+
+    it("persists funding source and budget on create", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-1",
+        studentId: null,
+      })
+      vi.mocked(getCurrentSemesterId).mockResolvedValueOnce("sem-1")
+
+      const mockInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: "supp-2" },
+            error: null,
+          }),
+        }),
+      })
+
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "students") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: { id: "stu-1" }, error: null }),
+                  }),
+                }),
+              }),
+            }
+          }
+          if (table === "semesters") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: { id: "sem-1" }, error: null }),
+                  }),
+                }),
+              }),
+            }
+          }
+          if (table === "support_records") {
+            return {
+              insert: mockInsert,
+            }
+          }
+          return {}
+        }),
+      }
+      // @ts-expect-error mock supabase client
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient)
+
+      const formData = new FormData()
+      formData.set("student_id", "stu-1")
+      formData.set("support_type", "financial")
+      formData.set("priority", "high")
+      formData.set("title", "Scholarship support")
+      formData.set("description", "Needs lunch scholarship")
+      formData.set("funding_source", "ทุนปัจจัยพื้นฐาน")
+      formData.set("budget_amount", "1500")
+
+      const result = await createSupportRecordFormAction(null, formData)
+      expect(result.ok).toBe(true)
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          funding_source: "ทุนปัจจัยพื้นฐาน",
+          budget_amount: 1500,
+        }),
+      )
+    })
+
+    it("rejects a negative budget on create", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-1",
+        studentId: null,
+      })
+      vi.mocked(getCurrentSemesterId).mockResolvedValueOnce("sem-1")
+
+      const formData = new FormData()
+      formData.set("student_id", "stu-1")
+      formData.set("support_type", "financial")
+      formData.set("priority", "high")
+      formData.set("title", "Scholarship support")
+      formData.set("description", "Needs lunch scholarship")
+      formData.set("budget_amount", "-50")
+
+      const result = await createSupportRecordFormAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.budget_amount).toBeDefined()
+      }
+    })
   })
 
   describe("updateSupportRecord", () => {

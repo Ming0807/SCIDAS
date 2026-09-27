@@ -1,5 +1,20 @@
 # Task Progress
 
+## 2026-09-28 P0-P2 Requirement Gap Closure (423 Tests, 74 Suites)
+
+Status: done. Closed every unfinished Must/Should/Could item from the 2026-09-27 audit:
+1. **P0 student profile completeness**: create/update form + actions now cover travel method, distance, address detail (subdistrict/district/province/postal with format validation), national ID (13-digit), blood type (allowlist), medical conditions, special needs; profile health card displays family status + travel. Migration 0027 adds `family_status` with check constraint (FR-02-03/04/05/12/13).
+2. **P0 cross-semester GPA trend (FR-04-06)**: new `getAcademicTrendAcrossSemesters()` (per-student averaging, oldest-first, school-scoped) + `AcademicTrendCard` with delta indicators on `/academics`.
+3. **P1 home-visit depth**: create/edit forms + actions + read model + detail page now cover housing type/ownership/condition, family size/income/situation, behavior at home, environment safety, study space/internet, co-visitors, travel detail (FR-06-02/03/04/08).
+4. **P1 audit coverage (FR-01-05)**: fire-and-forget `logAudit` on student create/update/archive, attendance, academic, basic-skills, behavior, assignment, support, home-visit, IDP plan/goal mutations (national_id auto-masked by sanitizer).
+5. **P1 support funding (FR-07-07/08)**: migration 0026 (`funding_source`, `budget_amount >= 0`), form inputs with validation, detail display, action tests.
+6. **P1 notification preferences**: mute-by-type stored in `user_dashboard_preferences` (no migration needed), `NotificationPreferences` card on desktop + mobile, muted types excluded from list/counts/badge; 5 read-model tests + 2 action tests.
+7. **P2 IDP attachments (FR-09-10)**: `StudentAttachmentsPanel` scoped to `development_plans` on plan detail (FR-09-10); report academic-year dropdown narrowing semester options + generator now honors `semesterId` for home-visit/support reports (risk reports stay current-snapshot by design).
+8. **Migrations found & applied**: user's own `0025_nullable_student_dob.sql` discovered (renamed mine to 0027 to avoid version collision); 0026+0027 applied locally via `migration up`, `db:types` regenerated.
+9. **Drive-by repair**: `text-[11px]` ×5 in `student-import-client.tsx` (from user's 3e08fec import rework) tripped the UI guardrail suite — replaced with `text-xs`.
+10. **Build fix**: family-status consts were first exported from `student.actions.ts` ("use server"), which broke every client import of that module (`/development-plans/new` failed to collect) — moved to client-safe `src/lib/student-constants.ts` with a sync test.
+11. Verification: `tsc`, `eslint`, full `vitest --pool=forks --maxWorkers=2` 74 files / 423 tests, `next build`, `npm audit --omit=dev` (see below).
+
 ## 2026-09-27 Phase Close-Out: E2E Green + IDP Reminder Migration (399 Tests, 71 Suites)
 
 Status: done. Closed the phase with real runtime evidence:

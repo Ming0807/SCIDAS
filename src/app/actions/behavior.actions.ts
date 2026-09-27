@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
 import type { Database } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
@@ -237,6 +238,15 @@ export async function createBehaviorRecordAction(
     revalidatePath("/behavior/record")
     revalidatePath(`/behavior/${data.id}`)
 
+    logAudit({
+      action: "INSERT",
+      tableName: "behavior_records",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { behavior_type: parsed.fields.behaviorType },
+    }).catch(() => {})
+
     return actionOk("บันทึกพฤติกรรมสำเร็จ", {
       data: { id: data.id },
       redirectTo: `/behavior/${data.id}`,
@@ -319,6 +329,15 @@ export async function updateBehaviorRecordAction(
     revalidatePath(`/behavior/${record.id}`)
     revalidatePath(`/behavior/${record.id}/edit`)
     revalidatePath("/behavior/record")
+
+    logAudit({
+      action: "UPDATE",
+      tableName: "behavior_records",
+      recordId: record.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { behavior_type: parsed.fields.behaviorType },
+    }).catch(() => {})
 
     return actionOk("แก้ไขบันทึกพฤติกรรมสำเร็จ", {
       data: { id: record.id },

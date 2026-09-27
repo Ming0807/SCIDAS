@@ -144,6 +144,89 @@ describe("student.actions", () => {
       }
       expect(revalidatePath).toHaveBeenCalledWith("/students")
     })
+
+    it("rejects invalid national_id, postal_code, distance, and blood_type", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const formData = new FormData()
+      formData.set("first_name", "Somchai")
+      formData.set("last_name", "Jaidee")
+      formData.set("student_code", "STU002")
+      formData.set("gender", "male")
+      formData.set("date_of_birth", "2015-05-10")
+      formData.set("national_id", "12345")
+      formData.set("postal_code", "3611")
+      formData.set("distance_to_school_km", "-2")
+      formData.set("blood_type", "Z")
+
+      const result = await createStudentAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.national_id).toBeDefined()
+        expect(result.fieldErrors?.postal_code).toBeDefined()
+        expect(result.fieldErrors?.distance_to_school_km).toBeDefined()
+        expect(result.fieldErrors?.blood_type).toBeDefined()
+      }
+    })
+
+    it("persists extended profile fields on create", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockSingle = vi.fn().mockResolvedValue({ data: { id: "stu-101" }, error: null })
+      const mockSelect = vi.fn().mockReturnValue({ single: mockSingle })
+      const mockInsert = vi.fn().mockReturnValue({ select: mockSelect })
+      const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert })
+
+      // @ts-expect-error mock client
+      vi.mocked(createClient).mockResolvedValueOnce({ from: mockFrom })
+
+      const formData = new FormData()
+      formData.set("first_name", "Somchai")
+      formData.set("last_name", "Jaidee")
+      formData.set("student_code", "STU101")
+      formData.set("gender", "male")
+      formData.set("date_of_birth", "2015-05-10")
+      formData.set("national_id", "1369900123456")
+      formData.set("travel_method", "รถรับส่ง")
+      formData.set("distance_to_school_km", "2.5")
+      formData.set("subdistrict", "ในเมือง")
+      formData.set("district", "เมือง")
+      formData.set("province", "ชัยภูมิ")
+      formData.set("postal_code", "36000")
+      formData.set("blood_type", "o+")
+      formData.set("medical_conditions", "หอบหืด")
+      formData.set("special_needs", "ที่นั่งหน้าชั้น")
+
+      const result = await createStudentAction(null, formData)
+      expect(result.ok).toBe(true)
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          national_id: "1369900123456",
+          travel_method: "รถรับส่ง",
+          distance_to_school_km: 2.5,
+          subdistrict: "ในเมือง",
+          district: "เมือง",
+          province: "ชัยภูมิ",
+          postal_code: "36000",
+          blood_type: "O+",
+          medical_conditions: "หอบหืด",
+          special_needs: "ที่นั่งหน้าชั้น",
+        }),
+      )
+    })
   })
 
   describe("updateStudentAction", () => {

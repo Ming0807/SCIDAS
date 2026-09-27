@@ -6,6 +6,7 @@ import type { Database } from "@/types/database.types"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
 import { createClient } from "@/utils/supabase/server"
 import { SKILL_LEVELS, type SkillLevel } from "@/lib/basic-skills-constants"
 
@@ -106,6 +107,13 @@ export async function upsertBasicSkills(
     }
 
     revalidatePath("/academics")
+    logAudit({
+      action: "INSERT",
+      tableName: "basic_skills",
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { semesterId, count: payload.length },
+    }).catch(() => {})
     return actionOk("บันทึกทักษะพื้นฐานเรียบร้อยแล้ว", {
       data: { count: payload.length },
       revalidated: ["/academics"],

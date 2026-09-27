@@ -6,6 +6,7 @@ import type { Database } from "@/types/database.types"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
 import { createClient } from "@/utils/supabase/server"
 
 type AcademicYearSummary = { year: number }
@@ -350,6 +351,13 @@ export async function upsertAcademicScores(
     }
 
     revalidatePath("/academics")
+    logAudit({
+      action: "INSERT",
+      tableName: "academic_scores",
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { semesterId, count: payload.length },
+    }).catch(() => {})
     return actionOk("บันทึกผลการเรียนเรียบร้อยแล้ว", {
       data: { count: payload.length },
       revalidated: ["/academics"],

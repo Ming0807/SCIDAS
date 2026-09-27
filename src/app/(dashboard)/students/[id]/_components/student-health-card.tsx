@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 
 import type { Tables } from "@/types/database.types"
-import { formatThaiShortDate } from "@/lib/student-care-formatters"
+import { formatThaiShortDate, getFamilyStatusLabel } from "@/lib/student-care-formatters"
 
 interface StudentHealthCardProps {
   student: Tables<"students"> | null
@@ -101,6 +101,25 @@ export function StudentHealthCard({ student }: StudentHealthCardProps) {
           </div>
           <p className="mt-1 text-sm text-foreground leading-relaxed">
             {student.special_needs || "ปกติ (ไม่มีความต้องการพิเศษ)"}
+          </p>
+        </div>
+
+        {/* Family Status */}
+        <div className="rounded-lg border border-border bg-background p-3">
+          <span className="text-xs text-muted-foreground">สถานะครอบครัว</span>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {getFamilyStatusLabel(student.family_status)}
+          </p>
+        </div>
+
+        {/* Travel */}
+        <div className="rounded-lg border border-border bg-background p-3 sm:col-span-2">
+          <span className="text-xs text-muted-foreground">การเดินทางมาโรงเรียน</span>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {student.travel_method || "ไม่ระบุวิธีเดินทาง"}
+            {student.distance_to_school_km !== null && student.distance_to_school_km !== undefined
+              ? ` · ${Number(student.distance_to_school_km).toLocaleString("th-TH")} กม.`
+              : ""}
           </p>
         </div>
 

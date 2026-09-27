@@ -4,6 +4,7 @@ import {
   markAllAsReadAction,
   toggleNotificationReadAction,
   deleteNotificationAction,
+  updateNotificationPreferencesAction,
 } from "./notifications.actions"
 
 vi.mock("next/cache", () => ({
@@ -14,12 +15,14 @@ vi.mock("@/lib/server/notification-read-models", () => ({
   markAllNotificationsRead: vi.fn(),
   toggleNotificationRead: vi.fn(),
   deleteNotification: vi.fn(),
+  setMutedNotificationTypes: vi.fn(),
 }))
 
 import {
   markAllNotificationsRead,
   toggleNotificationRead,
   deleteNotification,
+  setMutedNotificationTypes,
 } from "@/lib/server/notification-read-models"
 import { revalidatePath } from "next/cache"
 
@@ -102,6 +105,34 @@ describe("notifications.actions", () => {
         expect(result.data.id).toBe(validUUID)
       }
       expect(revalidatePath).toHaveBeenCalledWith("/notifications")
+    })
+  })
+
+  describe("updateNotificationPreferencesAction", () => {
+    it("saves muted types and revalidates /notifications", async () => {
+      vi.mocked(setMutedNotificationTypes).mockResolvedValueOnce(["general", "system"])
+
+      const formData = new FormData()
+      formData.append("types", "general")
+      formData.append("types", "system")
+
+      const result = await updateNotificationPreferencesAction(null, formData)
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.muted).toEqual(["general", "system"])
+      }
+      expect(setMutedNotificationTypes).toHaveBeenCalledWith(["general", "system"])
+      expect(revalidatePath).toHaveBeenCalledWith("/notifications")
+    })
+
+    it("returns FORBIDDEN when the user is not authenticated", async () => {
+      vi.mocked(setMutedNotificationTypes).mockRejectedValueOnce(new Error("FORBIDDEN"))
+
+      const result = await updateNotificationPreferencesAction(null, new FormData())
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
     })
   })
 })

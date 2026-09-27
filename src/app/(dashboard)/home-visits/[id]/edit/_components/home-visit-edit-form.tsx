@@ -137,7 +137,109 @@ export function HomeVisitEditForm({ record, studentOptions }: HomeVisitEditFormP
             <Checkbox name="travelDifficulty" checked={record.travelDifficulty}>
               เดินทางลำบาก
             </Checkbox>
+            <Checkbox name="hasStudySpace" checked={record.hasStudySpace}>
+              มีมุมอ่านหนังสือ
+            </Checkbox>
+            <Checkbox name="hasInternet" checked={record.hasInternet}>
+              มีอินเทอร์เน็ตใช้
+            </Checkbox>
           </div>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field id="housingType" label="ประเภทที่อยู่อาศัย" error={fieldErrors?.housingType?.[0]}>
+              <Input
+                id="housingType"
+                name="housingType"
+                defaultValue={record.housingType ?? ""}
+                maxLength={100}
+                placeholder="เช่น บ้านไม้, ห้องเช่า"
+                aria-invalid={!!fieldErrors?.housingType}
+              />
+            </Field>
+            <Field id="housingOwnership" label="การครอบครอง" error={fieldErrors?.housingOwnership?.[0]}>
+              <Input
+                id="housingOwnership"
+                name="housingOwnership"
+                defaultValue={record.housingOwnership ?? ""}
+                maxLength={100}
+                placeholder="เช่น เป็นของตนเอง, เช่า"
+                aria-invalid={!!fieldErrors?.housingOwnership}
+              />
+            </Field>
+            <Field id="familyMembersCount" label="จำนวนสมาชิกในบ้าน (คน)" error={fieldErrors?.familyMembersCount?.[0]}>
+              <Input
+                id="familyMembersCount"
+                name="familyMembersCount"
+                type="number"
+                min={0}
+                step={1}
+                defaultValue={record.familyMembersCount ?? ""}
+                aria-invalid={!!fieldErrors?.familyMembersCount}
+              />
+            </Field>
+            <Field id="familyIncome" label="รายได้ครอบครัว/เดือน (บาท)" error={fieldErrors?.familyIncome?.[0]}>
+              <Input
+                id="familyIncome"
+                name="familyIncome"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={record.familyIncome ?? ""}
+                aria-invalid={!!fieldErrors?.familyIncome}
+              />
+            </Field>
+            <Field id="familySituation" label="สภาพครอบครัว" error={fieldErrors?.familySituation?.[0]}>
+              <Textarea
+                id="familySituation"
+                name="familySituation"
+                defaultValue={record.familySituation ?? ""}
+                maxLength={5000}
+                className="min-h-28 resize-y"
+                aria-invalid={!!fieldErrors?.familySituation}
+              />
+            </Field>
+            <Field id="studentBehaviorAtHome" label="พฤติกรรมนักเรียนที่บ้าน" error={fieldErrors?.studentBehaviorAtHome?.[0]}>
+              <Textarea
+                id="studentBehaviorAtHome"
+                name="studentBehaviorAtHome"
+                defaultValue={record.studentBehaviorAtHome ?? ""}
+                maxLength={5000}
+                className="min-h-28 resize-y"
+                aria-invalid={!!fieldErrors?.studentBehaviorAtHome}
+              />
+            </Field>
+            <Field id="environmentSafety" label="ความปลอดภัยของสภาพแวดล้อม" error={fieldErrors?.environmentSafety?.[0]}>
+              <Textarea
+                id="environmentSafety"
+                name="environmentSafety"
+                defaultValue={record.environmentSafety ?? ""}
+                maxLength={2000}
+                className="min-h-28 resize-y"
+                aria-invalid={!!fieldErrors?.environmentSafety}
+              />
+            </Field>
+            <Field id="travelDifficultyDetail" label="รายละเอียดการเดินทางลำบาก" error={fieldErrors?.travelDifficultyDetail?.[0]}>
+              <Textarea
+                id="travelDifficultyDetail"
+                name="travelDifficultyDetail"
+                defaultValue={record.travelDifficultyDetail ?? ""}
+                maxLength={2000}
+                className="min-h-28 resize-y"
+                aria-invalid={!!fieldErrors?.travelDifficultyDetail}
+              />
+            </Field>
+          </div>
+
+          <Field id="coVisitors" label="ผู้ร่วมเยี่ยม (คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่)" error={fieldErrors?.coVisitors?.[0]}>
+            <Textarea
+              id="coVisitors"
+              name="coVisitors"
+              defaultValue={(record.coVisitors ?? []).join(", ")}
+              maxLength={2000}
+              className="min-h-20 resize-y"
+              aria-invalid={!!fieldErrors?.coVisitors}
+            />
+          </Field>
 
           <div className="grid gap-5 md:grid-cols-2">
             <Field id="overallAssessment" label="ผลประเมินโดยรวม" error={fieldErrors?.overallAssessment?.[0]}>

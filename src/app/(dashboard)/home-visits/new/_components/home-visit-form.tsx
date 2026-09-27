@@ -154,6 +154,134 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                 />
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="housingCondition" className="text-sm font-medium">
+                    สภาพบ้าน
+                  </label>
+                  <select
+                    id="housingCondition"
+                    name="housingCondition"
+                    defaultValue=""
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+                  >
+                    <option value="">ไม่ระบุ</option>
+                    <option value="good">ดี</option>
+                    <option value="moderate">พอใช้</option>
+                    <option value="poor">ควรปรับปรุง</option>
+                    <option value="critical">วิกฤต/ไม่ปลอดภัย</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="housingType" className="text-sm font-medium">
+                    ประเภทที่อยู่อาศัย
+                  </label>
+                  <Input
+                    id="housingType"
+                    name="housingType"
+                    placeholder="เช่น บ้านไม้, บ้านปูน, ห้องเช่า"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="housingOwnership" className="text-sm font-medium">
+                    การครอบครอง
+                  </label>
+                  <Input
+                    id="housingOwnership"
+                    name="housingOwnership"
+                    placeholder="เช่น เป็นของตนเอง, เช่า, อาศัยญาติ"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="familyMembersCount" className="text-sm font-medium">
+                    จำนวนสมาชิกในบ้าน (คน)
+                  </label>
+                  <Input
+                    id="familyMembersCount"
+                    name="familyMembersCount"
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="เช่น 4"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label htmlFor="familyIncome" className="text-sm font-medium">
+                    รายได้ครอบครัว/เดือน (บาท)
+                  </label>
+                  <Input
+                    id="familyIncome"
+                    name="familyIncome"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="เช่น 9000"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="familySituation" className="text-sm font-medium">
+                  สภาพครอบครัว
+                </label>
+                <Textarea
+                  id="familySituation"
+                  name="familySituation"
+                  placeholder="เช่น อยู่พร้อมหน้า บิดาทำงานรับจ้าง มารดาทำงาน..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="studentBehaviorAtHome" className="text-sm font-medium">
+                  พฤติกรรมนักเรียนที่บ้าน
+                </label>
+                <Textarea
+                  id="studentBehaviorAtHome"
+                  name="studentBehaviorAtHome"
+                  placeholder="เช่น ช่วยงานบ้าน อ่านหนังสือตอนเย็น..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="environmentSafety" className="text-sm font-medium">
+                  ความปลอดภัยของสภาพแวดล้อม
+                </label>
+                <Textarea
+                  id="environmentSafety"
+                  name="environmentSafety"
+                  placeholder="เช่น บ้านใกล้ถนนใหญ่ ควรระวัง..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="coVisitors" className="text-sm font-medium">
+                  ผู้ร่วมเยี่ยม (คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่)
+                </label>
+                <Textarea
+                  id="coVisitors"
+                  name="coVisitors"
+                  placeholder={"เช่น ครูสมชาย, ผอ.วิภา"}
+                  className="min-h-[60px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="travelDifficultyDetail" className="text-sm font-medium">
+                  รายละเอียดการเดินทางลำบาก
+                </label>
+                <Input
+                  id="travelDifficultyDetail"
+                  name="travelDifficultyDetail"
+                  placeholder="เช่น ระยะทาง 12 กม. ไม่มีรถส่วนตัว"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label htmlFor="suggestions" className="text-sm font-medium">
                   บันทึกการเยี่ยม
@@ -206,6 +334,22 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     className="size-4 rounded border-input"
                   />
                   เดินทางลำบาก
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="hasStudySpace"
+                    className="size-4 rounded border-input"
+                  />
+                  มีมุมอ่านหนังสือ
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="hasInternet"
+                    className="size-4 rounded border-input"
+                  />
+                  มีอินเทอร์เน็ตใช้
                 </label>
               </div>
             </CardContent>

@@ -92,6 +92,23 @@ export function getStudentRiskTone(riskLevel?: string | null): StatusTone {
   return "neutral"
 }
 
+const familyStatusLabels: Record<string, string> = {
+  together: "อยู่พร้อมหน้า",
+  separated: "บิดา/มารดาแยกกันอยู่",
+  single_parent: "พ่อหรือแม่เลี้ยงเดี่ยว",
+  orphan: "กำพร้า",
+  guardian: "อยู่กับญาติ/ผู้อุปการะ",
+  other: "อื่นๆ",
+}
+
+export function getFamilyStatusLabel(familyStatus?: string | null) {
+  if (familyStatus && familyStatusLabels[familyStatus]) {
+    return familyStatusLabels[familyStatus]
+  }
+
+  return "ไม่ระบุ"
+}
+
 export function formatPercent(value?: number | null, digits = 1) {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "-"

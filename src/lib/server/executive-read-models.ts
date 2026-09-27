@@ -37,6 +37,7 @@ export type ClassroomOption = {
 export type SemesterOption = {
   id: string
   name: string
+  year: number | null
   isCurrent: boolean
 }
 
@@ -111,6 +112,7 @@ export async function getSemesterOptions(): Promise<SemesterOption[]> {
       return {
         id: row.id,
         name: `ภาคเรียนที่ ${semNum}/${year ?? "-"}`,
+        year: year ?? null,
         isCurrent: row.is_current,
       }
     })

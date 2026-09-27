@@ -160,6 +160,77 @@ describe("home-visit.actions", () => {
       }
       expect(revalidatePath).toHaveBeenCalledWith("/home-visits")
     })
+
+    it("passes extended environment and family fields to createHomeVisit", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      vi.mocked(createHomeVisit).mockResolvedValueOnce({ id: "visit-124" })
+
+      const formData = new FormData()
+      formData.set("studentId", "stu-1")
+      formData.set("visitDate", "2026-09-13")
+      formData.set("housingCondition", "good")
+      formData.set("housingType", "บ้านปูน")
+      formData.set("housingOwnership", "ของตนเอง")
+      formData.set("familyMembersCount", "4")
+      formData.set("familyIncome", "9000")
+      formData.set("familySituation", "อยู่พร้อมหน้า")
+      formData.set("studentBehaviorAtHome", "ช่วยงานบ้าน")
+      formData.set("environmentSafety", "ปลอดภัย")
+      formData.set("hasStudySpace", "on")
+      formData.set("hasInternet", "true")
+      formData.set("coVisitors", "ครูสมชาย, ผอ.วิภา\nครูแนะแนว")
+      formData.set("travelDifficultyDetail", "ระยะทาง 12 กม.")
+
+      const result = await createHomeVisitAction(null, formData)
+      expect(result.ok).toBe(true)
+      expect(createHomeVisit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          housingType: "บ้านปูน",
+          housingOwnership: "ของตนเอง",
+          familyMembersCount: 4,
+          familyIncome: 9000,
+          familySituation: "อยู่พร้อมหน้า",
+          studentBehaviorAtHome: "ช่วยงานบ้าน",
+          environmentSafety: "ปลอดภัย",
+          hasStudySpace: true,
+          hasInternet: true,
+          coVisitors: ["ครูสมชาย", "ผอ.วิภา", "ครูแนะแนว"],
+          travelDifficultyDetail: "ระยะทาง 12 กม.",
+        }),
+      )
+    })
+
+    it("rejects invalid family counts and income", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const formData = new FormData()
+      formData.set("studentId", "stu-1")
+      formData.set("visitDate", "2026-09-13")
+      formData.set("familyMembersCount", "2.5")
+      formData.set("familyIncome", "-100")
+
+      const result = await createHomeVisitAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.familyMembersCount).toBeDefined()
+        expect(result.fieldErrors?.familyIncome).toBeDefined()
+      }
+      expect(createHomeVisit).not.toHaveBeenCalled()
+    })
   })
 
   describe("updateHomeVisitAction", () => {

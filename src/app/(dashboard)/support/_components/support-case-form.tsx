@@ -223,6 +223,35 @@ export function SupportCaseForm({ students, initialCase, defaultStudentId }: Sup
             </div>
           </div>
 
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="support-funding" className="text-sm font-medium text-foreground">
+                แหล่งที่มาของทุน/การช่วยเหลือ
+              </label>
+              <Input
+                id="support-funding"
+                name="funding_source"
+                defaultValue={initialCase?.funding_source ?? ""}
+                placeholder="เช่น ทุนปัจจัยพื้นฐาน, อบต., ผู้บริจาค"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="support-budget" className="text-sm font-medium text-foreground">
+                งบประมาณ/มูลค่า (บาท)
+              </label>
+              <Input
+                id="support-budget"
+                name="budget_amount"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={initialCase?.budget_amount ?? ""}
+                placeholder="เช่น 1500"
+              />
+              <FieldError result={result} field="budget_amount" />
+            </div>
+          </div>
+
           <ActionFeedback result={result} />
         </CardContent>
         <CardFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">

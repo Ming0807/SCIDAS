@@ -212,3 +212,100 @@ function emptySummary(): AcademicSummary {
     weakestSubjectAvg: null,
   }
 }
+
+export type AcademicTrendPoint = {
+  semesterId: string
+  label: string
+  averageGpa: number | null
+  scoreCount: number
+}
+
+/**
+ * School-wide average GPA per semester, oldest first (FR-04-06).
+ * Averages per-student GPAs (same method as the dashboard summary) so a
+ * student with many subjects cannot dominate a semester.
+ */
+export async function getAcademicTrendAcrossSemesters(
+  limit = 6,
+): Promise<AcademicTrendPoint[]> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  const client = await createClient()
+  const { data: semesters, error: semesterError } = await client
+    .from("semesters")
+    .select("id, semester, start_date, academic_years(year)")
+    .eq("school_id", context.schoolId)
+    .order("start_date", { ascending: true })
+    .limit(12)
+
+  if (semesterError) {
+    throw new Error(semesterError.message)
+  }
+
+  type SemesterRow = {
+    id: string
+    semester: string
+    academic_years: { year: number } | Array<{ year: number }> | null
+  }
+  const ordered = ((semesters ?? []) as SemesterRow[]).slice(-Math.max(limit, 1))
+  if (ordered.length === 0) return []
+
+  const { data: scores, error: scoresError } = await client
+    .from("academic_scores")
+    .select("semester_id, student_id, grade_point")
+    .eq("school_id", context.schoolId)
+    .in(
+      "semester_id",
+      ordered.map((s) => s.id),
+    )
+    .not("grade_point", "is", null)
+    .limit(10000)
+
+  if (scoresError) {
+    throw new Error(scoresError.message)
+  }
+
+  type ScoreRow = { semester_id: string; student_id: string; grade_point: number }
+  const perStudent = new Map<string, { sum: number; count: number }>()
+  for (const row of ((scores ?? []) as ScoreRow[])) {
+    const key = `${row.semester_id}:${row.student_id}`
+    const entry = perStudent.get(key) ?? { sum: 0, count: 0 }
+    entry.sum += row.grade_point
+    entry.count++
+    perStudent.set(key, entry)
+  }
+
+  const perSemester = new Map<string, { sum: number; count: number; records: number }>()
+  for (const [key, entry] of perStudent) {
+    const semesterId = key.split(":")[0]
+    const agg = perSemester.get(semesterId) ?? { sum: 0, count: 0, records: 0 }
+    agg.sum += entry.sum / entry.count
+    agg.count++
+    agg.records += entry.count
+    perSemester.set(semesterId, agg)
+  }
+
+  return ordered.map((semester) => {
+    const year = Array.isArray(semester.academic_years)
+      ? semester.academic_years[0]?.year
+      : semester.academic_years?.year
+    const semNum =
+      semester.semester === "semester_1"
+        ? "1"
+        : semester.semester === "semester_2"
+          ? "2"
+          : semester.semester
+    const agg = perSemester.get(semester.id)
+    return {
+      semesterId: semester.id,
+      label: `ภาคเรียนที่ ${semNum}/${year ?? "-"}`,
+      averageGpa:
+        agg && agg.count > 0 ? Math.round((agg.sum / agg.count) * 100) / 100 : null,
+      scoreCount: agg?.records ?? 0,
+    }
+  })
+}

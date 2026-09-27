@@ -1,8 +1,13 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { fireEvent, render, screen } from "@testing-library/react"
+import { describe, expect, it, vi } from "vitest"
 import { DesktopStatsCategory } from "./desktop-stats-category"
 import { DesktopTrendComparison } from "./desktop-trend-comparison"
+import { DesktopCreateReport } from "./desktop-create-report"
 import { MobileTrendChart } from "./mobile/mobile-trend-chart"
+
+vi.mock("@/app/actions/reports.actions", () => ({
+  requestReportJobActionState: vi.fn(),
+}))
 
 describe("Report Analytics Components", () => {
   describe("DesktopStatsCategory", () => {
@@ -72,6 +77,35 @@ describe("Report Analytics Components", () => {
 
       expect(screen.getByText("ม.ค. 2568")).toBeDefined()
       expect(screen.getByText("ก.พ. 2568")).toBeDefined()
+    })
+  })
+
+  describe("DesktopCreateReport academic year filter", () => {
+    const semesters = [
+      { id: "sem-1", name: "ภาคเรียนที่ 1/2567", year: 2567 },
+      { id: "sem-2", name: "ภาคเรียนที่ 2/2567", year: 2567 },
+      { id: "sem-3", name: "ภาคเรียนที่ 1/2568", year: 2568 },
+    ]
+
+    it("lists every semester when no year is selected", () => {
+      render(<DesktopCreateReport semesters={semesters} />)
+
+      const semesterSelect = screen.getByLabelText("ภาคเรียน") as HTMLSelectElement
+      const options = Array.from(semesterSelect.options).map((o) => o.text)
+      expect(options).toContain("ภาคเรียนที่ 1/2567")
+      expect(options).toContain("ภาคเรียนที่ 1/2568")
+    })
+
+    it("narrows semester options after picking an academic year", () => {
+      render(<DesktopCreateReport semesters={semesters} />)
+
+      fireEvent.change(screen.getByLabelText("ปีการศึกษา"), { target: { value: "2568" } })
+
+      const semesterSelect = screen.getByLabelText("ภาคเรียน") as HTMLSelectElement
+      const options = Array.from(semesterSelect.options).map((o) => o.text)
+      expect(options).toContain("ภาคเรียนที่ 1/2568")
+      expect(options).not.toContain("ภาคเรียนที่ 1/2567")
+      expect(options).not.toContain("ภาคเรียนที่ 2/2567")
     })
   })
 })

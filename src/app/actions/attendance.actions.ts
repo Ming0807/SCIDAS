@@ -6,6 +6,7 @@ import type { Database } from "@/types/database.types"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
 import { createClient } from "@/utils/supabase/server"
 
 type AttendanceStatus = Database["public"]["Enums"]["attendance_status"]
@@ -202,6 +203,14 @@ export async function upsertAttendance(
     }
 
     revalidatePath("/attendance")
+    logAudit({
+      action: "INSERT",
+      tableName: "attendance_records",
+      recordId: classroomId,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { date, count: payload.length },
+    }).catch(() => {})
     return actionOk("บันทึกการมาเรียนเรียบร้อยแล้ว", {
       data: { count: payload.length },
       revalidated: ["/attendance"],

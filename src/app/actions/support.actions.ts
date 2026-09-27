@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
 import type { Database, Tables, TablesUpdate } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
@@ -39,6 +40,8 @@ export type SupportCase = Pick<
   | "action_plan"
   | "provided_support"
   | "resources_used"
+  | "funding_source"
+  | "budget_amount"
   | "external_referral"
   | "status"
   | "priority"
@@ -109,7 +112,7 @@ const allowedTransitions: Record<SupportStatus, SupportStatus[]> = {
 }
 
 const supportSelect =
-  "id, school_id, student_id, semester_id, support_type, title, description, action_plan, provided_support, resources_used, external_referral, status, priority, started_at, completed_at, provided_by, approved_by, created_at, updated_at, student:students(id, first_name, last_name, student_code), provider:profiles!support_records_provided_by_fkey(id, first_name, last_name)"
+  "id, school_id, student_id, semester_id, support_type, title, description, action_plan, provided_support, resources_used, funding_source, budget_amount, external_referral, status, priority, started_at, completed_at, provided_by, approved_by, created_at, updated_at, student:students(id, first_name, last_name, student_code), provider:profiles!support_records_provided_by_fkey(id, first_name, last_name)"
 
 function getFormString(formData: FormData, name: string): string {
   const value = formData.get(name)
@@ -124,6 +127,19 @@ function isValidDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
   const date = new Date(`${value}T00:00:00.000Z`)
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
+/**
+ * Parses an optional THB budget input. Returns the numeric value, null when
+ * absent/blank, or false when the input is not a non-negative number.
+ */
+function parseBudgetAmount(raw: string | undefined): number | null | false {
+  if (raw === undefined) return null
+  const normalized = raw.trim().replace(/,/g, "")
+  if (normalized === "") return null
+  const value = Number(normalized)
+  if (!Number.isFinite(value) || value < 0) return false
+  return Math.round(value * 100) / 100
 }
 
 function actionFailureFromError(error: unknown, fallbackMessage: string): ActionResult<SupportActionData> {
@@ -246,6 +262,11 @@ function validateCommonFields(
   const startedAt = getOptionalFormString(formData, "started_at")
   if (startedAt !== undefined && startedAt !== "" && !isValidDate(startedAt)) {
     fieldErrors.started_at = ["วันที่เริ่มต้นไม่ถูกต้อง"]
+  }
+
+  const rawBudget = getOptionalFormString(formData, "budget_amount")
+  if (rawBudget !== undefined && rawBudget !== "" && parseBudgetAmount(rawBudget) === false) {
+    fieldErrors.budget_amount = ["งบประมาณต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป"]
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -390,6 +411,13 @@ export async function createSupportRecord(
     const semesterError = await verifySemesterInSchool(client, semesterId, context.schoolId)
     if (semesterError) return semesterError
 
+    const budgetAmount = parseBudgetAmount(getOptionalFormString(formData, "budget_amount"))
+    if (budgetAmount === false) {
+      return actionFail("VALIDATION_ERROR", "งบประมาณต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป", {
+        fieldErrors: { budget_amount: ["งบประมาณต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป"] },
+      })
+    }
+
     const insertData = {
       student_id: studentId,
       semester_id: semesterId,
@@ -401,6 +429,8 @@ export async function createSupportRecord(
       action_plan: getOptionalFormString(formData, "action_plan") || null,
       provided_support: getOptionalFormString(formData, "provided_support") || null,
       resources_used: getOptionalFormString(formData, "resources_used") || null,
+      funding_source: getOptionalFormString(formData, "funding_source") || null,
+      budget_amount: budgetAmount,
       external_referral: getOptionalFormString(formData, "external_referral") || null,
       provided_by: providedBy,
       status: "pending" as const,
@@ -415,6 +445,14 @@ export async function createSupportRecord(
     }
 
     revalidateSupportRoutes(data.id, studentId)
+    logAudit({
+      action: "INSERT",
+      tableName: "support_records",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { support_type: supportType, title },
+    }).catch(() => {})
     return actionOk("สร้างเคสช่วยเหลือสำเร็จ", {
       data: { id: data.id, status: "pending" },
       redirectTo: `/support/${data.id}`,
@@ -495,9 +533,20 @@ export async function updateSupportRecord(
           : null,
     }
 
-    for (const field of ["action_plan", "provided_support", "resources_used", "external_referral"] as const) {
+    for (const field of ["action_plan", "provided_support", "resources_used", "funding_source", "external_referral"] as const) {
       const value = getOptionalFormString(formData, field)
       if (value !== undefined) updateData[field] = value || null
+    }
+
+    const rawBudget = getOptionalFormString(formData, "budget_amount")
+    if (rawBudget !== undefined) {
+      const parsedBudget = parseBudgetAmount(rawBudget)
+      if (parsedBudget === false) {
+        return actionFail("VALIDATION_ERROR", "งบประมาณต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป", {
+          fieldErrors: { budget_amount: ["งบประมาณต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป"] },
+        })
+      }
+      updateData.budget_amount = parsedBudget
     }
 
     const startedAt = getOptionalFormString(formData, "started_at")
@@ -522,6 +571,14 @@ export async function updateSupportRecord(
     }
 
     revalidateSupportRoutes(data.id, studentId)
+    logAudit({
+      action: "UPDATE",
+      tableName: "support_records",
+      recordId: data.id,
+      schoolId: access.context.schoolId,
+      userId: access.context.userId,
+      newData: { status: data.status },
+    }).catch(() => {})
     return actionOk("แก้ไขเคสช่วยเหลือสำเร็จ", {
       data: { id: data.id, status: data.status },
       redirectTo: `/support/${data.id}`,

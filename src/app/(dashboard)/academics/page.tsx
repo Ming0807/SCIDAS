@@ -3,9 +3,11 @@ import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
 import { getClassroomAcademicData } from "@/app/actions/academic.actions"
 import { getBasicSkillsData } from "@/lib/server/basic-skills-read-models"
+import { getAcademicTrendAcrossSemesters } from "@/lib/server/academic-read-models"
 
 import { AcademicForm } from "./academic-form"
 import { BasicSkillsForm } from "./basic-skills-form"
+import { AcademicTrendCard } from "./_components/academic-trend-card"
 
 type AcademicsPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -18,6 +20,7 @@ export default async function AcademicsPage({ searchParams }: AcademicsPageProps
 
   let academicData: Awaited<ReturnType<typeof getClassroomAcademicData>>
   let basicSkills: Awaited<ReturnType<typeof getBasicSkillsData>> | null = null
+  let gpaTrend: Awaited<ReturnType<typeof getAcademicTrendAcrossSemesters>> = []
 
   try {
     academicData = await getClassroomAcademicData(semesterId, classroomId)
@@ -28,6 +31,11 @@ export default async function AcademicsPage({ searchParams }: AcademicsPageProps
       )
     } catch {
       basicSkills = null
+    }
+    try {
+      gpaTrend = await getAcademicTrendAcrossSemesters()
+    } catch {
+      gpaTrend = []
     }
   } catch {
     return (
@@ -77,6 +85,7 @@ export default async function AcademicsPage({ searchParams }: AcademicsPageProps
 
       {academicData.currentSemesterId ? (
         <>
+          <AcademicTrendCard trend={gpaTrend} />
           <AcademicForm
             key={`${academicData.currentSemesterId}-${academicData.classroom.id}`}
             classroom={academicData.classroom}

@@ -71,6 +71,59 @@ describe("Report Generator Filter Tests", () => {
     expect(mockEqClassroom).toHaveBeenCalledWith("classroom_id", "c-1")
   })
 
+  it("should generate support summary scoped to the selected semester", async () => {
+    const mockRange = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "sup-1",
+          support_type: "financial",
+          priority: "high",
+          title: "ทุนอาหารกลางวัน",
+          status: "in_progress",
+          started_at: "2026-06-01",
+          completed_at: null,
+          students: { student_code: "STD101", first_name: "สมชาย", last_name: "ใจดี" },
+        },
+      ],
+      error: null,
+    })
+    const mockOrder2 = vi.fn().mockReturnValue({ range: mockRange })
+    const mockOrder1 = vi.fn().mockReturnValue({ order: mockOrder2 })
+    const mockEqSemester = vi.fn().mockReturnValue({ order: mockOrder1 })
+    const mockEqSchool = vi.fn().mockReturnValue({ eq: mockEqSemester, order: mockOrder1 })
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqSchool })
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "schools") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: { name: "โรงเรียนอนุบาลพัฒนา", school_code: "SCH001" }, error: null }),
+            }),
+          }),
+        }
+      }
+      if (table === "support_records") {
+        return {
+          select: mockSelect,
+        }
+      }
+      return {}
+    })
+
+    const artifact = await generateReportArtifact({
+      id: "job-3",
+      schoolId: "school-1",
+      reportType: "support_summary",
+      title: "รายงานการช่วยเหลือเทอม 1",
+      filters: { semesterId: "sem-1", format: "pdf" },
+    })
+
+    expect(artifact.fileName).toContain(".pdf")
+    expect(artifact.buffer.length).toBeGreaterThan(0)
+    expect(mockEqSemester).toHaveBeenCalledWith("semester_id", "sem-1")
+  })
+
   it("should generate attendance report with date range filters", async () => {
     const mockRange = vi.fn().mockResolvedValue({
       data: [

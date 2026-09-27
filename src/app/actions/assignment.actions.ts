@@ -6,6 +6,7 @@ import type { Database } from "@/types/database.types"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
 import { createClient } from "@/utils/supabase/server"
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/assignment-constants"
 
@@ -94,6 +95,13 @@ export async function createAssignmentAction(
     }
 
     revalidatePath("/behavior")
+    logAudit({
+      action: "INSERT",
+      tableName: "assignment_submissions",
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { count: payload.length },
+    }).catch(() => {})
     return actionOk("มอบหมายงานเรียบร้อยแล้ว", {
       data: { count: payload.length },
       revalidated: ["/behavior"],
@@ -175,6 +183,14 @@ export async function updateSubmissionStatusAction(input: {
     }
 
     revalidatePath("/behavior")
+    logAudit({
+      action: "UPDATE",
+      tableName: "assignment_submissions",
+      recordId: input.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { status: input.status },
+    }).catch(() => {})
     return actionOk("บันทึกการส่งงานเรียบร้อยแล้ว", {
       data: { id: input.id },
       revalidated: ["/behavior"],

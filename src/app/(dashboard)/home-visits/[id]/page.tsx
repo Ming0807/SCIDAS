@@ -58,11 +58,11 @@ function getHousingLabel(condition: HomeVisitRecord["housingCondition"]) {
   return condition ? labels[condition] : "ไม่ระบุ"
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="space-y-1">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="break-words text-sm font-medium text-foreground">{value}</dd>
+      <dd className="break-words text-sm font-medium text-foreground">{value ?? "-"}</dd>
     </div>
   )
 }
@@ -177,6 +177,24 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
             />
             <DetailItem label="ผู้บันทึก" value={record.visitorName} />
             <DetailItem label="สภาพบ้าน" value={getHousingLabel(record.housingCondition)} />
+            <DetailItem label="ประเภทที่อยู่อาศัย" value={record.housingType} />
+            <DetailItem label="การครอบครอง" value={record.housingOwnership} />
+            <DetailItem
+              label="สมาชิกในบ้าน"
+              value={
+                record.familyMembersCount !== null && record.familyMembersCount !== undefined
+                  ? `${record.familyMembersCount.toLocaleString("th-TH")} คน`
+                  : null
+              }
+            />
+            <DetailItem
+              label="รายได้ครอบครัว/เดือน"
+              value={
+                record.familyIncome !== null && record.familyIncome !== undefined
+                  ? `${Number(record.familyIncome).toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท`
+                  : null
+              }
+            />
             <DetailItem
               label="ปัญหาครอบครัว"
               value={record.hasFamilyProblem ? "มีประเด็น" : "ไม่พบประเด็น"}
@@ -184,6 +202,12 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
             <DetailItem
               label="การเดินทาง"
               value={record.travelDifficulty ? "ลำบาก" : "ปกติ"}
+            />
+            <DetailItem label="มุมอ่านหนังสือ" value={record.hasStudySpace ? "มี" : "ไม่มี"} />
+            <DetailItem label="อินเทอร์เน็ต" value={record.hasInternet ? "มีใช้" : "ไม่มี"} />
+            <DetailItem
+              label="ผู้ร่วมเยี่ยม"
+              value={record.coVisitors.length > 0 ? record.coVisitors.join(", ") : null}
             />
           </div>
 
@@ -206,7 +230,11 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
           </div>
 
           <TextSection title="ผลประเมินโดยรวม" value={record.overallAssessment} />
+          <TextSection title="สภาพครอบครัว" value={record.familySituation} />
           <TextSection title="รายละเอียดปัญหาครอบครัว" value={record.familyProblemDetail} />
+          <TextSection title="พฤติกรรมนักเรียนที่บ้าน" value={record.studentBehaviorAtHome} />
+          <TextSection title="ความปลอดภัยของสภาพแวดล้อม" value={record.environmentSafety} />
+          <TextSection title="รายละเอียดการเดินทางลำบาก" value={record.travelDifficultyDetail} />
           <TextSection title="ข้อเสนอแนะ" value={record.suggestions} />
           <TextSection title="รายละเอียดการติดตาม" value={record.followUpDetail} />
         </section>

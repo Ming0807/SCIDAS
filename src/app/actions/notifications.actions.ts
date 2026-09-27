@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { deleteNotification, markAllNotificationsRead, toggleNotificationRead } from "@/lib/server/notification-read-models"
+import { deleteNotification, markAllNotificationsRead, setMutedNotificationTypes, toggleNotificationRead } from "@/lib/server/notification-read-models"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -80,6 +80,33 @@ export async function toggleNotificationReadAction(
     }
 
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการเปลี่ยนสถานะการอ่าน")
+  }
+}
+
+export async function updateNotificationPreferencesAction(
+  _previousState: ActionResult<{ muted: string[] }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ muted: string[] }>> {
+  try {
+    const saved = await setMutedNotificationTypes(
+      formData.getAll("types").filter((v): v is string => typeof v === "string"),
+    )
+    revalidatePath("/notifications")
+
+    return actionOk("บันทึกการตั้งค่าแจ้งเตือนแล้ว", {
+      data: { muted: saved },
+      revalidated: ["/notifications"],
+    })
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "UNAUTHORIZED" || error.message === "FORBIDDEN") {
+        return actionFail(error.message, "กรุณาเข้าสู่ระบบอีกครั้ง")
+      }
+
+      return actionFail("INTERNAL_ERROR", error.message)
+    }
+
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการบันทึกการตั้งค่า")
   }
 }
 

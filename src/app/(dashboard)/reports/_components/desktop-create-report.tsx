@@ -124,12 +124,16 @@ export type ReportFilterOption = {
   name: string
 }
 
+export type ReportSemesterOption = ReportFilterOption & {
+  year?: number | null
+}
+
 export function DesktopCreateReport({
   classrooms = [],
   semesters = [],
 }: {
   classrooms?: ReportFilterOption[]
-  semesters?: ReportFilterOption[]
+  semesters?: ReportSemesterOption[]
 }) {
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
@@ -140,6 +144,7 @@ export function DesktopCreateReport({
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "xlsx">("pdf")
   const [title, setTitle] = useState<string>(defaultTitleByType.student_summary)
   const [classroomId, setClassroomId] = useState<string>("")
+  const [academicYear, setAcademicYear] = useState<string>("")
   const [semesterId, setSemesterId] = useState<string>("")
   const [dateFrom, setDateFrom] = useState<string>("")
   const [dateTo, setDateTo] = useState<string>("")
@@ -147,6 +152,20 @@ export function DesktopCreateReport({
   const typeErrors = state?.ok === false ? state.fieldErrors?.reportType : undefined
   const titleErrors = state?.ok === false ? state.fieldErrors?.title : undefined
   const filterErrors = state?.ok === false ? state.fieldErrors?.filters : undefined
+
+  const academicYears = [...new Set(semesters.map((s) => s.year).filter((y): y is number => y !== null && y !== undefined))].sort((a, b) => b - a)
+  const visibleSemesters = academicYear
+    ? semesters.filter((s) => s.year === Number(academicYear))
+    : semesters
+
+  function handleYearSelect(value: string) {
+    setAcademicYear(value)
+    setSemesterId((current) => {
+      if (!value) return current
+      const stillVisible = semesters.some((s) => s.id === current && s.year === Number(value))
+      return stillVisible ? current : ""
+    })
+  }
 
   function handleTypeSelect(value: string) {
     setSelectedType(value)
@@ -318,6 +337,24 @@ export function DesktopCreateReport({
             </select>
           </div>
           <div>
+            <label htmlFor="report-year" className="block text-xs font-medium text-muted-foreground mb-1.5">
+              ปีการศึกษา
+            </label>
+            <select
+              id="report-year"
+              value={academicYear}
+              onChange={(e) => handleYearSelect(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">ทุกปีการศึกษา</option>
+              {academicYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label htmlFor="report-semester" className="block text-xs font-medium text-muted-foreground mb-1.5">
               ภาคเรียน
             </label>
@@ -329,7 +366,7 @@ export function DesktopCreateReport({
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">ทุกภาคเรียน</option>
-              {semesters.map((s) => (
+              {visibleSemesters.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>

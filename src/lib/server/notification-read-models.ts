@@ -191,6 +191,7 @@ export async function getNotifications(
   const status = resolveStatusFilter(filter)
   const pageSize = safeLimit(filter.limit)
   const page = parsePageNumber(filter.page)
+  const muted = await getMutedNotificationTypes().catch(() => [] as NotificationType[])
 
   // Build the base query for counting and data
   let baseQuery = client
@@ -198,6 +199,10 @@ export async function getNotifications(
     .select("id", { count: "exact", head: true })
     .eq("recipient_id", context.profileId)
     .eq("school_id", context.schoolId)
+
+  if (muted.length > 0) {
+    baseQuery = baseQuery.not("type", "in", `(${muted.map((t) => `"${t}"`).join(",")})`)
+  }
 
   if (status === "unread") {
     baseQuery = baseQuery.eq("is_read", false)
@@ -245,6 +250,10 @@ export async function getNotifications(
     .eq("school_id", context.schoolId)
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1)
+
+  if (muted.length > 0) {
+    dataQuery = dataQuery.not("type", "in", `(${muted.map((t) => `"${t}"`).join(",")})`)
+  }
 
   if (status === "unread") {
     dataQuery = dataQuery.eq("is_read", false)
@@ -298,6 +307,8 @@ export async function getNotificationCounts(): Promise<NotificationCounts> {
 
   const rows = data ?? []
 
+  const mutedSet = new Set(await getMutedNotificationTypes().catch(() => [] as NotificationType[]))
+
   const byType: Record<string, number> = {}
   for (const t of allNotificationTypes) {
     byType[t] = 0
@@ -307,6 +318,7 @@ export async function getNotificationCounts(): Promise<NotificationCounts> {
   let unread = 0
 
   for (const row of rows) {
+    if (mutedSet.has(row.type as NotificationType)) continue
     total++
     if (!row.is_read) unread++
     if (row.type && byType[row.type] !== undefined) {
@@ -424,4 +436,77 @@ export async function deleteNotification(notificationId: string): Promise<{ succ
   }
 
   return { success: true }
+}
+
+const NOTIFICATION_PREFS_SCOPE = "notifications"
+const MUTED_TYPES_KEY = "muted_types"
+
+function sanitizeMutedTypes(raw: unknown): NotificationType[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter((t): t is NotificationType =>
+    typeof t === "string" && (allNotificationTypes as string[]).includes(t),
+  )
+}
+
+/**
+ * Notification types the current user muted. Muted types are excluded from
+ * the list, counts, and unread badge (FR-11 preferences).
+ */
+export async function getMutedNotificationTypes(): Promise<NotificationType[]> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  const client = await createClient()
+  const { data, error } = await client
+    .from("user_dashboard_preferences")
+    .select("value")
+    .eq("school_id", context.schoolId)
+    .eq("user_id", context.profileId)
+    .eq("scope", NOTIFICATION_PREFS_SCOPE)
+    .eq("key", MUTED_TYPES_KEY)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const value = (data as { value?: unknown } | null)?.value
+  const muted = value && typeof value === "object"
+    ? (value as { muted?: unknown }).muted
+    : value
+  return sanitizeMutedTypes(muted)
+}
+
+export async function setMutedNotificationTypes(
+  types: string[],
+): Promise<NotificationType[]> {
+  const context = await getCurrentUserContext()
+
+  if (!context.profileId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  const sanitized = sanitizeMutedTypes(types)
+  const client = await createClient()
+  const { error } = await client
+    .from("user_dashboard_preferences")
+    .upsert(
+      {
+        school_id: context.schoolId,
+        user_id: context.profileId,
+        scope: NOTIFICATION_PREFS_SCOPE,
+        key: MUTED_TYPES_KEY,
+        value: { muted: sanitized },
+      },
+      { onConflict: "school_id,user_id,scope,key" },
+    )
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return sanitized
 }

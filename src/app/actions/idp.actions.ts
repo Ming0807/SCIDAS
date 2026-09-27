@@ -10,6 +10,7 @@ import {
   type CurrentUserContext,
 } from "@/lib/server/current-user"
 import type { Database } from "@/types/database.types"
+import { logAudit } from "@/lib/server/audit-logger"
 import { createClient } from "@/utils/supabase/server"
 
 export type DevelopmentPlan = Database["public"]["Tables"]["development_plans"]["Row"]
@@ -248,6 +249,14 @@ export async function createDevelopmentPlanAction(
     }
 
     revalidatePlan(data.id)
+    logAudit({
+      action: "INSERT",
+      tableName: "development_plans",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { title },
+    }).catch(() => {})
     return actionOk("สร้างแผนพัฒนาสำเร็จ", {
       data: { id: data.id },
       redirectTo: `/development-plans/${data.id}`,
@@ -299,6 +308,14 @@ export async function updateDevelopmentPlanAction(
     if (error || !data) return actionFail("INTERNAL_ERROR", "ไม่สามารถแก้ไขแผนพัฒนาได้")
 
     revalidatePlan(id)
+    logAudit({
+      action: "UPDATE",
+      tableName: "development_plans",
+      recordId: id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { title },
+    }).catch(() => {})
     return actionOk("แก้ไขแผนพัฒนาสำเร็จ", { data: { id }, redirectTo: `/development-plans/${id}` })
   } catch (error) {
     return failFromError(error, "ไม่สามารถแก้ไขแผนพัฒนาได้")
@@ -335,6 +352,14 @@ export async function transitionDevelopmentPlanAction(
       completed: "ปิดแผนพัฒนาเป็นเสร็จสิ้นแล้ว",
       cancelled: "ยกเลิกแผนพัฒนาแล้ว",
     }
+    logAudit({
+      action: "UPDATE",
+      tableName: "development_plans",
+      recordId: id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { status: nextStatus },
+    }).catch(() => {})
     return actionOk(messages[nextStatus], { data: { id } })
   } catch (error) {
     return failFromError(error, "ไม่สามารถเปลี่ยนสถานะแผนพัฒนาได้")
@@ -378,6 +403,14 @@ export async function createDevelopmentGoalAction(
       .single()
     if (error) return actionFail("INTERNAL_ERROR", "ไม่สามารถเพิ่มเป้าหมายได้")
     revalidatePlan(planId)
+    logAudit({
+      action: "INSERT",
+      tableName: "development_goals",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { plan_id: planId, title },
+    }).catch(() => {})
     return actionOk("เพิ่มเป้าหมายสำเร็จ", { data: { id: data.id } })
   } catch (error) {
     return failFromError(error, "ไม่สามารถเพิ่มเป้าหมายได้")

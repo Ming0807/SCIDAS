@@ -783,6 +783,7 @@ export async function generateReportArtifact(job: {
 
         if (dateFrom) query = query.gte("visit_date", dateFrom)
         if (dateTo) query = query.lte("visit_date", dateTo)
+        if (semesterFilter) query = query.eq("semester_id", semesterFilter)
         if (studentFilter) query = query.eq("student_id", studentFilter)
 
         const { data: pageData, error } = await query
@@ -860,6 +861,7 @@ export async function generateReportArtifact(job: {
           `)
           .eq("school_id", job.schoolId)
 
+        if (semesterFilter) query = query.eq("semester_id", semesterFilter)
         if (studentFilter) query = query.eq("student_id", studentFilter)
 
         const { data: pageData, error } = await query

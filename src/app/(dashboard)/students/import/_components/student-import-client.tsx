@@ -559,7 +559,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                     className="size-4 text-primary focus:ring-primary"
                   />
                 </div>
-                <span className="mt-1 inline-block text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="mt-1 inline-block text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   ★ ค่าเริ่มต้นที่แนะนำ
                 </span>
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -587,7 +587,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                     className="size-4 text-primary focus:ring-primary"
                   />
                 </div>
-                <span className="mt-1 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                <span className="mt-1 inline-block text-xs font-medium text-blue-600 dark:text-blue-400">
                   สำหรับเลื่อนชั้น/ย้ายห้อง
                 </span>
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -615,7 +615,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                     className="size-4 text-primary focus:ring-primary"
                   />
                 </div>
-                <span className="mt-1 inline-block text-[11px] font-medium text-muted-foreground">
+                <span className="mt-1 inline-block text-xs font-medium text-muted-foreground">
                   โหมดตรวจสอบเข้มงวด
                 </span>
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -719,14 +719,14 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                           <td className="px-4 py-2.5 text-xs">
                             {r.isExistingInDb ? (
                               <span
-                                className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400"
+                                className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
                                 title={`มีในระบบแล้ว: ${r.existingStudentName || ""}`}
                               >
                                 <AlertCircle className="size-3" />
                                 มีในระบบแล้ว
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                                 <Sparkles className="size-3" />
                                 ข้อมูลใหม่
                               </span>

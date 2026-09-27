@@ -6,6 +6,8 @@ import { z } from "zod"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { logAudit } from "@/lib/server/audit-logger"
+import { validFamilyStatuses } from "@/lib/student-constants"
 import { createClient } from "@/utils/supabase/server"
 import type { Database } from "@/types/database.types"
 
@@ -19,6 +21,17 @@ type StudentFormData = {
   gender: string
   date_of_birth: string
   address: string | null
+  national_id: string | null
+  travel_method: string | null
+  distance_to_school_km: number | null
+  subdistrict: string | null
+  district: string | null
+  province: string | null
+  postal_code: string | null
+  blood_type: string | null
+  medical_conditions: string | null
+  special_needs: string | null
+  family_status: string | null
 }
 
 export type StudentArchiveStatus = "transferred" | "dropped_out"
@@ -44,7 +57,23 @@ const studentFormFields = [
   "gender",
   "date_of_birth",
   "address",
+  "national_id",
+  "travel_method",
+  "distance_to_school_km",
+  "subdistrict",
+  "district",
+  "province",
+  "postal_code",
+  "blood_type",
+  "medical_conditions",
+  "special_needs",
+  "family_status",
 ] as const
+
+const validBloodTypes = new Set([
+  "A", "B", "AB", "O",
+  "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-",
+])
 
 function readStudentFormData(formData: FormData): StudentFormData {
   const getText = (name: (typeof studentFormFields)[number]) =>
@@ -52,6 +81,10 @@ function readStudentFormData(formData: FormData): StudentFormData {
   const values = Object.fromEntries(
     studentFormFields.map((field) => [field, getText(field)]),
   ) as Record<(typeof studentFormFields)[number], string>
+
+  const rawDistance = values.distance_to_school_km
+  const distance =
+    rawDistance === "" ? null : Number(rawDistance.replace(",", "."))
 
   return {
     student_code: values.student_code,
@@ -62,6 +95,17 @@ function readStudentFormData(formData: FormData): StudentFormData {
     gender: values.gender,
     date_of_birth: values.date_of_birth,
     address: values.address || null,
+    national_id: values.national_id || null,
+    travel_method: values.travel_method || null,
+    distance_to_school_km: distance,
+    subdistrict: values.subdistrict || null,
+    district: values.district || null,
+    province: values.province || null,
+    postal_code: values.postal_code || null,
+    blood_type: values.blood_type || null,
+    medical_conditions: values.medical_conditions || null,
+    special_needs: values.special_needs || null,
+    family_status: values.family_status || null,
   }
 }
 
@@ -75,6 +119,25 @@ function getStudentFieldErrors(values: StudentFormData) {
     fieldErrors.gender = ["กรุณาเลือกเพศ"]
   }
   if (!values.date_of_birth) fieldErrors.date_of_birth = ["กรุณาระบุวันเกิด"]
+  if (values.national_id && !/^\d{13}$/.test(values.national_id)) {
+    fieldErrors.national_id = ["เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก"]
+  }
+  if (values.postal_code && !/^\d{5}$/.test(values.postal_code)) {
+    fieldErrors.postal_code = ["รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก"]
+  }
+  if (
+    values.distance_to_school_km !== null &&
+    (!Number.isFinite(values.distance_to_school_km) ||
+      values.distance_to_school_km < 0)
+  ) {
+    fieldErrors.distance_to_school_km = ["ระยะทางต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป"]
+  }
+  if (values.blood_type && !validBloodTypes.has(values.blood_type.toUpperCase())) {
+    fieldErrors.blood_type = ["หมู่โลหิตไม่ถูกต้อง (A, B, AB, O พร้อม + หรือ -)"]
+  }
+  if (values.family_status && !validFamilyStatuses.has(values.family_status)) {
+    fieldErrors.family_status = ["สถานะครอบครัวไม่ถูกต้อง กรุณาเลือกใหม่"]
+  }
 
   return fieldErrors
 }
@@ -171,6 +234,17 @@ export async function createStudentAction(
         gender: values.gender as Database["public"]["Enums"]["gender_type"],
         date_of_birth: values.date_of_birth,
         address: values.address,
+        national_id: values.national_id,
+        travel_method: values.travel_method,
+        distance_to_school_km: values.distance_to_school_km,
+        subdistrict: values.subdistrict,
+        district: values.district,
+        province: values.province,
+        postal_code: values.postal_code,
+        blood_type: values.blood_type?.toUpperCase() ?? null,
+        medical_conditions: values.medical_conditions,
+        special_needs: values.special_needs,
+        family_status: values.family_status,
         status: "active",
       })
       .select("id")
@@ -187,6 +261,15 @@ export async function createStudentAction(
     }
 
     revalidatePath("/students")
+
+    logAudit({
+      action: "INSERT",
+      tableName: "students",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { student_code: values.student_code },
+    }).catch(() => {})
 
     return actionOk("เพิ่มนักเรียนสำเร็จ", {
       data: { id: data.id },
@@ -232,6 +315,17 @@ export async function updateStudentAction(
       gender: values.gender as Database["public"]["Enums"]["gender_type"],
       date_of_birth: values.date_of_birth,
       address: values.address,
+      national_id: values.national_id,
+      travel_method: values.travel_method,
+      distance_to_school_km: values.distance_to_school_km,
+      subdistrict: values.subdistrict,
+      district: values.district,
+      province: values.province,
+      postal_code: values.postal_code,
+      blood_type: values.blood_type?.toUpperCase() ?? null,
+      medical_conditions: values.medical_conditions,
+      special_needs: values.special_needs,
+      family_status: values.family_status,
     }
 
     if (statusToUpdate) {
@@ -264,6 +358,15 @@ export async function updateStudentAction(
     revalidatePath("/students")
     revalidatePath(`/students/${data.id}`)
     revalidatePath(`/students/${data.id}/edit`)
+
+    logAudit({
+      action: "UPDATE",
+      tableName: "students",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { student_code: values.student_code },
+    }).catch(() => {})
 
     return actionOk("แก้ไขข้อมูลนักเรียนสำเร็จ", {
       data: { id: data.id },
@@ -310,6 +413,15 @@ export async function archiveStudentAction(
     revalidatePath("/students")
     revalidatePath(`/students/${data.id}`)
     revalidatePath(`/students/${data.id}/edit`)
+
+    logAudit({
+      action: "UPDATE",
+      tableName: "students",
+      recordId: data.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { status },
+    }).catch(() => {})
 
     return actionOk(
       status === "transferred" ? "บันทึกสถานะย้ายออกสำเร็จ" : "บันทึกสถานะออกกลางคันสำเร็จ",

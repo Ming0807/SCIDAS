@@ -2652,6 +2652,7 @@ export type Database = {
           district: string | null
           enrollment_date: string | null
           ethnicity: string | null
+          family_status: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender_type"]
           graduation_date: string | null
@@ -2687,6 +2688,7 @@ export type Database = {
           district?: string | null
           enrollment_date?: string | null
           ethnicity?: string | null
+          family_status?: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender_type"]
           graduation_date?: string | null
@@ -2722,6 +2724,7 @@ export type Database = {
           district?: string | null
           enrollment_date?: string | null
           ethnicity?: string | null
+          family_status?: string | null
           first_name?: string
           gender?: Database["public"]["Enums"]["gender_type"]
           graduation_date?: string | null
@@ -2882,10 +2885,12 @@ export type Database = {
         Row: {
           action_plan: string | null
           approved_by: string | null
+          budget_amount: number | null
           completed_at: string | null
           created_at: string
           description: string
           external_referral: string | null
+          funding_source: string | null
           id: string
           priority: Database["public"]["Enums"]["severity_level"] | null
           provided_by: string
@@ -2903,10 +2908,12 @@ export type Database = {
         Insert: {
           action_plan?: string | null
           approved_by?: string | null
+          budget_amount?: number | null
           completed_at?: string | null
           created_at?: string
           description: string
           external_referral?: string | null
+          funding_source?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["severity_level"] | null
           provided_by: string
@@ -2924,10 +2931,12 @@ export type Database = {
         Update: {
           action_plan?: string | null
           approved_by?: string | null
+          budget_amount?: number | null
           completed_at?: string | null
           created_at?: string
           description?: string
           external_referral?: string | null
+          funding_source?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["severity_level"] | null
           provided_by?: string
