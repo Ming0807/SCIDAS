@@ -137,9 +137,9 @@ describe("reports.actions", () => {
       formData.set("reportType", "behavior_summary")
       formData.set("title", "Monthly Behavior Report")
       formData.set("format", "xlsx")
-      formData.set("classroomId", "cls-1")
-      formData.set("semesterId", "sem-1")
-      formData.set("studentId", "stu-1")
+      formData.set("classroomId", "11111111-1111-4111-8111-111111111111")
+      formData.set("semesterId", "22222222-2222-4222-8222-222222222222")
+      formData.set("studentId", "33333333-3333-4333-8333-333333333333")
       formData.set("dateFrom", "2026-01-01")
       formData.set("dateTo", "2026-01-31")
 
@@ -154,9 +154,9 @@ describe("reports.actions", () => {
         title: "Monthly Behavior Report",
         filters: {
           format: "xlsx",
-          classroomId: "cls-1",
-          semesterId: "sem-1",
-          studentId: "stu-1",
+          classroomId: "11111111-1111-4111-8111-111111111111",
+          semesterId: "22222222-2222-4222-8222-222222222222",
+          studentId: "33333333-3333-4333-8333-333333333333",
           dateFrom: "2026-01-01",
           dateTo: "2026-01-31",
         },
@@ -179,6 +179,52 @@ describe("reports.actions", () => {
       if (!result.ok) {
         expect(result.code).toBe("INTERNAL_ERROR")
       }
+    })
+
+    it("rejects non-UUID classroom filter with field error", async () => {
+      const formData = new FormData()
+      formData.set("reportType", "student_summary")
+      formData.set("title", "Filtered Summary")
+      formData.set("classroomId", "not-a-uuid")
+
+      const result = await requestReportJobActionState(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.filters).toBeDefined()
+      }
+      expect(requestReportJob).not.toHaveBeenCalled()
+    })
+
+    it("rejects malformed date filter with field error", async () => {
+      const formData = new FormData()
+      formData.set("reportType", "attendance_report")
+      formData.set("title", "Bad Date Report")
+      formData.set("dateFrom", "01/01/2026")
+
+      const result = await requestReportJobActionState(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.filters).toBeDefined()
+      }
+      expect(requestReportJob).not.toHaveBeenCalled()
+    })
+
+    it("rejects inverted date range with field error", async () => {
+      const formData = new FormData()
+      formData.set("reportType", "attendance_report")
+      formData.set("title", "Inverted Range Report")
+      formData.set("dateFrom", "2026-02-01")
+      formData.set("dateTo", "2026-01-01")
+
+      const result = await requestReportJobActionState(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.filters?.[0]).toContain("วันที่เริ่มต้น")
+      }
+      expect(requestReportJob).not.toHaveBeenCalled()
     })
 
     it("returns RATE_LIMITED when rate limit check fails", async () => {

@@ -21,6 +21,9 @@ interface StudentCarePathwayProps {
 export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
   const riskTone = getStudentRiskTone(profile.riskLevel)
   const riskLabel = getStudentRiskLabel(profile.riskLevel)
+  const isAtRisk = profile.riskLevel === "high" || profile.riskLevel === "watch"
+  // FR-08-09: proactively suggest IDP creation for at-risk students with no plan yet.
+  const shouldSuggestIdp = isAtRisk && profile.activePlanCount === 0
 
   const steps = [
     {
@@ -132,6 +135,28 @@ export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
           <StatusBadge status={riskTone} label={riskLabel} size="sm" />
         </div>
       </div>
+
+      {shouldSuggestIdp ? (
+        <div
+          role="note"
+          aria-label="แนะนำให้สร้างแผนพัฒนารายบุคคล"
+          className="mt-4 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-sm dark:border-amber-800/60 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="text-foreground">
+            <span className="font-semibold">แนะนำให้สร้างแผน IDP:</span>{" "}
+            นักเรียนอยู่กลุ่ม{profile.riskLevel === "high" ? "เสี่ยงสูง" : "เฝ้าระวัง"}และยังไม่มีแผนพัฒนาที่กำลังดำเนินการ
+          </p>
+          <Button
+            nativeButton={false}
+            size="sm"
+            className="shrink-0 text-xs"
+            render={<Link href={`/development-plans/new?studentId=${profile.studentId}`} />}
+          >
+            <span>สร้างแผน IDP</span>
+            <ArrowUpRight className="size-3" />
+          </Button>
+        </div>
+      ) : null}
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {steps.map((step) => {

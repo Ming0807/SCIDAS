@@ -56,6 +56,19 @@ export default async function DevelopmentPlansPage({
     )
   }
 
+  // FR-09-09: surface plans that need attention — active/draft plans whose
+  // end date has passed or falls within the next 7 days.
+  const nowStart = new Date()
+  nowStart.setHours(0, 0, 0, 0)
+  const dueSoonLimit = new Date(nowStart)
+  dueSoonLimit.setDate(dueSoonLimit.getDate() + 7)
+  const duePlans = plans.filter((plan) => {
+    if (plan.status !== "active" && plan.status !== "draft") return false
+    if (!plan.endDate) return false
+    return new Date(plan.endDate) <= dueSoonLimit
+  })
+  const overduePlans = duePlans.filter((plan) => new Date(plan.endDate as string) < nowStart)
+
   return (
     <PageShell>
       <PageHeader
@@ -129,6 +142,44 @@ export default async function DevelopmentPlansPage({
       ) : null}
 
       {/* Plans Table */}
+      {duePlans.length > 0 ? (
+        <div
+          role="note"
+          aria-label="แผนที่ใกล้ครบกำหนด"
+          className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-800/60 dark:bg-amber-950/40"
+        >
+          <p className="font-semibold text-foreground">
+            {overduePlans.length > 0
+              ? `มีแผนเลยกำหนด ${overduePlans.length.toLocaleString("th-TH")} แผน และใกล้ครบกำหนด (7 วัน) รวม ${duePlans.length.toLocaleString("th-TH")} แผน`
+              : `มีแผนใกล้ครบกำหนดภายใน 7 วัน ${duePlans.length.toLocaleString("th-TH")} แผน`}
+          </p>
+          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {duePlans.slice(0, 5).map((plan) => (
+              <li key={plan.id}>
+                <Link
+                  href={`/development-plans/${plan.id}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {plan.title}
+                </Link>{" "}
+                · {plan.studentName} · สิ้นสุด{" "}
+                {plan.endDate
+                  ? new Intl.DateTimeFormat("th-TH", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    }).format(new Date(plan.endDate))
+                  : "-"}
+              </li>
+            ))}
+          </ul>
+          {duePlans.length > 5 ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              และอีก {(duePlans.length - 5).toLocaleString("th-TH")} แผน ดูได้จากตารางด้านล่าง
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="bg-card rounded-xl border border-border shadow-sm flex flex-col min-h-0">
         <div className="p-5 border-b border-border">
           <h2 className="text-base font-semibold text-foreground">

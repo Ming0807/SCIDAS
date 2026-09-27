@@ -119,7 +119,18 @@ const defaultTitleByType: Record<string, string> = {
   comprehensive: "รายงานสรุปผลการดำเนินงานระบบดูแลช่วยเหลือ (SAR)",
 }
 
-export function DesktopCreateReport() {
+export type ReportFilterOption = {
+  id: string
+  name: string
+}
+
+export function DesktopCreateReport({
+  classrooms = [],
+  semesters = [],
+}: {
+  classrooms?: ReportFilterOption[]
+  semesters?: ReportFilterOption[]
+}) {
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
     FormData
@@ -128,9 +139,14 @@ export function DesktopCreateReport() {
   const [selectedType, setSelectedType] = useState<string>("student_summary")
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "xlsx">("pdf")
   const [title, setTitle] = useState<string>(defaultTitleByType.student_summary)
+  const [classroomId, setClassroomId] = useState<string>("")
+  const [semesterId, setSemesterId] = useState<string>("")
+  const [dateFrom, setDateFrom] = useState<string>("")
+  const [dateTo, setDateTo] = useState<string>("")
 
   const typeErrors = state?.ok === false ? state.fieldErrors?.reportType : undefined
   const titleErrors = state?.ok === false ? state.fieldErrors?.title : undefined
+  const filterErrors = state?.ok === false ? state.fieldErrors?.filters : undefined
 
   function handleTypeSelect(value: string) {
     setSelectedType(value)
@@ -143,6 +159,10 @@ export function DesktopCreateReport() {
     fd.set("reportType", selectedType)
     fd.set("format", selectedFormat)
     fd.set("title", title)
+    if (classroomId) fd.set("classroomId", classroomId)
+    if (semesterId) fd.set("semesterId", semesterId)
+    if (dateFrom) fd.set("dateFrom", dateFrom)
+    if (dateTo) fd.set("dateTo", dateTo)
     formAction(fd)
   }
 
@@ -273,6 +293,86 @@ export function DesktopCreateReport() {
           </p>
         ) : null}
       </div>
+
+      {/* Scope filters (persisted into the job snapshot; generators honor them) */}
+      <fieldset className="mb-4 rounded-xl border border-border bg-muted/20 p-3">
+        <legend className="px-1 text-xs font-semibold text-foreground">ขอบเขตข้อมูลในรายงาน</legend>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="report-classroom" className="block text-xs font-medium text-muted-foreground mb-1.5">
+              ชั้น/ห้อง
+            </label>
+            <select
+              id="report-classroom"
+              name="classroomId"
+              value={classroomId}
+              onChange={(e) => setClassroomId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">ทุกห้องเรียน</option>
+              {classrooms.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="report-semester" className="block text-xs font-medium text-muted-foreground mb-1.5">
+              ภาคเรียน
+            </label>
+            <select
+              id="report-semester"
+              name="semesterId"
+              value={semesterId}
+              onChange={(e) => setSemesterId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">ทุกภาคเรียน</option>
+              {semesters.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="report-date-from" className="block text-xs font-medium text-muted-foreground mb-1.5">
+              ตั้งแต่วันที่
+            </label>
+            <Input
+              id="report-date-from"
+              type="date"
+              name="dateFrom"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="report-date-to" className="block text-xs font-medium text-muted-foreground mb-1.5">
+              ถึงวันที่
+            </label>
+            <Input
+              id="report-date-to"
+              type="date"
+              name="dateTo"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-9 text-sm"
+            />
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          ตัวกรองชั้น/ห้องใช้กับรายงานรายชื่อนักเรียน ช่วงวันที่ใช้กับรายงานการมาเรียน พฤติกรรม เยี่ยมบ้าน และการช่วยเหลือ
+        </p>
+        {filterErrors ? (
+          <p className="mt-1 text-xs text-destructive" aria-live="polite">
+            {filterErrors[0]}
+          </p>
+        ) : null}
+      </fieldset>
 
       {/* Submit button + feedback */}
       <div className="flex items-center justify-between">

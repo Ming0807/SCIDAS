@@ -222,3 +222,38 @@ export async function getPlanSummary(): Promise<PlanSummary> {
       plans.length > 0 ? Math.round(totalProgress / plans.length) : 0,
   }
 }
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Returns the subset of the given student ids that already have at least one
+ * non-terminal plan (`draft` or `active`). School-scoped; used to suggest IDP
+ * creation for at-risk students without a plan (FR-08-09).
+ */
+export async function getStudentIdsWithActivePlans(
+  studentIds: string[],
+): Promise<Set<string>> {
+  const validIds = [...new Set(studentIds.filter((id) => uuidPattern.test(id)))]
+  if (validIds.length === 0) return new Set()
+
+  const context = await getCurrentUserContext()
+  if (!context.profileId) {
+    throw new Error("FORBIDDEN")
+  }
+
+  const client = await createClient()
+  const { data, error } = await client
+    .from("development_plans")
+    .select("student_id")
+    .eq("school_id", context.schoolId)
+    .in("student_id", validIds)
+    .in("status", ["draft", "active"])
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return new Set(
+    ((data ?? []) as Array<{ student_id: string }>).map((row) => row.student_id),
+  )
+}

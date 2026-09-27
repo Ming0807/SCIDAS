@@ -10,6 +10,12 @@ import {
   type RiskFactorDistribution,
   type RiskTrendPoint,
 } from "@/lib/server/risk-read-models"
+import {
+  getClassroomOptions,
+  getSemesterOptions,
+  type ClassroomOption,
+  type SemesterOption,
+} from "@/lib/server/executive-read-models"
 import { DesktopOverviewStats } from "./_components/desktop-overview-stats"
 import { DesktopStatsCategory } from "./_components/desktop-stats-category"
 import { DesktopTrendComparison } from "./_components/desktop-trend-comparison"
@@ -35,20 +41,26 @@ export default async function ReportsPage({
   let dashboardMetrics: Awaited<ReturnType<typeof getStudentCareDashboard>>["metrics"] | null = null
   let factorDistribution: RiskFactorDistribution = { factors: [], totalStudents: 0 }
   let trendData: RiskTrendPoint[] = []
+  let classroomOptions: ClassroomOption[] = []
+  let semesterOptions: SemesterOption[] = []
 
   try {
-    const [jobsResult, popularResult, dashResult, factorResult, trendResult] = await Promise.all([
+    const [jobsResult, popularResult, dashResult, factorResult, trendResult, classroomResult, semesterResult] = await Promise.all([
       getReportJobs(10),
       getPopularReportTypes(5),
       getStudentCareDashboard().catch(() => null),
       getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
       getRiskTrendHistory().catch(() => []),
+      getClassroomOptions().catch(() => []),
+      getSemesterOptions().catch(() => []),
     ])
     jobs = jobsResult
     popularTypes = popularResult
     dashboardMetrics = dashResult?.metrics ?? null
     factorDistribution = factorResult
     trendData = trendResult
+    classroomOptions = classroomResult
+    semesterOptions = semesterResult
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown report data error"
   }
@@ -72,6 +84,8 @@ export default async function ReportsPage({
           metrics={dashboardMetrics}
           trendData={trendData}
           activeType={activeType}
+          classrooms={classroomOptions}
+          semesters={semesterOptions}
         />
       </div>
 
@@ -116,7 +130,7 @@ export default async function ReportsPage({
               <DesktopLatestReports jobs={jobs} />
             </div>
             <div className="flex-1 flex flex-col gap-6 min-w-0">
-              <DesktopCreateReport />
+              <DesktopCreateReport classrooms={classroomOptions} semesters={semesterOptions} />
               <DesktopInsights metrics={dashboardMetrics} />
             </div>
           </div>

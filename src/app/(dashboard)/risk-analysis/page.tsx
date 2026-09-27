@@ -14,6 +14,7 @@ import {
 } from "@/lib/server/risk-read-models"
 import { getRiskWeightsAction } from "@/app/actions/risk.actions"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getStudentIdsWithActivePlans } from "@/lib/server/idp-read-models"
 
 import { RecalculateButton } from "./RecalculateButton"
 import { RiskWeightsForm } from "./risk-weights-form"
@@ -79,6 +80,21 @@ export default async function RiskAnalysisPage() {
     total: students.length,
   }
 
+  // FR-08-09: at-risk students (high/watch) that have no draft/active plan yet.
+  // Failure here must not break the page — fall back to suggesting for all at-risk.
+  const atRiskStudentIds = students
+    .filter((s) => s.riskLevel === "high" || s.riskLevel === "watch")
+    .map((s) => s.studentId)
+  let idpSuggestionCount = atRiskStudentIds.length
+  try {
+    const withPlans = await getStudentIdsWithActivePlans(atRiskStudentIds).catch(
+      () => new Set<string>(),
+    )
+    idpSuggestionCount = atRiskStudentIds.filter((id) => !withPlans.has(id)).length
+  } catch {
+    idpSuggestionCount = atRiskStudentIds.length
+  }
+
   const priorityStudents = students
     .filter(
       (student) =>
@@ -132,7 +148,7 @@ export default async function RiskAnalysisPage() {
             <RiskDimensionRadar benchmarks={dimensionBenchmarks} />
             <RiskFactorsChart factorDistribution={factorDistribution} />
             <RiskHistoryChart trendData={trendData} />
-            <RiskRecommendations students={students} />
+            <RiskRecommendations students={students} idpSuggestionCount={idpSuggestionCount} />
           </div>
 
           {canManageWeights && riskWeights.ok && riskWeights.data ? (

@@ -3,6 +3,7 @@ import {
   BookOpen,
   ChevronRight,
   Clock,
+  FilePlus2,
   HeartPulse,
   ShieldAlert,
   type LucideIcon,
@@ -50,8 +51,10 @@ function RecommendationItem({
 
 export function RiskRecommendations({
   students,
+  idpSuggestionCount = 0,
 }: {
   students: StudentWorklistItem[]
+  idpSuggestionCount?: number
 }) {
   const highRisk = students.filter((student) => student.riskLevel === "high").length
   const watch = students.filter((student) => student.riskLevel === "watch").length
@@ -83,6 +86,14 @@ export function RiskRecommendations({
         count={watch}
         href="/students?status=watch"
         tone="watch"
+      />
+      <RecommendationItem
+        icon={FilePlus2}
+        title="แนะนำให้สร้าง IDP"
+        description="นักเรียนเสี่ยงที่ยังไม่มีแผนพัฒนา"
+        count={idpSuggestionCount}
+        href="/development-plans/new"
+        tone={idpSuggestionCount > 0 ? "watch" : "normal"}
       />
       <RecommendationItem
         icon={BookOpen}

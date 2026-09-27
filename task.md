@@ -1,5 +1,47 @@
 # Task Progress
 
+## 2026-09-27 Phase Close-Out: E2E Green + IDP Reminder Migration (399 Tests, 71 Suites)
+
+Status: done. Closed the phase with real runtime evidence:
+1. **E2E functional green (18/18)**: seeded local Supabase via idempotent `tests/seed-local.mjs` (localhost-only guard), ran dev server with local env overrides (`.env.local` still points at Cloud — untouched), `setup + chromium-authenticated` 11 passed (`--workers=2`; default parallel flakes on this box), `chromium tests/auth.spec.ts` 7 passed.
+2. **Real bug hunt**: `students-crud` edit step 404'd on `/students/[id]/edit` twice (server log `GET .../edit 404`, `notFound()` page). Instrumented temporarily (role+query log), proved `role=admin` + query hit, reverted instrumentation, re-ran green 11/11. Root cause: transient dev-server staleness under parallel hammering (same family as vitest pool flakes), not app logic — no source change kept.
+3. **Migration 0024 (`enqueue_idp_due_reminders()`)**: idempotent tenant-scoped `plan_review` reminders for active/draft plans overdue or due within 7 days; recipients = creator + homeroom + counselor/director (mirrors `notify_risk_alert`), unread-per-plan dedupe, explicit `school_id`, deep link `/development-plans/<id>` (matches `getNotificationSourceLink`); internal-only grants per 0010 convention; pg_cron daily schedule guarded by `pg_extension` check (pg_cron absent locally, present on Cloud).
+4. **Validation caught 2 real bugs pre-commit** (rolled-back txn on live local DB, zero persistent change): nested `$$` dollar-quote collision (fixed with `$job$` tag) + `profiles p` alias shadowing outer plan alias (renamed to `prof`/`sem`). Live proof: first run inserted 1 reminder, second run 0, link correct, `ROLLBACK` clean (0 function / 0 rows after).
+5. **Tests**: new `idp-reminder-migration.test.ts` (5 contract tests incl. the dollar-quote regression guard).
+6. Deploy notes: apply migrations in order on target; on Cloud the `idp-due-reminders` cron self-registers; then `npm run db:types` to pick up the new RPC (no TS caller yet — scheduler/service workers only). LINE channel binding still needs real credentials (provider stays unconfigured-safe).
+7. Verification: `tsc`, `eslint`, full `vitest --pool=forks --maxWorkers=2`, `next build`, `npm audit --omit=dev` (see below).
+
+## 2026-09-27 IDP Auto-Suggest + Near-Due Surfacing (394 Tests, 70 Suites)
+
+Status: done. Closed FR-08-09 (Should) and surfaced FR-09-09 (Should) with real data:
+1. **IDP auto-suggest (FR-08-09)**: new `getStudentIdsWithActivePlans()` in `idp-read-models.ts` (school-scoped, `draft`/`active` only, UUID-sanitized); `/risk-analysis` page computes at-risk students (high/watch) lacking plans and shows a real-count "แนะนำให้สร้าง IDP" item in `RiskRecommendations` linking to `/development-plans/new`; student profile `StudentCarePathway` shows an explicit IDP suggestion banner when riskLevel is high/watch with zero active plans.
+2. **Near-due surfacing (FR-09-09)**: `/development-plans` page renders an honest "ใกล้ครบกำหนด" banner (active/draft plans with endDate overdue or within 7 days, top-5 links + overflow count) from already-loaded list data. No push/cron worker — automatic In-App notification on a schedule still needs pg_cron/Edge Function deployment, recorded as remaining.
+3. **Tests**: new `idp-read-models.test.ts` (6 tests: empty/invalid input no-query, UUID filtering, school scope + status filter, FORBIDDEN, DB error) + `risk-recommendations.test.tsx` (2 tests: real count + link, honest zero).
+4. **Runtime (non-destructive)**: Docker engine running, `supabase_db_scidas-local` healthy, local stack up (API 54321/Studio 54323). Skipped `db reset` deliberately to protect the user's live local data; instead verified read-only on the live DB: `development_plans(school_id, student_id, status, end_date)` columns exist, `plan_status` = draft/active/completed/cancelled, plans table currently 0 rows (empty-set path covered by unit tests).
+5. Verification: `tsc` 0 errors, `eslint` 0/0, full `vitest` 70 files / 394 tests (run with `--pool=forks --maxWorkers=2`; default parallel pool flakes on this machine with `[vitest-pool] Failed to start forks worker` across random untouched files, green on retry/isolated) + `next build` + `npm audit --omit=dev` (see below).
+
+## 2026-09-27 Report Scope Filters + Lint Zero-Warning (386 Tests, 68 Suites)
+
+Status: done. Closed Wave 3.7 (real report filters end-to-end) and cleared the last lint warning:
+1. **Report scope filters UI**: `DesktopCreateReport` (shared by desktop + mobile via `MobileReportProfile`) now has ชั้น/ห้อง select, ภาคเรียน select, and ตั้งแต่วันที่/ถึงวันที่ inputs, with an honest hint about which report types each filter affects.
+2. **Server wiring**: `/reports` page loads school-scoped `getClassroomOptions()` + `getSemesterOptions()` and threads them through desktop and mobile; selected filters persist into `report_jobs.filters` snapshot (backend already supported this, generators already honor `classroomId`/`semesterId`/`studentId`/`dateFrom`/`dateTo`).
+3. **Action validation**: `requestReportJobActionState` now rejects non-UUID id filters, malformed dates (must be ปปปป-ดด-วว), and inverted ranges with Thai `fieldErrors.filters`. Generation-time queries stay school-scoped from server context, so filters only narrow within the tenant.
+4. **Tests**: `reports.actions.test.ts` updated to UUID fixtures + 3 new rejection tests (bad UUID, bad date, inverted range) — 18 tests in file.
+5. **Lint**: fixed `student-table.tsx` exhaustive-deps warning via `useCallback` for row selection toggles — `npm run lint` now 0 errors, 0 warnings.
+6. Verification: `tsc` 0 errors, `eslint` 0/0, full `vitest` run + `next build` + `npm audit --omit=dev` (see below).
+
+## 2026-09-26/27 Undocumented Batch Catch-Up (Parent Portal, E2E Hardening, A11y)
+
+Status: done (committed before this session; recorded here for traceability). Commits after the Phase 0-1D entry that were never logged in task.md:
+1. **Executive analytics + classroom filter** (`58b0db6`, `9845305`): Top10/GPA/factors/compare/trend sections with classroom + semester filters on dashboard.
+2. **Student photo upload** (`1ec24c2`, `c546927`, `4668787`): client-side compression + `student-photos` bucket, build/lint follow-ups.
+3. **Dark mode + LINE** (`af8c996`): ThemeProvider, unconfigured-safe LINE Messaging provider + unit tests.
+4. **Semester filter + SDQ + idle logout + UX cleanup** (`c0e0ad5`): dashboard semester filter, SDQ history/delete, 30-min idle auto-logout with tests, command palette/header/nav cleanup.
+5. **E2E auth + smoke** (`328be51`): Playwright auth setup, functional auth spec, authenticated dashboard smoke, session-safe helpers.
+6. **Parent portal + RLS** (`cfe991f`, migration `0023_parent_portal_access.sql`): guardian-linked read-only `/parent` portal, guardian account control on student profile, staff read models.
+7. **Student lifecycle + a11y + flow specs** (`5beb1ae`, `f8b906e`, `28e552f`, `4b1cbbb`): student CRUD e2e, session-safe logout, dead mock panel removal, dark-mode contrast repair, attendance save + behavior record flows, hardened attendance/support/lifecycle specs with serial mode and mobile-project exclusions.
+8. Health at session start: `tsc` 0 errors, `eslint` 0 errors + 1 warning, `vitest` 68 files / 383 tests passing, `next build` 44 routes, `npm audit --omit=dev` 0 vulnerabilities.
+
 ## 2026-09-26 Phase 0-1D + Dashboard Completion (370 Tests, 66 Suites)
 
 Status: done. Closed all P0 functional gaps vs REQUIREMENTS plus executive dashboard:

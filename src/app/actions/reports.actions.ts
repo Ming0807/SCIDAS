@@ -65,6 +65,33 @@ export async function requestReportJobActionState(
   const dateFrom = String(formData.get("dateFrom") ?? "").trim() || undefined
   const dateTo = String(formData.get("dateTo") ?? "").trim() || undefined
 
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/
+
+  const idFilters = [classroomId, semesterId, studentId]
+  if (idFilters.some((value) => value !== undefined && !uuidPattern.test(value))) {
+    return actionFail("VALIDATION_ERROR", "ตัวกรองที่เลือกไม่ถูกต้อง กรุณาเลือกใหม่", {
+      fieldErrors: { filters: ["ตัวกรองที่เลือกไม่ถูกต้อง กรุณาเลือกใหม่"] },
+    })
+  }
+
+  const parsedFrom = dateFrom !== undefined ? new Date(`${dateFrom}T00:00:00`) : undefined
+  const parsedTo = dateTo !== undefined ? new Date(`${dateTo}T00:00:00`) : undefined
+  if (
+    (dateFrom !== undefined &&
+      (!datePattern.test(dateFrom) || Number.isNaN(parsedFrom?.getTime()))) ||
+    (dateTo !== undefined && (!datePattern.test(dateTo) || Number.isNaN(parsedTo?.getTime())))
+  ) {
+    return actionFail("VALIDATION_ERROR", "รูปแบบวันที่ไม่ถูกต้อง (ต้องเป็น ปปปป-ดด-วว)", {
+      fieldErrors: { filters: ["รูปแบบวันที่ไม่ถูกต้อง (ต้องเป็น ปปปป-ดด-วว)"] },
+    })
+  }
+  if (parsedFrom && parsedTo && parsedFrom.getTime() > parsedTo.getTime()) {
+    return actionFail("VALIDATION_ERROR", "วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด", {
+      fieldErrors: { filters: ["วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด"] },
+    })
+  }
+
   const filters: Record<string, unknown> = { format }
   if (classroomId) filters.classroomId = classroomId
   if (semesterId) filters.semesterId = semesterId

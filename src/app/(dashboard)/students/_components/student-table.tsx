@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import Link from "next/link"
 import { CheckSquare, Download, Edit2, Eye, SlidersHorizontal, Square, X } from "lucide-react"
 
@@ -40,15 +40,15 @@ export function StudentTable({
   const isAllSelected = students.length > 0 && students.every((s) => selectedIds.has(s.id))
   const isSomeSelected = students.some((s) => selectedIds.has(s.id)) && !isAllSelected
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = useCallback(() => {
     if (isAllSelected) {
       setSelectedIds(new Set())
     } else {
       setSelectedIds(new Set(students.map((s) => s.id)))
     }
-  }
+  }, [isAllSelected, students])
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) {
@@ -58,7 +58,7 @@ export function StudentTable({
       }
       return next
     })
-  }
+  }, [])
 
   const handleExportSelected = () => {
     const selectedStudents = students.filter((s) => selectedIds.has(s.id))
@@ -218,7 +218,7 @@ export function StudentTable({
     ]
 
     return cols
-  }, [students, selectedIds, isAllSelected, isSomeSelected, isCompact, canEdit])
+  }, [selectedIds, isAllSelected, isSomeSelected, isCompact, canEdit, toggleSelect, toggleSelectAll])
 
   return (
     <div className="relative flex flex-col h-full">
