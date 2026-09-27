@@ -2647,7 +2647,7 @@ export type Database = {
           address: string | null
           blood_type: string | null
           created_at: string
-          date_of_birth: string
+          date_of_birth: string | null
           distance_to_school_km: number | null
           district: string | null
           enrollment_date: string | null
@@ -2682,7 +2682,7 @@ export type Database = {
           address?: string | null
           blood_type?: string | null
           created_at?: string
-          date_of_birth: string
+          date_of_birth?: string | null
           distance_to_school_km?: number | null
           district?: string | null
           enrollment_date?: string | null
@@ -2717,7 +2717,7 @@ export type Database = {
           address?: string | null
           blood_type?: string | null
           created_at?: string
-          date_of_birth?: string
+          date_of_birth?: string | null
           distance_to_school_km?: number | null
           district?: string | null
           enrollment_date?: string | null
@@ -3334,6 +3334,7 @@ export type Database = {
         Args: { p_claim_token: string; p_job_id: string; p_output_path: string }
         Returns: boolean
       }
+      enqueue_idp_due_reminders: { Args: never; Returns: number }
       fail_report_job: {
         Args: {
           p_claim_token: string
@@ -3388,14 +3389,24 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_school_id: { Args: never; Returns: string }
-      import_students_atomic: {
-        Args: {
-          p_classroom_id: string
-          p_semester_id: string
-          p_students: Json
-        }
-        Returns: Json
-      }
+      import_students_atomic:
+        | {
+            Args: {
+              p_classroom_id: string
+              p_semester_id: string
+              p_students: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_classroom_id: string
+              p_duplicate_mode?: string
+              p_semester_id: string
+              p_students: Json
+            }
+            Returns: Json
+          }
       is_homeroom_teacher_of_classroom: {
         Args: { p_classroom_id: string }
         Returns: boolean

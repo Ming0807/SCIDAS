@@ -22,6 +22,7 @@ vi.mock("@/lib/student-import-parser", () => ({
 
 vi.mock("@/lib/server/student-import-service", () => ({
   executeStudentImportRpc: vi.fn(),
+  findExistingStudentsInSchool: vi.fn(async () => new Map()),
 }))
 
 import { getCurrentUserContext } from "@/lib/server/current-user"
@@ -237,6 +238,8 @@ describe("student-import.actions", () => {
       vi.mocked(executeStudentImportRpc).mockResolvedValueOnce({
         success: true,
         count: 1,
+        skippedCount: 0,
+        enrolledExistingCount: 0,
       })
 
       const students: ParsedStudentRow[] = [sampleStudent]
@@ -253,6 +256,41 @@ describe("student-import.actions", () => {
       expect(revalidatePath).toHaveBeenCalledWith("/academics")
       expect(revalidatePath).toHaveBeenCalledWith("/settings/academic")
       expect(revalidatePath).toHaveBeenCalledWith("/")
+    })
+
+    it("allows skipping duplicate student codes when duplicateMode is 'skip'", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+      vi.mocked(executeStudentImportRpc).mockResolvedValueOnce({
+        success: true,
+        count: 1,
+        skippedCount: 1,
+        enrolledExistingCount: 0,
+      })
+
+      const duplicateStudents: ParsedStudentRow[] = [
+        sampleStudent,
+        { ...sampleStudent, rowNumber: 2, firstName: "Different" },
+      ]
+
+      const result = await executeStudentImportAction(
+        validUuid1,
+        validUuid2,
+        duplicateStudents,
+        "skip",
+      )
+      expect(result.ok).toBe(true)
+      expect(executeStudentImportRpc).toHaveBeenCalledWith(
+        validUuid1,
+        validUuid2,
+        [sampleStudent],
+        "skip",
+      )
     })
   })
 

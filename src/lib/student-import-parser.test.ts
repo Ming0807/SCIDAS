@@ -95,12 +95,47 @@ describe("Student Import Parser", () => {
       expect(res.invalidRows[0].errors.some((e) => e.includes("ซ้ำกับแถวอื่น"))).toBe(true)
     })
 
-    it("should reject student row when date of birth is missing", async () => {
+    it("should accept student row when date of birth is missing and set dateOfBirth to null", async () => {
       const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เพศ\nSTD1001,สมชาย,ใจดี,ชาย`
       const res = await parseAndValidateStudentRows(csv)
-      expect(res.validRows.length).toBe(0)
-      expect(res.invalidRows.length).toBe(1)
-      expect(res.invalidRows[0].errors.some((e) => e.includes("วันเกิด"))).toBe(true)
+      expect(res.validRows.length).toBe(1)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.validRows[0].dateOfBirth).toBeNull()
+    })
+
+    it("should parse combined Thai full name into prefix, firstName, lastName, and gender", async () => {
+      const csv = `เลขประจำตัว,ชื่อ-สกุล\n1305,ด.ญ.นูรฟาเตน เปาะนุ๊\n1367,ด.ช.ซุกรอน วาเยะ`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(2)
+      expect(res.validRows[0].studentCode).toBe("1305")
+      expect(res.validRows[0].prefix).toBe("ด.ญ.")
+      expect(res.validRows[0].firstName).toBe("นูรฟาเตน")
+      expect(res.validRows[0].lastName).toBe("เปาะนุ๊")
+      expect(res.validRows[0].gender).toBe("female")
+
+      expect(res.validRows[1].studentCode).toBe("1367")
+      expect(res.validRows[1].prefix).toBe("ด.ช.")
+      expect(res.validRows[1].firstName).toBe("ซุกรอน")
+      expect(res.validRows[1].lastName).toBe("วาเยะ")
+      expect(res.validRows[1].gender).toBe("male")
+    })
+
+    it("should skip empty or numbering-only rows automatically", async () => {
+      const csv = `ที่,เลขประจำตัว,ชื่อ-สกุล\n1.,1305,ด.ญ.นูรฟาเตน เปาะนุ๊\n13.,,`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.totalRows).toBe(1)
+    })
+
+    it("should allow skipping in-file duplicates when skipInFileDuplicates option is true", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล\nSTD1001,สมชาย,ใจดี\nSTD1001,สมหญิง,ดีใจ`
+      const res = await parseAndValidateStudentRows(csv, "data.csv", {
+        skipInFileDuplicates: true,
+      })
+      expect(res.validRows.length).toBe(1)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.validRows[0].firstName).toBe("สมชาย")
     })
 
     it("should reject student row when date of birth is invalid text", async () => {

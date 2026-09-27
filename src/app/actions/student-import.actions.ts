@@ -12,7 +12,11 @@ import {
   type ParsedStudentRow,
   type ParseImportResult,
 } from "@/lib/student-import-parser"
-import { executeStudentImportRpc } from "@/lib/server/student-import-service"
+import {
+  executeStudentImportRpc,
+  findExistingStudentsInSchool,
+  type ImportDuplicateMode,
+} from "@/lib/server/student-import-service"
 
 const importAllowedRoles = new Set<AppRole>(["admin", "director", "homeroom_teacher"])
 const guardianRelations = [
@@ -36,7 +40,7 @@ const studentImportRowSchema = z.object({
   lastName: z.string().trim().min(1).max(100),
   nickname: nullableText(50),
   gender: z.enum(["male", "female", "other"]),
-  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   bloodType: nullableText(5),
   address: nullableText(2000),
   studentNumber: z.number().int().positive().max(9999).nullable().optional(),
@@ -45,36 +49,13 @@ const studentImportRowSchema = z.object({
   guardianLastName: nullableText(100),
   guardianPhone: nullableText(20),
   guardianRelation: z.enum(guardianRelations).nullable().optional(),
+  isExistingInDb: z.boolean().optional(),
+  existingStudentName: z.string().optional(),
 })
 const studentImportBatchSchema = z
   .array(studentImportRowSchema)
   .min(1)
   .max(500)
-  .superRefine((rows, ctx) => {
-    const studentCodes = new Set<string>()
-    const nationalIds = new Set<string>()
-    rows.forEach((row, index) => {
-      if (studentCodes.has(row.studentCode)) {
-        ctx.addIssue({
-          code: "custom",
-          message: `รหัสนักเรียน ${row.studentCode} ซ้ำในชุดนำเข้า`,
-          path: [index, "studentCode"],
-        })
-      }
-      studentCodes.add(row.studentCode)
-
-      if (row.nationalId) {
-        if (nationalIds.has(row.nationalId)) {
-          ctx.addIssue({
-            code: "custom",
-            message: `เลขประจำตัวประชาชน ${row.nationalId} ซ้ำในชุดนำเข้า`,
-            path: [index, "nationalId"],
-          })
-        }
-        nationalIds.add(row.nationalId)
-      }
-    })
-  })
 
 const acceptedMimeTypes: Record<"csv" | "xlsx", Set<string>> = {
   csv: new Set(["text/csv", "application/csv", "text/plain", "application/vnd.ms-excel"]),
@@ -140,7 +121,13 @@ export async function parseStudentFileAction(
       }
     }
 
-    const result = await parseAndValidateStudentRows(buffer, file.name)
+    const targetSheet = (formData.get("sheet") as string | null) || undefined
+    const skipInFileDuplicates = formData.get("skipInFileDuplicates") === "true"
+
+    const result = await parseAndValidateStudentRows(buffer, file.name, {
+      sheet: targetSheet,
+      skipInFileDuplicates,
+    })
 
     if (result.totalRows === 0) {
       return actionFail("VALIDATION_ERROR", "ไม่พบข้อมูลในไฟล์ หรือไฟล์ว่างเปล่า")
@@ -150,8 +137,47 @@ export async function parseStudentFileAction(
       return actionFail("VALIDATION_ERROR", "ไฟล์มีจำนวนข้อมูลเกิน 500 แถว กรุณาแบ่งนำเข้าทีละชุด")
     }
 
+    // Check duplicate students against database
+    const studentCodes = result.validRows.map((r) => r.studentCode)
+    const nationalIds = result.validRows.map((r) => r.nationalId || "").filter(Boolean)
+
+    let existingCount = 0
+    let enhancedValidRows = result.validRows
+
+    try {
+      const existingMap = await findExistingStudentsInSchool(studentCodes, nationalIds)
+      enhancedValidRows = result.validRows.map((r) => {
+        const byCode = existingMap.get(`code:${r.studentCode}`)
+        const byNid = r.nationalId ? existingMap.get(`nid:${r.nationalId}`) : undefined
+        const match = byCode || byNid
+        if (match) {
+          existingCount++
+          return {
+            ...r,
+            isExistingInDb: true,
+            existingStudentName: match.fullName,
+          }
+        }
+        return {
+          ...r,
+          isExistingInDb: false,
+        }
+      })
+    } catch (dbErr) {
+      console.warn("Could not pre-check existing students in database:", dbErr)
+    }
+
+    const finalResult: ParseImportResult = {
+      ...result,
+      validRows: enhancedValidRows,
+      summary: {
+        ...result.summary,
+        existingCount,
+      },
+    }
+
     return actionOk("ตรวจสอบไฟล์สำเร็จ", {
-      data: result,
+      data: finalResult,
     })
   } catch (error) {
     console.error("parseStudentFileAction error:", error)
@@ -168,7 +194,8 @@ export async function executeStudentImportAction(
   classroomId: string,
   semesterId: string,
   students: ParsedStudentRow[],
-): Promise<ActionResult<{ count: number }>> {
+  duplicateMode?: ImportDuplicateMode,
+): Promise<ActionResult<{ count: number; skippedCount: number; enrolledExistingCount: number }>> {
   try {
     const context = await getCurrentUserContext()
     if (!importAllowedRoles.has(context.role)) {
@@ -188,16 +215,43 @@ export async function executeStudentImportAction(
       return actionFail("VALIDATION_ERROR", "จำนวนนักเรียนเกินขีดจำกัดสูงสุด 500 คนต่อครั้ง")
     }
 
+    // When duplicateMode is "error" or omitted (default strict mode), reject in-batch duplicates
+    if (!duplicateMode || duplicateMode === "error") {
+      const studentCodes = new Set<string>()
+      const nationalIds = new Set<string>()
+      for (const row of students) {
+        if (studentCodes.has(row.studentCode)) {
+          return actionFail("VALIDATION_ERROR", `รหัสนักเรียน ${row.studentCode} ซ้ำในชุดนำเข้า`)
+        }
+        studentCodes.add(row.studentCode)
+
+        if (row.nationalId) {
+          if (nationalIds.has(row.nationalId)) {
+            return actionFail("VALIDATION_ERROR", `เลขประจำตัวประชาชน ${row.nationalId} ซ้ำในชุดนำเข้า`)
+          }
+          nationalIds.add(row.nationalId)
+        }
+      }
+    }
+
     const parsedStudents = studentImportBatchSchema.safeParse(students)
     if (!parsedStudents.success) {
       return actionFail("VALIDATION_ERROR", "ข้อมูลนักเรียนไม่ผ่านการตรวจสอบฝั่งเซิร์ฟเวอร์")
     }
 
-    const rpcRes = await executeStudentImportRpc(
-      classroomId,
-      semesterId,
-      parsedStudents.data as ParsedStudentRow[],
-    )
+    let finalStudents = parsedStudents.data as ParsedStudentRow[]
+    if (duplicateMode === "skip") {
+      const seen = new Set<string>()
+      finalStudents = finalStudents.filter((s) => {
+        if (seen.has(s.studentCode)) return false
+        seen.add(s.studentCode)
+        return true
+      })
+    }
+
+    const rpcRes = duplicateMode
+      ? await executeStudentImportRpc(classroomId, semesterId, finalStudents, duplicateMode)
+      : await executeStudentImportRpc(classroomId, semesterId, finalStudents)
 
     if (!rpcRes.success) {
       return actionFail("CONFLICT", rpcRes.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล")
@@ -209,8 +263,20 @@ export async function executeStudentImportAction(
     revalidatePath("/settings/academic")
     revalidatePath("/")
 
-    return actionOk(`นำเข้าข้อมูลนักเรียนสำเร็จ ${rpcRes.count} คน`, {
-      data: { count: rpcRes.count },
+    let msg = `นำเข้าข้อมูลนักเรียนสำเร็จ ${rpcRes.count} คน`
+    if (rpcRes.enrolledExistingCount > 0) {
+      msg += ` (ดึงเข้าห้องเรียนนี้ ${rpcRes.enrolledExistingCount} คน)`
+    }
+    if (rpcRes.skippedCount > 0) {
+      msg += ` ข้ามรายการซ้ำ ${rpcRes.skippedCount} คน`
+    }
+
+    return actionOk(msg, {
+      data: {
+        count: rpcRes.count,
+        skippedCount: rpcRes.skippedCount,
+        enrolledExistingCount: rpcRes.enrolledExistingCount,
+      },
     })
   } catch (error) {
     console.error("executeStudentImportAction error:", error)

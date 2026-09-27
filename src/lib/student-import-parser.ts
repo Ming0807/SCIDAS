@@ -10,7 +10,7 @@ export type ParsedStudentRow = {
   lastName: string
   nickname?: string | null
   gender: "male" | "female" | "other"
-  dateOfBirth: string // YYYY-MM-DD
+  dateOfBirth?: string | null // YYYY-MM-DD (optional)
   bloodType?: string | null
   address?: string | null
   studentNumber?: number | null
@@ -29,6 +29,8 @@ export type ParsedStudentRow = {
     | "other_relative"
     | "guardian"
     | null
+  isExistingInDb?: boolean
+  existingStudentName?: string
 }
 
 export type RowValidationError = {
@@ -45,6 +47,100 @@ export type ParseImportResult = {
   summary: {
     validCount: number
     invalidCount: number
+    existingCount?: number
+  }
+  availableSheets?: string[]
+  selectedSheet?: string
+}
+
+export type ImportDuplicateMode = "skip" | "enroll_existing" | "error"
+
+// ----------------------------------------------------------------------------
+// Thai Full Name Splitting Helper
+// ----------------------------------------------------------------------------
+export function splitThaiFullName(fullName: string): {
+  prefix: string | null
+  firstName: string
+  lastName: string
+  inferredGender: "male" | "female" | null
+} {
+  let raw = (fullName || "").trim()
+  let prefix: string | null = null
+  let inferredGender: "male" | "female" | null = null
+
+  const KNOWN_PREFIXES = [
+    "เด็กชาย",
+    "เด็กหญิง",
+    "ด.ช.",
+    "ด.ญ.",
+    "นางสาว",
+    "น.ส.",
+    "นาย",
+    "นาง",
+  ]
+
+  for (const p of KNOWN_PREFIXES) {
+    if (raw.startsWith(p)) {
+      prefix = p
+      raw = raw.slice(p.length).trim()
+      if (["เด็กชาย", "ด.ช.", "นาย"].includes(p)) inferredGender = "male"
+      if (["เด็กหญิง", "ด.ญ.", "นางสาว", "น.ส.", "นาง"].includes(p)) inferredGender = "female"
+      break
+    }
+  }
+
+  const parts = raw.split(/\s+/).filter(Boolean)
+  let firstName = ""
+  let lastName = ""
+
+  if (parts.length === 1) {
+    firstName = parts[0]
+    lastName = "-"
+  } else if (parts.length === 2) {
+    firstName = parts[0]
+    lastName = parts[1]
+  } else if (parts.length > 2) {
+    firstName = parts.slice(0, -1).join(" ")
+    lastName = parts[parts.length - 1]
+  }
+
+  return { prefix, firstName, lastName, inferredGender }
+}
+
+// ----------------------------------------------------------------------------
+// Excel Sheet Names Inspector
+// ----------------------------------------------------------------------------
+export async function getExcelSheetNames(
+  buffer: Buffer | ArrayBuffer | Uint8Array,
+): Promise<string[]> {
+  const nodeBuf = Buffer.isBuffer(buffer)
+    ? buffer
+    : Buffer.from(buffer instanceof ArrayBuffer ? buffer : buffer.buffer)
+
+  if (
+    nodeBuf.length < 4 ||
+    nodeBuf[0] !== 0x50 ||
+    nodeBuf[1] !== 0x4b ||
+    nodeBuf[2] !== 0x03 ||
+    nodeBuf[3] !== 0x04
+  ) {
+    return []
+  }
+
+  try {
+    const sheets = await readXlsxFile(nodeBuf)
+    if (!sheets || !Array.isArray(sheets)) return []
+    if (
+      sheets.length > 0 &&
+      typeof sheets[0] === "object" &&
+      sheets[0] !== null &&
+      "sheet" in sheets[0]
+    ) {
+      return (sheets as unknown as { sheet: string }[]).map((s) => s.sheet)
+    }
+    return ["Sheet1"]
+  } catch {
+    return []
   }
 }
 
@@ -106,11 +202,18 @@ export function parseCsvContent(content: string): string[][] {
 }
 
 // ----------------------------------------------------------------------------
-// XLSX Parser using read-excel-file
+export type ParsedFileTable = string[][] & {
+  availableSheets: string[]
+  selectedSheet: string
+}
+
+// ----------------------------------------------------------------------------
+// XLSX Parser using read-excel-file (Multi-Sheet Support)
 // ----------------------------------------------------------------------------
 export async function parseXlsxContent(
   buffer: Buffer | ArrayBuffer | Uint8Array,
-): Promise<string[][]> {
+  sheetOption?: string | number,
+): Promise<ParsedFileTable> {
   const nodeBuf = Buffer.isBuffer(buffer)
     ? buffer
     : Buffer.from(buffer instanceof ArrayBuffer ? buffer : buffer.buffer)
@@ -129,18 +232,47 @@ export async function parseXlsxContent(
   try {
     const sheets = await readXlsxFile(nodeBuf)
     if (!sheets || !Array.isArray(sheets) || sheets.length === 0) {
-      return []
+      const empty = [] as unknown as ParsedFileTable
+      empty.availableSheets = []
+      empty.selectedSheet = ""
+      return empty
     }
 
-    const rawRows =
+    let availableSheets: string[] = []
+    let selectedSheet = "Sheet1"
+    let rawRows: unknown[][] = []
+
+    if (
       sheets.length > 0 &&
       typeof sheets[0] === "object" &&
       sheets[0] !== null &&
-      "data" in sheets[0]
-        ? ((sheets[0] as { data: unknown[][] }).data ?? [])
-        : (sheets as unknown as unknown[][])
+      "sheet" in sheets[0]
+    ) {
+      const typedSheets = sheets as unknown as { sheet: string; data?: unknown[][] }[]
+      availableSheets = typedSheets.map((s) => s.sheet)
 
-    return rawRows.map((row) =>
+      let targetSheetObj = typedSheets[0]
+      if (sheetOption !== undefined && sheetOption !== null) {
+        if (typeof sheetOption === "number") {
+          if (sheetOption >= 0 && sheetOption < typedSheets.length) {
+            targetSheetObj = typedSheets[sheetOption]
+          }
+        } else if (typeof sheetOption === "string") {
+          const cleanOpt = sheetOption.trim().toLowerCase()
+          const found = typedSheets.find(
+            (s) => s.sheet.trim().toLowerCase() === cleanOpt,
+          )
+          if (found) targetSheetObj = found
+        }
+      }
+      selectedSheet = targetSheetObj.sheet
+      rawRows = targetSheetObj.data ?? []
+    } else {
+      availableSheets = ["Sheet1"]
+      rawRows = sheets as unknown as unknown[][]
+    }
+
+    const formattedRows = rawRows.map((row) =>
       (Array.isArray(row) ? row : []).map((cell) => {
         if (cell === null || cell === undefined) return ""
         if (cell instanceof Date) {
@@ -151,7 +283,12 @@ export async function parseXlsxContent(
         }
         return String(cell).trim()
       }),
-    )
+    ) as ParsedFileTable
+
+    formattedRows.availableSheets = availableSheets
+    formattedRows.selectedSheet = selectedSheet
+
+    return formattedRows
   } catch (err) {
     const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการอ่านไฟล์ XLSX"
     throw new Error(`ไฟล์ XLSX ไม่ถูกต้อง หรือข้อมูลเสียหาย: ${msg}`)
@@ -164,7 +301,8 @@ export async function parseXlsxContent(
 export async function parseFileContent(
   fileData: string | Buffer | ArrayBuffer | Uint8Array,
   fileName: string,
-): Promise<string[][]> {
+  sheetOption?: string | number,
+): Promise<ParsedFileTable> {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
 
   if (ext === "xlsx") {
@@ -174,7 +312,7 @@ export async function parseFileContent(
         : Buffer.isBuffer(fileData)
           ? fileData
           : Buffer.from(fileData instanceof ArrayBuffer ? fileData : fileData.buffer)
-    return parseXlsxContent(buf)
+    return parseXlsxContent(buf, sheetOption)
   }
 
   if (ext !== "csv") {
@@ -188,16 +326,21 @@ export async function parseFileContent(
       : Buffer.from(
           fileData instanceof ArrayBuffer ? fileData : fileData.buffer,
         ).toString("utf8")
-  return parseCsvContent(textContent)
+  const rows = parseCsvContent(textContent) as ParsedFileTable
+  rows.availableSheets = ["CSV"]
+  rows.selectedSheet = "CSV"
+  return rows
 }
 
 // ----------------------------------------------------------------------------
 // Header Mapping
 // ----------------------------------------------------------------------------
-const HEADER_MAP: Record<string, keyof ParsedStudentRow> = {
+const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName"> = {
   // รหัสนักเรียน
   รหัสนักเรียน: "studentCode",
   เลขประจำตัวนักเรียน: "studentCode",
+  เลขประจำตัว: "studentCode",
+  รหัสประจำตัว: "studentCode",
   student_code: "studentCode",
   studentcode: "studentCode",
   code: "studentCode",
@@ -232,6 +375,16 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow> = {
   lastname: "lastName",
   surname: "lastName",
 
+  // ชื่อ-นามสกุล รวมกัน (Composite Name)
+  "ชื่อ-สกุล": "fullName",
+  "ชื่อ-นามสกุล": "fullName",
+  "ชื่อ - สกุล": "fullName",
+  "ชื่อ_สกุล": "fullName",
+  "ชื่อสกุล": "fullName",
+  "ชื่อและนามสกุล": "fullName",
+  fullname: "fullName",
+  full_name: "fullName",
+
   // ชื่อเล่น
   ชื่อเล่น: "nickname",
   nickname: "nickname",
@@ -262,6 +415,8 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow> = {
   // เลขที่
   เลขที่: "studentNumber",
   ลำดับที่: "studentNumber",
+  ลำดับ: "studentNumber",
+  ที่: "studentNumber",
   student_number: "studentNumber",
   no: "studentNumber",
 
@@ -405,17 +560,26 @@ export function normalizeGuardianRelation(
 // ----------------------------------------------------------------------------
 // Master Row Parser & Validator
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Master Row Parser & Validator
+// ----------------------------------------------------------------------------
 export async function parseAndValidateStudentRows(
   input: string | string[][] | Buffer | ArrayBuffer | Uint8Array,
   fileName = "data.csv",
+  options?: { sheet?: string | number; skipInFileDuplicates?: boolean },
 ): Promise<ParseImportResult> {
   let table: string[][]
+  let availableSheets: string[] = []
+  let selectedSheet = ""
 
   try {
     if (Array.isArray(input)) {
       table = input as string[][]
     } else {
-      table = await parseFileContent(input, fileName)
+      const parsed = await parseFileContent(input, fileName, options?.sheet)
+      table = parsed
+      availableSheets = parsed.availableSheets || []
+      selectedSheet = parsed.selectedSheet || ""
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : "ไม่สามารถอ่านไฟล์ได้"
@@ -429,6 +593,8 @@ export async function parseAndValidateStudentRows(
       ],
       totalRows: 0,
       summary: { validCount: 0, invalidCount: 1 },
+      availableSheets: [],
+      selectedSheet: "",
     }
   }
 
@@ -445,6 +611,8 @@ export async function parseAndValidateStudentRows(
       ],
       totalRows: 0,
       summary: { validCount: 0, invalidCount: 1 },
+      availableSheets,
+      selectedSheet,
     }
   }
 
@@ -459,11 +627,13 @@ export async function parseAndValidateStudentRows(
       ],
       totalRows: table.length - 1,
       summary: { validCount: 0, invalidCount: 1 },
+      availableSheets,
+      selectedSheet,
     }
   }
 
   const rawHeaders = table[0]
-  const headerMap: Record<number, keyof ParsedStudentRow> = {}
+  const headerMap: Record<number, keyof ParsedStudentRow | "fullName"> = {}
 
   rawHeaders.forEach((header, index) => {
     const directKey = HEADER_MAP[header.trim()]
@@ -483,10 +653,15 @@ export async function parseAndValidateStudentRows(
   // Ensure mandatory header columns are present
   const mappedProps = Object.values(headerMap)
   const missingHeaders: string[] = []
-  if (!mappedProps.includes("studentCode"))
-    missingHeaders.push("รหัสนักเรียน (student_code)")
-  if (!mappedProps.includes("firstName")) missingHeaders.push("ชื่อ (first_name)")
-  if (!mappedProps.includes("lastName")) missingHeaders.push("นามสกุล (last_name)")
+  if (!mappedProps.includes("studentCode")) {
+    missingHeaders.push("รหัสนักเรียน (student_code หรือ เลขประจำตัว)")
+  }
+
+  const hasSeparateNames = mappedProps.includes("firstName") && mappedProps.includes("lastName")
+  const hasFullName = mappedProps.includes("fullName")
+  if (!hasSeparateNames && !hasFullName) {
+    missingHeaders.push("ชื่อและนามสกุล (first_name, last_name หรือ ชื่อ-สกุล)")
+  }
 
   if (missingHeaders.length > 0) {
     return {
@@ -499,6 +674,8 @@ export async function parseAndValidateStudentRows(
       ],
       totalRows: table.length - 1,
       summary: { validCount: 0, invalidCount: 1 },
+      availableSheets,
+      selectedSheet,
     }
   }
 
@@ -513,7 +690,7 @@ export async function parseAndValidateStudentRows(
     const rowNumber = rowIndex + 1
     const rowErrors: string[] = []
 
-    const rowObj: Partial<ParsedStudentRow> = { rowNumber }
+    const rowObj: Record<string, unknown> = { rowNumber }
 
     row.forEach((cellVal, colIndex) => {
       const propName = headerMap[colIndex]
@@ -523,22 +700,60 @@ export async function parseAndValidateStudentRows(
       if (cleanVal.length === 0) return
 
       if (propName === "studentNumber") {
-        const num = parseInt(cleanVal, 10)
+        const cleanNum = cleanVal.replace(/\D/g, "")
+        const num = parseInt(cleanNum, 10)
         if (!isNaN(num)) rowObj.studentNumber = num
       } else {
-        ;(rowObj as Record<string, unknown>)[propName] = cleanVal
+        rowObj[propName] = cleanVal
       }
     })
 
+    // Skip empty or numbering-only rows (e.g. "13.", null, null, null)
+    const hasIdentifyingData = Boolean(
+      rowObj.studentCode ||
+      rowObj.firstName ||
+      rowObj.lastName ||
+      rowObj.fullName ||
+      rowObj.nationalId
+    )
+    if (!hasIdentifyingData) {
+      continue
+    }
+
+    // Auto-split fullName if present
+    if (rowObj.fullName) {
+      const split = splitThaiFullName(String(rowObj.fullName))
+      if (!rowObj.prefix && split.prefix) rowObj.prefix = split.prefix
+      if (!rowObj.firstName) rowObj.firstName = split.firstName
+      if (!rowObj.lastName) rowObj.lastName = split.lastName
+      if (!rowObj.gender && split.inferredGender) rowObj.gender = split.inferredGender
+    }
+
+    // Extract prefix from firstName if attached (e.g. "ด.ช.สมชาย")
+    if (rowObj.firstName && !rowObj.prefix) {
+      const split = splitThaiFullName(String(rowObj.firstName))
+      if (split.prefix) {
+        rowObj.prefix = split.prefix
+        rowObj.firstName = split.firstName
+        if (!rowObj.gender && split.inferredGender) rowObj.gender = split.inferredGender
+      }
+    }
+
     // Validation 1: Student Code
     if (!rowObj.studentCode) {
-      rowErrors.push("จำเป็นต้องระบุรหัสนักเรียน")
+      rowErrors.push("จำเป็นต้องระบุรหัสนักเรียน (เลขประจำตัว)")
     } else {
-      if (seenStudentCodes.has(rowObj.studentCode)) {
-        rowErrors.push(`รหัสนักเรียน '${rowObj.studentCode}' ซ้ำกับแถวอื่นในไฟล์นี้`)
+      const sCode = String(rowObj.studentCode).trim()
+      if (seenStudentCodes.has(sCode)) {
+        if (options?.skipInFileDuplicates) {
+          continue
+        } else {
+          rowErrors.push(`รหัสนักเรียน '${sCode}' ซ้ำกับแถวอื่นในไฟล์นี้`)
+        }
       } else {
-        seenStudentCodes.add(rowObj.studentCode)
+        seenStudentCodes.add(sCode)
       }
+      rowObj.studentCode = sCode
     }
 
     // Validation 2: First & Last Name
@@ -551,12 +766,16 @@ export async function parseAndValidateStudentRows(
 
     // Validation 3: National ID (Optional, but if present must be 13 digits)
     if (rowObj.nationalId) {
-      const cleanId = rowObj.nationalId.replace(/[\s\-]/g, "")
+      const cleanId = String(rowObj.nationalId).replace(/[\s\-]/g, "")
       if (!/^\d{13}$/.test(cleanId)) {
-        rowErrors.push("เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก")
+        rowErrors.push(`เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก (ปัจจุบันมี ${cleanId.length} หลัก)`)
       } else {
         if (seenNationalIds.has(cleanId)) {
-          rowErrors.push(`เลขประจำตัวประชาชน '${cleanId}' ซ้ำกับแถวอื่นในไฟล์นี้`)
+          if (options?.skipInFileDuplicates) {
+            continue
+          } else {
+            rowErrors.push(`เลขประจำตัวประชาชน '${cleanId}' ซ้ำกับแถวอื่นในไฟล์นี้`)
+          }
         } else {
           seenNationalIds.add(cleanId)
         }
@@ -564,22 +783,22 @@ export async function parseAndValidateStudentRows(
       }
     }
 
-    // Validation 4: Date of Birth (MANDATORY - never fabricate identity data)
-    const rawDob = (rowObj as { dateOfBirth?: string }).dateOfBirth
-    if (!rawDob) {
-      rowErrors.push("จำเป็นต้องระบุวันเกิด (วัน/เดือน/ปีเกิด)")
-    } else {
+    // Validation 4: Date of Birth (Optional if not present, but if present must be valid)
+    const rawDob = rowObj.dateOfBirth as string | undefined
+    if (rawDob) {
       const normalizedDob = normalizeDateOfBirth(rawDob)
       if (!normalizedDob) {
         rowErrors.push("รูปแบบวันเกิดไม่ถูกต้อง (รองรับ วัน/เดือน/ปี หรือ ปี-เดือน-วัน)")
       } else {
         rowObj.dateOfBirth = normalizedDob
       }
+    } else {
+      rowObj.dateOfBirth = null
     }
 
     // Validation 5: Gender
-    const rawGender = (rowObj as { gender?: string }).gender
-    rowObj.gender = normalizeGender(rawGender ?? "", rowObj.prefix)
+    const rawGender = rowObj.gender as string | undefined
+    rowObj.gender = normalizeGender(rawGender ?? "", rowObj.prefix as string | undefined)
 
     // Validation 6: Guardian info
     if (rowObj.guardianFirstName) {
@@ -588,27 +807,32 @@ export async function parseAndValidateStudentRows(
       )
     }
 
+    delete rowObj.fullName
+
     if (rowErrors.length > 0) {
       invalidRows.push({
         rowNumber,
-        studentCode: rowObj.studentCode,
+        studentCode: rowObj.studentCode as string | undefined,
         studentName:
           `${rowObj.firstName ?? ""} ${rowObj.lastName ?? ""}`.trim() || undefined,
         errors: rowErrors,
       })
     } else {
-      validRows.push(rowObj as ParsedStudentRow)
+      validRows.push(rowObj as unknown as ParsedStudentRow)
     }
   }
 
+  const processedCount = validRows.length + invalidRows.length
   return {
     validRows,
     invalidRows,
-    totalRows: table.length - 1,
+    totalRows: processedCount,
     summary: {
       validCount: validRows.length,
       invalidCount: invalidRows.length,
     },
+    availableSheets,
+    selectedSheet,
   }
 }
 

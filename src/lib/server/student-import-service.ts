@@ -117,16 +117,86 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
   }
 }
 
+export type ImportDuplicateMode = "skip" | "enroll_existing" | "error"
+
+export type ImportResultSummary = {
+  success: boolean
+  count: number
+  skippedCount: number
+  enrolledExistingCount: number
+  error?: string
+}
+
+export type ExistingStudentInfo = {
+  studentCode: string
+  nationalId: string | null
+  fullName: string
+}
+
+export async function findExistingStudentsInSchool(
+  studentCodes: string[],
+  nationalIds: string[],
+): Promise<Map<string, ExistingStudentInfo>> {
+  const context = await getCurrentUserContext()
+  const supabase = await createClient()
+
+  const cleanCodes = studentCodes.filter(Boolean)
+  const cleanNids = nationalIds.filter(Boolean)
+
+  if (cleanCodes.length === 0 && cleanNids.length === 0) {
+    return new Map()
+  }
+
+  const query = supabase
+    .from("students")
+    .select("id, student_code, national_id, prefix, first_name, last_name")
+    .eq("school_id", context.schoolId)
+
+  const orConditions: string[] = []
+  if (cleanCodes.length > 0) {
+    orConditions.push(`student_code.in.(${cleanCodes.join(",")})`)
+  }
+  if (cleanNids.length > 0) {
+    orConditions.push(`national_id.in.(${cleanNids.join(",")})`)
+  }
+
+  const { data, error } = await query.or(orConditions.join(","))
+  if (error) {
+    console.error("findExistingStudentsInSchool error:", error)
+    return new Map()
+  }
+
+  const existingMap = new Map<string, ExistingStudentInfo>()
+  for (const s of data || []) {
+    const info: ExistingStudentInfo = {
+      studentCode: s.student_code,
+      nationalId: s.national_id,
+      fullName: `${s.prefix || ""} ${s.first_name} ${s.last_name}`.trim(),
+    }
+    if (s.student_code) existingMap.set(`code:${s.student_code}`, info)
+    if (s.national_id) existingMap.set(`nid:${s.national_id}`, info)
+  }
+
+  return existingMap
+}
+
 export async function executeStudentImportRpc(
   classroomId: string,
   semesterId: string,
-  students: ParsedStudentRow[]
-): Promise<{ success: boolean; count: number; error?: string }> {
+  students: ParsedStudentRow[],
+  duplicateMode: ImportDuplicateMode = "skip",
+): Promise<ImportResultSummary> {
   const context = await getCurrentUserContext()
   const supabase = await createClient()
 
   if (!["admin", "director", "homeroom_teacher"].includes(context.role)) {
-    return { success: false, count: 0, error: "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน" }
+    return {
+      success: false,
+      count: 0,
+      skippedCount: 0,
+      enrolledExistingCount: 0,
+      error: "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน",
+    }
   }
 
   // Transform DTO keys to database snake_case parameters for RPC (students table has no phone)
@@ -138,7 +208,7 @@ export async function executeStudentImportRpc(
     last_name: s.lastName,
     nickname: s.nickname || null,
     gender: s.gender,
-    date_of_birth: s.dateOfBirth,
+    date_of_birth: s.dateOfBirth || null,
     blood_type: s.bloodType || null,
     address: s.address || null,
     student_number: s.studentNumber || null,
@@ -153,6 +223,7 @@ export async function executeStudentImportRpc(
     p_classroom_id: classroomId,
     p_semester_id: semesterId,
     p_students: payload,
+    p_duplicate_mode: duplicateMode,
   })
 
   if (error) {
@@ -160,13 +231,23 @@ export async function executeStudentImportRpc(
     return {
       success: false,
       count: 0,
+      skippedCount: 0,
+      enrolledExistingCount: 0,
       error: error.message || "เกิดข้อผิดพลาดในการนำเข้าข้อมูลนักเรียน",
     }
   }
 
-  const result = data as { success?: boolean; imported_count?: number } | null
+  const result = data as {
+    success?: boolean
+    imported_count?: number
+    skipped_count?: number
+    enrolled_existing_count?: number
+  } | null
+
   return {
     success: true,
-    count: result?.imported_count || students.length,
+    count: result?.imported_count ?? 0,
+    skippedCount: result?.skipped_count ?? 0,
+    enrolledExistingCount: result?.enrolled_existing_count ?? 0,
   }
 }
