@@ -14,6 +14,7 @@ export type ParsedStudentRow = {
   bloodType?: string | null
   address?: string | null
   studentNumber?: number | null
+  classroomName?: string | null
   guardianPrefix?: string | null
   guardianFirstName?: string | null
   guardianLastName?: string | null
@@ -54,6 +55,96 @@ export type ParseImportResult = {
 }
 
 export type ImportDuplicateMode = "skip" | "enroll_existing" | "error"
+
+export type InferredRoomInfo = {
+  gradeLevel:
+    | "k1"
+    | "k2"
+    | "k3"
+    | "p1"
+    | "p2"
+    | "p3"
+    | "p4"
+    | "p5"
+    | "p6"
+    | "m1"
+    | "m2"
+    | "m3"
+    | "m4"
+    | "m5"
+    | "m6"
+  section: number
+  thaiName: string
+}
+
+export type ParsedStudentGroup = {
+  groupId: string
+  groupName: string
+  sourceType: "sheet" | "column" | "file"
+  validRows: ParsedStudentRow[]
+  invalidRows: RowValidationError[]
+  totalRows: number
+  inferred?: InferredRoomInfo | null
+}
+
+export type MultiGroupParseResult = {
+  isMultiGroup: boolean
+  groups: ParsedStudentGroup[]
+  allValidCount: number
+  allInvalidCount: number
+  allTotalCount: number
+  availableSheets: string[]
+}
+
+// ----------------------------------------------------------------------------
+// Room / Grade Inference Helper
+// ----------------------------------------------------------------------------
+export function inferGradeAndSection(name: string): InferredRoomInfo | null {
+  const trimmed = (name || "").trim()
+  if (!trimmed) return null
+
+  // 1. Kindergarten: อนุบาล 1-3, อ.1-3, k1-3
+  const kMatch = trimmed.match(/(?:อนุบาล|อ\.?|k)\s*([1-3])(?:\s*[\/|\-]\s*(\d+))?/i)
+  if (kMatch) {
+    const gradeNum = kMatch[1]
+    const secNum = kMatch[2] ? parseInt(kMatch[2], 10) : 1
+    const gradeLevel = `k${gradeNum}` as "k1" | "k2" | "k3"
+    const thaiName = secNum > 1 ? `อนุบาล ${gradeNum}/${secNum}` : `อนุบาล ${gradeNum}`
+    return { gradeLevel, section: isNaN(secNum) ? 1 : secNum, thaiName }
+  }
+
+  // 2. Primary: ป.1-6, ประถมศึกษาปีที่ 1-6, p1-6, grade 1-6
+  const pMatch = trimmed.match(
+    /(?:ประถม(?:ศึกษา)?(?:ปีที่)?|ป\.?|p|grade)\s*([1-6])(?:\s*[\/|\-]\s*(\d+))?/i,
+  )
+  if (pMatch) {
+    const gradeNum = pMatch[1]
+    const secNum = pMatch[2] ? parseInt(pMatch[2], 10) : 1
+    const gradeLevel = `p${gradeNum}` as "p1" | "p2" | "p3" | "p4" | "p5" | "p6"
+    const thaiName =
+      secNum > 1
+        ? `ประถมศึกษาปีที่ ${gradeNum}/${secNum}`
+        : `ประถมศึกษาปีที่ ${gradeNum}`
+    return { gradeLevel, section: isNaN(secNum) ? 1 : secNum, thaiName }
+  }
+
+  // 3. Secondary: ม.1-6, มัธยมศึกษาปีที่ 1-6, m1-6
+  const mMatch = trimmed.match(
+    /(?:มัธยม(?:ศึกษา)?(?:ปีที่)?|ม\.?|m)\s*([1-6])(?:\s*[\/|\-]\s*(\d+))?/i,
+  )
+  if (mMatch) {
+    const gradeNum = mMatch[1]
+    const secNum = mMatch[2] ? parseInt(mMatch[2], 10) : 1
+    const gradeLevel = `m${gradeNum}` as "m1" | "m2" | "m3" | "m4" | "m5" | "m6"
+    const thaiName =
+      secNum > 1
+        ? `มัธยมศึกษาปีที่ ${gradeNum}/${secNum}`
+        : `มัธยมศึกษาปีที่ ${gradeNum}`
+    return { gradeLevel, section: isNaN(secNum) ? 1 : secNum, thaiName }
+  }
+
+  return null
+}
 
 // ----------------------------------------------------------------------------
 // Thai Full Name Splitting Helper
@@ -335,7 +426,17 @@ export async function parseFileContent(
 // ----------------------------------------------------------------------------
 // Header Mapping
 // ----------------------------------------------------------------------------
-const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName"> = {
+const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroomName"> = {
+  // ห้องเรียน / ชั้นเรียน
+  ห้อง: "classroomName",
+  ชั้น: "classroomName",
+  ระดับชั้น: "classroomName",
+  ห้องเรียน: "classroomName",
+  ชั้นเรียน: "classroomName",
+  class: "classroomName",
+  classroom: "classroomName",
+  room: "classroomName",
+
   // รหัสนักเรียน
   รหัสนักเรียน: "studentCode",
   เลขประจำตัวนักเรียน: "studentCode",
@@ -566,7 +667,11 @@ export function normalizeGuardianRelation(
 export async function parseAndValidateStudentRows(
   input: string | string[][] | Buffer | ArrayBuffer | Uint8Array,
   fileName = "data.csv",
-  options?: { sheet?: string | number; skipInFileDuplicates?: boolean },
+  options?: {
+    sheet?: string | number
+    skipInFileDuplicates?: boolean
+    autoGenerateMissingCode?: boolean
+  },
 ): Promise<ParseImportResult> {
   let table: string[][]
   let availableSheets: string[] = []
@@ -741,7 +846,17 @@ export async function parseAndValidateStudentRows(
 
     // Validation 1: Student Code
     if (!rowObj.studentCode) {
-      rowErrors.push("จำเป็นต้องระบุรหัสนักเรียน (เลขประจำตัว)")
+      if (options?.autoGenerateMissingCode) {
+        let candidate = `AUTO${String(rowNumber).padStart(4, "0")}`
+        let counter = 1
+        while (seenStudentCodes.has(candidate)) {
+          candidate = `AUTO${String(rowNumber).padStart(4, "0")}_${counter++}`
+        }
+        seenStudentCodes.add(candidate)
+        rowObj.studentCode = candidate
+      } else {
+        rowErrors.push("จำเป็นต้องระบุรหัสนักเรียน (เลขประจำตัว)")
+      }
     } else {
       const sCode = String(rowObj.studentCode).trim()
       if (seenStudentCodes.has(sCode)) {
@@ -923,3 +1038,191 @@ export async function generateStudentImportTemplateXlsx(): Promise<Buffer> {
   const res = await writeXlsxFile(rows, { columns })
   return await res.toBuffer()
 }
+
+// ----------------------------------------------------------------------------
+// Multi-Group Parser & Dispatcher (Sheets & Classrooms)
+// ----------------------------------------------------------------------------
+export async function parseAndValidateAllGroups(
+  input: string | Buffer | ArrayBuffer | Uint8Array,
+  fileName = "data.csv",
+  options?: {
+    skipInFileDuplicates?: boolean
+    autoGenerateMissingCode?: boolean
+  },
+): Promise<MultiGroupParseResult> {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
+  const isXlsx = ext === "xlsx"
+
+  // 1. If XLSX, check if there are multiple sheets
+  if (isXlsx) {
+    const sheetNames = await getExcelSheetNames(
+      typeof input === "string" ? Buffer.from(input) : input,
+    )
+
+    if (sheetNames.length > 1) {
+      const groups: ParsedStudentGroup[] = []
+      let allValid = 0
+      let allInvalid = 0
+      let allTotal = 0
+
+      for (let i = 0; i < sheetNames.length; i++) {
+        const sheetName = sheetNames[i]
+        const res = await parseAndValidateStudentRows(input, fileName, {
+          sheet: sheetName,
+          skipInFileDuplicates: options?.skipInFileDuplicates,
+          autoGenerateMissingCode: options?.autoGenerateMissingCode,
+        })
+
+        // Skip sheets that have no data at all (e.g. blank trailing sheets)
+        if (
+          res.totalRows === 0 &&
+          res.invalidRows.length === 1 &&
+          res.invalidRows[0].errors[0]?.includes("ไม่พบข้อมูลในไฟล์")
+        ) {
+          continue
+        }
+
+        const inferred = inferGradeAndSection(sheetName)
+        groups.push({
+          groupId: `sheet_${i}_${encodeURIComponent(sheetName)}`,
+          groupName: sheetName,
+          sourceType: "sheet",
+          validRows: res.validRows,
+          invalidRows: res.invalidRows,
+          totalRows: res.totalRows,
+          inferred,
+        })
+
+        allValid += res.validRows.length
+        allInvalid += res.invalidRows.length
+        allTotal += res.totalRows
+      }
+
+      if (groups.length > 0) {
+        return {
+          isMultiGroup: groups.length > 1,
+          groups,
+          allValidCount: allValid,
+          allInvalidCount: allInvalid,
+          allTotalCount: allTotal,
+          availableSheets: sheetNames,
+        }
+      }
+    }
+  }
+
+  // 2. Single-sheet XLSX or CSV: Parse entire content into table first
+  const parsedTable = await parseFileContent(input, fileName)
+  if (parsedTable.length < 2) {
+    const singleRes = await parseAndValidateStudentRows(input, fileName, options)
+    return {
+      isMultiGroup: false,
+      groups: [
+        {
+          groupId: "default",
+          groupName: fileName.replace(/\.[^/.]+$/, "") || "รายชื่อนักเรียน",
+          sourceType: "file",
+          validRows: singleRes.validRows,
+          invalidRows: singleRes.invalidRows,
+          totalRows: singleRes.totalRows,
+          inferred: inferGradeAndSection(fileName),
+        },
+      ],
+      allValidCount: singleRes.validRows.length,
+      allInvalidCount: singleRes.invalidRows.length,
+      allTotalCount: singleRes.totalRows,
+      availableSheets: parsedTable.availableSheets || [],
+    }
+  }
+
+  // 3. Inspect headers for classroom column
+  const headerRow = parsedTable[0]
+  let classroomColIdx = -1
+  headerRow.forEach((h, idx) => {
+    const norm = normalizeHeaderKey(h)
+    for (const [key, val] of Object.entries(HEADER_MAP)) {
+      if (val === "classroomName" && normalizeHeaderKey(key) === norm) {
+        classroomColIdx = idx
+        break
+      }
+    }
+  })
+
+  if (classroomColIdx !== -1) {
+    const dataRows = parsedTable.slice(1)
+    const classroomMap = new Map<string, string[][]>()
+
+    for (const row of dataRows) {
+      const roomVal = (row[classroomColIdx] || "").trim()
+      const roomKey = roomVal || "ไม่ระบุห้อง"
+      if (!classroomMap.has(roomKey)) {
+        classroomMap.set(roomKey, [])
+      }
+      classroomMap.get(roomKey)!.push(row)
+    }
+
+    if (classroomMap.size > 1) {
+      const groups: ParsedStudentGroup[] = []
+      let allValid = 0
+      let allInvalid = 0
+      let allTotal = 0
+      let idx = 0
+
+      for (const [roomName, roomRows] of classroomMap.entries()) {
+        const subTable = [headerRow, ...roomRows]
+        const res = await parseAndValidateStudentRows(subTable, fileName, options)
+
+        const inferred = roomName !== "ไม่ระบุห้อง" ? inferGradeAndSection(roomName) : null
+        groups.push({
+          groupId: `col_${idx++}_${encodeURIComponent(roomName)}`,
+          groupName: roomName,
+          sourceType: "column",
+          validRows: res.validRows,
+          invalidRows: res.invalidRows,
+          totalRows: res.totalRows,
+          inferred,
+        })
+
+        allValid += res.validRows.length
+        allInvalid += res.invalidRows.length
+        allTotal += res.totalRows
+      }
+
+      return {
+        isMultiGroup: true,
+        groups,
+        allValidCount: allValid,
+        allInvalidCount: allInvalid,
+        allTotalCount: allTotal,
+        availableSheets: parsedTable.availableSheets || [],
+      }
+    }
+  }
+
+  // 4. Default: Single group
+  const singleRes = await parseAndValidateStudentRows(input, fileName, options)
+  const defaultGroupName =
+    parsedTable.selectedSheet && parsedTable.selectedSheet !== "Sheet1"
+      ? parsedTable.selectedSheet
+      : fileName.replace(/\.[^/.]+$/, "") || "รายชื่อนักเรียน"
+
+  return {
+    isMultiGroup: false,
+    groups: [
+      {
+        groupId: "default",
+        groupName: defaultGroupName,
+        sourceType: parsedTable.selectedSheet ? "sheet" : "file",
+        validRows: singleRes.validRows,
+        invalidRows: singleRes.invalidRows,
+        totalRows: singleRes.totalRows,
+        inferred: inferGradeAndSection(defaultGroupName),
+      },
+    ],
+    allValidCount: singleRes.validRows.length,
+    allInvalidCount: singleRes.invalidRows.length,
+    allTotalCount: singleRes.totalRows,
+    availableSheets: parsedTable.availableSheets || [],
+  }
+}
+

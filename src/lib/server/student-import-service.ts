@@ -22,10 +22,18 @@ export type ImportSemesterOption = {
   isCurrent: boolean
 }
 
+export type ImportAcademicYearOption = {
+  id: string
+  year: number
+  isCurrent: boolean
+}
+
 export type ImportContextData = {
   classrooms: ImportClassroomOption[]
   semesters: ImportSemesterOption[]
   currentSemesterId: string | null
+  academicYears: ImportAcademicYearOption[]
+  activeAcademicYearId: string | null
   canImport: boolean
   role: string
 }
@@ -40,12 +48,28 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
       classrooms: [],
       semesters: [],
       currentSemesterId: null,
+      academicYears: [],
+      activeAcademicYearId: null,
       canImport: false,
       role: context.role,
     }
   }
 
-  // 1. Load Semesters for the school
+  // 1. Load Academic Years
+  const { data: yearsData } = await supabase
+    .from("academic_years")
+    .select("id, year, is_current")
+    .eq("school_id", context.schoolId)
+    .order("year", { ascending: false })
+
+  const academicYears: ImportAcademicYearOption[] = (yearsData || []).map((y) => ({
+    id: y.id,
+    year: y.year,
+    isCurrent: y.is_current,
+  }))
+  const activeYear = academicYears.find((y) => y.isCurrent) || academicYears[0] || null
+
+  // 2. Load Semesters for the school
   const { data: semestersData, error: semError } = await supabase
     .from("semesters")
     .select("id, semester, start_date, end_date, is_current, academic_years(year)")
@@ -112,7 +136,9 @@ export async function getStudentImportContext(): Promise<ImportContextData> {
     classrooms,
     semesters,
     currentSemesterId: currentSemester?.id || null,
-    canImport: classrooms.length > 0,
+    academicYears,
+    activeAcademicYearId: activeYear?.id || null,
+    canImport: classrooms.length > 0 || academicYears.length > 0,
     role: context.role,
   }
 }

@@ -3499,6 +3499,9 @@ export type Database = {
         | "not_achieved"
         | "cancelled"
       grade_level:
+        | "k1"
+        | "k2"
+        | "k3"
         | "p1"
         | "p2"
         | "p3"
@@ -3716,6 +3719,9 @@ export const Constants = {
         "cancelled",
       ],
       grade_level: [
+        "k1",
+        "k2",
+        "k3",
         "p1",
         "p2",
         "p3",

@@ -5,7 +5,11 @@ import {
   parseAndValidateStudentRows,
   generateStudentImportTemplateCsv,
   generateStudentImportTemplateXlsx,
+  inferGradeAndSection,
+  parseAndValidateAllGroups,
 } from "./student-import-parser"
+import * as fs from "fs"
+import * as path from "path"
 
 describe("Student Import Parser", () => {
   describe("parseCsvContent", () => {
@@ -188,4 +192,146 @@ describe("Student Import Parser", () => {
       expect(template).toContain("นามสกุล")
     })
   })
+
+  describe("inferGradeAndSection", () => {
+    it("should infer kindergarten levels", () => {
+      expect(inferGradeAndSection("อนุบาล 1")).toEqual({
+        gradeLevel: "k1",
+        section: 1,
+        thaiName: "อนุบาล 1",
+      })
+      expect(inferGradeAndSection("อนุบาล 2/2")).toEqual({
+        gradeLevel: "k2",
+        section: 2,
+        thaiName: "อนุบาล 2/2",
+      })
+      expect(inferGradeAndSection("อ.3")).toEqual({
+        gradeLevel: "k3",
+        section: 1,
+        thaiName: "อนุบาล 3",
+      })
+      expect(inferGradeAndSection("K2/1")).toEqual({
+        gradeLevel: "k2",
+        section: 1,
+        thaiName: "อนุบาล 2",
+      })
+    })
+
+    it("should infer primary school levels", () => {
+      expect(inferGradeAndSection("ป.1")).toEqual({
+        gradeLevel: "p1",
+        section: 1,
+        thaiName: "ประถมศึกษาปีที่ 1",
+      })
+      expect(inferGradeAndSection("ป.3/2")).toEqual({
+        gradeLevel: "p3",
+        section: 2,
+        thaiName: "ประถมศึกษาปีที่ 3/2",
+      })
+      expect(inferGradeAndSection("ประถมศึกษาปีที่ 6/1")).toEqual({
+        gradeLevel: "p6",
+        section: 1,
+        thaiName: "ประถมศึกษาปีที่ 6",
+      })
+    })
+
+    it("should infer secondary school levels", () => {
+      expect(inferGradeAndSection("ม.1/1")).toEqual({
+        gradeLevel: "m1",
+        section: 1,
+        thaiName: "มัธยมศึกษาปีที่ 1",
+      })
+      expect(inferGradeAndSection("ม.4/3")).toEqual({
+        gradeLevel: "m4",
+        section: 3,
+        thaiName: "มัธยมศึกษาปีที่ 4/3",
+      })
+    })
+
+    it("should return null for unrecognized names", () => {
+      expect(inferGradeAndSection("ห้องสมุด")).toBeNull()
+      expect(inferGradeAndSection("")).toBeNull()
+    })
+  })
+
+  describe("parseAndValidateAllGroups", () => {
+    it("should handle single CSV without classroom column as single group", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เพศ\nSTD001,สมชาย,สุขใจ,ชาย\nSTD002,สมหญิง,มีชัย,หญิง`
+      const result = await parseAndValidateAllGroups(csv, "students.csv")
+      expect(result.isMultiGroup).toBe(false)
+      expect(result.groups).toHaveLength(1)
+      expect(result.groups[0].validRows).toHaveLength(2)
+      expect(result.groups[0].invalidRows).toHaveLength(0)
+    })
+
+    it("should split single CSV by classroom column when present", async () => {
+      const csv = `ห้อง,รหัสนักเรียน,ชื่อ,นามสกุล,เพศ\nป.1/1,STD001,สมชาย,สุขใจ,ชาย\nป.1/2,STD002,สมหญิง,มีชัย,หญิง\nป.1/1,STD003,กิตติ,สมบูรณ์,ชาย`
+      const result = await parseAndValidateAllGroups(csv, "all_students.csv")
+      expect(result.isMultiGroup).toBe(true)
+      expect(result.groups).toHaveLength(2)
+
+      const g1 = result.groups.find((g) => g.groupName === "ป.1/1")
+      const g2 = result.groups.find((g) => g.groupName === "ป.1/2")
+
+      expect(g1).toBeDefined()
+      expect(g1?.validRows).toHaveLength(2)
+      expect(g1?.inferred?.gradeLevel).toBe("p1")
+      expect(g1?.inferred?.section).toBe(1)
+
+      expect(g2).toBeDefined()
+      expect(g2?.validRows).toHaveLength(1)
+      expect(g2?.inferred?.gradeLevel).toBe("p1")
+      expect(g2?.inferred?.section).toBe(2)
+    })
+
+    it("should parse multi-sheet XLSX file and extract all 9 sheets", async () => {
+      const filePath = path.join(process.cwd(), "data-import", "รายชื่อนักเรียน_เทอม1.xlsx")
+      if (fs.existsSync(filePath)) {
+        const buffer = fs.readFileSync(filePath)
+        const result = await parseAndValidateAllGroups(buffer, "รายชื่อนักเรียน_เทอม1.xlsx")
+
+        expect(result.isMultiGroup).toBe(true)
+        expect(result.groups.length).toBe(9)
+        expect(result.availableSheets).toEqual([
+          "อนุบาล 1",
+          "อนุบาล 2",
+          "อนุบาล 3",
+          "ป.1",
+          "ป.2",
+          "ป.3",
+          "ป.4",
+          "ป.5",
+          "ป.6",
+        ])
+
+        // In default mode without auto-generation, K1 students lack student codes in the raw file
+        const k1Group = result.groups[0]
+        expect(k1Group.groupName).toBe("อนุบาล 1")
+        expect(k1Group.inferred?.gradeLevel).toBe("k1")
+        expect(k1Group.invalidRows.length).toBe(12)
+        expect(k1Group.invalidRows[0].errors[0]).toContain("จำเป็นต้องระบุรหัสนักเรียน")
+
+        // Primary 1 to 6 all have student codes and should be valid
+        const p1Group = result.groups[3]
+        expect(p1Group.groupName).toBe("ป.1")
+        expect(p1Group.inferred?.gradeLevel).toBe("p1")
+        expect(p1Group.validRows.length).toBe(15)
+
+        const p6Group = result.groups[8]
+        expect(p6Group.groupName).toBe("ป.6")
+        expect(p6Group.inferred?.gradeLevel).toBe("p6")
+        expect(p6Group.validRows.length).toBe(13)
+
+        // When autoGenerateMissingCode is enabled, K1 rows become valid
+        const resultWithAutoGen = await parseAndValidateAllGroups(buffer, "รายชื่อนักเรียน_เทอม1.xlsx", {
+          autoGenerateMissingCode: true,
+        })
+        const k1WithGen = resultWithAutoGen.groups[0]
+        expect(k1WithGen.validRows.length).toBe(12)
+        expect(k1WithGen.invalidRows.length).toBe(0)
+        expect(k1WithGen.validRows[0].studentCode).toMatch(/^AUTO\d+/)
+      }
+    })
+  })
 })
+

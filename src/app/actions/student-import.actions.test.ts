@@ -4,6 +4,9 @@ import {
   parseStudentFileAction,
   executeStudentImportAction,
   getStudentImportTemplateAction,
+  parseAllStudentGroupsAction,
+  quickCreateClassroomAction,
+  executeBatchStudentImportAction,
 } from "./student-import.actions"
 
 vi.mock("next/cache", () => ({
@@ -14,10 +17,15 @@ vi.mock("@/lib/server/current-user", () => ({
   getCurrentUserContext: vi.fn(),
 }))
 
+vi.mock("@/utils/supabase/server", () => ({
+  createClient: vi.fn(),
+}))
+
 vi.mock("@/lib/student-import-parser", () => ({
   generateStudentImportTemplateCsv: vi.fn(() => "studentCode,firstName,lastName"),
   generateStudentImportTemplateXlsx: vi.fn(async () => Buffer.from("mock-xlsx-bytes")),
   parseAndValidateStudentRows: vi.fn(),
+  parseAndValidateAllGroups: vi.fn(),
 }))
 
 vi.mock("@/lib/server/student-import-service", () => ({
@@ -26,13 +34,15 @@ vi.mock("@/lib/server/student-import-service", () => ({
 }))
 
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { createClient } from "@/utils/supabase/server"
 import {
   parseAndValidateStudentRows,
+  parseAndValidateAllGroups,
   generateStudentImportTemplateCsv,
   generateStudentImportTemplateXlsx,
   type ParsedStudentRow,
 } from "@/lib/student-import-parser"
-import { executeStudentImportRpc } from "@/lib/server/student-import-service"
+import { executeStudentImportRpc, findExistingStudentsInSchool } from "@/lib/server/student-import-service"
 import { revalidatePath } from "next/cache"
 
 const validUuid1 = "123e4567-e89b-12d3-a456-426614174000"
@@ -315,6 +325,255 @@ describe("student-import.actions", () => {
         expect(result.data.contentBase64).toBeDefined()
       }
       expect(generateStudentImportTemplateXlsx).toHaveBeenCalled()
+    })
+  })
+
+  describe("parseAllStudentGroupsAction", () => {
+    it("fails with FORBIDDEN if role is not allowed", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "student",
+        profileId: "prof-1",
+        studentId: "stu-1",
+      })
+
+      const formData = new FormData()
+      formData.set("file", new File(["dummy"], "data.csv", { type: "text/csv" }))
+
+      const result = await parseAllStudentGroupsAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+    })
+
+    it("parses multiple groups and annotates existing DB records", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      vi.mocked(parseAndValidateAllGroups).mockResolvedValueOnce({
+        isMultiGroup: true,
+        groups: [
+          {
+            groupId: "sheet_0_p1",
+            groupName: "ป.1",
+            sourceType: "sheet",
+            validRows: [sampleStudent],
+            invalidRows: [],
+            totalRows: 1,
+            inferred: { gradeLevel: "p1", section: 1, thaiName: "ประถมศึกษาปีที่ 1" },
+          },
+        ],
+        allValidCount: 1,
+        allInvalidCount: 0,
+        allTotalCount: 1,
+        availableSheets: ["ป.1"],
+      })
+
+      const existingMap = new Map([
+        ["code:S001", { studentCode: "S001", nationalId: null, fullName: "Somchai Existing" }],
+      ])
+      vi.mocked(findExistingStudentsInSchool).mockResolvedValueOnce(existingMap)
+
+      const formData = new FormData()
+      formData.set("file", new File(["dummy"], "data.csv", { type: "text/csv" }))
+
+      const result = await parseAllStudentGroupsAction(null, formData)
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.isMultiGroup).toBe(true)
+        expect(result.data.groups[0].validRows[0].isExistingInDb).toBe(true)
+        expect(result.data.groups[0].validRows[0].existingStudentName).toBe("Somchai Existing")
+      }
+    })
+  })
+
+  describe("quickCreateClassroomAction", () => {
+    it("fails with FORBIDDEN if role is homeroom_teacher", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await quickCreateClassroomAction({
+        academicYearId: validUuid1,
+        gradeLevel: "k1",
+        section: 1,
+        name: "อนุบาล 1/1",
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+    })
+
+    it("returns existing room if already created", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockMaybeSingle = vi.fn().mockResolvedValueOnce({
+        data: { id: "room-123", name: "อนุบาล 1/1", grade_level: "k1", section: 1 },
+        error: null,
+      })
+      const mockEq4 = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle })
+      const mockEq3 = vi.fn().mockReturnValue({ eq: mockEq4 })
+      const mockEq2 = vi.fn().mockReturnValue({ eq: mockEq3 })
+      const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 })
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq1 })
+      const mockFrom = vi.fn().mockReturnValue({ select: mockSelect })
+
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: mockFrom,
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
+
+      const result = await quickCreateClassroomAction({
+        academicYearId: validUuid1,
+        gradeLevel: "k1",
+        section: 1,
+        name: "อนุบาล 1/1",
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.id).toBe("room-123")
+      }
+    })
+
+    it("creates classroom when it does not exist yet", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockMaybeSingle = vi.fn().mockResolvedValueOnce({ data: null, error: null })
+      const mockEq4 = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle })
+      const mockEq3 = vi.fn().mockReturnValue({ eq: mockEq4 })
+      const mockEq2 = vi.fn().mockReturnValue({ eq: mockEq3 })
+      const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 })
+      const mockSelectQuery = vi.fn().mockReturnValue({ eq: mockEq1 })
+
+      const mockSingle = vi.fn().mockResolvedValueOnce({
+        data: { id: "new-room-456", name: "อนุบาล 1/1", grade_level: "k1", section: 1 },
+        error: null,
+      })
+      const mockSelectInsert = vi.fn().mockReturnValue({ single: mockSingle })
+      const mockInsert = vi.fn().mockReturnValue({ select: mockSelectInsert })
+
+      const mockFrom = vi.fn().mockImplementation((table: string) => {
+        if (table === "classrooms") {
+          return {
+            select: mockSelectQuery,
+            insert: mockInsert,
+          }
+        }
+        return {}
+      })
+
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: mockFrom,
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
+
+      const result = await quickCreateClassroomAction({
+        academicYearId: validUuid1,
+        gradeLevel: "k1",
+        section: 1,
+        name: "อนุบาล 1/1",
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.id).toBe("new-room-456")
+      }
+      expect(revalidatePath).toHaveBeenCalledWith("/students")
+    })
+  })
+
+  describe("executeBatchStudentImportAction", () => {
+    it("fails with FORBIDDEN if role is not allowed", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "student",
+        profileId: "prof-1",
+        studentId: "stu-1",
+      })
+
+      const result = await executeBatchStudentImportAction([])
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+    })
+
+    it("imports multiple rooms sequentially and aggregates counts", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      vi.mocked(executeStudentImportRpc)
+        .mockResolvedValueOnce({
+          success: true,
+          count: 15,
+          skippedCount: 0,
+          enrolledExistingCount: 0,
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          count: 10,
+          skippedCount: 2,
+          enrolledExistingCount: 1,
+        })
+
+      const payloads = [
+        {
+          groupId: "g1",
+          roomName: "ป.1",
+          classroomId: validUuid1,
+          semesterId: validUuid2,
+          students: [sampleStudent],
+        },
+        {
+          groupId: "g2",
+          roomName: "ป.2",
+          classroomId: validUuid1,
+          semesterId: validUuid2,
+          students: [{ ...sampleStudent, studentCode: "S002" }],
+        },
+      ]
+
+      const result = await executeBatchStudentImportAction(payloads, "skip")
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.totalRooms).toBe(2)
+        expect(result.data.successRooms).toBe(2)
+        expect(result.data.failedRooms).toBe(0)
+        expect(result.data.totalImported).toBe(25)
+        expect(result.data.totalSkipped).toBe(2)
+        expect(result.data.totalEnrolledExisting).toBe(1)
+        expect(result.data.roomResults).toHaveLength(2)
+      }
+      expect(revalidatePath).toHaveBeenCalledWith("/students")
     })
   })
 })

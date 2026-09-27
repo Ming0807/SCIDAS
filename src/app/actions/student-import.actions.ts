@@ -3,14 +3,18 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { createClient } from "@/utils/supabase/server"
 import { getCurrentUserContext, type AppRole } from "@/lib/server/current-user"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
+import type { Database } from "@/types/database.types"
 import {
   generateStudentImportTemplateCsv,
   generateStudentImportTemplateXlsx,
   parseAndValidateStudentRows,
+  parseAndValidateAllGroups,
   type ParsedStudentRow,
   type ParseImportResult,
+  type MultiGroupParseResult,
 } from "@/lib/student-import-parser"
 import {
   executeStudentImportRpc,
@@ -313,3 +317,404 @@ export async function getStudentImportTemplateAction(format: "csv" | "xlsx"): Pr
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการสร้างไฟล์แม่แบบ")
   }
 }
+
+// ----------------------------------------------------------------------------
+// Batch Multi-Group Parser Action
+// ----------------------------------------------------------------------------
+export async function parseAllStudentGroupsAction(
+  _prevState: ActionResult<MultiGroupParseResult> | null,
+  formData: FormData,
+): Promise<ActionResult<MultiGroupParseResult>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!importAllowedRoles.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน (เฉพาะผู้ดูแลระบบ ผู้บริหาร หรือครูประจำชั้น)")
+    }
+
+    const file = formData.get("file") as File | null
+    if (!file || file.size === 0) {
+      return actionFail("VALIDATION_ERROR", "กรุณาเลือกไฟล์ CSV หรือ Excel (.xlsx) สำหรับนำเข้า")
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      return actionFail("VALIDATION_ERROR", "ขนาดไฟล์ต้องไม่เกิน 10 MB")
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
+    if (ext !== "csv" && ext !== "xlsx") {
+      return actionFail("VALIDATION_ERROR", "รูปแบบไฟล์ไม่ถูกต้อง รองรับเฉพาะไฟล์นามสกุล .csv และ .xlsx")
+    }
+
+    if (file.type && !acceptedMimeTypes[ext].has(file.type.toLowerCase())) {
+      return actionFail("VALIDATION_ERROR", "ชนิดไฟล์ไม่ตรงกับรูปแบบ CSV หรือ XLSX ที่รองรับ")
+    }
+
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    // Validate magic bytes
+    if (ext === "xlsx") {
+      const isZipMagic =
+        buffer.length >= 4 &&
+        buffer[0] === 0x50 &&
+        buffer[1] === 0x4b &&
+        buffer[2] === 0x03 &&
+        buffer[3] === 0x04
+
+      if (!isZipMagic) {
+        return actionFail("VALIDATION_ERROR", "ไฟล์ Excel เสียหายหรือไม่ถูกต้อง (magic bytes mismatch)")
+      }
+    } else if (ext === "csv") {
+      if (
+        buffer.length >= 2 &&
+        ((buffer[0] === 0x4d && buffer[1] === 0x5a) ||
+          (buffer[0] === 0x7f && buffer[1] === 0x45) ||
+          (buffer[0] === 0x50 && buffer[1] === 0x4b))
+      ) {
+        return actionFail("VALIDATION_ERROR", "ไฟล์ CSV มีรูปแบบข้อมูลผิดปกติ")
+      }
+    }
+
+    const skipInFileDuplicates = formData.get("skipInFileDuplicates") === "true"
+    const autoGenerateMissingCode = formData.get("autoGenerateMissingCode") === "true"
+
+    const multiResult = await parseAndValidateAllGroups(buffer, file.name, {
+      skipInFileDuplicates,
+      autoGenerateMissingCode,
+    })
+
+    if (multiResult.allTotalCount === 0) {
+      return actionFail("VALIDATION_ERROR", "ไม่พบข้อมูลในไฟล์ หรือไฟล์ว่างเปล่า")
+    }
+
+    // Collect all valid student codes and national IDs across groups for DB pre-check
+    const allCodes: string[] = []
+    const allNids: string[] = []
+    for (const grp of multiResult.groups) {
+      for (const row of grp.validRows) {
+        if (row.studentCode) allCodes.push(row.studentCode)
+        if (row.nationalId) allNids.push(row.nationalId)
+      }
+    }
+
+    let existingMap = new Map<string, { fullName: string }>()
+    try {
+      if (allCodes.length > 0 || allNids.length > 0) {
+        existingMap = await findExistingStudentsInSchool(allCodes, allNids)
+      }
+    } catch (dbErr) {
+      console.warn("Could not pre-check existing students across groups:", dbErr)
+    }
+
+    // Annotate rows in each group
+    const annotatedGroups = multiResult.groups.map((grp) => {
+      const enhancedRows = grp.validRows.map((r) => {
+        const byCode = existingMap.get(`code:${r.studentCode}`)
+        const byNid = r.nationalId ? existingMap.get(`nid:${r.nationalId}`) : undefined
+        const match = byCode || byNid
+        if (match) {
+          return {
+            ...r,
+            isExistingInDb: true,
+            existingStudentName: match.fullName,
+          }
+        }
+        return {
+          ...r,
+          isExistingInDb: false,
+        }
+      })
+      return {
+        ...grp,
+        validRows: enhancedRows,
+      }
+    })
+
+    const finalResult: MultiGroupParseResult = {
+      ...multiResult,
+      groups: annotatedGroups,
+    }
+
+    return actionOk("ตรวจสอบไฟล์สำเร็จ", {
+      data: finalResult,
+    })
+  } catch (error) {
+    console.error("parseAllStudentGroupsAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการอ่านและตรวจสอบโครงสร้างไฟล์")
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Quick-Create Classroom Action
+// ----------------------------------------------------------------------------
+const QuickCreateClassroomSchema = z.object({
+  academicYearId: z.string().uuid("กรุณาเลือกปีการศึกษา"),
+  gradeLevel: z.enum([
+    "k1",
+    "k2",
+    "k3",
+    "p1",
+    "p2",
+    "p3",
+    "p4",
+    "p5",
+    "p6",
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5",
+    "m6",
+  ]),
+  section: z.coerce.number().int().min(1).default(1),
+  name: z.string().trim().min(1, "กรุณาระบุชื่อห้องเรียน"),
+})
+
+export type CreatedClassroomInfo = {
+  id: string
+  name: string
+  grade_level: Database["public"]["Enums"]["grade_level"]
+  section: number
+}
+
+export async function quickCreateClassroomAction(input: {
+  academicYearId: string
+  gradeLevel: string
+  section: number
+  name: string
+}): Promise<ActionResult<CreatedClassroomInfo>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!["admin", "director"].includes(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ในการสร้างห้องเรียน (เฉพาะผู้ดูแลระบบหรือผู้บริหาร)")
+    }
+
+    const parsed = QuickCreateClassroomSchema.safeParse(input)
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", "ข้อมูลห้องเรียนไม่ถูกต้อง", {
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      })
+    }
+
+    const d = parsed.data
+    const supabase = await createClient()
+
+    // Check if room with same year, grade_level, section already exists
+    const { data: existing } = await supabase
+      .from("classrooms")
+      .select("id, name, grade_level, section")
+      .eq("school_id", context.schoolId)
+      .eq("academic_year_id", d.academicYearId)
+      .eq("grade_level", d.gradeLevel as Database["public"]["Enums"]["grade_level"])
+      .eq("section", d.section)
+      .maybeSingle()
+
+    if (existing) {
+      return actionOk("ห้องเรียนนี้มีอยู่แล้วในระบบ", {
+        data: existing as CreatedClassroomInfo,
+      })
+    }
+
+    const { data: created, error } = await supabase
+      .from("classrooms")
+      .insert({
+        school_id: context.schoolId,
+        academic_year_id: d.academicYearId,
+        grade_level: d.gradeLevel as Database["public"]["Enums"]["grade_level"],
+        section: d.section,
+        name: d.name,
+        is_active: true,
+        max_students: 40,
+      })
+      .select("id, name, grade_level, section")
+      .single()
+
+    if (error) {
+      console.error("quickCreateClassroomAction error:", error)
+      return actionFail("INTERNAL_ERROR", `ไม่สามารถสร้างห้องเรียนได้: ${error.message}`)
+    }
+
+    revalidatePath("/students")
+    revalidatePath("/students/import")
+    revalidatePath("/settings/academic")
+
+    return actionOk(`สร้างห้องเรียน ${created.name} สำเร็จ`, {
+      data: created as CreatedClassroomInfo,
+    })
+  } catch (error) {
+    console.error("quickCreateClassroomAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการสร้างห้องเรียน")
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Batch Multi-Room Import Coordinator Action
+// ----------------------------------------------------------------------------
+export type BatchRoomImportPayload = {
+  groupId: string
+  roomName: string
+  classroomId: string
+  semesterId: string
+  students: ParsedStudentRow[]
+}
+
+export type BatchRoomResult = {
+  groupId: string
+  roomName: string
+  classroomId: string
+  success: boolean
+  count: number
+  skippedCount: number
+  enrolledExistingCount: number
+  error?: string
+}
+
+export type BatchImportSummaryResult = {
+  totalRooms: number
+  successRooms: number
+  failedRooms: number
+  totalImported: number
+  totalSkipped: number
+  totalEnrolledExisting: number
+  roomResults: BatchRoomResult[]
+}
+
+export async function executeBatchStudentImportAction(
+  payloads: BatchRoomImportPayload[],
+  duplicateMode: ImportDuplicateMode = "skip",
+): Promise<ActionResult<BatchImportSummaryResult>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!importAllowedRoles.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน")
+    }
+
+    if (!payloads || payloads.length === 0) {
+      return actionFail("VALIDATION_ERROR", "ไม่มีห้องเรียนที่เลือกสำหรับการนำเข้า")
+    }
+
+    const roomResults: BatchRoomResult[] = []
+    let totalImported = 0
+    let totalSkipped = 0
+    let totalEnrolledExisting = 0
+    let successRooms = 0
+    let failedRooms = 0
+
+    for (const item of payloads) {
+      if (!item.classroomId || !item.semesterId) {
+        roomResults.push({
+          groupId: item.groupId,
+          roomName: item.roomName,
+          classroomId: item.classroomId,
+          success: false,
+          count: 0,
+          skippedCount: 0,
+          enrolledExistingCount: 0,
+          error: "ยังไม่ได้จับคู่ห้องเรียนหรือภาคเรียนปลายทาง",
+        })
+        failedRooms++
+        continue
+      }
+
+      if (!item.students || item.students.length === 0) {
+        roomResults.push({
+          groupId: item.groupId,
+          roomName: item.roomName,
+          classroomId: item.classroomId,
+          success: false,
+          count: 0,
+          skippedCount: 0,
+          enrolledExistingCount: 0,
+          error: "ไม่มีข้อมูลนักเรียนที่ถูกต้องในห้องนี้",
+        })
+        failedRooms++
+        continue
+      }
+
+      const parsedBatch = studentImportBatchSchema.safeParse(item.students)
+      if (!parsedBatch.success) {
+        roomResults.push({
+          groupId: item.groupId,
+          roomName: item.roomName,
+          classroomId: item.classroomId,
+          success: false,
+          count: 0,
+          skippedCount: 0,
+          enrolledExistingCount: 0,
+          error: "ข้อมูลนักเรียนไม่ผ่านเกณฑ์การตรวจสอบ",
+        })
+        failedRooms++
+        continue
+      }
+
+      let studentsToImport = parsedBatch.data as ParsedStudentRow[]
+      if (duplicateMode === "skip") {
+        const seen = new Set<string>()
+        studentsToImport = studentsToImport.filter((s) => {
+          if (seen.has(s.studentCode)) return false
+          seen.add(s.studentCode)
+          return true
+        })
+      }
+
+      const rpcRes = await executeStudentImportRpc(
+        item.classroomId,
+        item.semesterId,
+        studentsToImport,
+        duplicateMode,
+      )
+
+      if (rpcRes.success) {
+        successRooms++
+        totalImported += rpcRes.count
+        totalSkipped += rpcRes.skippedCount
+        totalEnrolledExisting += rpcRes.enrolledExistingCount
+        roomResults.push({
+          groupId: item.groupId,
+          roomName: item.roomName,
+          classroomId: item.classroomId,
+          success: true,
+          count: rpcRes.count,
+          skippedCount: rpcRes.skippedCount,
+          enrolledExistingCount: rpcRes.enrolledExistingCount,
+        })
+      } else {
+        failedRooms++
+        roomResults.push({
+          groupId: item.groupId,
+          roomName: item.roomName,
+          classroomId: item.classroomId,
+          success: false,
+          count: 0,
+          skippedCount: 0,
+          enrolledExistingCount: 0,
+          error: rpcRes.error || "เกิดข้อผิดพลาดในการนำเข้า",
+        })
+      }
+    }
+
+    revalidatePath("/students")
+    revalidatePath("/attendance")
+    revalidatePath("/academics")
+    revalidatePath("/settings/academic")
+    revalidatePath("/")
+
+    const summary: BatchImportSummaryResult = {
+      totalRooms: payloads.length,
+      successRooms,
+      failedRooms,
+      totalImported,
+      totalSkipped,
+      totalEnrolledExisting,
+      roomResults,
+    }
+
+    return actionOk(`ประมวลผลการนำเข้าสำเร็จ ${successRooms}/${payloads.length} ห้อง`, {
+      data: summary,
+    })
+  } catch (error) {
+    console.error("executeBatchStudentImportAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการประมวลผลการนำเข้าแบบกลุ่ม")
+  }
+}
+

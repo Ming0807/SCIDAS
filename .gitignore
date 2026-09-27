@@ -33,6 +33,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .reasonix-transcripts/
+.reasonix/
+.agents/
+.gemini/
+skills-lock.json
 data-import/
 
 # env files (can opt-in for committing if needed)

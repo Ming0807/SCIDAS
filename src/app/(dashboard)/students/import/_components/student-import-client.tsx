@@ -5,13 +5,21 @@ import Link from "next/link"
 import {
   AlertCircle,
   AlertTriangle,
+  ArrowRight,
+  Building2,
   CheckCircle2,
+  CheckSquare,
+  ChevronRight,
+  Eye,
   FileSpreadsheet,
   FileText,
   Layers,
   Loader2,
+  Plus,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
+  Square,
   Upload,
   UserCheck,
   Users,
@@ -23,19 +31,58 @@ import { EmptyState } from "@/components/feedback/empty-state"
 import type {
   ImportDuplicateMode,
   ParseImportResult,
+  MultiGroupParseResult,
+  ParsedStudentGroup,
+  ParsedStudentRow,
+  InferredRoomInfo,
 } from "@/lib/student-import-parser"
 import {
   executeStudentImportAction,
+  executeBatchStudentImportAction,
   getStudentImportTemplateAction,
   parseStudentFileAction,
+  parseAllStudentGroupsAction,
+  quickCreateClassroomAction,
+  type BatchRoomImportPayload,
+  type BatchImportSummaryResult,
 } from "@/app/actions/student-import.actions"
-import type { ImportContextData } from "@/lib/server/student-import-service"
+import type {
+  ImportClassroomOption,
+  ImportContextData,
+} from "@/lib/server/student-import-service"
 
-// Helper to auto-match classroom name to sheet name in multi-sheet Excel
+// ----------------------------------------------------------------------------
+// Room Matching Helper
+// ----------------------------------------------------------------------------
+function autoMatchRoomToClassroom(
+  inferred: InferredRoomInfo | null | undefined,
+  groupName: string,
+  classrooms: ImportClassroomOption[],
+): string {
+  if (inferred) {
+    const exact = classrooms.find(
+      (c) => c.gradeLevel === inferred.gradeLevel && c.section === inferred.section,
+    )
+    if (exact) return exact.id
+
+    const sameGrade = classrooms.filter((c) => c.gradeLevel === inferred.gradeLevel)
+    if (sameGrade.length === 1) return sameGrade[0].id
+  }
+
+  const cleanGroup = groupName.toLowerCase().replace(/[\s\-_/.]/g, "")
+  const found = classrooms.find((c) => {
+    const cleanC = c.name.toLowerCase().replace(/[\s\-_/.]/g, "")
+    return cleanC.includes(cleanGroup) || cleanGroup.includes(cleanC)
+  })
+  return found ? found.id : ""
+}
+
+// ----------------------------------------------------------------------------
+// Single-Room Sheet Finder Helper
+// ----------------------------------------------------------------------------
 function findMatchingSheet(classroomName: string, sheets: string[]): string | undefined {
   const cleanName = classroomName.toLowerCase().replace(/[\s\-_/.]/g, "")
 
-  // 1. Direct contains or exact match
   for (const sheet of sheets) {
     const cleanSheet = sheet.toLowerCase().replace(/[\s\-_/.]/g, "")
     if (cleanName.includes(cleanSheet) || cleanSheet.includes(cleanName)) {
@@ -43,7 +90,6 @@ function findMatchingSheet(classroomName: string, sheets: string[]): string | un
     }
   }
 
-  // 2. Grade mapping dictionary (covers Kindergarten, Primary, Secondary)
   const grades = [
     { classKeywords: ["ประถม1", "ป1", "grade1", "p1"], sheetKeywords: ["ป1", "ประถม1", "ป.1"] },
     { classKeywords: ["ประถม2", "ป2", "grade2", "p2"], sheetKeywords: ["ป2", "ประถม2", "ป.2"] },
@@ -79,7 +125,23 @@ interface ImportResultStats {
   enrolledExistingCount: number
 }
 
+interface QuickCreateModalState {
+  isOpen: boolean
+  sourceGroupId?: string
+  academicYearId: string
+  gradeLevel: string
+  section: number
+  name: string
+}
+
 export function StudentImportClient({ context }: { context: ImportContextData }) {
+  // Mode selection: "batch" for multi-room / whole-school, "single" for single-room teacher
+  const [importMode, setImportMode] = useState<"batch" | "single">("batch")
+
+  // Classrooms local list (can be updated when a quick classroom is created)
+  const [classroomsList, setClassroomsList] = useState<ImportClassroomOption[]>(context.classrooms)
+
+  // Primary Single-Room state
   const [selectedClassroomId, setSelectedClassroomId] = useState<string>(
     context.classrooms[0]?.id || "",
   )
@@ -89,12 +151,33 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   const [file, setFile] = useState<File | null>(null)
   const [selectedSheet, setSelectedSheet] = useState<string>("")
   const [duplicateMode, setDuplicateMode] = useState<ImportDuplicateMode>("skip")
+  const [autoGenerateMissingCode, setAutoGenerateMissingCode] = useState<boolean>(true)
   const [parseResult, setParseResult] = useState<ParseImportResult | null>(null)
   const [activeTab, setActiveTab] = useState<"valid" | "invalid">("valid")
   const [isParsing, startParseTransition] = useTransition()
   const [isImporting, startImportTransition] = useTransition()
   const [importResultStats, setImportResultStats] = useState<ImportResultStats | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+
+  // Multi-Group / Batch State
+  const [multiGroupResult, setMultiGroupResult] = useState<MultiGroupParseResult | null>(null)
+  const [roomSelections, setRoomSelections] = useState<Record<string, boolean>>({})
+  const [roomTargets, setRoomTargets] = useState<Record<string, string>>({})
+  const [batchImportResult, setBatchImportResult] = useState<BatchImportSummaryResult | null>(null)
+
+  // Preview Drawer Modal State
+  const [previewGroup, setPreviewGroup] = useState<ParsedStudentGroup | null>(null)
+  const [previewTab, setPreviewTab] = useState<"valid" | "invalid">("valid")
+
+  // Quick Create Classroom Modal State
+  const [quickCreateModal, setQuickCreateModal] = useState<QuickCreateModalState>({
+    isOpen: false,
+    academicYearId: context.activeAcademicYearId || context.academicYears[0]?.id || "",
+    gradeLevel: "k1",
+    section: 1,
+    name: "",
+  })
+  const [isCreatingRoom, startCreateRoomTransition] = useTransition()
 
   // Download CSV template via Server Action
   const handleDownloadCsvTemplate = async () => {
@@ -158,11 +241,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     }
   }
 
-  // Process file (CSV or XLSX) through Server Action
+  // Master Process File: Parses both Multi-Group and Single-Room representations
   const processFile = (
     selected: File,
     targetSheet?: string,
     modeOverride?: ImportDuplicateMode,
+    autoGenOverride?: boolean,
   ) => {
     const ext = selected.name.split(".").pop()?.toLowerCase() ?? ""
     if (ext !== "csv" && ext !== "xlsx") {
@@ -170,72 +254,85 @@ export function StudentImportClient({ context }: { context: ImportContextData })
       return
     }
 
-    if (selected.size > 5 * 1024 * 1024) {
-      toast.error("ขนาดไฟล์เกิน 5 MB")
+    if (selected.size > 10 * 1024 * 1024) {
+      toast.error("ขนาดไฟล์เกิน 10 MB")
       return
     }
 
     setFile(selected)
     setImportResultStats(null)
+    setBatchImportResult(null)
 
     const effectiveMode = modeOverride ?? duplicateMode
+    const effectiveAutoGen = autoGenOverride ?? autoGenerateMissingCode
 
     startParseTransition(async () => {
-      const formData = new FormData()
-      formData.set("file", selected)
-      if (targetSheet) {
-        formData.set("sheet", targetSheet)
+      // 1. Run Multi-Group Action
+      const multiFormData = new FormData()
+      multiFormData.set("file", selected)
+      multiFormData.set("skipInFileDuplicates", effectiveMode === "skip" ? "true" : "false")
+      multiFormData.set("autoGenerateMissingCode", effectiveAutoGen ? "true" : "false")
+
+      const multiRes = await parseAllStudentGroupsAction(null, multiFormData)
+
+      if (multiRes.ok && multiRes.data) {
+        const mg = multiRes.data
+        setMultiGroupResult(mg)
+
+        // Initialize selections and auto-match target classrooms
+        const newSelections: Record<string, boolean> = {}
+        const newTargets: Record<string, string> = {}
+
+        for (const g of mg.groups) {
+          newSelections[g.groupId] = g.validRows.length > 0
+          const matchedId = autoMatchRoomToClassroom(g.inferred, g.groupName, classroomsList)
+          newTargets[g.groupId] = matchedId
+        }
+
+        setRoomSelections(newSelections)
+        setRoomTargets(newTargets)
+
+        // Auto-switch mode: If multiple groups detected, recommend batch mode!
+        if (mg.isMultiGroup) {
+          setImportMode("batch")
+          toast.success(
+            `ตรวจพบ ${mg.groups.length} ห้องเรียนในไฟล์ (รวม ${mg.allValidCount} คน) สลับสู่โหมดนำเข้าหลายห้องพร้อมกันอัตโนมัติ`,
+          )
+        }
       }
-      formData.set("skipInFileDuplicates", effectiveMode === "skip" ? "true" : "false")
 
-      const res = await parseStudentFileAction(null, formData)
-      if (res.ok && res.data) {
-        const availableSheets = res.data.availableSheets || []
-        let currentSheet = res.data.selectedSheet || targetSheet || (availableSheets[0] ?? "")
+      // 2. Also run single-room parse for fallback/focused single room view
+      const singleFormData = new FormData()
+      singleFormData.set("file", selected)
+      if (targetSheet) {
+        singleFormData.set("sheet", targetSheet)
+      }
+      singleFormData.set("skipInFileDuplicates", effectiveMode === "skip" ? "true" : "false")
+      singleFormData.set("autoGenerateMissingCode", effectiveAutoGen ? "true" : "false")
 
-        // Auto-match sheet if user uploaded a multi-sheet file without specifying sheet
+      const singleRes = await parseStudentFileAction(null, singleFormData)
+      if (singleRes.ok && singleRes.data) {
+        const availableSheets = singleRes.data.availableSheets || []
+        let currentSheet = singleRes.data.selectedSheet || targetSheet || (availableSheets[0] ?? "")
+
         if (!targetSheet && availableSheets.length > 1) {
-          const currentClassroom = context.classrooms.find((c) => c.id === selectedClassroomId)
+          const currentClassroom = classroomsList.find((c) => c.id === selectedClassroomId)
           if (currentClassroom) {
             const matched = findMatchingSheet(currentClassroom.name, availableSheets)
             if (matched && matched !== currentSheet) {
               currentSheet = matched
-              // Re-parse with matched sheet automatically
-              const reFormData = new FormData()
-              reFormData.set("file", selected)
-              reFormData.set("sheet", matched)
-              reFormData.set("skipInFileDuplicates", effectiveMode === "skip" ? "true" : "false")
-              const reRes = await parseStudentFileAction(null, reFormData)
-              if (reRes.ok && reRes.data) {
-                setParseResult(reRes.data)
-                setSelectedSheet(matched)
-                if (reRes.data.validRows.length > 0) {
-                  toast.success(
-                    `เลือกแผ่นงาน "${matched}" ให้สอดคล้องกับ ${currentClassroom.name} อัตโนมัติ (พร้อมนำเข้า ${reRes.data.validRows.length} คน)`,
-                  )
-                  setActiveTab("valid")
-                } else {
-                  toast.warning(`สลับเป็นแผ่นงาน "${matched}" แล้ว แต่ไม่พบข้อมูลที่ถูกต้อง`)
-                  setActiveTab("invalid")
-                }
-                return
-              }
             }
           }
         }
 
-        setParseResult(res.data)
+        setParseResult(singleRes.data)
         setSelectedSheet(currentSheet)
-
-        if (res.data.validRows.length > 0) {
-          toast.success(`ตรวจสอบไฟล์สำเร็จ: พร้อมนำเข้า ${res.data.validRows.length} คน`)
+        if (singleRes.data.validRows.length > 0) {
           setActiveTab("valid")
         } else {
-          toast.error("ไม่พบข้อมูลนักเรียนที่ถูกต้องในไฟล์")
           setActiveTab("invalid")
         }
       } else {
-        toast.error(res.message || "เกิดข้อผิดพลาดในการตรวจสอบไฟล์")
         setParseResult(null)
       }
     })
@@ -253,30 +350,6 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     if (selected) processFile(selected)
   }
 
-  // Handle classroom change with auto-sheet matching
-  const handleClassroomChange = (newClassroomId: string) => {
-    setSelectedClassroomId(newClassroomId)
-    if (file && parseResult?.availableSheets && parseResult.availableSheets.length > 1) {
-      const newClass = context.classrooms.find((c) => c.id === newClassroomId)
-      if (newClass) {
-        const matched = findMatchingSheet(newClass.name, parseResult.availableSheets)
-        if (matched && matched !== selectedSheet) {
-          setSelectedSheet(matched)
-          processFile(file, matched)
-          toast.info(`สลับไปที่แผ่นงาน "${matched}" ให้สอดคล้องกับห้องเรียน ${newClass.name}`)
-        }
-      }
-    }
-  }
-
-  // Handle explicit sheet change by user
-  const handleSheetChange = (sheetName: string) => {
-    if (!file || sheetName === selectedSheet) return
-    setSelectedSheet(sheetName)
-    processFile(file, sheetName)
-  }
-
-  // Handle duplicate mode change
   const handleDuplicateModeChange = (mode: ImportDuplicateMode) => {
     setDuplicateMode(mode)
     if (file) {
@@ -284,16 +357,171 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     }
   }
 
-  // Clear file
+  const handleAutoGenToggle = (enabled: boolean) => {
+    setAutoGenerateMissingCode(enabled)
+    if (file) {
+      processFile(file, selectedSheet, duplicateMode, enabled)
+    }
+  }
+
   const handleClearFile = () => {
     setFile(null)
     setSelectedSheet("")
     setParseResult(null)
+    setMultiGroupResult(null)
     setImportResultStats(null)
+    setBatchImportResult(null)
+    setRoomSelections({})
+    setRoomTargets({})
+    setPreviewGroup(null)
   }
 
-  // Execute Import
-  const handleConfirmImport = () => {
+  // Batch Selection Toggles
+  const handleToggleSelectAll = (select: boolean) => {
+    if (!multiGroupResult) return
+    const updated: Record<string, boolean> = {}
+    for (const g of multiGroupResult.groups) {
+      updated[g.groupId] = select && g.validRows.length > 0
+    }
+    setRoomSelections(updated)
+  }
+
+  const handleToggleGroup = (groupId: string) => {
+    setRoomSelections((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }))
+  }
+
+  const handleGroupTargetChange = (groupId: string, classroomId: string) => {
+    if (classroomId === "__CREATE_NEW__") {
+      // Open Quick Create Modal pre-filled with group info
+      const group = multiGroupResult?.groups.find((g) => g.groupId === groupId)
+      openQuickCreateModal(group)
+      return
+    }
+    setRoomTargets((prev) => ({
+      ...prev,
+      [groupId]: classroomId,
+    }))
+  }
+
+  // Quick Create Modal Helpers
+  const openQuickCreateModal = (group?: ParsedStudentGroup) => {
+    const inf = group?.inferred
+    const defaultGrade = inf?.gradeLevel || "p1"
+    const defaultSection = inf?.section || 1
+    const defaultName = inf?.thaiName || group?.groupName || "ห้องเรียนใหม่"
+
+    setQuickCreateModal({
+      isOpen: true,
+      sourceGroupId: group?.groupId,
+      academicYearId: context.activeAcademicYearId || context.academicYears[0]?.id || "",
+      gradeLevel: defaultGrade,
+      section: defaultSection,
+      name: defaultName,
+    })
+  }
+
+  const handleQuickCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!quickCreateModal.name.trim()) {
+      toast.error("กรุณาระบุชื่อห้องเรียน")
+      return
+    }
+
+    startCreateRoomTransition(async () => {
+      const res = await quickCreateClassroomAction({
+        academicYearId: quickCreateModal.academicYearId,
+        gradeLevel: quickCreateModal.gradeLevel,
+        section: quickCreateModal.section,
+        name: quickCreateModal.name.trim(),
+      })
+
+      if (res.ok && res.data) {
+        const created = res.data
+        const newOption: ImportClassroomOption = {
+          id: created.id,
+          name: created.name,
+          gradeLevel: created.grade_level,
+          section: created.section,
+          academicYear: 2567,
+          isHomeroom: false,
+        }
+
+        // Add to local list if not already present
+        setClassroomsList((prev) => {
+          if (prev.some((c) => c.id === created.id)) return prev
+          return [...prev, newOption]
+        })
+
+        // Auto-assign to the source group if opened from a specific row
+        if (quickCreateModal.sourceGroupId) {
+          setRoomTargets((prev) => ({
+            ...prev,
+            [quickCreateModal.sourceGroupId!]: created.id,
+          }))
+        }
+
+        toast.success(`ห้องเรียน "${created.name}" พร้อมใช้งานแล้ว`)
+        setQuickCreateModal((prev) => ({ ...prev, isOpen: false }))
+      } else {
+        toast.error(res.message || "ไม่สามารถสร้างห้องเรียนได้")
+      }
+    })
+  }
+
+  // Execute Batch Import
+  const handleExecuteBatchImport = () => {
+    if (!multiGroupResult || !selectedSemesterId) {
+      toast.error("กรุณาเลือกภาคเรียนปลายทาง")
+      return
+    }
+
+    // Build payloads for selected rooms
+    const payloads: BatchRoomImportPayload[] = []
+    const unmappedRooms: string[] = []
+
+    for (const g of multiGroupResult.groups) {
+      if (roomSelections[g.groupId]) {
+        const targetId = roomTargets[g.groupId]
+        if (!targetId) {
+          unmappedRooms.push(g.groupName)
+        } else if (g.validRows.length > 0) {
+          payloads.push({
+            groupId: g.groupId,
+            roomName: g.groupName,
+            classroomId: targetId,
+            semesterId: selectedSemesterId,
+            students: g.validRows,
+          })
+        }
+      }
+    }
+
+    if (unmappedRooms.length > 0) {
+      toast.error(`กรุณาจับคู่ห้องเรียนสำหรับ: ${unmappedRooms.join(", ")} ก่อนเริ่มนำเข้า`)
+      return
+    }
+
+    if (payloads.length === 0) {
+      toast.error("ไม่มีห้องเรียนหรือนักเรียนที่เลือกสำหรับการนำเข้า")
+      return
+    }
+
+    startImportTransition(async () => {
+      const res = await executeBatchStudentImportAction(payloads, duplicateMode)
+      if (res.ok && res.data) {
+        setBatchImportResult(res.data)
+        toast.success(res.message)
+      } else {
+        toast.error(res.message || "เกิดข้อผิดพลาดในการนำเข้าแบบกลุ่ม")
+      }
+    })
+  }
+
+  // Execute Single Room Import
+  const handleExecuteSingleImport = () => {
     if (!parseResult || parseResult.validRows.length === 0) return
     if (!selectedClassroomId) {
       toast.error("กรุณาเลือกห้องเรียนสำหรับนำเข้า")
@@ -325,18 +553,29 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     })
   }
 
-  const selectedClassroom = context.classrooms.find((c) => c.id === selectedClassroomId)
-  const existingCount = parseResult?.summary?.existingCount ?? 0
+  // Computed summary counts
+  const totalSelectedRooms = multiGroupResult?.groups.filter((g) => roomSelections[g.groupId]).length ?? 0
+  const totalSelectedStudents =
+    multiGroupResult?.groups
+      .filter((g) => roomSelections[g.groupId])
+      .reduce((sum, g) => sum + g.validRows.length, 0) ?? 0
+
+  const selectedClassroom = classroomsList.find((c) => c.id === selectedClassroomId)
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Options & Template Download */}
+      {/* 1. Header & Download Templates */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>
-            <h3 className="text-base font-semibold">ขั้นตอนที่ 1: กำหนดห้องเรียนและดาวน์โหลดแบบฟอร์ม</h3>
-            <p className="text-sm text-muted-foreground">
-              เลือกห้องเรียนและภาคเรียนปลายทางที่ต้องการนำเข้านักเรียน
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+                1
+              </span>
+              <h3 className="text-base font-semibold">ดาวน์โหลดแบบฟอร์ม & เลือกลักษณะการนำเข้า</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              ระบบรองรับทั้งไฟล์รายห้องเดี่ยว และไฟล์รวมทั้งโรงเรียนที่มีหลายแผ่นงาน (Sheet) หรือมีคอลัมน์ระบุห้อง
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -359,34 +598,17 @@ export function StudentImportClient({ context }: { context: ImportContextData })
           </div>
         </div>
 
+        {/* Global Target Semester */}
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="importClassroom" className="block text-sm font-medium">
-              ห้องเรียนปลายทาง <span className="text-destructive">*</span>
+            <label htmlFor="globalSemester" className="block text-sm font-medium">
+              ภาคเรียนเป้าหมายหลัก <span className="text-destructive">*</span>
             </label>
             <select
-              id="importClassroom"
-              value={selectedClassroomId}
-              onChange={(e) => handleClassroomChange(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {context.classrooms.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} {c.isHomeroom ? "(ครูประจำชั้น)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="importSemester" className="block text-sm font-medium">
-              ภาคเรียน <span className="text-destructive">*</span>
-            </label>
-            <select
-              id="importSemester"
+              id="globalSemester"
               value={selectedSemesterId}
               onChange={(e) => setSelectedSemesterId(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {context.semesters.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -395,20 +617,71 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium">โหมดการแสดงผลและการนำเข้า</label>
+            <div className="mt-1.5 flex items-center rounded-lg border border-border bg-muted/30 p-1">
+              <button
+                type="button"
+                onClick={() => setImportMode("batch")}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  importMode === "batch"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Building2 className="size-3.5" />
+                นำเข้าหลายห้องพร้อมกัน (Batch Multi-Room)
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportMode("single")}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  importMode === "single"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Users className="size-3.5" />
+                นำเข้าเฉพาะห้อง (Single Room Focus)
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 2. File Upload Dropzone */}
+      {/* 2. File Upload Dropzone & Auto-Gen Option */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6">
-        <h3 className="text-base font-semibold">ขั้นตอนที่ 2: อัปโหลดไฟล์รายชื่อนักเรียน (CSV หรือ Excel)</h3>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          รองรับไฟล์นามสกุล .csv และ .xlsx (ไฟล์จริงของโรงเรียนที่มีคำนำหน้ารวมชื่อ หรือหลายแผ่นงานนำเข้าได้ทันที)
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+              2
+            </span>
+            <h3 className="text-base font-semibold">อัปโหลดไฟล์รายชื่อนักเรียน</h3>
+          </div>
+
+          {/* Auto-generate Missing Student Code Checkbox */}
+          <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground bg-muted/40 hover:bg-muted/70 px-3 py-1.5 rounded-xl border border-border transition">
+            <input
+              type="checkbox"
+              checked={autoGenerateMissingCode}
+              onChange={(e) => handleAutoGenToggle(e.target.checked)}
+              className="size-4 rounded text-primary focus:ring-primary"
+            />
+            <span>สร้างรหัสชั่วคราวอัตโนมัติ (กรณีเด็กอนุบาล/เข้าใหม่ยังไม่มีเลขประจำตัว)</span>
+          </label>
+        </div>
+
+        <p className="mt-1 text-sm text-muted-foreground">
+          รองรับทั้งไฟล์ .xlsx ที่มีหลายชีต (เช่น อนุบาล 1 ถึง ป.6) และไฟล์ .csv ที่มีคอลัมน์ระบุห้อง
         </p>
 
         {isParsing ? (
           <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-8 text-center">
             <Loader2 className="size-6 animate-spin text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">กำลังอ่านและตรวจสอบโครงสร้างไฟล์...</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              กำลังอ่านและตรวจสอบโครงสร้างไฟล์นักเรียนทุกห้อง...
+            </p>
           </div>
         ) : !file ? (
           <label
@@ -436,7 +709,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </div>
             <p className="text-sm font-semibold">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              รองรับไฟล์ .csv (UTF-8) หรือ .xlsx ขนาดไม่เกิน 5 MB
+              รองรับไฟล์ .csv (UTF-8) หรือ .xlsx ขนาดไม่เกิน 10 MB
             </p>
           </label>
         ) : (
@@ -449,7 +722,10 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 <div>
                   <p className="text-sm font-semibold">{file.name}</p>
                   <p className="text-xs text-muted-foreground font-mono tabular-nums">
-                    {(file.size / 1024).toFixed(1)} KB &bull; แผ่นงานปัจจุบัน: {selectedSheet || "แผ่นแรก"} &bull; พบ {parseResult?.totalRows || 0} รายการ
+                    {(file.size / 1024).toFixed(1)} KB &bull;{" "}
+                    {multiGroupResult?.isMultiGroup
+                      ? `ตรวจพบ ${multiGroupResult.groups.length} ห้องเรียน/ชีต (${multiGroupResult.allValidCount} คนพร้อมนำเข้า)`
+                      : `พบ ${parseResult?.totalRows || 0} รายการ`}
                   </p>
                 </div>
               </div>
@@ -463,82 +739,23 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 <X className="size-4" />
               </button>
             </div>
-
-            {/* Sheet Selector Bar (if multi-sheet Excel) */}
-            {parseResult?.availableSheets && parseResult.availableSheets.length > 1 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-sm">
-                <div className="flex items-center gap-2">
-                  <Layers className="size-4 text-primary" />
-                  <span className="font-semibold text-foreground">แผ่นงาน (Sheet) ในไฟล์ Excel:</span>
-                  <span className="text-xs text-muted-foreground">
-                    (พบ {parseResult.availableSheets.length} แผ่นงาน)
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedSheet}
-                    onChange={(e) => handleSheetChange(e.target.value)}
-                    disabled={isParsing}
-                    className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-semibold shadow-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {parseResult.availableSheets.map((sh) => (
-                      <option key={sh} value={sh}>
-                        แผ่นงาน: {sh}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-xs text-muted-foreground hidden sm:inline">
-                    ระบบจับคู่ให้สอดคล้องกับห้องเรียนปลายทางโดยอัตโนมัติ
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
 
       {/* 3. Duplicate Handling Configuration */}
-      {parseResult && (
+      {file && (
         <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-semibold flex items-center gap-2">
-                <ShieldCheck className="size-5 text-primary" />
-                การตั้งค่าการจัดการข้อมูลซ้ำ (Duplicate Handling)
-              </h3>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                กำหนดแนวทางปฏิบัติเมื่อพบรหัสนักเรียนหรือเลขประจำตัวประชาชนที่ซ้ำกับข้อมูลในระบบ
-              </p>
-            </div>
-            {existingCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="size-3.5" />
-                พบข้อมูลเดิมในระบบ {existingCount} รายการ
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+              3
+            </span>
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <ShieldCheck className="size-5 text-primary" />
+              การจัดการข้อมูลซ้ำในระบบ (Duplicate Handling Strategy)
+            </h3>
           </div>
 
-          {/* Alert if duplicates exist */}
-          {existingCount > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-sm text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
-              <AlertCircle className="size-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-              <div>
-                <p className="font-semibold">
-                  ตรวจพบข้อมูลนักเรียนที่มีอยู่ในโรงเรียนนี้แล้ว {existingCount} คน
-                </p>
-                <p className="text-xs mt-0.5 text-amber-700 dark:text-amber-400">
-                  {duplicateMode === "skip" &&
-                    `ระบบจะนำเข้าเฉพาะนักเรียนใหม่ (${parseResult.summary.validCount - existingCount} คน) และข้ามข้อมูลที่ซ้ำ ${existingCount} คนโดยไม่เกิดข้อผิดพลาด`}
-                  {duplicateMode === "enroll_existing" &&
-                    `ระบบจะเพิ่มนักเรียนใหม่ และดึงนักเรียนที่มีอยู่เดิม ${existingCount} คนเข้าสู่ห้องเรียน ${selectedClassroom?.name || ""} ในภาคเรียนนี้ด้วย`}
-                  {duplicateMode === "error" &&
-                    "ระบบจะระงับการนำเข้าข้อมูล เนื่องจากโหมดเข้มงวดไม่อนุญาตให้นำเข้าข้อมูลที่มีรายการซ้ำ"}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Option Cards */}
           <div className="grid gap-3 sm:grid-cols-3">
             <label
               className={`flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition ${
@@ -591,7 +808,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                   สำหรับเลื่อนชั้น/ย้ายห้อง
                 </span>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  หากพบนักเรียนเดิมในระบบ จะดึงนักเรียนเข้าสู่ห้องเรียนนี้ในภาคเรียนที่เลือกด้วย
+                  หากพบนักเรียนเดิมในระบบ จะดึงนักเรียนเข้าสู่ห้องเรียนปลายทางในภาคเรียนที่เลือกด้วย
                 </p>
               </div>
             </label>
@@ -627,25 +844,254 @@ export function StudentImportClient({ context }: { context: ImportContextData })
         </div>
       )}
 
-      {/* 4. Validation Summary & Preview Table */}
-      {parseResult && (
+      {/* 4. WORKSPACE: Mode A - Batch Multi-Room Workspace */}
+      {importMode === "batch" && multiGroupResult && (
         <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+          {/* Workspace Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-muted/20 px-5 py-4 sm:px-6">
             <div>
-              <h3 className="text-base font-semibold">ขั้นตอนที่ 3: ตรวจสอบความถูกต้องและยืนยันการนำเข้า</h3>
-              <p className="text-sm text-muted-foreground">
-                พร้อมนำเข้า <span className="font-mono tabular-nums font-medium">{parseResult.summary.validCount}</span> คน &bull; พบข้อผิดพลาด <span className="font-mono tabular-nums font-medium">{parseResult.summary.invalidCount}</span> รายการ
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+                  4
+                </span>
+                <h3 className="text-base font-semibold">
+                  พื้นที่จับคู่ห้องเรียน & เตรียมนำเข้าแบบกลุ่ม (Interactive Room Matrix)
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                เลือกห้องที่ต้องการนำเข้า จับคู่กับห้องเรียนในระบบ หรือกดสร้างห้องเรียนใหม่ได้ทันที
               </p>
             </div>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-2" role="tablist" aria-label="ผลการตรวจสอบไฟล์">
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                id="valid-import-tab"
-                role="tab"
-                aria-selected={activeTab === "valid"}
-                aria-controls="valid-import-panel"
+                onClick={() => handleToggleSelectAll(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+              >
+                <CheckSquare className="size-3.5 text-primary" />
+                เลือกทั้งหมด
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleSelectAll(false)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+              >
+                <Square className="size-3.5 text-muted-foreground" />
+                ยกเลิกทั้งหมด
+              </button>
+              <button
+                type="button"
+                onClick={() => openQuickCreateModal()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/20"
+              >
+                <Plus className="size-3.5" />
+                สร้างห้องเรียนใหม่
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Room Mapping Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-muted/50 text-xs font-semibold text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3.5 w-12 text-center">เลือก</th>
+                  <th className="px-4 py-3.5">ห้องเรียนจากไฟล์</th>
+                  <th className="px-4 py-3.5 text-center">จำนวนนักเรียน</th>
+                  <th className="px-4 py-3.5">ห้องเรียนปลายทางในระบบ</th>
+                  <th className="px-4 py-3.5">สถานะความพร้อม</th>
+                  <th className="px-4 py-3.5 text-right">ตรวจสอบรายชื่อ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {multiGroupResult.groups.map((group) => {
+                  const isChecked = Boolean(roomSelections[group.groupId])
+                  const targetId = roomTargets[group.groupId] || ""
+                  const validCount = group.validRows.length
+                  const invalidCount = group.invalidRows.length
+                  const existingInDbCount = group.validRows.filter((r) => r.isExistingInDb).length
+
+                  return (
+                    <tr
+                      key={group.groupId}
+                      className={`transition ${isChecked ? "bg-card" : "bg-muted/10 opacity-70"}`}
+                    >
+                      {/* Checkbox */}
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleGroup(group.groupId)}
+                          disabled={validCount === 0}
+                          className="size-4 rounded text-primary focus:ring-primary cursor-pointer disabled:opacity-30"
+                        />
+                      </td>
+
+                      {/* Source Room */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Layers className="size-4 text-primary shrink-0" />
+                          <div>
+                            <span className="font-semibold text-foreground">{group.groupName}</span>
+                            {group.inferred && (
+                              <span className="ml-2 inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-mono font-medium text-muted-foreground">
+                                {group.inferred.thaiName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Student Count */}
+                      <td className="px-4 py-3 text-center font-mono font-medium tabular-nums">
+                        {group.totalRows} คน
+                      </td>
+
+                      {/* Target Classroom Dropdown */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={targetId}
+                            onChange={(e) => handleGroupTargetChange(group.groupId, e.target.value)}
+                            disabled={!isChecked}
+                            className={`w-full max-w-xs rounded-lg border px-3 py-1.5 text-xs font-medium shadow-xs focus:outline-none focus:ring-2 focus:ring-ring ${
+                              !targetId && isChecked
+                                ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+                                : "border-input bg-background"
+                            }`}
+                          >
+                            <option value="">-- กรุณาเลือกห้องเรียนปลายทาง --</option>
+                            {classroomsList.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name} {c.isHomeroom ? "(ครูประจำชั้น)" : ""}
+                              </option>
+                            ))}
+                            <option value="__CREATE_NEW__" className="text-primary font-semibold">
+                              ✨ + สร้างห้องเรียน &quot;{group.inferred?.thaiName || group.groupName}&quot; ใหม่...
+                            </option>
+                          </select>
+
+                          {!targetId && isChecked && (
+                            <button
+                              type="button"
+                              onClick={() => openQuickCreateModal(group)}
+                              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20"
+                              title="สร้างห้องเรียนนี้ทันที"
+                            >
+                              <Plus className="size-3" />
+                              สร้างด่วน
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Status Badges */}
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                          {validCount > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 className="size-3" />
+                              พร้อมนำเข้า {validCount}
+                            </span>
+                          )}
+                          {existingInDbCount > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                              <AlertCircle className="size-3" />
+                              มีเดิมในระบบ {existingInDbCount}
+                            </span>
+                          )}
+                          {invalidCount > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                              <AlertTriangle className="size-3" />
+                              ข้อผิดพลาด {invalidCount}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Action: Open Preview Drawer */}
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewGroup(group)
+                            setPreviewTab(group.validRows.length > 0 ? "valid" : "invalid")
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition"
+                        >
+                          <Eye className="size-3.5 text-primary" />
+                          ดูรายชื่อ
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Batch Submit Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-card px-5 py-4 sm:px-6">
+            <div className="text-sm">
+              <span className="text-muted-foreground">สรุปการเลือก: </span>
+              <strong className="text-foreground">{totalSelectedRooms}</strong> ห้องเรียน &bull;{" "}
+              <strong className="text-foreground">{totalSelectedStudents}</strong> คนพร้อมนำเข้า
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleClearFile}
+                disabled={isImporting}
+                className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExecuteBatchImport}
+                disabled={isImporting || totalSelectedRooms === 0 || totalSelectedStudents === 0}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50 transition"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    กำลังประมวลผลการนำเข้าแบบกลุ่ม...
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="size-4" />
+                    🚀 เริ่มนำเข้าข้อมูลทั้งหมดที่เลือก ({totalSelectedRooms} ห้อง / {totalSelectedStudents} คน)
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. WORKSPACE: Mode B - Single Room Focused Workspace */}
+      {importMode === "single" && parseResult && (
+        <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-muted/20 px-5 py-4 sm:px-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+                  4
+                </span>
+                <h3 className="text-base font-semibold">นำเข้าเฉพาะห้อง (Single Room Focus)</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                พร้อมนำเข้า <span className="font-mono font-medium">{parseResult.summary.validCount}</span> คน &bull; พบข้อผิดพลาด <span className="font-mono font-medium">{parseResult.summary.invalidCount}</span> รายการ
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
                 onClick={() => setActiveTab("valid")}
                 className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "valid"
@@ -654,15 +1100,10 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 }`}
               >
                 <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                ข้อมูลถูกต้อง (<span className="font-mono tabular-nums">{parseResult.summary.validCount}</span>)
+                ข้อมูลถูกต้อง ({parseResult.summary.validCount})
               </button>
-
               <button
                 type="button"
-                id="invalid-import-tab"
-                role="tab"
-                aria-selected={activeTab === "invalid"}
-                aria-controls="invalid-import-panel"
                 onClick={() => setActiveTab("invalid")}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "invalid"
@@ -676,14 +1117,9 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </div>
           </div>
 
-          {/* Valid Rows Tab */}
+          {/* Valid Rows Table */}
           {activeTab === "valid" && (
-            <div
-              id="valid-import-panel"
-              role="tabpanel"
-              aria-labelledby="valid-import-tab"
-              className="p-0"
-            >
+            <div className="p-0">
               {parseResult.validRows.length === 0 ? (
                 <div className="p-8">
                   <EmptyState
@@ -701,12 +1137,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                         <th className="px-4 py-3">เลขที่</th>
                         <th className="px-4 py-3">รหัสนักเรียน</th>
                         <th className="px-4 py-3">ชื่อ - นามสกุล</th>
-                        <th className="px-4 py-3">สถานะในระบบ</th>
+                        <th className="px-4 py-3">สถานะ</th>
                         <th className="px-4 py-3">เพศ</th>
                         <th className="px-4 py-3">วันเกิด</th>
                         <th className="px-4 py-3">เลขประจำตัวประชาชน</th>
                         <th className="px-4 py-3">ผู้ปกครอง</th>
-                        <th className="px-4 py-3">เบอร์ติดต่อผู้ปกครอง</th>
+                        <th className="px-4 py-3">เบอร์ติดต่อ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -718,10 +1154,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                           <td className="px-4 py-2.5 font-medium">{`${r.prefix || ""} ${r.firstName} ${r.lastName}`.trim()}</td>
                           <td className="px-4 py-2.5 text-xs">
                             {r.isExistingInDb ? (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
-                                title={`มีในระบบแล้ว: ${r.existingStudentName || ""}`}
-                              >
+                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
                                 <AlertCircle className="size-3" />
                                 มีในระบบแล้ว
                               </span>
@@ -735,9 +1168,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                           <td className="px-4 py-2.5 text-xs">
                             {r.gender === "male" ? "ชาย" : r.gender === "female" ? "หญิง" : "อื่นๆ"}
                           </td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                            {r.dateOfBirth || "-"}
-                          </td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.dateOfBirth || "-"}</td>
                           <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{r.nationalId || "-"}</td>
                           <td className="px-4 py-2.5 text-xs">{`${r.guardianFirstName || ""} ${r.guardianLastName || ""}`.trim() || "-"}</td>
                           <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.guardianPhone || "-"}</td>
@@ -750,14 +1181,9 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </div>
           )}
 
-          {/* Invalid Rows Tab */}
+          {/* Invalid Rows Table */}
           {activeTab === "invalid" && (
-            <div
-              id="invalid-import-panel"
-              role="tabpanel"
-              aria-labelledby="invalid-import-tab"
-              className="p-0"
-            >
+            <div className="p-0">
               {parseResult.invalidRows.length === 0 ? (
                 <div className="p-8">
                   <EmptyState
@@ -799,16 +1225,11 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             </div>
           )}
 
-          {/* 5. Action & Submit Bar */}
+          {/* Single Submit Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-card px-5 py-4 sm:px-6">
             <div className="text-sm">
-              <span className="text-muted-foreground">ห้องเรียนปลายทาง: </span>
+              <span className="text-muted-foreground">ห้องเรียนเป้าหมาย: </span>
               <span className="font-semibold text-foreground">{selectedClassroom?.name || "ยังไม่ได้เลือก"}</span>
-              {selectedSheet && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  (แผ่นงาน: <strong className="text-foreground">{selectedSheet}</strong>)
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -816,16 +1237,16 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 type="button"
                 onClick={handleClearFile}
                 disabled={isImporting}
-                className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
+                className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 ยกเลิก
               </button>
 
               <button
                 type="button"
-                onClick={handleConfirmImport}
+                onClick={handleExecuteSingleImport}
                 disabled={isImporting || parseResult.validRows.length === 0}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50"
               >
                 {isImporting ? (
                   <>
@@ -835,7 +1256,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 ) : (
                   <>
                     <UserCheck className="size-4" />
-                    ยืนยันนำเข้า (<span className="font-mono tabular-nums">{parseResult.validRows.length}</span> คน)
+                    ยืนยันนำเข้า ({parseResult.validRows.length} คน)
                   </>
                 )}
               </button>
@@ -844,7 +1265,74 @@ export function StudentImportClient({ context }: { context: ImportContextData })
         </div>
       )}
 
-      {/* 6. Success Banner */}
+      {/* 5. Batch Success Report */}
+      {batchImportResult !== null && (
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-foreground shadow-xs">
+          <div className="flex items-start gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-7" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-base font-semibold text-emerald-700 dark:text-emerald-300">
+                นำเข้าข้อมูลนักเรียนแบบกลุ่มสำเร็จ ({batchImportResult.successRooms}/{batchImportResult.totalRooms} ห้อง)
+              </h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                นำเข้านักเรียนใหม่ทั้งหมด{" "}
+                <strong className="text-foreground">{batchImportResult.totalImported}</strong> คน
+                {batchImportResult.totalEnrolledExisting > 0 &&
+                  ` &bull; ดึงเข้าห้องเรียนเดิม ${batchImportResult.totalEnrolledExisting} คน`}
+                {batchImportResult.totalSkipped > 0 &&
+                  ` &bull; ข้ามรายการซ้ำ ${batchImportResult.totalSkipped} คน`}
+              </p>
+
+              {/* Room by Room Report Checklist */}
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {batchImportResult.roomResults.map((r) => (
+                  <div
+                    key={r.groupId}
+                    className={`flex items-center justify-between rounded-xl border p-3 text-xs ${
+                      r.success
+                        ? "border-emerald-500/30 bg-emerald-500/5 text-foreground"
+                        : "border-destructive/30 bg-destructive/5 text-destructive"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {r.success ? (
+                        <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertCircle className="size-4 text-destructive shrink-0" />
+                      )}
+                      <span className="font-semibold">{r.roomName}</span>
+                    </div>
+                    <span className="font-mono tabular-nums">
+                      {r.success ? `+${r.count} คน` : r.error || "เกิดข้อผิดพลาด"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  href="/students"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition"
+                >
+                  <Users className="size-4" />
+                  ไปยังหน้ารายชื่อนักเรียน
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleClearFile}
+                  className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted transition"
+                >
+                  นำเข้าไฟล์อื่นเพิ่มเติม
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Single Import Success Report */}
       {importResultStats !== null && (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-foreground shadow-xs">
           <div className="flex items-start gap-4">
@@ -852,7 +1340,9 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               <CheckCircle2 className="size-6" />
             </div>
             <div className="flex-1">
-              <h4 className="text-base font-semibold text-emerald-700 dark:text-emerald-300">นำเข้าข้อมูลนักเรียนเสร็จสมบูรณ์</h4>
+              <h4 className="text-base font-semibold text-emerald-700 dark:text-emerald-300">
+                นำเข้าข้อมูลนักเรียนเสร็จสมบูรณ์
+              </h4>
               <p className="mt-1 text-sm text-muted-foreground">
                 บันทึกข้อมูลเข้าสู่ห้องเรียน <span className="font-medium text-foreground">{selectedClassroom?.name}</span> เรียบร้อยแล้ว
               </p>
@@ -892,6 +1382,354 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                   นำเข้าห้องเรียนหรือไฟล์อื่นเพิ่มเติม
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. QUICK CREATE CLASSROOM MODAL DIALOG */}
+      {quickCreateModal.isOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quick-create-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div className="flex items-center gap-2">
+                <Building2 className="size-5 text-primary" />
+                <h3 id="quick-create-title" className="text-base font-semibold">
+                  สร้างห้องเรียนใหม่อย่างรวดเร็ว
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickCreateModal((prev) => ({ ...prev, isOpen: false }))}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
+                aria-label="ปิดหน้าต่าง"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickCreateSubmit} className="mt-4 space-y-4">
+              {/* Academic Year */}
+              <div>
+                <label htmlFor="qcYear" className="block text-xs font-semibold text-muted-foreground">
+                  ปีการศึกษา
+                </label>
+                <select
+                  id="qcYear"
+                  value={quickCreateModal.academicYearId}
+                  onChange={(e) =>
+                    setQuickCreateModal((prev) => ({ ...prev, academicYearId: e.target.value }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {context.academicYears.map((y) => (
+                    <option key={y.id} value={y.id}>
+                      ปีการศึกษา {y.year} {y.isCurrent ? "(ปัจจุบัน)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Grade Level */}
+              <div>
+                <label htmlFor="qcGrade" className="block text-xs font-semibold text-muted-foreground">
+                  ระดับชั้น
+                </label>
+                <select
+                  id="qcGrade"
+                  value={quickCreateModal.gradeLevel}
+                  onChange={(e) => {
+                    const gl = e.target.value
+                    setQuickCreateModal((prev) => {
+                      const thaiLabels: Record<string, string> = {
+                        k1: "อนุบาล 1",
+                        k2: "อนุบาล 2",
+                        k3: "อนุบาล 3",
+                        p1: "ประถมศึกษาปีที่ 1",
+                        p2: "ประถมศึกษาปีที่ 2",
+                        p3: "ประถมศึกษาปีที่ 3",
+                        p4: "ประถมศึกษาปีที่ 4",
+                        p5: "ประถมศึกษาปีที่ 5",
+                        p6: "ประถมศึกษาปีที่ 6",
+                        m1: "มัธยมศึกษาปีที่ 1",
+                        m2: "มัธยมศึกษาปีที่ 2",
+                        m3: "มัธยมศึกษาปีที่ 3",
+                        m4: "มัธยมศึกษาปีที่ 4",
+                        m5: "มัธยมศึกษาปีที่ 5",
+                        m6: "มัธยมศึกษาปีที่ 6",
+                      }
+                      const name = `${thaiLabels[gl] || gl}/${prev.section}`
+                      return { ...prev, gradeLevel: gl, name }
+                    })
+                  }}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <optgroup label="ระดับอนุบาล">
+                    <option value="k1">อนุบาล 1 (อ.1)</option>
+                    <option value="k2">อนุบาล 2 (อ.2)</option>
+                    <option value="k3">อนุบาล 3 (อ.3)</option>
+                  </optgroup>
+                  <optgroup label="ระดับประถมศึกษา">
+                    <option value="p1">ประถมศึกษาปีที่ 1 (ป.1)</option>
+                    <option value="p2">ประถมศึกษาปีที่ 2 (ป.2)</option>
+                    <option value="p3">ประถมศึกษาปีที่ 3 (ป.3)</option>
+                    <option value="p4">ประถมศึกษาปีที่ 4 (ป.4)</option>
+                    <option value="p5">ประถมศึกษาปีที่ 5 (ป.5)</option>
+                    <option value="p6">ประถมศึกษาปีที่ 6 (ป.6)</option>
+                  </optgroup>
+                  <optgroup label="ระดับมัธยมศึกษา">
+                    <option value="m1">มัธยมศึกษาปีที่ 1 (ม.1)</option>
+                    <option value="m2">มัธยมศึกษาปีที่ 2 (ม.2)</option>
+                    <option value="m3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
+                    <option value="m4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
+                    <option value="m5">มัธยมศึกษาปีที่ 5 (ม.5)</option>
+                    <option value="m6">มัธยมศึกษาปีที่ 6 (ม.6)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              {/* Section */}
+              <div>
+                <label htmlFor="qcSection" className="block text-xs font-semibold text-muted-foreground">
+                  ห้องที่ / ทับ (Section)
+                </label>
+                <input
+                  id="qcSection"
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={quickCreateModal.section}
+                  onChange={(e) => {
+                    const s = parseInt(e.target.value, 10) || 1
+                    setQuickCreateModal((prev) => {
+                      const baseName = prev.name.split("/")[0] || prev.name
+                      return { ...prev, section: s, name: `${baseName}/${s}` }
+                    })
+                  }}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              {/* Name */}
+              <div>
+                <label htmlFor="qcName" className="block text-xs font-semibold text-muted-foreground">
+                  ชื่อห้องเรียนที่จะแสดงผล <span className="text-destructive">*</span>
+                </label>
+                <input
+                  id="qcName"
+                  type="text"
+                  value={quickCreateModal.name}
+                  onChange={(e) =>
+                    setQuickCreateModal((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="เช่น อนุบาล 1/1 หรือ ประถมศึกษาปีที่ 3/2"
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setQuickCreateModal((prev) => ({ ...prev, isOpen: false }))}
+                  className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingRoom}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {isCreatingRoom ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      กำลังสร้าง...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="size-4" />
+                      บันทึกและใช้ห้องนี้
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. STUDENT PREVIEW DRAWER / MODAL */}
+      {previewGroup && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="preview-drawer-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 sm:p-6"
+        >
+          <div className="flex flex-col h-full max-h-[85vh] w-full max-w-4xl rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in-0 zoom-in-95 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border bg-muted/20 px-6 py-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Eye className="size-5 text-primary" />
+                  <h3 id="preview-drawer-title" className="text-base font-semibold">
+                    ตรวจสอบรายชื่อนักเรียน: {previewGroup.groupName}
+                  </h3>
+                  {previewGroup.inferred && (
+                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-mono font-medium text-primary">
+                      {previewGroup.inferred.thaiName}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  พบทั้งหมด {previewGroup.totalRows} คน &bull; พร้อมนำเข้า {previewGroup.validRows.length} คน
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Tabs */}
+                <div className="flex items-center rounded-lg border border-border bg-muted/30 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("valid")}
+                    className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                      previewTab === "valid"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    ถูกต้อง ({previewGroup.validRows.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("invalid")}
+                    className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                      previewTab === "invalid"
+                        ? "bg-destructive/10 text-destructive border border-destructive/20"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    ข้อผิดพลาด ({previewGroup.invalidRows.length})
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setPreviewGroup(null)}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+                  aria-label="ปิดหน้ารายชื่อ"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-0">
+              {previewTab === "valid" ? (
+                previewGroup.validRows.length === 0 ? (
+                  <div className="p-8">
+                    <EmptyState
+                      icon={AlertTriangle}
+                      title="ไม่มีข้อมูลที่ผ่านการตรวจสอบ"
+                      description="โปรดตรวจสอบแท็บข้อผิดพลาดเพื่อดูสาเหตุที่ข้อมูลไม่ผ่าน"
+                    />
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-sm">
+                    <thead className="sticky top-0 z-10 border-b border-border bg-muted/80 text-xs font-semibold text-muted-foreground backdrop-blur">
+                      <tr>
+                        <th className="px-4 py-2.5">แถว</th>
+                        <th className="px-4 py-2.5">เลขที่</th>
+                        <th className="px-4 py-2.5">รหัสนักเรียน</th>
+                        <th className="px-4 py-2.5">ชื่อ - นามสกุล</th>
+                        <th className="px-4 py-2.5">เพศ</th>
+                        <th className="px-4 py-2.5">สถานะ</th>
+                        <th className="px-4 py-2.5">วันเกิด</th>
+                        <th className="px-4 py-2.5">เลขประชาชน</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {previewGroup.validRows.map((r) => (
+                        <tr key={r.rowNumber} className="hover:bg-muted/30">
+                          <td className="px-4 py-2 text-xs text-muted-foreground">{r.rowNumber}</td>
+                          <td className="px-4 py-2 font-medium">{r.studentNumber ?? "-"}</td>
+                          <td className="px-4 py-2 font-mono text-xs font-semibold text-primary">{r.studentCode}</td>
+                          <td className="px-4 py-2 font-medium">{`${r.prefix || ""} ${r.firstName} ${r.lastName}`.trim()}</td>
+                          <td className="px-4 py-2 text-xs">
+                            {r.gender === "male" ? "ชาย" : r.gender === "female" ? "หญิง" : "อื่นๆ"}
+                          </td>
+                          <td className="px-4 py-2 text-xs">
+                            {r.isExistingInDb ? (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                                <AlertCircle className="size-3" />
+                                มีในระบบ
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                <Sparkles className="size-3" />
+                                ข้อมูลใหม่
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-xs text-muted-foreground">{r.dateOfBirth || "-"}</td>
+                          <td className="px-4 py-2 font-mono text-xs text-muted-foreground">{r.nationalId || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
+              ) : previewGroup.invalidRows.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState
+                    icon={CheckCircle2}
+                    title="ไม่มีข้อผิดพลาดในห้องนี้"
+                    description="ข้อมูลนักเรียนทุกคนในห้องนี้ผ่านการตรวจสอบเรียบร้อยแล้ว"
+                  />
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 z-10 border-b border-border bg-muted/80 text-xs font-semibold text-muted-foreground backdrop-blur">
+                    <tr>
+                      <th className="px-4 py-2.5">แถวที่</th>
+                      <th className="px-4 py-2.5">ชื่อนักเรียน</th>
+                      <th className="px-4 py-2.5">สาเหตุข้อผิดพลาด</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {previewGroup.invalidRows.map((err) => (
+                      <tr key={err.rowNumber} className="bg-destructive/5 hover:bg-destructive/10">
+                        <td className="px-4 py-2 font-semibold text-destructive">{err.rowNumber}</td>
+                        <td className="px-4 py-2 text-xs">{err.studentName || "-"}</td>
+                        <td className="px-4 py-2 text-xs text-destructive">
+                          <ul className="list-disc list-inside space-y-0.5">
+                            {err.errors.map((e, i) => (
+                              <li key={i}>{e}</li>
+                            ))}
+                          </ul>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-border bg-card px-6 py-3 text-right">
+              <button
+                type="button"
+                onClick={() => setPreviewGroup(null)}
+                className="rounded-xl bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90"
+              >
+                เสร็จสิ้น
+              </button>
             </div>
           </div>
         </div>
