@@ -1,5 +1,115 @@
 # Task Progress
 
+## T1 MULTI-TENANT HARDENING DONE 2026-09-28 (76 files, 456 tests)
+
+Status: done. Two subagent teams implemented in parallel; lead merged + verified live:
+1. **Migration 0029 (storage leak closed)**: rewrote SELECT on `home-visit-images` +
+   `student-photos` to school-scoped (`home_visits`/`students` join + `can_access_student`).
+   Pre-fix pen-test proved leak (spy saw 1/1/1); post-apply pen-test proves 0/0 with rows present.
+   INSERT/UPDATE/DELETE untouched. Applied locally via `migration up`.
+   Residual: `student-photos` bucket stays public — direct-URL secrecy only (signed-URL migration = follow-up).
+2. **Role gates**: referral status (care-loop roles + enum validation), risk recalc single+all
+   (care-loop roles), import template (authenticated staff). 8 new/updated tests.
+3. Verification: `tsc` 0, `eslint` 0/0, `vitest --pool=forks --maxWorkers=2` 76/456,
+   `next build`, `npm audit --omit=dev` 0, live storage pen-test 0 rows leaked (rolled back).
+
+## MULTI-TENANT RENTAL READINESS 2026-09-28 (pen-tested live, plan only)
+
+Goal: โรงเรียนอื่นเช่าใช้ → tenant isolation ต้องขาดที่สุด. Verified on live local DB.
+
+### Proven solid (ห้ามถอย)
+- RLS เปิดทุกตาราง; `school_id` ครบทุกตารางยกเว้น `schools` (tenant root ถูกต้อง)
+- Pen test ข้ามโรงเรียนจริง: spy (homeroom รร.B) เห็น 0 แถว; admin รร.B เห็นแค่ 1 แถว รร.ตัวเอง
+- ชวน user ผูก `school_id` ของคนชวนเสมอ; ไม่มีสมัครเองเลือกโรงเรียน (ปิดทาง tenant-hopping)
+- Storage `documents` (ผ่าน `can_access_student`), `reports` (โฟลเดอร์ = school_id), avatars ✓
+- Audit logs / prefs / notifications ผูก school + recipient ถูกต้อง
+
+### P0 — ห้ามรับเช่าก่อนแก้ (3 ข้อ)
+- [ ] **T1 Storage read leak**: `home-visit-images` + `student-photos` SELECT = any authenticated —
+  ครู รร.B อ่านรูป รร.A ได้. Fix: migration เขียน SELECT policy ใหม่ join
+  `home_visits`/`students` + `can_access_student()` (pattern เดียวกับ `documents`)
+- [ ] **T1 role-open mutations**: `updateReferralStatusAction` (ไร้เช็ค role),
+  `recalculate(All)RiskScores` (ไร้เช็ค role), `getStudentImportTemplateAction` (ไร้ auth ทั้งหมด).
+  Fix: role set + template ต้อง login; แล้ว pen-test ซ้ำ
+- [ ] **T1 school onboarding ไม่มีในระบบ**: สร้างโรงเรียน + admin คนแรกต้องยิง SQL มือ —
+  รับเงินใครไม่ได้ถ้าทำเอง. Fix: หน้าสมัครเช่าใช้ (school + bootstrap admin + setup wizard)
+
+### P1 — rental ops
+- [ ] **T2 UX scoping**: homeroom/subject เห็นทั้งโรงเรียนทุกหน้า (metrics, pickers, exports) —
+  default ห้องตัวเอง + pickers ตามสิทธิ (นโยบายจากสาย D)
+- [ ] **T3 billing/limits**: ตาราง subscription + จำกัด (users/storage) + หน้า tenant-admin
+- [ ] **T3 tenant settings**: โปรไฟล์โรงเรียน, โลโก้, ปีการศึกษา wizard, branding
+- [ ] **T3 one-email-one-school**: 1 auth user = 1 profiles row = 1 โรงเรียน — document ไว้
+  หรือออกแบบ multi-profile (งานใหญ่, ตัดสินใจก่อน)
+
+### Phases
+- **T1 security** (storage migration + role gates + pen-test + template auth) → ค่อยรับ tenant แรก
+- **T2 onboarding** (signup + bootstrap + wizard)
+- **T3 UX scoping + SaaS ops** (billing/limits/tenant admin)
+- Realtime/exports/audit พร้อมแล้ว ไม่ต้องแตะ
+
+## ROUND-2 REVIEW + ROADMAP 2026-09-28 (4 agents, lead-verified, plan only)
+
+`✓` = lead verified in code/DB. Rest are agent-reported, high-confidence.
+
+### P1 verified (security/data correctness — do first)
+- [ ] **Risk recalc open to all roles** ✓ — `recalculateAllRiskScores()` (`risk.actions.ts:98`) checks
+  only profile/school; any teacher triggers school-wide RPC loop. Gate to admin/director +
+  confirm dialog; `RecalculateButton` hidden or disabled otherwise.
+- [ ] **Referral status change ungated** ✓ — `updateReferralStatusAction` checks only login/school;
+  `[id]/page.tsx` (39 lines, no gate) renders buttons for everyone. Add role check
+  (admin/director/counselor/homeroom) + hide buttons without `canEdit`.
+- [ ] **Referral print leaks national_id unmasked** ✓ (`referral-detail-view.tsx:391`) + raw priority
+  text (`:149,381`). Mask as `1-XXXX-XXXXX-12-3` with opt-in full print; map priority to Thai.
+- [ ] **Silent truncations lie**: students `limit:500` ✓, IDP `limit:50` ✓ (+ summary on 50 rows),
+  support queue `limit:24` metric. Add `แสดง X จาก N ทั้งหมด` + server counts; IDP add status/q filter.
+- [ ] **Attendance overwrite risk**: missing rows default `present`, save upserts all rows, dirty-guard
+  discards server updates; no future-date guard; time accepted with absent/leave. Add sticky save bar
+  with counters, `max=today`, cross-field validation, director/counselor Save hidden (else guaranteed 403).
+
+### P2 verified (honesty/UX with evidence)
+- [ ] **Dashboard scope**: metrics/action-queue ignore classroom/semester params; semester has zero
+  effect on TrackingTable; mobile queue unfiltered. Scope queue by classroom + visible scope caption.
+- [ ] **Support due metric** counts any dated item (not 7-day); student picker below content;
+  `?studentId` fallback silent. Split overdue/due-soon; move picker up.
+- [ ] **SDQ table** shows EWS score under SDQ headers; search drops filters (fixed for `risk/studentId`
+  preservation pattern already proven on referrals/sdq elsewhere — apply same).
+- [ ] **Notifications**: mark-all clears muted types too; message single-line truncated; filtered-empty
+  has no clear-filter CTA; double bell icons in header.
+- [ ] **Auth**: parent lands via bounce (`/`→`/parent`) — add role-aware redirect; no show/hide password;
+  forgot resend/cooldown missing. (No loop, verified.)
+- [ ] **Dates**: UTC `toISOString` bugs (attendance `today()`, behavior record, home-visit default);
+  invalid `?date=` falls back silently; IDP due-edge off-by-one (UTC vs +7).
+
+### Extension roadmap (ต่อยอด — phased, reuses existing tables)
+- **E1 Risk→action loop**: absence streak / repeated negative behavior / urgent home-visit /
+  GPA<1.5 auto-suggest `action_items`+`support_records` (tables exist; rule engine new).
+- **E2 Student 360° handoff**: peer counts + one-click create (IDP/case/referral prefilled) on every
+  detail page for same `student_id`.
+- **E3 Unified follow-up inbox**: merge `support_followups.next_followup_date` + IDP activities +
+  actionQueue `dueDate` into one per-student queue (replaces 3 separate due calculations).
+- **E4 SDQ depth**: trend + auto-flag (`classification` jump → suggest case), classroom bulk print,
+  autosave drafts, `sdq_assessments` completion stats per room.
+- **E5 Screening honesty**: real per-room SDQ progress; label 5-domain/3R cards "เร็วๆ นี้" until forms exist.
+- **E6 Referrals**: SLA view, agency directory, attachments, ack tracker, split status/follow-up forms.
+- **E7 Reports**: recurring presets, failed-job diagnostics drawer, one-click re-run from history.
+- **E8 Parent**: risk-toned cards, teacher-contact button, consent ack feeding case/plan status.
+- **E9 Settings**: workload card, homeroom coverage banner, semester rollover wizard, audit export CSV.
+
+### UX/UI emphasis backlog (new this round)
+- [ ] Sticky save bars with dirty counters (attendance, academics, behavior record).
+- [ ] Steppers replace mega-forms (new student 3-step, behavior record 2-step, import 4-step).
+- [ ] Searchable comboboxes replace raw UUID dropdowns (support/referral/IDP student selects).
+- [ ] Row-level links everywhere lists show (behavior related rows, home-visit cards → follow-up).
+- [ ] Expandable notification messages + `aria-current` on active KPI filters + sticky table headers.
+- [ ] Print parity: support printData = screen fields; home-visit print all images (not 3) + lightbox.
+- [ ] Kill fake controls on sight (already-removed pattern: fake sort, dead channels, raw-UUID banners).
+
+### Direction (unchanged + one addition)
+- Dual-tree cost, `after()` worker, PWA icons (done), one-command e2e (done), kindergarten labels (done).
+- NEW: permission model needs one standard (`canEdit` row-level vs role-only vs open actions) —
+  referrals + behavior-edit + SDQ-delete diverge today; pick row-level `canEdit` as the standard.
+
 ## 2026-09-28 Finish-All: Kindergarten, UX Leftovers, PWA, One-Command E2E (446 Tests, 75 Suites)
 
 Status: done. Closed every remaining item from SYSTEM REVIEW + NEXT UX list:

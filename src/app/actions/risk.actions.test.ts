@@ -75,6 +75,23 @@ describe("risk.actions", () => {
       }
     })
 
+    it("fails with FORBIDDEN when role is outside the care loop (e.g. subject_teacher)", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "subject_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await recalculateStudentRiskAction(validUuid)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+      expect(createClient).not.toHaveBeenCalled()
+    })
+
     it("calls database RPC and revalidates paths on success", async () => {
       vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
         userId: "user-1",
@@ -201,6 +218,21 @@ describe("risk.actions", () => {
       const result = await recalculateAllRiskScores()
       expect(result.success).toBe(false)
       expect(result.error).toBe("Unauthorized")
+    })
+
+    it("returns forbidden when role is outside the care loop (e.g. subject_teacher)", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "subject_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await recalculateAllRiskScores()
+      expect(result.success).toBe(false)
+      expect(result.error).toBe("Forbidden")
+      expect(createClient).not.toHaveBeenCalled()
     })
 
     it("iterates through active students and runs rpc for each", async () => {

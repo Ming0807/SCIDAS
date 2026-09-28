@@ -292,6 +292,14 @@ export async function getStudentImportTemplateAction(format: "csv" | "xlsx"): Pr
   ActionResult<{ contentBase64: string; fileName: string; contentType: string }>
 > {
   try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId || !importAllowedRoles.has(context.role)) {
+      return actionFail(
+        "FORBIDDEN",
+        "คุณไม่มีสิทธิ์ในการนำเข้าข้อมูลนักเรียน (เฉพาะผู้ดูแลระบบ ผู้บริหาร หรือครูประจำชั้น)",
+      )
+    }
+
     if (format === "xlsx") {
       const buf = await generateStudentImportTemplateXlsx()
       return actionOk("สร้างแม่แบบสำเร็จ", {

@@ -20,6 +20,7 @@ import {
   getReferralDetail,
   createReferralAction,
   updateReferralStatusAction,
+  type SupportStatus,
 } from "./referral.actions"
 
 describe("referral.actions", () => {
@@ -370,6 +371,45 @@ describe("referral.actions", () => {
   })
 
   describe("updateReferralStatusAction", () => {
+    it("fails with FORBIDDEN if user role is not allowed", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-subject",
+        schoolId: "sch-1",
+        role: "subject_teacher",
+        profileId: "prof-subject",
+        studentId: null,
+      })
+
+      const result = await updateReferralStatusAction("ref-123", "completed")
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+      expect(createClient).not.toHaveBeenCalled()
+    })
+
+    it("fails with VALIDATION_ERROR for an invalid status value", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-counselor",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-counselor",
+        studentId: null,
+      })
+
+      const result = await updateReferralStatusAction(
+        "ref-123",
+        "bogus_status" as unknown as SupportStatus,
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+      }
+      expect(createClient).not.toHaveBeenCalled()
+    })
+
     it("updates status and creates followup note", async () => {
       vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
         userId: "user-counselor",

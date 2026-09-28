@@ -16,6 +16,8 @@ import {
 
 const uuidSchema = z.string().uuid("รหัสไม่ถูกต้อง")
 
+const riskRecalculateAllowedRoles = new Set(["admin", "director", "counselor", "homeroom_teacher"])
+
 export type RecalculatedRiskData = {
   studentId: string
   semesterId: string
@@ -44,6 +46,10 @@ export async function recalculateStudentRiskAction(
     const context = await getCurrentUserContext()
     if (!context.profileId || !context.schoolId) {
       return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
+    }
+
+    if (!riskRecalculateAllowedRoles.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ประมวลผลความเสี่ยงนักเรียน")
     }
 
     const targetSemesterId = semesterId || (await getCurrentSemesterId(context.schoolId))
@@ -100,6 +106,10 @@ export async function recalculateAllRiskScores(): Promise<{ success: boolean; pr
     const context = await getCurrentUserContext()
     if (!context.schoolId || !context.profileId) {
       return { success: false, error: "Unauthorized" }
+    }
+
+    if (!riskRecalculateAllowedRoles.has(context.role)) {
+      return { success: false, error: "Forbidden" }
     }
 
     const targetSemesterId = await getCurrentSemesterId(context.schoolId)

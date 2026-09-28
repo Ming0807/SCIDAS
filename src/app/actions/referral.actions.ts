@@ -513,6 +513,24 @@ export async function updateReferralStatusAction(
       return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
     }
 
+    const allowedRoles = new Set(["admin", "director", "counselor", "homeroom_teacher"])
+    if (!allowedRoles.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์อัปเดตสถานะการส่งต่อ")
+    }
+
+    const validStatuses = new Set<string>([
+      "pending",
+      "in_progress",
+      "completed",
+      "cancelled",
+      "referred",
+    ])
+    if (!validStatuses.has(newStatus)) {
+      return actionFail("VALIDATION_ERROR", "สถานะการส่งต่อไม่ถูกต้อง", {
+        fieldErrors: { status: ["สถานะการส่งต่อไม่ถูกต้อง"] },
+      })
+    }
+
     const client = await createClient()
 
     const updatePayload: Database["public"]["Tables"]["support_records"]["Update"] = {

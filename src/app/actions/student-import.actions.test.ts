@@ -305,7 +305,49 @@ describe("student-import.actions", () => {
   })
 
   describe("getStudentImportTemplateAction", () => {
+    it("fails with FORBIDDEN when user has no profile (unauthenticated)", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "student",
+        profileId: null,
+        studentId: "stu-1",
+      })
+
+      const result = await getStudentImportTemplateAction("csv")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+      expect(generateStudentImportTemplateCsv).not.toHaveBeenCalled()
+    })
+
+    it("fails with FORBIDDEN when role has no import permission (e.g. subject_teacher)", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "subject_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await getStudentImportTemplateAction("xlsx")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+      expect(generateStudentImportTemplateXlsx).not.toHaveBeenCalled()
+    })
+
     it("returns base64 CSV template", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
       const result = await getStudentImportTemplateAction("csv")
       expect(result.ok).toBe(true)
       if (result.ok && result.data) {
@@ -317,6 +359,14 @@ describe("student-import.actions", () => {
     })
 
     it("returns base64 XLSX template", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
       const result = await getStudentImportTemplateAction("xlsx")
       expect(result.ok).toBe(true)
       if (result.ok && result.data) {
