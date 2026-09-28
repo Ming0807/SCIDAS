@@ -60,7 +60,7 @@ export type ReferralDetail = {
     date_of_birth?: string | null
     national_id?: string | null
     classroom?: {
-      grade_level: number
+      grade_level: string
       section: number
       name?: string | null
     } | null
@@ -332,7 +332,7 @@ export async function getReferralDetail(id: string): Promise<ActionResult<Referr
         gender?: string | null
         date_of_birth?: string | null
         national_id?: string | null
-        classroom: { grade_level: number; section: number; name?: string | null } | null
+        classroom: { grade_level: string; section: number; name?: string | null } | null
       } | null
       provider: {
         id: string

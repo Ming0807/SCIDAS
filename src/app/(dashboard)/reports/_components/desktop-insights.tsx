@@ -32,7 +32,7 @@ export function DesktopInsights({
           <div className="text-xs text-muted-foreground font-mono tabular-nums">
             {m
               ? `${m.highRiskStudents + m.watchStudents} คน จาก ${m.totalStudents} คน (${m.totalStudents > 0 ? Math.round(((m.highRiskStudents + m.watchStudents) / m.totalStudents) * 100) : 0}%)`
-              : "กำลังโหลดข้อมูล..."}
+              : "ไม่มีข้อมูล"}
           </div>
         </div>
       </div>
@@ -49,7 +49,7 @@ export function DesktopInsights({
           <div className="text-xs text-muted-foreground font-mono tabular-nums">
             {m?.averageAttendance30d != null
               ? `${m.averageAttendance30d.toFixed(1)}%`
-              : "กำลังโหลดข้อมูล..."}
+              : "ไม่มีข้อมูล"}
           </div>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function DesktopInsights({
           <div className="text-xs text-muted-foreground font-mono tabular-nums">
             {m
               ? `${m.activePlans} แผน, ${m.openActionItems} งานที่ต้องทำ`
-              : "กำลังโหลดข้อมูล..."}
+              : "ไม่มีข้อมูล"}
           </div>
         </div>
       </div>

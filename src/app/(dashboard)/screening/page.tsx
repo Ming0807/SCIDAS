@@ -13,6 +13,7 @@ import {
 
 import { MetricCard, PageHeader, PageShell } from "@/components/dashboard"
 import { Button } from "@/components/ui/button"
+import { ErrorState } from "@/components/feedback/error-state"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
 import { createClient } from "@/utils/supabase/server"
@@ -23,8 +24,21 @@ export const metadata = {
 }
 
 export default async function ScreeningHubPage() {
-  const context = await getCurrentUserContext()
-  const worklist = await getStudentWorklist()
+  let context: Awaited<ReturnType<typeof getCurrentUserContext>>
+  let worklist: Awaited<ReturnType<typeof getStudentWorklist>>
+  try {
+    context = await getCurrentUserContext()
+    worklist = await getStudentWorklist()
+  } catch {
+    return (
+      <PageShell>
+        <ErrorState
+          title="โหลดศูนย์คัดกรองไม่ได้"
+          description="กรุณาลองใหม่อีกครั้ง หรือตรวจสอบสิทธิ์การเข้าถึง"
+        />
+      </PageShell>
+    )
+  }
 
   // Calculate high-level metrics
   const totalStudents = worklist.length
@@ -248,7 +262,7 @@ export default async function ScreeningHubPage() {
             <div className="pt-4 mt-4 border-t border-border">
               <Link href="/risk-analysis" className="w-full block">
                 <Button variant="outline" size="sm" className="w-full text-xs gap-1">
-                  ดูการวิเคราะห์ 5 ด้าน
+                  ดูการวิเคราะห์ความเสี่ยง
                   <ArrowRight className="size-3.5" />
                 </Button>
               </Link>

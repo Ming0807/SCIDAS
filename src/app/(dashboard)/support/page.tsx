@@ -399,9 +399,19 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
           size="compact"
         />
         <MetricCard
-          title="ใกล้ครบกำหนด"
-          value={actionQueue.filter((item) => item.dueDate).length.toLocaleString("th-TH")}
-          description="มีกำหนดเส้นตายต้องดำเนินการ"
+          title="ใกล้ครบกำหนด (7 วัน)"
+          value={actionQueue
+            .filter((item) => {
+              if (!item.dueDate) return false
+              const due = new Date(`${item.dueDate}T00:00:00`)
+              if (Number.isNaN(due.getTime())) return false
+              const nowStart = new Date()
+              nowStart.setHours(0, 0, 0, 0)
+              const diffDays = (due.getTime() - nowStart.getTime()) / 86_400_000
+              return diffDays <= 7
+            })
+            .length.toLocaleString("th-TH")}
+          description="งานครบกำหนดใน 7 วันรวมที่เลยกำหนด"
           icon={CalendarClock}
           status="watch"
           size="compact"

@@ -88,33 +88,33 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <MetricCard
           title="ทั้งหมด"
-          value={summary.total.toLocaleString()}
+          value={summary.total.toLocaleString("th-TH")}
           status="neutral"
           size="compact"
           statusLabel="คน"
         />
         <MetricCard
           title="มาเรียน"
-          value={summary.present.toLocaleString()}
+          value={summary.present.toLocaleString("th-TH")}
           status="success"
           size="compact"
           statusLabel={summary.presentRate != null ? `${summary.presentRate}%` : undefined}
         />
         <MetricCard
           title="ขาด"
-          value={summary.absent.toLocaleString()}
+          value={summary.absent.toLocaleString("th-TH")}
           status="danger"
           size="compact"
         />
         <MetricCard
           title="มาสาย"
-          value={summary.late.toLocaleString()}
+          value={summary.late.toLocaleString("th-TH")}
           status="info"
           size="compact"
         />
         <MetricCard
           title="ลา / ป่วย"
-          value={(summary.leave + summary.sick).toLocaleString()}
+          value={(summary.leave + summary.sick).toLocaleString("th-TH")}
           status="warning"
           size="compact"
         />

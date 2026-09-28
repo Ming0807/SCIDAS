@@ -187,10 +187,13 @@ describe("behavior.actions", () => {
       const formData = new FormData()
       formData.set("student_id", "stu-1")
       formData.set("behavior_type", "positive")
-      formData.set("category", "จิตอาสา")
+      formData.set("category", "helpfulness")
       formData.set("description", "ช่วยคุณครูจัดกิจกรรม")
       formData.set("points", "10")
       formData.set("date", "2026-09-13")
+      formData.set("severity", "low")
+      formData.set("parent_notified", "on")
+      formData.set("action_taken", "ชื่นชมหน้าเสาธง")
 
       const result = await createBehaviorRecordAction(null, formData)
       expect(result.ok).toBe(true)
@@ -200,6 +203,54 @@ describe("behavior.actions", () => {
       expect(revalidatePath).toHaveBeenCalledWith("/behavior")
       expect(revalidatePath).toHaveBeenCalledWith("/behavior/record")
       expect(revalidatePath).toHaveBeenCalledWith("/behavior/beh-101")
+    })
+
+    it("rejects an unknown category code", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const formData = new FormData()
+      formData.set("student_id", "stu-1")
+      formData.set("behavior_type", "positive")
+      formData.set("category", "จิตอาสา")
+      formData.set("description", "ช่วยคุณครูจัดกิจกรรม")
+      formData.set("date", "2026-09-13")
+
+      const result = await createBehaviorRecordAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.category).toBeDefined()
+      }
+    })
+
+    it("rejects an invalid severity level", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const formData = new FormData()
+      formData.set("student_id", "stu-1")
+      formData.set("behavior_type", "negative")
+      formData.set("description", "ก่อกวนเพื่อน")
+      formData.set("date", "2026-09-13")
+      formData.set("severity", "extreme")
+
+      const result = await createBehaviorRecordAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.severity).toBeDefined()
+      }
     })
   })
 

@@ -24,10 +24,13 @@ export function DashboardClassroomFilter({
       action="/"
       className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 text-card-foreground sm:flex-row sm:items-end"
     >
+      <span className="sr-only">
+        ตัวกรองนี้มีผลกับตารางติดตามและข้อมูลเชิงลึกด้านล่าง การ์ดสรุปด้านบนเป็นภาพรวมทั้งโรงเรียนเสมอ
+      </span>
       {options.length > 0 ? (
         <label className="flex flex-1 flex-col gap-1 text-xs font-medium sm:max-w-xs">
           <span className="text-muted-foreground">
-            ห้องเรียน{activeName ? ` • กำลังดู: ${activeName}` : " • ทุกห้อง"}
+            กรองตารางติดตาม: ห้องเรียน{activeName ? ` • ${activeName}` : " • ทุกห้อง"}
           </span>
           <select
             name="classroom"

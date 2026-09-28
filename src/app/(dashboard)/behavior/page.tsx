@@ -87,7 +87,7 @@ export default async function BehaviorDashboardPage({
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard
           title="บันทึกพฤติกรรมทั้งหมด"
-          value={dashboard.summary.totalRecords.toLocaleString()}
+          value={dashboard.summary.totalRecords.toLocaleString("th-TH")}
           icon={TrendingUp}
           status="info"
           delta={{
@@ -98,7 +98,7 @@ export default async function BehaviorDashboardPage({
         />
         <MetricCard
           title="พฤติกรรมเชิงบวก"
-          value={dashboard.summary.positiveCount.toLocaleString()}
+          value={dashboard.summary.positiveCount.toLocaleString("th-TH")}
           description={`คิดเป็น ${dashboard.summary.positivePct}%`}
           icon={ThumbsUp}
           status="success"
@@ -106,7 +106,7 @@ export default async function BehaviorDashboardPage({
         />
         <MetricCard
           title="พฤติกรรมเชิงลบ"
-          value={dashboard.summary.negativeCount.toLocaleString()}
+          value={dashboard.summary.negativeCount.toLocaleString("th-TH")}
           description={`คิดเป็น ${dashboard.summary.negativePct}%`}
           icon={ThumbsDown}
           status="danger"
@@ -114,7 +114,7 @@ export default async function BehaviorDashboardPage({
         />
         <MetricCard
           title="นักเรียนที่ต้องติดตามพิเศษ"
-          value={dashboard.summary.studentsNeedingFollowUp.toLocaleString()}
+          value={dashboard.summary.studentsNeedingFollowUp.toLocaleString("th-TH")}
           description="มีพฤติกรรมลบซ้ำซ้อน"
           icon={AlertCircle}
           status={dashboard.summary.studentsNeedingFollowUp > 0 ? "warning" : "success"}
@@ -182,12 +182,9 @@ export default async function BehaviorDashboardPage({
 
           {dashboard.totalRecords > 10 && (
             <div className="p-4 border-t border-border text-center">
-              <Link
-                href="/behavior/record"
-                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                ดูประวัติทั้งหมด ({dashboard.totalRecords} รายการ)
-              </Link>
+              <p className="text-sm text-muted-foreground">
+                แสดง 10 รายการล่าสุดจากทั้งหมด {dashboard.totalRecords.toLocaleString("th-TH")} รายการ
+              </p>
             </div>
           )}
         </div>
@@ -210,12 +207,9 @@ export default async function BehaviorDashboardPage({
             </div>
           )}
 
-          <Link
-            href="/behavior/record"
-            className="mt-auto pt-4 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            ดูอันดับทั้งหมด →
-          </Link>
+          <p className="mt-auto pt-4 text-sm text-muted-foreground">
+            อันดับคำชมสูงสุด {dashboard.leaderboard.length.toLocaleString("th-TH")} อันดับแรก
+          </p>
         </div>
       </div>
     </PageShell>

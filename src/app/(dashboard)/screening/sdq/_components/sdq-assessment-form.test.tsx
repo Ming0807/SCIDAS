@@ -30,13 +30,25 @@ describe("SdqAssessmentForm", () => {
     expect(screen.getByText("ผู้ปกครองประเมิน")).toBeInTheDocument()
   })
 
-  it("opens SDQ printable dialog when print button is clicked", () => {
+  it("disables printing until all 25 questions are answered, then opens the dialog", () => {
     render(<SdqAssessmentForm student={student} />)
 
-    const printButtons = screen.getAllByRole("button", { name: /พิมพ์รายงาน SDQ/i })
-    expect(printButtons.length).toBeGreaterThan(0)
+    const toolbarPrint = screen
+      .getAllByRole("button", { name: /พิมพ์รายงาน SDQ/i })
+      .find((button) => button instanceof HTMLButtonElement && button.disabled)
+    expect(toolbarPrint).toBeDefined()
 
-    fireEvent.click(printButtons[0])
+    const notTrueButtons = screen.getAllByRole("button", { name: "ไม่จริง" })
+    expect(notTrueButtons).toHaveLength(25)
+    for (const button of notTrueButtons) {
+      fireEvent.click(button)
+    }
+
+    const enabledPrintButtons = screen
+      .getAllByRole("button", { name: /พิมพ์รายงาน SDQ/i })
+      .filter((button) => button instanceof HTMLButtonElement && !button.disabled)
+    expect(enabledPrintButtons.length).toBeGreaterThan(0)
+    fireEvent.click(enabledPrintButtons[0])
 
     expect(
       screen.getByText("แบบรายงานสรุปผลการประเมินพฤติกรรมและอารมณ์เด็ก (SDQ)")

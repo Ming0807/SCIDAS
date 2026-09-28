@@ -10,9 +10,19 @@ import type { Database } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
 
 type BehaviorType = Database["public"]["Enums"]["behavior_type"]
+type SeverityLevel = Database["public"]["Enums"]["severity_level"]
 type BehaviorActionData = { id: string }
 
 const validBehaviorTypes: BehaviorType[] = ["positive", "negative", "neutral"]
+const validCategories = new Set([
+  "academic",
+  "helpfulness",
+  "discipline",
+  "disruption",
+  "tardiness",
+  "other",
+])
+const validSeverities: SeverityLevel[] = ["low", "medium", "high", "critical"]
 const behaviorEditors = new Set(["admin", "homeroom_teacher", "subject_teacher", "counselor"])
 
 type MutableBehaviorFields = {
@@ -22,6 +32,9 @@ type MutableBehaviorFields = {
   description: string
   points: number
   date: string
+  severity: SeverityLevel | null
+  parentNotified: boolean
+  actionTaken: string | null
 }
 
 type ParsedBehaviorFields =
@@ -71,6 +84,15 @@ function parseMutableBehaviorFields(
     }
   }
 
+  if (categoryValue && !validCategories.has(categoryValue)) {
+    return {
+      ok: false,
+      result: actionFail("VALIDATION_ERROR", "กรุณาเลือกหมวดหมู่ที่ถูกต้อง", {
+        fieldErrors: { category: ["กรุณาเลือกหมวดหมู่ที่ถูกต้อง"] },
+      }),
+    }
+  }
+
   if (categoryValue.length > 100) {
     return {
       ok: false,
@@ -110,6 +132,30 @@ function parseMutableBehaviorFields(
     }
   }
 
+  const severityValue = getFormString(formData, "severity")
+  const severity = (severityValue ? severityValue : null) as SeverityLevel | null
+  if (severity && !validSeverities.includes(severity)) {
+    return {
+      ok: false,
+      result: actionFail("VALIDATION_ERROR", "กรุณาเลือกระดับความรุนแรงที่ถูกต้อง", {
+        fieldErrors: { severity: ["กรุณาเลือกระดับความรุนแรงที่ถูกต้อง"] },
+      }),
+    }
+  }
+
+  const actionTakenValue = getFormString(formData, "action_taken")
+  if (actionTakenValue.length > 2000) {
+    return {
+      ok: false,
+      result: actionFail("VALIDATION_ERROR", "การดำเนินการต้องมีความยาวไม่เกิน 2000 ตัวอักษร", {
+        fieldErrors: { action_taken: ["การดำเนินการต้องมีความยาวไม่เกิน 2000 ตัวอักษร"] },
+      }),
+    }
+  }
+
+  const parentValue = formData.get("parent_notified")
+  const parentNotified = parentValue === "on" || parentValue === "true"
+
   return {
     ok: true,
     fields: {
@@ -119,6 +165,9 @@ function parseMutableBehaviorFields(
       description,
       points,
       date,
+      severity,
+      parentNotified,
+      actionTaken: actionTakenValue || null,
     },
   }
 }
@@ -221,6 +270,9 @@ export async function createBehaviorRecordAction(
         category: parsed.fields.category,
         description: parsed.fields.description,
         points: parsed.fields.points,
+        severity: parsed.fields.severity,
+        parent_notified: parsed.fields.parentNotified,
+        action_taken: parsed.fields.actionTaken,
         reported_by: context.profileId,
         school_id: context.schoolId,
         date: parsed.fields.date,
@@ -314,6 +366,9 @@ export async function updateBehaviorRecordAction(
         category: parsed.fields.category,
         description: parsed.fields.description,
         points: parsed.fields.points,
+        severity: parsed.fields.severity,
+        parent_notified: parsed.fields.parentNotified,
+        action_taken: parsed.fields.actionTaken,
         date: parsed.fields.date,
       })
       .eq("id", record.id)

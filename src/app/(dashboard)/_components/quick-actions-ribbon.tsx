@@ -13,7 +13,7 @@ export function QuickActionsRibbon() {
   const actions = [
     {
       title: "เช็คชื่อประจำวัน",
-      subtitle: "เวลาเรียน 80% (มส.)",
+      subtitle: "บันทึกมา/ขาด/ลา/สาย",
       href: "/attendance",
       icon: CalendarCheck,
     },
@@ -25,7 +25,7 @@ export function QuickActionsRibbon() {
     },
     {
       title: "บันทึกเยี่ยมบ้าน",
-      subtitle: "หลักฐาน สพฐ. 6 หมวด",
+      subtitle: "พร้อมแนบรูปหลักฐาน",
       href: "/home-visits/new",
       icon: Home,
     },
@@ -37,13 +37,13 @@ export function QuickActionsRibbon() {
     },
     {
       title: "เปิดเคสช่วยเหลือ",
-      subtitle: "การให้คำปรึกษา บร.",
+      subtitle: "ทุน อุปกรณ์ ปรึกษา ส่งต่อ",
       href: "/support/new",
       icon: HeartHandshake,
     },
     {
       title: "พิมพ์รายงาน / SAR",
-      subtitle: "เอกสารทางการ 9 ฉบับ",
+      subtitle: "PDF และ Excel",
       href: "/reports",
       icon: FileText,
     },

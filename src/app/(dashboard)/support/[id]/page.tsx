@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/dashboard"
 import { StudentAttachmentsPanel } from "@/components/care"
 import { Button } from "@/components/ui/button"
 import { getStudentAttachments } from "@/lib/server/student-care-read-models"
+import { getSemesterOptions } from "@/lib/server/executive-read-models"
 import { formatThaiDateTime, formatThaiShortDate } from "@/lib/student-care-formatters"
 
 import { SupportDetailActions } from "./_components/support-detail-actions"
@@ -75,6 +76,9 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
     referenceTable: "support_cases",
     referenceId: supportCase.id,
   }).catch(() => [])
+  const semesterOptions = await getSemesterOptions().catch(() => [])
+  const semesterName =
+    semesterOptions.find((s) => s.id === supportCase.semester_id)?.name ?? "ไม่ระบุภาคเรียน"
 
   const studentName = supportCase.student
     ? `${supportCase.student.first_name} ${supportCase.student.last_name}`
@@ -155,7 +159,7 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
           <DetailItem label="ผู้บันทึก" value={providerName} />
           <DetailItem label="วันที่เริ่มต้น" value={formatThaiShortDate(supportCase.started_at)} />
           <DetailItem label="วันที่เสร็จสิ้น" value={formatThaiShortDate(supportCase.completed_at)} />
-          <DetailItem label="ภาคการศึกษา" value={supportCase.semester_id} />
+          <DetailItem label="ภาคการศึกษา" value={semesterName} />
           <DetailItem label="อัปเดตล่าสุด" value={formatThaiDateTime(supportCase.updated_at)} />
         </dl>
         <div className="mt-6 border-t border-border pt-5">
@@ -171,6 +175,7 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
         <dl className="mt-5 grid gap-5 lg:grid-cols-3">
           <DetailItem label="แผนดำเนินการ" value={supportCase.action_plan} />
           <DetailItem label="การช่วยเหลือที่ดำเนินการแล้ว" value={supportCase.provided_support} />
+          <DetailItem label="ทรัพยากรที่ใช้" value={supportCase.resources_used} />
           <DetailItem label="การส่งต่อภายนอก" value={supportCase.external_referral} />
           <DetailItem label="แหล่งที่มาของทุน/การช่วยเหลือ" value={supportCase.funding_source} />
           <DetailItem

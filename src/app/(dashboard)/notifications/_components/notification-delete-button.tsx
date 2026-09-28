@@ -44,7 +44,7 @@ export function NotificationDeleteButton({
       title="ลบการแจ้งเตือน"
       aria-label="ลบการแจ้งเตือน"
       className={cn(
-        "flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive",
+        "flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive",
         className,
       )}
     >

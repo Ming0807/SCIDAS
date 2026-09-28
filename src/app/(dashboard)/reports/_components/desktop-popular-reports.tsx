@@ -45,7 +45,7 @@ export function DesktopPopularReports({
           return (
             <Link
               key={item.reportType}
-              href={`/reports`}
+              href={`/reports?type=${item.reportType}`}
               className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/30 transition-colors group"
             >
               <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">

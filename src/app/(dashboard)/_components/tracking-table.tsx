@@ -243,9 +243,10 @@ export function TrackingTable({
           </div>
 
           {/* Quick Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/50">
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/50" role="group" aria-label="กรองรายชื่อนักเรียน">
             <button
               type="button"
+              aria-pressed={activeTab === "all"}
               onClick={() => setActiveTab("all")}
               className={cn(
                 "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
@@ -258,6 +259,7 @@ export function TrackingTable({
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === "high"}
               onClick={() => setActiveTab("high")}
               className={cn(
                 "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
@@ -270,6 +272,7 @@ export function TrackingTable({
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === "absent"}
               onClick={() => setActiveTab("absent")}
               className={cn(
                 "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",
@@ -282,6 +285,7 @@ export function TrackingTable({
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === "actions"}
               onClick={() => setActiveTab("actions")}
               className={cn(
                 "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer",

@@ -487,9 +487,10 @@ export function AttendanceForm({
           />
         </div>
 
-        <div className="flex items-center gap-1 self-start sm:self-auto">
+        <div className="flex items-center gap-1 self-start sm:self-auto" role="group" aria-label="กรองรายชื่อตามสถานะ">
           <button
             type="button"
+            aria-pressed={statusFilter === "all"}
             onClick={() => setStatusFilter("all")}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === "all"
@@ -501,6 +502,7 @@ export function AttendanceForm({
           </button>
           <button
             type="button"
+            aria-pressed={statusFilter === "non_present"}
             onClick={() => setStatusFilter("non_present")}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === "non_present"
@@ -554,7 +556,11 @@ export function AttendanceForm({
                     />
                   </div>
                   <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                    {date}
+                    {new Intl.DateTimeFormat("th-TH", {
+                      day: "numeric",
+                      month: "short",
+                      year: "2-digit",
+                    }).format(new Date(`${date}T00:00:00`))}
                   </span>
                 </div>
 

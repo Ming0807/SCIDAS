@@ -50,7 +50,8 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
   const status = resolveStatus(getSearchParam(params, "status"))
   const type = resolveNotificationType(getSearchParam(params, "type"))
   const page = Number.parseInt(getSearchParam(params, "page"), 10) || 1
-  const limit = Number.parseInt(getSearchParam(params, "limit"), 10) || 20
+  const rawLimit = Number.parseInt(getSearchParam(params, "limit"), 10) || 20
+  const limit = Math.min(Math.max(rawLimit, 1), 50)
 
   let notifications: Awaited<ReturnType<typeof getNotifications>>
   let counts: Awaited<ReturnType<typeof getNotificationCounts>>

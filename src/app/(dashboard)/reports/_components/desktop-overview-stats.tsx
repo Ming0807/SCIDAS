@@ -31,14 +31,14 @@ export function DesktopOverviewStats({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard
           title="จำนวนนักเรียนทั้งหมด"
-          value={m?.totalStudents?.toLocaleString() ?? "-"}
+          value={m?.totalStudents?.toLocaleString("th-TH") ?? "-"}
           icon={Users}
           status="neutral"
           statusLabel="คน"
         />
         <MetricCard
           title="กลุ่มเสี่ยง"
-          value={m?.highRiskStudents?.toLocaleString() ?? "-"}
+          value={m?.highRiskStudents?.toLocaleString("th-TH") ?? "-"}
           icon={ShieldAlert}
           status="danger"
           statusLabel={
@@ -49,7 +49,7 @@ export function DesktopOverviewStats({
         />
         <MetricCard
           title="อยู่ระหว่างการดูแล"
-          value={m?.openSupportCases?.toLocaleString() ?? "-"}
+          value={m?.openSupportCases?.toLocaleString("th-TH") ?? "-"}
           icon={HeartPulse}
           status="info"
           statusLabel={
@@ -60,7 +60,7 @@ export function DesktopOverviewStats({
         />
         <MetricCard
           title="แผนกำลังดำเนินการ"
-          value={m?.activePlans?.toLocaleString() ?? "-"}
+          value={m?.activePlans?.toLocaleString("th-TH") ?? "-"}
           icon={CheckCircle2}
           status="success"
           statusLabel="แผน"

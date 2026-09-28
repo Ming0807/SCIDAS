@@ -101,10 +101,11 @@ export function SupportFollowups({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
+              <label htmlFor="followup-date" className="block text-xs font-medium text-muted-foreground mb-1">
                 วันที่ติดตามผล *
               </label>
               <Input
+                id="followup-date"
                 type="date"
                 name="followup_date"
                 defaultValue={new Date().toISOString().slice(0, 10)}
@@ -114,10 +115,11 @@ export function SupportFollowups({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
+              <label htmlFor="followup-result" className="block text-xs font-medium text-muted-foreground mb-1">
                 ผลการติดตาม
               </label>
               <Input
+                id="followup-result"
                 name="result"
                 placeholder="เช่น ดีขึ้นอย่างเห็นได้ชัด, ทรงตัว"
                 className="h-9"
@@ -126,10 +128,11 @@ export function SupportFollowups({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">
+            <label htmlFor="followup-description" className="block text-xs font-medium text-muted-foreground mb-1">
               รายละเอียดและข้อสังเกตการติดตามผล *
             </label>
             <textarea
+              id="followup-description"
               name="description"
               rows={3}
               required
@@ -140,10 +143,11 @@ export function SupportFollowups({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
+              <label htmlFor="followup-next-action" className="block text-xs font-medium text-muted-foreground mb-1">
                 การดำเนินการขั้นต่อไป (Next Action)
               </label>
               <Input
+                id="followup-next-action"
                 name="next_action"
                 placeholder="เช่น นัดพบผู้ปกครอง, ติดตามผลการเรียนสัปดาห์หน้า"
                 className="h-9"
@@ -151,10 +155,11 @@ export function SupportFollowups({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
+              <label htmlFor="followup-next-date" className="block text-xs font-medium text-muted-foreground mb-1">
                 กำหนดนัดติดตามครั้งถัดไป
               </label>
               <Input
+                id="followup-next-date"
                 type="date"
                 name="next_followup_date"
                 className="h-9"
@@ -242,6 +247,7 @@ export function SupportFollowups({
                         disabled={isPending}
                         className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors"
                         title="ลบบันทึกนี้"
+                        aria-label={`ลบบันทึกติดตามวันที่ ${item.followup_date}`}
                       >
                         <Trash2 className="size-3.5" />
                       </button>

@@ -97,9 +97,10 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
         {/* Evaluator Selector */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground">ผู้ประเมิน:</span>
-          <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+          <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1" role="group" aria-label="เลือกผู้ประเมิน">
             <button
               type="button"
+              aria-pressed={evaluatorType === "teacher"}
               onClick={() => setEvaluatorType("teacher")}
               className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                 evaluatorType === "teacher"
@@ -111,6 +112,7 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
             </button>
             <button
               type="button"
+              aria-pressed={evaluatorType === "student"}
               onClick={() => setEvaluatorType("student")}
               className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                 evaluatorType === "student"
@@ -122,6 +124,7 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
             </button>
             <button
               type="button"
+              aria-pressed={evaluatorType === "parent"}
               onClick={() => setEvaluatorType("parent")}
               className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                 evaluatorType === "parent"
@@ -138,6 +141,8 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
             variant="outline"
             size="sm"
             onClick={() => setIsPrintOpen(true)}
+            disabled={answeredCount < 25}
+            title={answeredCount < 25 ? "ตอบให้ครบ 25 ข้อก่อนพิมพ์รายงาน" : "พิมพ์รายงาน SDQ"}
             className="gap-1.5 text-xs shrink-0"
           >
             <Printer className="size-3.5" />

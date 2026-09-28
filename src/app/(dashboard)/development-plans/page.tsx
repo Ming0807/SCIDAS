@@ -89,14 +89,14 @@ export default async function DevelopmentPlansPage({
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard
           title="แผนทั้งหมด"
-          value={summary.totalPlans.toLocaleString()}
+          value={summary.totalPlans.toLocaleString("th-TH")}
           icon={ClipboardList}
           status="neutral"
           statusLabel="แผน"
         />
         <MetricCard
           title="กำลังดำเนินการ"
-          value={summary.activePlans.toLocaleString()}
+          value={summary.activePlans.toLocaleString("th-TH")}
           icon={TrendingUp}
           status="info"
           statusLabel={
@@ -107,7 +107,7 @@ export default async function DevelopmentPlansPage({
         />
         <MetricCard
           title="เสร็จสิ้น"
-          value={summary.completedPlans.toLocaleString()}
+          value={summary.completedPlans.toLocaleString("th-TH")}
           icon={Target}
           status="success"
           statusLabel={
@@ -252,6 +252,17 @@ export default async function DevelopmentPlansPage({
                                 year: "2-digit",
                               }).format(new Date(plan.endDate))}`
                             : ""}
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-2 md:hidden">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full bg-primary"
+                              style={{ width: `${plan.overallProgress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {plan.overallProgress}%
+                          </span>
                         </div>
                       </td>
                       <td className="py-3 px-5 whitespace-nowrap">

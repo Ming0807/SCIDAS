@@ -183,7 +183,14 @@ export function StudentTable({
         id: "phone",
         header: "เบอร์โทร",
         className: "text-muted-foreground text-xs tabular-nums",
-        cell: (student) => student.phone || "-",
+        cell: (student) =>
+          student.phone ? (
+            <a href={`tel:${student.phone.replace(/[\s-]/g, "")}`} className="hover:text-primary hover:underline">
+              {student.phone}
+            </a>
+          ) : (
+            "-"
+          ),
       },
       {
         id: "actions",

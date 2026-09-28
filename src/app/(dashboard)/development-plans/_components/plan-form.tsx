@@ -130,7 +130,7 @@ export function PlanForm(props: PlanFormProps) {
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <label htmlFor="semester_id" className="text-sm font-medium">ภาคเรียน <span className="text-destructive">*</span></label>
-                  <select id="semester_id" name="semester_id" required defaultValue="" className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" aria-invalid={fieldErrors?.semester_id ? true : undefined}>
+                  <select id="semester_id" name="semester_id" required defaultValue={props.mode === "create" ? (props.semesters.find((s) => s.is_current)?.id ?? "") : ""} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" aria-invalid={fieldErrors?.semester_id ? true : undefined}>
                     <option value="" disabled>เลือกภาคเรียน</option>
                     {(props.mode === "create" ? props.semesters : []).map((semester) => <option key={semester.id} value={semester.id}>{formatSemester(semester)}{semester.is_current ? " · ปัจจุบัน" : ""}</option>)}
                   </select>

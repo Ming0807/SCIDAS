@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/dashboard/page-header"
 import { PageShell } from "@/components/dashboard/page-shell"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { EmptyState } from "@/components/feedback/empty-state"
-import { ErrorState } from "@/components/feedback/error-state"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -65,6 +64,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
   let goals: DevelopmentGoal[] = []
   let evaluations: DevelopmentEvaluation[] = []
   let activitiesByGoal: Record<string, DevelopmentActivity[]> = {}
+  let subLoadError: string | null = null
   try {
     const [goalRows, evaluationRows] = await Promise.all([getDevelopmentGoals(id), getDevelopmentEvaluations(id)])
     goals = goalRows
@@ -72,7 +72,7 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
     const activityRows = await Promise.all(goals.map(async (goal) => [goal.id, await getDevelopmentActivities(goal.id)] as const))
     activitiesByGoal = Object.fromEntries(activityRows)
   } catch {
-    return <PageShell><ErrorState title="โหลดรายละเอียดรายการย่อยไม่สำเร็จ" description="ข้อมูลแผนยังเปิดดูได้ แต่ไม่สามารถโหลดเป้าหมาย กิจกรรม หรือการประเมินได้ในขณะนี้" /></PageShell>
+    subLoadError = "โหลดเป้าหมาย กิจกรรม หรือการประเมินไม่สำเร็จ ข้อมูลแผนหลักยังแสดงได้ตามปกติ"
   }
 
   const student = firstOrSelf(plan.student as Person | Person[] | null | undefined)
@@ -121,6 +121,12 @@ export default async function DevelopmentPlanDetailsPage({ params }: PageProps) 
         metadata={<StatusBadge status={getPlanStatusTone(plan.status)} label={getPlanStatusLabel(plan.status)} size="sm" />}
         actions={<PlanDetailActions planId={id} status={plan.status} canEdit={canMutatePlan} planData={planData} />}
       />
+
+      {subLoadError ? (
+        <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
+          {subLoadError}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="ข้อมูลสรุปแผน">
         <Card size="sm">

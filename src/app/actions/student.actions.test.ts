@@ -12,13 +12,14 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/server/current-user", () => ({
   getCurrentUserContext: vi.fn(),
+  getCurrentSemesterId: vi.fn(),
 }))
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(),
 }))
 
-import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getCurrentUserContext, getCurrentSemesterId } from "@/lib/server/current-user"
 import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 
@@ -226,6 +227,142 @@ describe("student.actions", () => {
           special_needs: "ที่นั่งหน้าชั้น",
         }),
       )
+    })
+
+    it("rejects a non-UUID classroom_id", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const formData = new FormData()
+      formData.set("first_name", "Somchai")
+      formData.set("last_name", "Jaidee")
+      formData.set("student_code", "STU102")
+      formData.set("gender", "male")
+      formData.set("date_of_birth", "2015-05-10")
+      formData.set("classroom_id", "not-a-uuid")
+
+      const result = await createStudentAction(null, formData)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.fieldErrors?.classroom_id).toBeDefined()
+      }
+    })
+
+    it("enrolls the new student when a classroom is chosen", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+      vi.mocked(getCurrentSemesterId).mockResolvedValueOnce("sem-1")
+
+      const classroomId = "11111111-1111-4111-8111-111111111111"
+      const mockEnrollInsert = vi.fn().mockResolvedValue({ error: null })
+      const mockStudentInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: "stu-102" }, error: null }),
+        }),
+      })
+      const chainable = (terminal: unknown): { select: () => unknown } => {
+        const chain: Record<string, unknown> = {}
+        for (const m of ["select", "eq", "maybeSingle", "single"]) {
+          chain[m] = vi.fn(() => chain)
+        }
+        chain.then = (onF: (v: unknown) => unknown) => Promise.resolve(terminal).then(onF)
+        return chain as unknown as { select: () => unknown }
+      }
+      const mockFrom = vi.fn((table: string) => {
+        if (table === "students") return { insert: mockStudentInsert }
+        if (table === "classrooms") {
+          return { select: () => chainable({ data: { id: classroomId }, error: null }).select() }
+        }
+        if (table === "classroom_students") return { insert: mockEnrollInsert }
+        return {}
+      })
+
+      // @ts-expect-error mock client
+      vi.mocked(createClient).mockResolvedValue({ from: mockFrom })
+
+      const formData = new FormData()
+      formData.set("first_name", "Somchai")
+      formData.set("last_name", "Jaidee")
+      formData.set("student_code", "STU102")
+      formData.set("gender", "male")
+      formData.set("date_of_birth", "2015-05-10")
+      formData.set("classroom_id", classroomId)
+
+      const result = await createStudentAction(null, formData)
+      expect(result.ok).toBe(true)
+      expect(mockEnrollInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          school_id: "sch-1",
+          classroom_id: classroomId,
+          student_id: "stu-102",
+          semester_id: "sem-1",
+          is_active: true,
+        }),
+      )
+    })
+
+    it("still creates the student with a warning when enrollment is forbidden", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-1",
+        studentId: null,
+      })
+      vi.mocked(getCurrentSemesterId).mockResolvedValueOnce("sem-1")
+
+      const classroomId = "11111111-1111-4111-8111-111111111111"
+      const mockEnrollInsert = vi.fn().mockResolvedValue({ error: { code: "42501" } })
+      const mockStudentInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: "stu-103" }, error: null }),
+        }),
+      })
+      const chainable = (terminal: unknown): { select: () => unknown } => {
+        const chain: Record<string, unknown> = {}
+        for (const m of ["select", "eq", "maybeSingle", "single"]) {
+          chain[m] = vi.fn(() => chain)
+        }
+        chain.then = (onF: (v: unknown) => unknown) => Promise.resolve(terminal).then(onF)
+        return chain as unknown as { select: () => unknown }
+      }
+      const mockFrom = vi.fn((table: string) => {
+        if (table === "students") return { insert: mockStudentInsert }
+        if (table === "classrooms") {
+          return { select: () => chainable({ data: { id: classroomId }, error: null }).select() }
+        }
+        if (table === "classroom_students") return { insert: mockEnrollInsert }
+        return {}
+      })
+
+      // @ts-expect-error mock client
+      vi.mocked(createClient).mockResolvedValue({ from: mockFrom })
+
+      const formData = new FormData()
+      formData.set("first_name", "Somchai")
+      formData.set("last_name", "Jaidee")
+      formData.set("student_code", "STU103")
+      formData.set("gender", "male")
+      formData.set("date_of_birth", "2015-05-10")
+      formData.set("classroom_id", classroomId)
+
+      const result = await createStudentAction(null, formData)
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.message).toContain("จัดห้องไม่ได้")
+        expect(result.data?.id).toBe("stu-103")
+      }
     })
   })
 

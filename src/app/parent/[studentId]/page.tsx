@@ -118,6 +118,25 @@ export default async function ParentChildPage({ params }: ParentChildPageProps) 
             ))}
           </ul>
         )}
+        {detail.attendance.length > 10 ? (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
+              ดูทั้งหมด {detail.attendance.length.toLocaleString("th-TH")} วัน
+            </summary>
+            <ul className="divide-y divide-border">
+              {detail.attendance.slice(10).map((row) => (
+                <li key={`${row.date}-${row.status}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="text-muted-foreground">{formatThaiShortDate(row.date)}</span>
+                  <StatusBadge
+                    status={row.status === "present" ? "success" : row.status === "absent" ? "danger" : "watch"}
+                    label={getAttendanceStatusLabel(row.status as AttendanceStatus)}
+                    size="sm"
+                  />
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </section>
 
       <section aria-label="ผลการเรียน" className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -173,7 +192,11 @@ export default async function ParentChildPage({ params }: ParentChildPageProps) 
             {detail.supportCases.map((row) => (
               <li key={`s-${row.id}`} className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 p-3 text-sm">
                 <span className="min-w-0 truncate font-medium text-foreground">{row.title}</span>
-                <StatusBadge status="info" label={supportLabels[row.status] ?? row.status} size="sm" />
+                <StatusBadge
+                  status={row.status === "completed" ? "success" : row.status === "cancelled" ? "danger" : row.status === "in_progress" ? "watch" : "info"}
+                  label={supportLabels[row.status] ?? row.status}
+                  size="sm"
+                />
               </li>
             ))}
             {detail.plans.map((row) => (
@@ -182,7 +205,11 @@ export default async function ParentChildPage({ params }: ParentChildPageProps) 
                   <ClipboardList aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
                   {row.title}
                 </span>
-                <StatusBadge status="info" label={planLabels[row.status] ?? row.status} size="sm" />
+                <StatusBadge
+                  status={row.status === "completed" ? "success" : row.status === "cancelled" ? "danger" : row.status === "active" ? "watch" : "info"}
+                  label={planLabels[row.status] ?? row.status}
+                  size="sm"
+                />
               </li>
             ))}
           </ul>

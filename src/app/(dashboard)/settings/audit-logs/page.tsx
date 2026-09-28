@@ -123,8 +123,8 @@ export default async function AuditLogsPage({
         />
         <MetricCard
           title="สถานะความคุ้มครอง PDPA"
-          value="ผ่านเกณฑ์ 100%"
-          description="Mask ข้อมูลอ่อนไหวอัตโนมัติ"
+          value="เปิดใช้งาน"
+          description="Mask เลขบัตรฯ และข้อมูลอ่อนไหวอัตโนมัติ"
           icon={ShieldCheck}
           status="normal"
           size="compact"

@@ -189,7 +189,69 @@ export function BasicSkillsForm({
       {filteredStudents.length === 0 ? (
         <p className="px-5 pb-5 text-sm text-muted-foreground">ไม่พบนักเรียนตามคำค้น</p>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+          {/* Mobile cards */}
+          <div className="space-y-3 px-5 pb-2 md:hidden">
+            {filteredStudents.map((student) => {
+              const entry = entries[student.id] ?? { ...defaultEntry }
+              return (
+                <article key={student.id} className="rounded-xl border border-border bg-background p-4">
+                  <p className="text-sm font-semibold text-foreground">{student.name}</p>
+                  <div className="mt-3 space-y-3">
+                    {skillFields.map((field) => (
+                      <div key={field.key} className="space-y-1.5">
+                        <span className="block text-xs font-medium text-muted-foreground">
+                          {field.label} (ระดับ/คะแนน)
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            aria-label={`${field.label}ของ${student.name}`}
+                            value={entry[`${field.key}_level` as keyof SkillEntry] as string}
+                            onChange={(e) =>
+                              updateEntry(student.id, {
+                                [`${field.key}_level`]: e.target.value as SkillLevel,
+                              } as Partial<SkillEntry>)
+                            }
+                            className="h-9 flex-1 rounded-lg border border-input bg-background px-2 text-xs font-medium"
+                          >
+                            {SKILL_LEVELS.map((level) => (
+                              <option key={level} value={level}>
+                                {getSkillLevelLabel(level)}
+                              </option>
+                            ))}
+                          </select>
+                          <Input
+                            aria-label={`คะแนน${field.label}ของ${student.name}`}
+                            value={entry[`${field.key}_score` as keyof SkillEntry] as string}
+                            onChange={(e) =>
+                              updateEntry(student.id, {
+                                [`${field.key}_score`]: e.target.value,
+                              } as Partial<SkillEntry>)
+                            }
+                            inputMode="decimal"
+                            placeholder="0-100"
+                            className="h-9 w-24 text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="space-y-1.5">
+                      <span className="block text-xs font-medium text-muted-foreground">หมายเหตุ</span>
+                      <Input
+                        aria-label={`หมายเหตุทักษะของ${student.name}`}
+                        value={entry.remark}
+                        onChange={(e) => updateEntry(student.id, { remark: e.target.value })}
+                        placeholder="เช่น อ่านคล่องขึ้น"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-y border-border bg-muted/30 text-xs font-semibold text-muted-foreground">
@@ -256,7 +318,8 @@ export function BasicSkillsForm({
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
 
       <p className="px-5 py-4 text-xs text-muted-foreground">

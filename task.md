@@ -1,5 +1,129 @@
 # Task Progress
 
+## 2026-09-28 Page-by-Page Fix Batches U1-U7 (442 Tests, 74 Suites)
+
+Status: done. Implemented the page review findings batch by batch:
+1. **U1 links & dead-ends**: staff `/auth/login`→`/login`; behavior fake history/ranking links → honest counts; referrals Thai status labels + `aria-pressed` + cancelled option + classroom label fix (also fixed wrong `grade_level: number` type); parent attendance expandable full list + semantic badges; attendance mobile Thai date; screening 5-dimension copy; empty guards on support/referrals new pages.
+2. **U1d enrollment**: `/students/new` classroom picker → auto-enroll in current semester with honest RLS warnings; 3 new tests.
+3. **U2 honesty**: dashboard filter moved above table + scope copy; referrals metrics on unfiltered base + studentId preserved in search; support 7-day due count + semester name + resources_used rendered; SDQ headers say EWS + filters preserved + name fallback; audit PDPA card honest; reports popular `?type=` links + real empty copy; notification channels actionable + fake sort removed.
+4. **U3 parity**: behavior severity/parent/action fields end-to-end (actions+forms+Thai labels) + category allowlist; gated [id] back/edit; support frozen guard; IDP error keeps plan + warning banner; referrals field errors + aria; SDQ print gated on 25 answers + evaluator pressed; IDP semester preselect.
+5. **U4 a11y**: pressed/labels/tabs/tel/button labels across tracking, attendance, staff, audit, followups, reports, printable; import single-room classroom select (fixes unused setter properly).
+6. **U5 copy**: quick-action plain Thai; `toLocaleString("th-TH")` everywhere; login aura hidden; Thai-only status labels.
+7. **U6 responsive**: IDP mobile progress; mobile numbering offset; basic-skills mobile cards. (Breakpoint `md`/`lg` split intentionally left — both valid.)
+8. **U7 states**: referrals real errors; notification limit clamp; screening try/catch.
+9. Repairs found by gates: `text-[11px]` leftovers, import unused vars, `use-server` const export lesson re-applied (behavior labels live in `lib/`), SDQ print test updated to new behavior.
+10. Verification: `tsc` 0, `eslint` 0/0, `vitest --pool=forks --maxWorkers=2` 74/442, `next build`, `audit` 0 vuln.
+
+## PAGE-BY-PAGE REVIEW 2026-09-28 (4 parallel agents, samples verified by lead)
+
+Method: 4 explore agents × route groups, then lead verified high-impact claims
+(`✓` = lead-verified in code). Overlaps with NEXT UX list below are merged, not duplicated.
+
+### Verdict ledger (OK = 2 pages, rest NEEDS-WORK)
+- `/` NEEDS-WORK — filter below table + cards ignore classroom filter ✓
+- `/students` NEEDS-WORK — featured panel not interactive + duplicate filters + status-link mismatch
+- `/students/[id]` NEEDS-WORK — header overflow on mobile + silent nulls + `Priority score` EN
+- `/students/new` NEEDS-WORK — no classroom/semester on create (orphan risk)
+- `/students/[id]/edit` NEEDS-WORK — dual status paths (dropdown vs archive buttons)
+- `/students/import` NEEDS-WORK — copy says CSV-only + hardcoded year 2567 + toast-only errors
+- `/attendance` NEEDS-WORK — no-classroom dead-end + tone system mismatch + mobile/desktop asymmetry
+- `/behavior` NEEDS-WORK — "ดูประวัติ/อันดับทั้งหมด" → `/behavior/record` (create form) ✓
+- `/behavior/[id]` NEEDS-WORK — back/edit buttons ungated per role + related rows not links
+- `/behavior/record` NEEDS-WORK — form lacks severity/parent fields the detail shows; category raw EN
+- `/academics` NEEDS-WORK — filters below analytics bar + basic-skills table no mobile cards
+- `/home-visits` NEEDS-WORK — label drift (housing options differ new/edit/list) + clear-filter misses studentId
+- `/home-visits/new`, `/[id]`, `/[id]/edit` NEEDS-WORK — copy drift + create/edit field mismatch (mostly fixed 2026-09-28 batch; re-verify labels)
+- `/support` NEEDS-WORK — due-count ≠ 7-day + student picker below content + `?studentId` fallback silent
+- `/support/new` NEEDS-WORK — no try/catch (throw = crash) + H1 mentions ส่งต่อ (referral overlap)
+- `/support/[id]` NEEDS-WORK — raw `semester_id` UUID ✓ + `resources_used`/`next_followup_date` collected but never rendered
+- `/support/[id]/edit` NEEDS-WORK — no frozen guard (IDP locks completed/cancelled)
+- `/development-plans` NEEDS-WORK — progress/creator columns hidden on mobile + `?studentId` filter has no UI
+- `/development-plans/new` OK — guards complete (only: no semester preselect)
+- `/development-plans/[id]` NEEDS-WORK — sub-load failure discards loaded plan; activities tab read-only
+- `/development-plans/[id]/edit` OK — frozen/permission guards correct
+- `/referrals` NEEDS-WORK — silent errors as empty + metrics computed on filtered list + no status UI
+- `/referrals/new` NEEDS-WORK — native selects (vs support's Select) + top-banner errors only + no crash guard
+- `/referrals/[id]` NEEDS-WORK — errors → 404 + no cancelled option + raw status + `id.slice(0,8)` doc number
+- `/risk-analysis` NEEDS-WORK — error renders zero-charts as normal + `md` vs `lg` breakpoint split
+- `/reports` NEEDS-WORK — popular links all dead (`/reports` no `?type=`) + delete icon missing aria-label + fake loading copy
+- `/notifications` NEEDS-WORK — filters in right rail (drops last on stack) + sidebar/filters type-list duplicated + fake sort control + LINE/Email dead info
+- `/settings`, `/settings/*` NEEDS-WORK — staff `href="/auth/login"` broken ✓ + counselor gating mismatch + temp password plaintext + audit `100%` hardcode + `div onClick` expand + semester_3 label bug
+- `/screening`, `/screening/sdq*` NEEDS-WORK — no try/catch + 2/3 module links mislead + EWS score under SDQ header + print-before-complete + evaluator buttons no aria-pressed
+- `/login*` NEEDS-WORK — no signup path + forgot redirect target must be verified + decorative aura lacks aria-hidden
+- `/parent*` NEEDS-WORK — errors swallowed as empty + attendance cut at 10 with no more-link + single-tone badges
+
+### Fix batches (implementation order — supersedes scattered lists)
+- [ ] **U1 broken links & dead-ends (P1)**: staff `/auth/login`→`/login` ✓; behavior 2 links ✓; students/new classroom picker; attendance no-classroom empty-state with picker link; screening 5-dimension/academics links; referrals cancelled option + status UI; parent attendance more-link; support/new + referrals/new try/catch
+- [ ] **U2 data honesty (P1)**: dashboard filter scope (cards must respect classroom or copy must say school-wide) ✓; referrals metrics on unfiltered base; support due-count = 7-day + render `resources_used`/`next_followup_date` + semester label (not UUID); sdq column shows real SDQ score; audit remove `100%`; reports popular `?type=` links + honest insights copy; notification remove fake sort + channel dead info
+- [ ] **U3 create/edit parity (P1)**: behavior category Select both sides + severity/parent fields in record form; support frozen guard (match IDP); IDP error path keeps loaded plan; referrals per-field errors + Select component; sdq disable print until complete + evaluator aria-pressed; IDP new preselect current semester
+- [ ] **U4 a11y pass (P1/P2)**: `aria-pressed` everywhere toggles live (tracking-table, attendance filter, referral type+status, sdq evaluator); icon-button labels (guardian edit, print X, followup delete, report delete); real `<label>` for search/select inputs (home-visits q, staff search, audit selects, followup form htmlFor); audit expand keyboard+role; tab roles in staff-manager; tel: in tables
+- [ ] **U5 copy/Thai (P2)**: quick-action jargon; support/new H1; import copy + year 2567→dynamic; status bilingual labels; `toLocaleString("th-TH")` everywhere; emoji counts→badges; verify forgot redirect route; aura `aria-hidden`
+- [ ] **U6 responsive (P2)**: unify `md`/`lg` split breakpoint; basic-skills mobile cards; IDP keep progress on mobile (stacked rows, not hidden); create-report fits `max-w-md`; tracking-table numbering per page
+- [ ] **U7 states (P2)**: skeletons on heavy tables; referrals real error vs empty; parent/IDP don't swallow errors; screening try/catch; notification `limit` clamp
+
+### Keep (from all 4 agents, unanimous)
+- Server-first data, Thai labels, PageHeader/breadcrumb pattern, skeleton LoadingState, honest EmptyStates where present, focus-visible rings, overflow-auto tables, 64×48 bottom nav, StatusBadge icon+color (not color-only)
+
+## SYSTEM REVIEW 2026-09-28 (analysis only, no code changed)
+
+### ภาพรวมตัวเลข
+- Routes: 42 pages (`page.tsx`), API มีแค่ `/api/health` + auth callback — mutations ผ่าน Server Actions ทั้งหมด
+- DB: 28 migration files (0001–0028), RLS ทุกตาราง, RPC ธุรกรรม (guardian/import/risk/report-claim), trigger แจ้งเตือน (risk/absence-3-days/IDP-0024)
+- Tests: 74 files / 423 tests vitest + Playwright functional 18/18 (setup/auth/dashboard/students/attendance/behavior/support)
+- Stack: Next.js 16.3.3, React 19, Tailwind 4, Supabase (Auth/Postgres/Storage/Realtime)
+
+### จุดแข็ง (คงไว้)
+- Server-first + `ActionResult<T>` + tenant scope + Zod สม่ำเสมอทั้งระบบ
+- Design tokens + guardrail tests + detector สะอาด; dual desktop/mobile trees ครบทุกโมดูลหลัก
+- วงจรข้อมูลปิด: EWS คำนวณอัตโนมัติ → แจ้งเตือน → IDP → ประเมิน pre/post → รายงาน PDF/Excel 14 แบบ
+
+### ความเสี่ยง/หนี้ (เรียงตามผลกระทบ)
+1. **Kindergarten (0028) ต่อไม่จบ**: DB/types/action รับ k1-k3 แล้ว แต่ `gradeLabels` (formatters), `GRADE_LABELS` (subjects-panel), `GRADE_LEVELS` dropdown (academic-forms), zod บรรทัด `academic-admin.actions.ts:411` ยังไม่มี k — ห้องอนุบาลสร้างได้แต่แสดงผล/เลือกไม่ครบ
+2. **Report worker ไม่ durable**: ใช้ `after()` — ถ้า instance ดับระหว่างสร้างไฟล์ งานค้าง `running` (มี stale recovery ช่วย แต่ไม่ใช่คิวจริง)
+3. **Dual-tree maintenance ×2**: ทุกจอฟีเจอร์ใหม่ต้องทำ desktop+mobile สองรอบ (เช่น preferences/filter ที่เพิ่งทำ)
+4. **Test env เปราะ**: vitest ต้อง `--pool=forks --maxWorkers=2` บนเครื่องนี้, Playwright ต้อง seed + env override (`.env.local` ชี้ Cloud แต่ e2e ใช้ local)
+5. **Docs stale**: `CONTEXT.md` และ roadmap หลายไฟล์ยังอ้างเวอร์ชัน/โครงเก่า
+
+### แผน Phase ถัดไป
+#### Phase A — Kindergarten completion (เล็ก, ชัด)
+- [ ] เติม k1-k3 ใน `gradeLabels`, `GRADE_LABELS`, `GRADE_LEVELS` + zod `academic-admin.actions.ts:411`
+- [ ] test: formatter labels + classroom create ด้วย grade k1
+- [ ] ตรวจ executive ordering/radar กับห้องอนุบาล
+
+#### Phase B — UX/UI polish (list อยู่ในหัวข้อ NEXT ด้านล่าง — ทำก่อน release)
+
+#### Phase C — Hardening & deploy
+- [ ] ตัดสินใจ report worker: pg_cron บน Cloud (มี schedule pattern จาก 0024 แล้ว) หรือคง `after()` + จด runbook
+- [ ] Apply 0026–0028 บน target + `db:types` + ตรวจ `cron.job` (idp-due-reminders)
+- [ ] ตั้งค่า vitest pool/CI + Playwright env ให้รันได้คำสั่งเดียว
+- [ ] ผูก LINE (รอ credentials)
+
+#### Phase D — Future (ตาม REQUIREMENTS Phase 2)
+- [ ] Offline PWA, AI risk prediction, multi-school, สพท. dashboard
+
+## NEXT: UX/UI Polish Pass (planned 2026-09-28, not started)
+
+Source: `$impeccable audit` review of `src/app` + `src/components` (detector `[]` clean).
+Score: **15/20 Good** — A11y 3, Performance 3, Theming 3, Responsive 3, Anti-patterns 3.
+No P0. Verdict: ไม่ใช่ AI slop — vocabulary ตรงกันทั้งระบบ (PageHeader/skeleton/EmptyState/StatusBadge), แต่มีจุดบอดเรื่อง dark mode บน mobile risk, ฟิลเตอร์วางใต้เนื้อหาที่มันกรอง, และปุ่มไอคอนเล็กเกินบนมือถือ.
+
+### P1 (fix before release)
+- [ ] **Dashboard filter placement**: `DashboardClassroomFilter` อยู่ใต้ `TrackingTable` ที่มันกรอง (`src/app/(dashboard)/page.tsx:126-134`) — ย้ายขึ้นเหนือตาราง/เข้า PageHeader actions หรือ sticky toolbar
+- [ ] **Dark-mode gaps**: `mobile-risk-guidelines.tsx` (4 cards `bg-*-50/80` ไม่มี `dark:`), `mobile-overall-risk.tsx:57-65`, `layout.tsx:50` (`bg-slate-50/70`), ลบ dead fields `iconColor/iconBg/iconBorder/selectedBorder` ใน `desktop-create-report.tsx:26-108`
+- [ ] **Touch targets <44px**: ปุ่มไอคอน `size-7` ใน `notification-delete-button.tsx:47`, `top-risk-students.tsx:86`, table row actions — ขยาย hit area บน coarse pointer (`min-h-11 min-w-11` หรือ hit-slop)
+
+### P2 (next pass)
+- [ ] **Quick-action subtitles ศัพท์ราชการ**: "เวลาเรียน 80% (มส.)", "หลักฐาน สพฐ. 6 หมวด", "การให้คำปรึกษา บร.", "เอกสารทางการ 9 ฉบับ" (`quick-actions-ribbon.tsx:14-49`) — เขียนใหม่เป็นภาษาครู
+- [ ] **Emoji counts**: `🔴🟡🟢` ใน `executive-insights.tsx:181` — แทนด้วย StatusBadge/dot + ตัวเลข
+- [ ] **Card hover lift**: `hover:-translate-y-0.5` ใน `summary-cards.tsx:33`, `quick-actions-ribbon.tsx:60` — เหลือแค่ border/shadow (motion ต้องสื่อ state)
+
+### P3 (if time)
+- [ ] ตรวจ `sidebar.tsx:119` (`bg-white/10`) ใน light mode ถ้า sidebar ไม่ได้ dark-only
+- [ ] Empty-state audit ทุก list ว่า "สอนใช้" จริง ไม่ใช่แค่ "ไม่มีข้อมูล"
+
+### Keep (ห้ามถอย)
+- PageHeader h1 + breadcrumbs + skeleton LoadingState + honest EmptyState + focus-visible rings + ตาราง `overflow-auto` + bottom nav 64×48px
+
 ## 2026-09-28 P0-P2 Requirement Gap Closure (423 Tests, 74 Suites)
 
 Status: done. Closed every unfinished Must/Should/Could item from the 2026-09-27 audit:

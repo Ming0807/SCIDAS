@@ -13,7 +13,7 @@ import {
   getBehaviorTypeLabel,
   type BehaviorRecordItem,
 } from "@/lib/server/behavior-read-models"
-import { formatGradeLevel } from "@/lib/student-care-formatters"
+import { getBehaviorCategoryLabel, getBehaviorSeverityLabel } from "@/lib/behavior-constants"
 import { cn } from "@/lib/utils"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 
@@ -52,17 +52,20 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
   const isPositive = record.behaviorType === "positive"
   const isNegative = record.behaviorType === "negative"
   const statusTone = isPositive ? "success" : isNegative ? "danger" : "neutral"
+  const canEditRecord =
+    context.role === "admin" ||
+    Boolean(context.profileId && record.reportedById === context.profileId)
 
   return (
     <PageShell>
       {/* Back link */}
-              {(context.role === "admin" || Boolean(context.profileId && record.reportedById === context.profileId)) ? <Link
+      <Link
         href="/behavior"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
         กลับไปภาพรวมพฤติกรรม
-              </Link> : null}
+      </Link>
 
       {/* Record detail card */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-6 mb-6">
@@ -79,7 +82,7 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
             classroom={
               record.studentClass
                 ? `ชั้น ${record.studentClass}`
-                : formatGradeLevel("ไม่ระบุ")
+                : "-"
             }
           />
           <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
@@ -88,13 +91,15 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
               label={getBehaviorTypeLabel(record.behaviorType)}
               size="default"
             />
-            <Link
-              href={`/behavior/${record.id}/edit`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-            >
-              <Pencil className="h-4 w-4" aria-hidden="true" />
-              แก้ไข
-            </Link>
+            {canEditRecord ? (
+              <Link
+                href={`/behavior/${record.id}/edit`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                แก้ไข
+              </Link>
+            ) : null}
           </div>
         </div>
 
@@ -131,7 +136,7 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">หมวดหมู่:</span>
               <span className="font-medium text-foreground">
-                {record.category}
+                {getBehaviorCategoryLabel(record.category)}
               </span>
             </div>
           ) : null}
@@ -139,7 +144,7 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">ระดับความรุนแรง:</span>
               <span className="font-medium text-foreground">
-                {record.severity}
+                {getBehaviorSeverityLabel(record.severity)}
               </span>
             </div>
           ) : null}

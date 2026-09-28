@@ -5,18 +5,15 @@ import Link from "next/link"
 import {
   AlertCircle,
   AlertTriangle,
-  ArrowRight,
   Building2,
   CheckCircle2,
   CheckSquare,
-  ChevronRight,
   Eye,
   FileSpreadsheet,
   FileText,
   Layers,
   Loader2,
   Plus,
-  RefreshCw,
   ShieldCheck,
   Sparkles,
   Square,
@@ -33,7 +30,6 @@ import type {
   ParseImportResult,
   MultiGroupParseResult,
   ParsedStudentGroup,
-  ParsedStudentRow,
   InferredRoomInfo,
 } from "@/lib/student-import-parser"
 import {
@@ -620,9 +616,10 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
           <div>
             <label className="block text-sm font-medium">โหมดการแสดงผลและการนำเข้า</label>
-            <div className="mt-1.5 flex items-center rounded-lg border border-border bg-muted/30 p-1">
+            <div className="mt-1.5 flex items-center rounded-lg border border-border bg-muted/30 p-1" role="group" aria-label="โหมดการนำเข้า">
               <button
                 type="button"
+                aria-pressed={importMode === "batch"}
                 onClick={() => setImportMode("batch")}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                   importMode === "batch"
@@ -635,6 +632,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               </button>
               <button
                 type="button"
+                aria-pressed={importMode === "single"}
                 onClick={() => setImportMode("single")}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                   importMode === "single"
@@ -647,6 +645,25 @@ export function StudentImportClient({ context }: { context: ImportContextData })
               </button>
             </div>
           </div>
+          {importMode === "single" ? (
+            <div className="mt-4">
+              <label htmlFor="singleRoomClassroom" className="block text-sm font-medium">
+                ห้องเรียนเป้าหมาย (โหมดห้องเดี่ยว)
+              </label>
+              <select
+                id="singleRoomClassroom"
+                value={selectedClassroomId}
+                onChange={(e) => setSelectedClassroomId(e.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring sm:max-w-xs"
+              >
+                {classroomsList.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -936,7 +953,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                           <div>
                             <span className="font-semibold text-foreground">{group.groupName}</span>
                             {group.inferred && (
-                              <span className="ml-2 inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-mono font-medium text-muted-foreground">
+                              <span className="ml-2 inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-mono font-medium text-muted-foreground">
                                 {group.inferred.thaiName}
                               </span>
                             )}
@@ -991,19 +1008,19 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-1.5 text-xs">
                           {validCount > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                               <CheckCircle2 className="size-3" />
                               พร้อมนำเข้า {validCount}
                             </span>
                           )}
                           {existingInDbCount > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
                               <AlertCircle className="size-3" />
                               มีเดิมในระบบ {existingInDbCount}
                             </span>
                           )}
                           {invalidCount > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-xs font-medium text-destructive">
                               <AlertTriangle className="size-3" />
                               ข้อผิดพลาด {invalidCount}
                             </span>

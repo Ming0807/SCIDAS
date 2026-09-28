@@ -22,6 +22,7 @@ import {
   StatusBadge,
 } from "@/components/dashboard"
 import { buttonVariants } from "@/components/ui/button"
+import { ErrorState } from "@/components/feedback/error-state"
 import { Input } from "@/components/ui/input"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
@@ -85,12 +86,22 @@ export default async function ReferralsPage({
   })
 
   const referrals = result.ok && result.data ? result.data : []
+  const listError = result.ok ? null : result.message
+
+  // Metrics always reflect the full semester scope, never the active filter.
+  const baseResult = await getReferralsList({}).catch(() => result)
+  const baseReferrals = baseResult.ok && baseResult.data ? baseResult.data : referrals
 
   // Calculate metrics
-  const total = referrals.length
-  const internalCount = referrals.filter((r) => r.referral_type === "internal").length
-  const externalCount = referrals.filter((r) => r.referral_type === "external").length
-  const completedCount = referrals.filter((r) => r.status === "completed").length
+  const total = baseReferrals.length
+  const internalCount = baseReferrals.filter((r) => r.referral_type === "internal").length
+  const externalCount = baseReferrals.filter((r) => r.referral_type === "external").length
+  const completedCount = baseReferrals.filter((r) => r.status === "completed").length
+
+  const bannerStudent = referrals[0]
+  const bannerStudentLabel = bannerStudent?.student_name
+    ? `${bannerStudent.student_name} (${bannerStudent.student_code ?? "รหัส"})`
+    : baseReferrals.find((r) => r.student_id === selectedStudentId)?.student_name ?? "นักเรียนที่เลือก"
 
   return (
     <PageShell size="wide" spacing="default">
@@ -160,7 +171,7 @@ export default async function ReferralsPage({
         <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-primary">กรองเฉพาะเคสส่งต่อของนักเรียน:</span>
-            <span>{referrals[0]?.student_name ? `${referrals[0].student_name} (${referrals[0].student_code ?? "รหัส"})` : selectedStudentId}</span>
+            <span>{bannerStudentLabel}</span>
           </div>
           <Link href="/referrals" className="font-medium text-primary hover:underline">
             ล้างตัวกรอง (แสดงทั้งหมด)
@@ -208,6 +219,9 @@ export default async function ReferralsPage({
           <form method="GET" className="flex items-center gap-2 max-w-sm w-full sm:w-auto">
             <input type="hidden" name="type" value={selectedType} />
             <input type="hidden" name="status" value={selectedStatus} />
+            {selectedStudentId ? (
+              <input type="hidden" name="studentId" value={selectedStudentId} />
+            ) : null}
             <div className="relative w-full">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
               <Input
@@ -221,7 +235,14 @@ export default async function ReferralsPage({
         </div>
 
         {/* Referrals List Table */}
-        {referrals.length === 0 ? (
+        {listError ? (
+          <div className="p-8">
+            <ErrorState
+              title="โหลดรายการส่งต่อไม่ได้"
+              description={listError}
+            />
+          </div>
+        ) : referrals.length === 0 ? (
           <div className="p-12 text-center">
             <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
               <Share2 className="size-6" />

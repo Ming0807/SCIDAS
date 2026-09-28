@@ -168,6 +168,7 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                           disabled={isPending}
                           className="inline-flex items-center p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                           title="ลบรายงาน"
+                          aria-label={`ลบรายงาน ${job.title}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

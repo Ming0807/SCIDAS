@@ -277,9 +277,11 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
       </div>
 
       {/* Tabs Switcher */}
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-border" role="tablist" aria-label="จัดการบุคลากร">
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === "directory"}
           onClick={() => setActiveTab("directory")}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "directory"
@@ -292,6 +294,8 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === "assignments"}
           onClick={() => setActiveTab("assignments")}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
             activeTab === "assignments"
@@ -406,7 +410,11 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <label htmlFor="staff-search" className="sr-only">
+                ค้นหาบุคลากร
+              </label>
               <input
+                id="staff-search"
                 type="text"
                 placeholder="ค้นหาตามชื่อ, อีเมล, กลุ่มสาระ หรือตำแหน่ง..."
                 value={search}

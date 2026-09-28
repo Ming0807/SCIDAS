@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { getStudents } from "@/app/actions/student.actions"
 import { PageHeader, PageShell } from "@/components/dashboard"
 import { buttonVariants } from "@/components/ui/button"
+import { EmptyState } from "@/components/feedback/empty-state"
 import { cn } from "@/lib/utils"
 import { ReferralForm } from "../_components/referral-form"
 
@@ -42,10 +43,22 @@ export default async function NewReferralPage({
         }
       />
 
-      <ReferralForm
-        students={students}
-        preselectedStudentId={preselectedStudentId}
-      />
+      {students.length === 0 ? (
+        <EmptyState
+          title="ยังไม่มีข้อมูลนักเรียน"
+          description="เพิ่มข้อมูลนักเรียนก่อนสร้างเคสส่งต่อ"
+          action={
+            <Link href="/students/new" className={cn(buttonVariants())}>
+              เพิ่มนักเรียน
+            </Link>
+          }
+        />
+      ) : (
+        <ReferralForm
+          students={students}
+          preselectedStudentId={preselectedStudentId}
+        />
+      )}
     </PageShell>
   )
 }

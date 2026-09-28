@@ -83,13 +83,16 @@ export function MobileStudents({
   canEdit: boolean
 }) {
   const getPageHref = createStudentPageHref(filters)
+  const rowOffset = (page - 1) * pageSize
   return (
     <MobileList
       items={students}
       getItemKey={(student) => student.id}
       title="รายชื่อนักเรียน"
       summary={`ทั้งหมด ${totalFiltered.toLocaleString("th-TH")} คน`}
-      renderItem={(student, index) => <MobileStudentRow student={student} index={index} canEdit={canEdit} />}
+      renderItem={(student, index) => (
+        <MobileStudentRow student={student} index={rowOffset + index} canEdit={canEdit} />
+      )}
       emptyState={
         <EmptyState
           size="compact"

@@ -28,7 +28,7 @@ export default async function StaffManagementPage() {
           description="กรุณาเข้าสู่ระบบเพื่อจัดการข้อมูลบุคลากรและครูประจำชั้น"
           action={
             <Link
-              href="/auth/login"
+              href="/login"
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
               เข้าสู่ระบบ

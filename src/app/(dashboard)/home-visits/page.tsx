@@ -129,7 +129,11 @@ function HomeVisitFilters({
         search={
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <label htmlFor="home-visit-search" className="sr-only">
+              ค้นหาบันทึกเยี่ยมบ้าน
+            </label>
             <input
+              id="home-visit-search"
               type="text"
               name="q"
               defaultValue={filters.q}

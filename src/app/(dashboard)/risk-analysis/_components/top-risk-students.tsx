@@ -79,15 +79,15 @@ const columns: Array<DataTableColumn<StudentWorklistItem>> = [
     id: "action",
     header: <span className="sr-only">เปิด</span>,
     align: "right",
-    cell: (student) => (
-      <Link
-        href={`/students/${student.studentId}`}
-        aria-label={`เปิดข้อมูล ${student.fullName}`}
-        className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-      >
-        <ChevronRight className="size-4" />
-      </Link>
-    ),
+      cell: (student) => (
+        <Link
+          href={`/students/${student.studentId}`}
+          aria-label={`เปิดข้อมูล ${student.fullName}`}
+          className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <ChevronRight className="size-4" />
+        </Link>
+      ),
   },
 ]
 

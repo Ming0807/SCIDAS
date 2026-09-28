@@ -21,7 +21,15 @@ import {
 } from "@/app/actions/referral.actions"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { formatThaiShortDate } from "@/lib/student-care-formatters"
+import { formatGradeLevel, formatThaiShortDate } from "@/lib/student-care-formatters"
+
+const referralStatusLabels: Record<SupportStatus, string> = {
+  pending: "รอดำเนินการ",
+  referred: "รอหน่วยงานปลายทางตอบรับ",
+  in_progress: "อยู่ระหว่างประสานงาน",
+  completed: "เสร็จสมบูรณ์",
+  cancelled: "ยกเลิก",
+}
 
 export function ReferralDetailView({
   referral,
@@ -54,7 +62,7 @@ export function ReferralDetailView({
   const student = referral.student
   const studentName = student ? `${student.first_name} ${student.last_name}` : "ไม่ระบุชื่อ"
   const classroomLabel = student?.classroom
-    ? `ชั้นมัธยมศึกษาปีที่ ${student.classroom.grade_level}/${student.classroom.section}`
+    ? `${formatGradeLevel(student.classroom.grade_level)}/${student.classroom.section}`
     : ""
 
   return (
@@ -71,7 +79,7 @@ export function ReferralDetailView({
           </Link>
           <span className="text-xs text-muted-foreground">·</span>
           <span className="text-xs text-muted-foreground">
-            สถานะปัจจุบัน: <strong className="text-foreground">{selectedStatus}</strong>
+            สถานะปัจจุบัน: <strong className="text-foreground">{referralStatusLabels[selectedStatus]}</strong>
           </span>
         </div>
 
@@ -260,11 +268,12 @@ export function ReferralDetailView({
           <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
             <h2 className="text-sm font-semibold text-foreground">จัดการสถานะการส่งต่อ</h2>
 
-            <div className="space-y-2">
+            <div className="space-y-2" role="group" aria-label="เปลี่ยนสถานะการส่งต่อ">
               <button
                 type="button"
                 onClick={() => handleUpdateStatus("referred")}
                 disabled={isPending}
+                aria-pressed={selectedStatus === "referred" || selectedStatus === "pending"}
                 className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
                   selectedStatus === "referred" || selectedStatus === "pending"
                     ? "border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800"
@@ -279,6 +288,7 @@ export function ReferralDetailView({
                 type="button"
                 onClick={() => handleUpdateStatus("in_progress")}
                 disabled={isPending}
+                aria-pressed={selectedStatus === "in_progress"}
                 className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
                   selectedStatus === "in_progress"
                     ? "border-blue-400 bg-blue-50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800"
@@ -293,6 +303,7 @@ export function ReferralDetailView({
                 type="button"
                 onClick={() => handleUpdateStatus("completed")}
                 disabled={isPending}
+                aria-pressed={selectedStatus === "completed"}
                 className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
                   selectedStatus === "completed"
                     ? "border-emerald-400 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800"
@@ -301,6 +312,21 @@ export function ReferralDetailView({
               >
                 <div className="font-semibold">3. การส่งต่อเสร็จสมบูรณ์</div>
                 <div className="text-muted-foreground mt-0.5">ได้รับการช่วยเหลือเสร็จสิ้น มีผลประเมินชัดเจน</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleUpdateStatus("cancelled")}
+                disabled={isPending}
+                aria-pressed={selectedStatus === "cancelled"}
+                className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
+                  selectedStatus === "cancelled"
+                    ? "border-rose-400 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-800"
+                    : "border-border bg-card hover:bg-muted/60 text-foreground"
+                }`}
+              >
+                <div className="font-semibold">ยกเลิกการส่งต่อ</div>
+                <div className="text-muted-foreground mt-0.5">ยุติรายการนี้โดยไม่ส่งต่อ (ยังคงเก็บประวัติไว้)</div>
               </button>
             </div>
 

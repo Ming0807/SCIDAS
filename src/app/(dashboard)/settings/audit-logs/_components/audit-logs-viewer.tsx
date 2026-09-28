@@ -107,7 +107,11 @@ export function AuditLogsViewer({
       <div className="rounded-2xl border border-border bg-card p-4 shadow-xs flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           {/* Action Filter */}
+          <label htmlFor="audit-action-filter" className="sr-only">
+            กรองตามกิจกรรม
+          </label>
           <select
+            id="audit-action-filter"
             value={filterAction}
             onChange={(e) => setFilterAction(e.target.value)}
             className="h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-ring"
@@ -122,7 +126,11 @@ export function AuditLogsViewer({
           </select>
 
           {/* Table Filter */}
+          <label htmlFor="audit-table-filter" className="sr-only">
+            กรองตามตารางข้อมูล
+          </label>
           <select
+            id="audit-table-filter"
             value={filterTable}
             onChange={(e) => setFilterTable(e.target.value)}
             className="h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-ring"
@@ -167,9 +175,11 @@ export function AuditLogsViewer({
 
               return (
                 <div key={log.id} className="transition-colors hover:bg-muted/30">
-                  <div
+                  <button
+                    type="button"
                     onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none"
+                    aria-expanded={isExpanded}
+                    className="w-full p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none text-left"
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       <div
@@ -230,7 +240,7 @@ export function AuditLogsViewer({
                         <ChevronRight className="size-4 text-muted-foreground" />
                       )}
                     </div>
-                  </div>
+                  </button>
 
                   {/* Expanded JSON Data Diff View */}
                   {isExpanded ? (

@@ -26,6 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import type { ActionResult } from "@/lib/server/action-result"
 import type { BehaviorRecordItem } from "@/lib/server/behavior-read-models"
+import { behaviorCategoryOptions, behaviorSeverityOptions } from "@/lib/behavior-constants"
 
 type StudentOption = {
   id: string
@@ -105,15 +106,51 @@ export function BehaviorEditForm({ record, students }: BehaviorEditFormProps) {
             <label htmlFor="category" className="text-sm font-medium">
               หมวดหมู่
             </label>
-            <Input
-              id="category"
-              name="category"
-              defaultValue={record.category ?? ""}
-              maxLength={100}
-              placeholder="เช่น ระเบียบวินัย หรือมีน้ำใจช่วยเหลือ"
-              aria-invalid={!!fieldErrors?.category}
-            />
+            <Select name="category" defaultValue={record.category ?? ""}>
+              <SelectTrigger id="category" className="w-full" aria-invalid={!!fieldErrors?.category}>
+                <SelectValue placeholder="เลือกหมวดหมู่..." />
+              </SelectTrigger>
+              <SelectContent>
+                {behaviorCategoryOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FieldError message={fieldErrors?.category?.[0]} />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="severity" className="text-sm font-medium">
+                ระดับความรุนแรง
+              </label>
+              <Select name="severity" defaultValue={record.severity ?? "low"}>
+                <SelectTrigger id="severity" className="w-full" aria-invalid={!!fieldErrors?.severity}>
+                  <SelectValue placeholder="เลือกระดับ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {behaviorSeverityOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError message={fieldErrors?.severity?.[0]} />
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="parent_notified"
+                  defaultChecked={record.parentNotified}
+                  className="size-4 rounded border-input"
+                />
+                แจ้งผู้ปกครองแล้ว
+              </label>
+            </div>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -162,6 +199,21 @@ export function BehaviorEditForm({ record, students }: BehaviorEditFormProps) {
               aria-invalid={!!fieldErrors?.description}
             />
             <FieldError message={fieldErrors?.description?.[0]} />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="action_taken" className="text-sm font-medium">
+              การดำเนินการ (ถ้ามี)
+            </label>
+            <Textarea
+              id="action_taken"
+              name="action_taken"
+              defaultValue={record.actionTaken ?? ""}
+              placeholder="เช่น ตักเตือนด้วยวาจา เชิญผู้ปกครองมาพบ..."
+              className="min-h-20 resize-y"
+              aria-invalid={!!fieldErrors?.action_taken}
+            />
+            <FieldError message={fieldErrors?.action_taken?.[0]} />
           </div>
 
           <ActionFeedback result={state} />

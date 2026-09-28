@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { getStudents } from "@/app/actions/student.actions"
 import { SupportCaseForm } from "@/app/(dashboard)/support/_components/support-case-form"
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/feedback/empty-state"
 
 type NewSupportCasePageProps = {
   searchParams?: Promise<{
@@ -25,12 +26,24 @@ export default async function NewSupportCasePage({
           <ArrowLeft aria-hidden="true" />
         </Button>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">เปิดเคสส่งต่อและช่วยเหลือ</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">เปิดเคสช่วยเหลือ</h1>
           <p className="mt-1 text-sm text-muted-foreground">สร้างบันทึกการช่วยเหลือสำหรับนักเรียนในโรงเรียน</p>
         </div>
       </header>
 
-      <SupportCaseForm students={students} defaultStudentId={preselectedStudentId} />
+      {students.length === 0 ? (
+        <EmptyState
+          title="ยังไม่มีข้อมูลนักเรียน"
+          description="เพิ่มข้อมูลนักเรียนก่อนเปิดเคสช่วยเหลือ"
+          action={
+            <Button nativeButton={false} render={<Link href="/students/new" />}>
+              เพิ่มนักเรียน
+            </Button>
+          }
+        />
+      ) : (
+        <SupportCaseForm students={students} defaultStudentId={preselectedStudentId} />
+      )}
     </main>
   )
 }

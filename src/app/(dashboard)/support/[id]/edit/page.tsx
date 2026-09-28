@@ -39,6 +39,22 @@ export default async function SupportCaseEditPage({ params }: SupportCaseEditPag
     )
   }
 
+  if (caseResult.data.status === "completed" || caseResult.data.status === "cancelled") {
+    return (
+      <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
+        <ErrorState
+          title="เคสนี้ปิดแล้ว ไม่สามารถแก้ไขได้"
+          description="เคสที่เสร็จสิ้นหรือยกเลิกแล้วจะถูกล็อก หากต้องดำเนินการต่อ ให้เปลี่ยนสถานะจากหน้ารายละเอียดก่อน"
+          action={
+            <Button nativeButton={false} render={<Link href={`/support/${id}`} />}>
+              กลับไปดูรายละเอียดเคส
+            </Button>
+          }
+        />
+      </main>
+    )
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6 lg:py-8">
       <header className="flex items-start gap-3 sm:items-center">

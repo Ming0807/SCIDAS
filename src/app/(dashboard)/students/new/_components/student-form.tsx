@@ -19,8 +19,8 @@ import type { ActionResult } from "@/lib/server/action-result"
 import { familyStatusOptions } from "@/lib/student-constants"
 
 type StudentFormProps =
-  | { mode: "create"; student?: never }
-  | { mode: "edit"; student: StudentRow }
+  | { mode: "create"; student?: never; classrooms?: Array<{ id: string; name: string }> }
+  | { mode: "edit"; student: StudentRow; classrooms?: never }
 
 function FieldError({ message }: { message?: string }) {
   return message ? (
@@ -30,7 +30,7 @@ function FieldError({ message }: { message?: string }) {
   ) : null
 }
 
-export function StudentForm({ mode, student }: StudentFormProps) {
+export function StudentForm({ mode, student, classrooms }: StudentFormProps) {
   const router = useRouter()
   const action = mode === "create" ? createStudentAction : updateStudentAction
   const [state, formAction, pending] = useActionState<
@@ -368,16 +368,38 @@ export function StudentForm({ mode, student }: StudentFormProps) {
                   defaultValue={student?.status ?? "active"}
                   className="h-8 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm"
                 >
-                  <option value="active">กำลังศึกษา (Active)</option>
-                  <option value="graduated">สำเร็จการศึกษา (Graduated)</option>
-                  <option value="transferred">ย้ายสถานศึกษา (Transferred)</option>
-                  <option value="dropped_out">ออกกลางคัน (Dropped out)</option>
-                  <option value="suspended">พักการเรียน (Suspended)</option>
+                  <option value="active">กำลังศึกษา</option>
+                  <option value="graduated">สำเร็จการศึกษา</option>
+                  <option value="transferred">ย้ายสถานศึกษา</option>
+                  <option value="dropped_out">ออกกลางคัน</option>
+                  <option value="suspended">พักการเรียน</option>
                 </select>
               </div>
             ) : null}
 
             <ActionFeedback result={state} />
+
+            {!isEdit && classrooms && classrooms.length > 0 ? (
+              <div className="space-y-2">
+                <label htmlFor="classroom_id" className="text-sm font-medium">
+                  จัดเข้าห้องเรียน (ไม่บังคับ)
+                </label>
+                <select
+                  id="classroom_id"
+                  name="classroom_id"
+                  defaultValue=""
+                  className="h-8 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="">ยังไม่จัดห้อง (เพิ่มภายหลังได้)</option>
+                  {classrooms.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <FieldError message={fieldErrors?.classroom_id?.[0]} />
+              </div>
+            ) : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
               <Button nativeButton={false} variant="ghost" className="w-full sm:w-auto" render={<Link href={isEdit ? `/students/${student.id}` : "/students"} />}>

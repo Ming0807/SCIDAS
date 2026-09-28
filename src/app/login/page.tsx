@@ -80,8 +80,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Subtle ambient background aura */}
-      <div className="absolute -top-40 -left-40 size-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 size-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+      <div aria-hidden="true" className="absolute -top-40 -left-40 size-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div aria-hidden="true" className="absolute -bottom-40 -right-40 size-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
 
       <Card className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-lg relative z-10">
         <CardHeader className="text-center pb-4">

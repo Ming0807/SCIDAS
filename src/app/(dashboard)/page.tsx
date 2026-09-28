@@ -121,17 +121,19 @@ export default async function DashboardPage({
             <ActionItems items={dashboard.actionQueue} className="col-span-1 lg:col-span-5" />
           </div>
 
-          {/* Priority Worklist: Immediate Student Interventions */}
-          <div className="w-full">
-            <TrackingTable students={trackedStudents} />
-          </div>
-
+          {/* Classroom/semester scope: filters the worklist table and insights below.
+              Top summary cards always show the whole school. */}
           <DashboardClassroomFilter
             options={insights.classroomOptions}
             activeClassroomId={insights.activeClassroomId}
             semesterOptions={insights.semesterOptions}
             activeSemesterId={insights.activeSemesterId}
           />
+
+          {/* Priority Worklist: Immediate Student Interventions */}
+          <div className="w-full">
+            <TrackingTable students={trackedStudents} />
+          </div>
 
           {/* Executive Analytics: Top lists, factors, classrooms, trend */}
           <ExecutiveInsights insights={insights} />

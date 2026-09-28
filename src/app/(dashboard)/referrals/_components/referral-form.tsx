@@ -36,6 +36,14 @@ const COMMON_EXTERNAL_AGENCIES = [
   "สถานีตำรวจภูธร / เจ้าหน้าที่ฝ่ายปกครอง",
 ]
 
+function FieldError({ message }: { message?: string }) {
+  return message ? (
+    <p className="mt-1 text-xs text-destructive" aria-live="polite">
+      {message}
+    </p>
+  ) : null
+}
+
 export function ReferralForm({
   students,
   preselectedStudentId,
@@ -58,6 +66,8 @@ export function ReferralForm({
 
   const suggestedAgencies =
     referralType === "internal" ? COMMON_INTERNAL_AGENCIES : COMMON_EXTERNAL_AGENCIES
+
+  const fieldErrors = state && !state.ok ? state.fieldErrors : undefined
 
   return (
     <form action={formAction} className="space-y-6">
@@ -86,6 +96,7 @@ export function ReferralForm({
               value={selectedStudentId}
               onChange={(e) => setSelectedStudentId(e.target.value)}
               required
+              aria-invalid={fieldErrors?.student_id ? true : undefined}
               className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-ring"
             >
               <option value="">-- เลือกนักเรียน --</option>
@@ -97,6 +108,7 @@ export function ReferralForm({
                 </option>
               ))}
             </select>
+            <FieldError message={fieldErrors?.student_id?.[0]} />
           </div>
 
           <div>
@@ -106,6 +118,7 @@ export function ReferralForm({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                aria-pressed={referralType === "internal"}
                 onClick={() => {
                   setReferralType("internal")
                   setTargetAgency("")
@@ -121,6 +134,7 @@ export function ReferralForm({
               </button>
               <button
                 type="button"
+                aria-pressed={referralType === "external"}
                 onClick={() => {
                   setReferralType("external")
                   setTargetAgency("")
@@ -143,15 +157,17 @@ export function ReferralForm({
           <label htmlFor="target_agency" className="block text-xs font-medium text-foreground mb-1">
             หน่วยงาน / บุคคล / สถาบันปลายทางที่รับส่งต่อ <span className="text-destructive">*</span>
           </label>
-          <Input
-            id="target_agency"
-            name="target_agency"
-            value={targetAgency}
-            onChange={(e) => setTargetAgency(e.target.value)}
-            placeholder="เช่น งานแนะแนวโรงเรียน หรือ โรงพยาบาลส่งเสริมสุขภาพตำบล..."
-            required
-            className="text-sm rounded-xl"
-          />
+            <Input
+              id="target_agency"
+              name="target_agency"
+              value={targetAgency}
+              onChange={(e) => setTargetAgency(e.target.value)}
+              placeholder="เช่น งานแนะแนวโรงเรียน หรือ โรงพยาบาลส่งเสริมสุขภาพตำบล..."
+              required
+              aria-invalid={fieldErrors?.target_agency ? true : undefined}
+              className="text-sm rounded-xl"
+            />
+            <FieldError message={fieldErrors?.target_agency?.[0]} />
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted-foreground">หน่วยงานแนะนำ:</span>
@@ -219,13 +235,15 @@ export function ReferralForm({
           <label htmlFor="title" className="block text-xs font-medium text-foreground mb-1">
             หัวข้อการส่งต่อนักเรียน <span className="text-destructive">*</span>
           </label>
-          <Input
-            id="title"
-            name="title"
-            placeholder="เช่น ขอส่งต่อนักเรียนเพื่อรับคำปรึกษาด้านอารมณ์และความเครียด"
-            required
-            className="text-sm rounded-xl"
-          />
+            <Input
+              id="title"
+              name="title"
+              placeholder="เช่น ขอส่งต่อนักเรียนเพื่อรับคำปรึกษาด้านอารมณ์และความเครียด"
+              required
+              aria-invalid={fieldErrors?.title ? true : undefined}
+              className="text-sm rounded-xl"
+            />
+            <FieldError message={fieldErrors?.title?.[0]} />
         </div>
 
         <div>
@@ -233,14 +251,16 @@ export function ReferralForm({
             เหตุผลและสภาพปัญหาที่พบ / ข้อมูลจากการคัดกรองหรือเยี่ยมบ้าน{" "}
             <span className="text-destructive">*</span>
           </label>
-          <Textarea
-            id="reason"
-            name="reason"
-            rows={4}
-            placeholder="ระบุพฤติกรรมที่สังเกตเห็น ผลกระทบต่อการเรียน ผลการประเมิน SDQ หรือข้อมูลแวดล้อมที่เป็นข้อบ่งชี้ในการส่งต่อ..."
-            required
-            className="text-sm rounded-xl"
-          />
+            <Textarea
+              id="reason"
+              name="reason"
+              rows={4}
+              placeholder="ระบุพฤติกรรมที่สังเกตเห็น ผลกระทบต่อการเรียน ผลการประเมิน SDQ หรือข้อมูลแวดล้อมที่เป็นข้อบ่งชี้ในการส่งต่อ..."
+              required
+              aria-invalid={fieldErrors?.reason ? true : undefined}
+              className="text-sm rounded-xl"
+            />
+            <FieldError message={fieldErrors?.reason?.[0]} />
         </div>
 
         <div>

@@ -83,6 +83,7 @@ export function HomeVisitPrintableCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsOpen(false)}
+                  aria-label="ปิดหน้าต่างพิมพ์"
                   className="size-8 p-0 text-muted-foreground hover:text-foreground"
                 >
                   <X className="size-4" />

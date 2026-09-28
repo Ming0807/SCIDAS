@@ -51,6 +51,9 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
   const normalCount = worklist.filter((s) => s.riskLevel === "normal").length
   const riskCount = worklist.filter((s) => s.riskLevel === "watch").length
   const problemCount = worklist.filter((s) => s.riskLevel === "high").length
+  const bannerStudent = studentId
+    ? (filteredStudents[0] ?? worklist.find((s) => s.studentId === studentId) ?? null)
+    : null
 
   return (
     <PageShell size="wide" spacing="default">
@@ -147,7 +150,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
             <span className="font-semibold text-primary">ตัวกรองปัจจุบัน:</span>
             {studentId && (
               <span>
-                นักเรียน: {filteredStudents[0]?.fullName ? `${filteredStudents[0].fullName} (${filteredStudents[0].studentCode})` : studentId}
+                นักเรียน: {bannerStudent ? `${bannerStudent.fullName} (${bannerStudent.studentCode})` : "นักเรียนที่เลือก"}
               </span>
             )}
             {riskFilter && (
@@ -185,6 +188,8 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
 
             <form method="GET" className="relative w-full">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              {riskFilter ? <input type="hidden" name="risk" value={riskFilter} /> : null}
+              {studentId ? <input type="hidden" name="studentId" value={studentId} /> : null}
               <Input
                 name="q"
                 defaultValue={query}
@@ -201,8 +206,8 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
               <tr>
                 <th className="px-4 py-3 font-medium min-w-64">นักเรียน</th>
                 <th className="px-4 py-3 font-medium min-w-24">ห้องเรียน</th>
-                <th className="px-4 py-3 font-medium min-w-28">ระดับผลการประเมิน</th>
-                <th className="px-4 py-3 font-medium min-w-24">คะแนนรวม</th>
+                <th className="px-4 py-3 font-medium min-w-28">ระดับความเสี่ยง (EWS)</th>
+                <th className="px-4 py-3 font-medium min-w-24">คะแนน EWS</th>
                 <th className="px-4 py-3 text-right font-medium min-w-44">การดำเนินการ</th>
               </tr>
             </thead>

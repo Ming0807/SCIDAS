@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import type { ActionResult } from "@/lib/server/action-result"
+import { behaviorCategoryOptions, behaviorSeverityOptions } from "@/lib/behavior-constants"
 
 type StudentOption = {
   id: string
@@ -107,15 +108,45 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
                 <SelectValue placeholder="เลือกหมวดหมู่..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="academic">ผลการเรียนโดดเด่น / ทุ่มเท</SelectItem>
-                <SelectItem value="helpfulness">มีน้ำใจช่วยเหลือ</SelectItem>
-                <SelectItem value="discipline">ระเบียบวินัย</SelectItem>
-                <SelectItem value="disruption">ก่อกวนในชั้นเรียน</SelectItem>
-                <SelectItem value="tardiness">มาสาย / ขาดเรียน</SelectItem>
-                <SelectItem value="other">อื่นๆ</SelectItem>
+                {behaviorCategoryOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FieldError message={fieldErrors?.category?.[0]} />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="severity" className="text-sm font-medium">
+                ระดับความรุนแรง
+              </label>
+              <Select name="severity" defaultValue="low">
+                <SelectTrigger id="severity" className="w-full" aria-invalid={!!fieldErrors?.severity}>
+                  <SelectValue placeholder="เลือกระดับ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {behaviorSeverityOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError message={fieldErrors?.severity?.[0]} />
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="parent_notified"
+                  className="size-4 rounded border-input"
+                />
+                แจ้งผู้ปกครองแล้ว
+              </label>
+            </div>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -163,6 +194,20 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
               aria-invalid={!!fieldErrors?.description}
             />
             <FieldError message={fieldErrors?.description?.[0]} />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="action_taken" className="text-sm font-medium">
+              การดำเนินการ (ถ้ามี)
+            </label>
+            <Textarea
+              id="action_taken"
+              name="action_taken"
+              placeholder="เช่น ตักเตือนด้วยวาจา เชิญผู้ปกครองมาพบ..."
+              className="min-h-20 resize-y"
+              aria-invalid={!!fieldErrors?.action_taken}
+            />
+            <FieldError message={fieldErrors?.action_taken?.[0]} />
           </div>
 
           <ActionFeedback result={state} />

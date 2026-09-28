@@ -145,12 +145,7 @@ export function DesktopNotificationList({
     <div className="bg-card rounded-2xl p-5 border border-border shadow-xs flex flex-col h-full">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
         <h3 className="text-sm font-bold text-foreground font-mono tabular-nums">ทั้งหมด {totalCount} รายการ</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">จัดเรียงตาม</span>
-          <span className="rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
-            ล่าสุด
-          </span>
-        </div>
+        <span className="text-xs text-muted-foreground">เรียงล่าสุดก่อนเสมอ</span>
       </div>
 
       {notifications.length === 0 ? (

@@ -5,7 +5,7 @@ import { z } from "zod"
 
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
-import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/current-user"
 import { logAudit } from "@/lib/server/audit-logger"
 import { validFamilyStatuses } from "@/lib/student-constants"
 import { createClient } from "@/utils/supabase/server"
@@ -36,6 +36,7 @@ type StudentFormData = {
 
 export type StudentArchiveStatus = "transferred" | "dropped_out"
 const studentEditors = new Set(["admin", "homeroom_teacher", "counselor"])
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const guardianRelationSchema = z.enum([
   "father",
   "mother",
@@ -203,6 +204,57 @@ export async function getStudentById(id: string) {
   return data
 }
 
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+
+/**
+ * Enrolls a just-created student into the selected classroom for the current
+ * semester. Returns a warning message when enrollment was skipped, or null
+ * when there is nothing to report (no classroom chosen or success).
+ */
+async function tryEnrollNewStudent(
+  client: SupabaseClient,
+  schoolId: string,
+  studentId: string,
+  classroomId: string | null,
+): Promise<string | null> {
+  if (!classroomId) return null
+
+  const { data: classroom } = await client
+    .from("classrooms")
+    .select("id")
+    .eq("id", classroomId)
+    .eq("school_id", schoolId)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (!classroom) {
+    return "เพิ่มนักเรียนสำเร็จ แต่ไม่พบห้องเรียนที่เลือก จึงยังไม่ได้จัดห้อง"
+  }
+
+  const semesterId = await getCurrentSemesterId(schoolId).catch(() => null)
+  if (!semesterId) {
+    return "เพิ่มนักเรียนสำเร็จ แต่ยังไม่มีภาคเรียนปัจจุบัน จึงยังไม่ได้จัดห้อง"
+  }
+
+  const { error } = await client.from("classroom_students").insert({
+    school_id: schoolId,
+    classroom_id: classroomId,
+    student_id: studentId,
+    semester_id: semesterId,
+    is_active: true,
+  })
+
+  if (error) {
+    if (error.code === "42501") {
+      return "เพิ่มนักเรียนสำเร็จ แต่สิทธิ์ของคุณจัดห้องไม่ได้ กรุณาแจ้งครูประจำชั้น"
+    }
+    console.error("Error enrolling new student:", error)
+    return "เพิ่มนักเรียนสำเร็จ แต่จัดห้องไม่สำเร็จ กรุณาจัดห้องภายหลัง"
+  }
+
+  return null
+}
+
 export async function createStudentAction(
   _prev: ActionResult<{ id: string }> | null,
   formData: FormData,
@@ -216,6 +268,10 @@ export async function createStudentAction(
 
     const values = readStudentFormData(formData)
     const fieldErrors = getStudentFieldErrors(values)
+    const rawClassroomId = (formData.get("classroom_id") as string | null)?.trim() || null
+    if (rawClassroomId && !uuidPattern.test(rawClassroomId)) {
+      fieldErrors.classroom_id = ["ห้องเรียนที่เลือกไม่ถูกต้อง"]
+    }
     if (Object.keys(fieldErrors).length > 0) {
       return actionFail("VALIDATION_ERROR", "กรุณาตรวจสอบข้อมูลนักเรียน", { fieldErrors })
     }
@@ -271,10 +327,20 @@ export async function createStudentAction(
       newData: { student_code: values.student_code },
     }).catch(() => {})
 
-    return actionOk("เพิ่มนักเรียนสำเร็จ", {
-      data: { id: data.id },
-      redirectTo: `/students/${data.id}`,
-    })
+    const enrollmentWarning = await tryEnrollNewStudent(
+      client,
+      context.schoolId,
+      data.id,
+      rawClassroomId,
+    )
+
+    return actionOk(
+      enrollmentWarning ?? "เพิ่มนักเรียนสำเร็จ",
+      {
+        data: { id: data.id },
+        redirectTo: `/students/${data.id}`,
+      },
+    )
   } catch (err) {
     return getActionFailure(err)
   }

@@ -61,7 +61,7 @@ export function MobileSummaryCards({
             </span>
           </div>
           <span className="text-lg font-bold text-foreground mb-1 font-mono tabular-nums">
-            {m?.totalStudents?.toLocaleString() ?? "-"}
+            {m?.totalStudents?.toLocaleString("th-TH") ?? "-"}
           </span>
           <span className="text-xs text-muted-foreground mb-3">คนทั้งหมด</span>
         </div>
@@ -93,7 +93,7 @@ export function MobileSummaryCards({
             </span>
           </div>
           <span className="text-lg font-bold text-foreground mb-1 font-mono tabular-nums">
-            {m?.activePlans?.toLocaleString() ?? "-"}
+            {m?.activePlans?.toLocaleString("th-TH") ?? "-"}
           </span>
           <span className="text-xs text-muted-foreground mb-3">
             กำลังดำเนินการ

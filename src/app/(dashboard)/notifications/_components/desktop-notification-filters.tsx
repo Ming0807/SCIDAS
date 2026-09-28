@@ -116,18 +116,21 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
               <span className="text-xs font-medium text-muted-foreground">อีเมล</span>
             </div>
             <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-              ยังไม่เชื่อมต่อ
+              ยังไม่เปิดใช้ในเวอร์ชันนี้
             </span>
           </div>
-          <div className="flex items-center justify-between rounded-lg p-2">
+          <Link
+            href="/settings"
+            className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted/50"
+          >
             <div className="flex items-center gap-3">
               <MessageCircle className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">LINE Notify</span>
+              <span className="text-xs font-medium text-foreground">LINE Notify</span>
             </div>
             <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-              ยังไม่เชื่อมต่อ
+              ยังไม่ผูก · ไปตั้งค่า
             </span>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
