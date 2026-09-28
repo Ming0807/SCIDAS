@@ -182,7 +182,7 @@ export function Header({
         >
           <Search className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">ค้นหาด่วน...</span>
-          <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+          <kbd className="hidden rounded border border-border bg-card px-1.5 py-0.5 font-mono text-xs text-muted-foreground sm:inline">
             Ctrl K
           </kbd>
         </button>

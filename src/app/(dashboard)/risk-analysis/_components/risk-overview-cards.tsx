@@ -30,6 +30,7 @@ export function RiskOverviewCards({
           description="อยู่ในฐานวิเคราะห์ความเสี่ยง"
           icon={Users}
           status="primary"
+          statusLabel="ทั้งหมด"
           className="hover:border-primary/40 transition-colors"
         />
       </Link>

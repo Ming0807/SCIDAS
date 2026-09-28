@@ -115,6 +115,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
             description="แสดงรายชื่อทั้งหมดในระบบ"
             icon={Users}
             status="primary"
+            statusLabel="ทั้งหมด"
             size="compact"
             className={cn(
               "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-xs",
@@ -157,6 +158,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
             description="มีเคส แผน ธง หรือความเสี่ยงสูง"
             icon={Heart}
             status="info"
+            statusLabel="พิเศษ"
             size="compact"
             className={cn(
               "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-rose-500/40 group-hover:shadow-xs",

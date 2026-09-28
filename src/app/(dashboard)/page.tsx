@@ -18,7 +18,6 @@ import {
   getStudentCareDashboard,
   type StudentCareDashboard,
 } from "@/lib/server/student-care-read-models"
-import { getUserRole } from "@/utils/supabase/server"
 
 const emptyDashboard: StudentCareDashboard = {
   currentSemesterId: null,
@@ -43,8 +42,7 @@ export default async function DashboardPage({
   const params = searchParams ? await searchParams : {}
   const rawClassroom = typeof params.classroom === "string" ? params.classroom : ""
   const rawSemester = typeof params.semester === "string" ? params.semester : ""
-  const [role, dashboardResult, insights] = await Promise.all([
-    getUserRole(),
+  const [dashboardResult, insights] = await Promise.all([
     getStudentCareDashboard()
       .then((data) => ({ data, error: null }))
       .catch((error: unknown) => ({
@@ -82,7 +80,6 @@ export default async function DashboardPage({
       {/* Mobile View */}
       <div className="md:hidden block">
         <MobileDashboard
-          role={role}
           dashboard={{ ...dashboard, priorityStudents: trackedStudents }}
           loadError={dashboardResult.error}
           topAbsence={insights.topAbsence}

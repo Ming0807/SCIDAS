@@ -1,5 +1,51 @@
 # Task Progress
 
+## VISUAL REVIEW 2026-09-28 (real screenshots, desktop + Pixel 5)
+
+Method: dev server + seeded local + Playwright screenshots of /, /students, /risk-analysis,
+/reports, /notifications (chromium 1280px + Mobile Chrome 393px). Shots in `test-results/shots/` (gitignored).
+
+### What looks good (keep)
+- Sidebar navy + grouping + Thai labels, PageHeader pattern, quick-action cards, summary cards
+  differentiated with real links, skeleton/empty states, focus rings, 64×48 bottom nav.
+- Mobile stacks cleanly; forms/cards usable one-handed; no horizontal overflow seen.
+
+### Fixed this round (verified on screenshots)
+1. **English badges everywhere**: `StatusBadge` fallback came from `getStatusToneLabel` (EN map) —
+   localized `statusToneLabels` to Thai in `lib/design/status.ts` + explicit `statusLabel`
+   ("ทั้งหมด"/"พิเศษ") on students + risk cards. Verified Thai on re-shot mobile.
+2. **Popular reports showed raw codes** (`student_summary`…): fallback now uses `getReportTypeLabel`.
+3. **Mobile duplicate header**: global `Header` + `MobileDashboard` sticky header both rendered
+   (2 hamburgers + 2 bells, ~200px wasted) — removed the mobile-local header, kept title block.
+4. **Ctrl K hint on mobile**: kbd now `hidden sm:inline`.
+5. **Risk table clipped at 1280px**: matrix+table row now stacks until `2xl`.
+6. **"มส." jargon** in dashboard attendance chip → plain Thai.
+7. **"N" black disc bottom-left**: investigated to DOM-absent (no text node/SVG/box, survives
+   nav-hide + svg-hide) — Next.js devtools indicator (dev-only shadow-DOM chrome), NOT app code.
+   No action; confirm absent on physical device / prod build before release.
+
+### Still open (do not regress)
+- Sidebar footer long school names truncate (by design, `truncate` present).
+- Reports overview badges (`คน/0%/33%/แผน`) lack context — consider `delta` labels.
+- PWA manifest has only `favicon.ico` — no 192/512 maskable icons, so install prompt won't fire
+  despite "mobile first-class" goal.
+- `?type=` deep-links on reports now work from popular list; category cards still link plain `/reports`.
+
+### Direction assessment (system good enough? what should change?)
+- **Good enough to ship (after 0026–0028 deploy + LINE later)**: CRUD, EWS loop, IDP, reports,
+  parent portal, import, audit, e2e green. No architectural rewrite needed.
+- **Direction adjustments recommended**:
+  1. **Stop dual-tree for new UI** — every feature costs ×2 (desktop+mobile). New screens should be
+     single responsive trees (`MobileStudents`-style cards work fine); migrate old dual trees opportunistically.
+  2. **Decide the report worker** — `after()` is fine for <120-student schools but not durable;
+     cheapest durable path is pg_cron on Cloud calling existing RPCs (pattern proven by 0024).
+  3. **PWA completion** — add 192/512 icons + screenshots to manifest, verify installability; aligns
+     with stated mobile-first goal and helps classroom tablet use.
+  4. **Test-env one-command** — encode local overrides + seed into `npm run e2e:local` script so the
+     next person doesn't rediscover the Cloud-vs-local env trap.
+  5. **Kindergarten Phase A still open** (gradeLabels ×3, settings dropdown, admin zod:411).
+  6. Keep the `use-server` const-export lesson in AGENTS.md-level memory: shared consts live in `lib/`.
+
 ## 2026-09-28 Page-by-Page Fix Batches U1-U7 (442 Tests, 74 Suites)
 
 Status: done. Implemented the page review findings batch by batch:

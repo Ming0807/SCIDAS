@@ -68,7 +68,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
                 : "bg-destructive/10 text-destructive"
             )}
           >
-            {isAttendanceGood ? "ผ่านเกณฑ์ มส." : "เฝ้าระวัง มส."}
+            {isAttendanceGood ? "ผ่านเกณฑ์" : "ต้องติดตาม"}
           </span>
         </div>
       </Link>

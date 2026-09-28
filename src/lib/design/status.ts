@@ -17,15 +17,15 @@ export type StatusToneClassNames = {
 }
 
 export const statusToneLabels: Record<StatusTone, string> = {
-  neutral: "Neutral",
-  primary: "Primary",
-  info: "Info",
-  success: "Success",
-  normal: "Normal",
-  warning: "Warning",
-  watch: "Watch",
-  danger: "Danger",
-  "high-risk": "High risk",
+  neutral: "ทั่วไป",
+  primary: "หลัก",
+  info: "ข้อมูล",
+  success: "สำเร็จ",
+  normal: "ปกติ",
+  warning: "ควรระวัง",
+  watch: "เฝ้าระวัง",
+  danger: "อันตราย",
+  "high-risk": "เสี่ยงสูง",
 }
 
 export const statusToneClassNames: Record<StatusTone, StatusToneClassNames> = {

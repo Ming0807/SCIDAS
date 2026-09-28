@@ -135,8 +135,8 @@ export default async function RiskAnalysisPage() {
 
           <RiskOverviewCards students={students} />
 
-          <div className="flex min-w-0 flex-col gap-6 xl:flex-row">
-            <div className="flex min-w-0 shrink-0 xl:w-[65%]">
+          <div className="flex min-w-0 flex-col gap-6 2xl:flex-row">
+            <div className="flex min-w-0 shrink-0 2xl:w-[65%]">
               <RiskMatrix riskCounts={riskLevelCounts} />
             </div>
             <div className="flex min-w-0 flex-1">

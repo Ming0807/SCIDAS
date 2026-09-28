@@ -1,12 +1,10 @@
 import Link from "next/link"
-import { Bell, ChevronRight, Menu, ShieldAlert, Users } from "lucide-react"
+import { ChevronRight, ShieldAlert, Users } from "lucide-react"
 
 import { QuickActionsRibbon } from "./quick-actions-ribbon"
 import { DashboardClassroomFilter } from "./dashboard-classroom-filter"
 import { StatusBadge, StudentIdentity } from "@/components/dashboard"
 import { EmptyState, ErrorState } from "@/components/feedback"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import {
   formatClassroomSection,
   formatGradeLevel,
@@ -41,7 +39,6 @@ function MetricTile({
 }
 
 export function MobileDashboard({
-  role,
   dashboard,
   loadError,
   topAbsence = [],
@@ -51,7 +48,6 @@ export function MobileDashboard({
   semesterOptions = [],
   activeSemesterId = null,
 }: {
-  role?: string | null
   dashboard: StudentCareDashboard
   loadError: string | null
   topAbsence?: TopAbsentStudent[]
@@ -64,38 +60,10 @@ export function MobileDashboard({
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-24">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <Sheet>
-          <SheetTrigger render={<button className="rounded-lg p-2 hover:bg-muted" aria-label="เปิดเมนู" />}>
-            <Menu className="size-5 text-foreground" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] p-0">
-            <SheetTitle className="sr-only">เมนูหลัก</SheetTitle>
-            <SheetDescription className="sr-only">
-              เมนูนำทางหลักของระบบดูแลนักเรียน
-            </SheetDescription>
-            <Sidebar role={role} />
-          </SheetContent>
-        </Sheet>
-
-        <div className="min-w-0 text-center">
-          <h1 className="truncate text-base font-semibold text-foreground">
-            ภาพรวมดูแลนักเรียน
-          </h1>
-          <p className="text-xs text-muted-foreground">ข้อมูลล่าสุดจากระบบ</p>
-        </div>
-
-        <Link
-          href="/notifications"
-          aria-label="การแจ้งเตือน"
-          className="relative rounded-lg p-2 hover:bg-muted"
-        >
-          <Bell className="size-5 text-foreground" />
-          {metrics.openActionItems > 0 ? (
-            <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" />
-          ) : null}
-        </Link>
-      </header>
+      <div className="px-4 pt-4">
+        <h1 className="text-lg font-semibold text-foreground">ภาพรวมดูแลนักเรียน</h1>
+        <p className="text-xs text-muted-foreground">ข้อมูลล่าสุดจากระบบ</p>
+      </div>
 
       <main className="flex flex-1 flex-col gap-5 px-4 py-5">
         {loadError ? (

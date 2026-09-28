@@ -9,7 +9,7 @@ import {
 import Link from "next/link"
 
 import type { PopularReportType } from "@/lib/server/report-read-models"
-import { reportJobTypes } from "@/lib/server/report-read-models"
+import { getReportTypeLabel, reportJobTypes } from "@/lib/server/report-read-models"
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   student_summary: FileText,
@@ -29,7 +29,7 @@ export function DesktopPopularReports({
       ? popularTypes
       : reportJobTypes.slice(0, 5).map((t) => ({
           reportType: t,
-          label: t,
+          label: getReportTypeLabel(t),
           count: 0,
         }))
 
