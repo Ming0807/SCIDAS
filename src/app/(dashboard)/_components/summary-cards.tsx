@@ -30,7 +30,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
       {/* 1. All Students */}
       <Link
         href="/students"
-        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-colors hover:shadow-md hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -76,7 +76,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
       {/* 2. Watch Group */}
       <Link
         href="/risk-analysis"
-        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20"
+        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-colors hover:shadow-md hover:border-amber-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -115,7 +115,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
       {/* 3. High Risk Group */}
       <Link
         href="/risk-analysis"
-        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20"
+        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-colors hover:shadow-md hover:border-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -170,7 +170,7 @@ export function SummaryCards({ metrics }: { metrics: DashboardMetrics }) {
       {/* 4. Open Tasks */}
       <Link
         href="/support"
-        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-sky-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20"
+        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs transition-colors hover:shadow-md hover:border-sky-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

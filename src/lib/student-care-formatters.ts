@@ -3,6 +3,9 @@ import type { StatusTone } from "@/lib/design/status"
 export type StudentRiskLevel = "normal" | "watch" | "high"
 
 const gradeLabels: Record<string, string> = {
+  k1: "อ.1",
+  k2: "อ.2",
+  k3: "อ.3",
   p1: "ป.1",
   p2: "ป.2",
   p3: "ป.3",

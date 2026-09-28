@@ -292,6 +292,45 @@ describe("academic-admin.actions", () => {
       expect(revalidatePath).toHaveBeenCalledWith("/students")
     })
 
+    it("creates kindergarten classroom successfully", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: "cls-k1" },
+            error: null,
+          }),
+        }),
+      })
+
+      // @ts-expect-error mock supabase client
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn().mockReturnValue({ insert: mockInsert }),
+      })
+
+      const formData = new FormData()
+      formData.set("academicYearId", validUuid)
+      formData.set("gradeLevel", "k1")
+      formData.set("section", "1")
+      formData.set("name", "อ.1/1")
+
+      const result = await upsertClassroomAction(mockPrevState, formData)
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.id).toBe("cls-k1")
+      }
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ grade_level: "k1" }),
+      )
+    })
+
     it("deletes classroom successfully", async () => {
       vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
         userId: "user-1",

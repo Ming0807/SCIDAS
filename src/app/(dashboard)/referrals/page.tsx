@@ -121,7 +121,7 @@ export default async function ReferralsPage({
 
       {/* Metrics Row */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/referrals" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/referrals" className="block text-left ">
           <MetricCard
             title="เคสส่งต่อทั้งหมด"
             value={`${total} เคส`}
@@ -132,7 +132,7 @@ export default async function ReferralsPage({
             className={selectedType === "all" && selectedStatus === "all" ? "ring-2 ring-primary" : undefined}
           />
         </Link>
-        <Link href="/referrals?type=internal" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/referrals?type=internal" className="block text-left ">
           <MetricCard
             title="ส่งต่อภายในสถานศึกษา"
             value={`${internalCount} เคส`}
@@ -143,7 +143,7 @@ export default async function ReferralsPage({
             className={selectedType === "internal" ? "ring-2 ring-blue-500" : undefined}
           />
         </Link>
-        <Link href="/referrals?type=external" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/referrals?type=external" className="block text-left ">
           <MetricCard
             title="ส่งต่อหน่วยงานภายนอก"
             value={`${externalCount} เคส`}
@@ -154,7 +154,7 @@ export default async function ReferralsPage({
             className={selectedType === "external" ? "ring-2 ring-purple-500" : undefined}
           />
         </Link>
-        <Link href="/referrals?status=completed" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/referrals?status=completed" className="block text-left ">
           <MetricCard
             title="ตอบรับ/ส่งต่อสำเร็จ"
             value={`${completedCount} เคส`}

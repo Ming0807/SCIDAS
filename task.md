@@ -1,5 +1,23 @@
 # Task Progress
 
+## 2026-09-28 Finish-All: Kindergarten, UX Leftovers, PWA, One-Command E2E (446 Tests, 75 Suites)
+
+Status: done. Closed every remaining item from SYSTEM REVIEW + NEXT UX list:
+1. **Phase A kindergarten**: k1-k3 labels in formatters/subjects-panel/settings dropdown + subject zod;
+   new classroom-k1 + formatter tests. (DB/types/action already accepted k.)
+2. **NEXT-UX leftovers**: mobile risk dark variants + Thai-only level labels; guidelines refactored
+   to data-driven with dark mode; dead report icon fields removed; emoji counts → dot badges;
+   card lift (`translate-y`) removed repo-wide (26 spots, color/ring hovers kept); sidebar verified
+   dark-always by design.
+3. **Report worker decision**: keep `after()` + stale recovery (right-sized for <120 students);
+   runbook added to `docs/DEPLOYMENT.md` (§10 migration order, cron verify, recovery) + LINE env docs.
+4. **PWA icons**: `scripts/generate-pwa-icons.mjs` (sharp, no fonts) → 192/512/maskable committed;
+   manifest + apple touch + viewport themeColor (fixed Next 16 metadata warning found via e2e).
+5. **One-command scripts**: `npm run test:local` (constrained pool), `npm run e2e:local`
+   (seed + local env + functional specs) — verified live (5 passed); `npm run icons`.
+6. Verification: `tsc` 0, `eslint` 0/0, `vitest --pool=forks --maxWorkers=2` 75/446,
+   `next build`, `npm audit --omit=dev` 0.
+
 ## VISUAL REVIEW 2026-09-28 (real screenshots, desktop + Pixel 5)
 
 Method: dev server + seeded local + Playwright screenshots of /, /students, /risk-analysis,

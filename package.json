@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
+    "test:local": "vitest --run --pool=forks --maxWorkers=2",
+    "e2e:local": "node scripts/e2e-local.mjs",
+    "icons": "node scripts/generate-pwa-icons.mjs",
     "supabase": "supabase",
     "db:start": "supabase start",
     "db:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts"

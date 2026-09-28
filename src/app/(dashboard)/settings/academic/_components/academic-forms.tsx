@@ -22,6 +22,9 @@ import type {
 } from "@/lib/server/academic-admin-read-models"
 
 const GRADE_LEVELS = [
+  { value: "k1", label: "อนุบาลปีที่ 1 (อ.1)" },
+  { value: "k2", label: "อนุบาลปีที่ 2 (อ.2)" },
+  { value: "k3", label: "อนุบาลปีที่ 3 (อ.3)" },
   { value: "p1", label: "ประถมศึกษาปีที่ 1 (ป.1)" },
   { value: "p2", label: "ประถมศึกษาปีที่ 2 (ป.2)" },
   { value: "p3", label: "ประถมศึกษาปีที่ 3 (ป.3)" },

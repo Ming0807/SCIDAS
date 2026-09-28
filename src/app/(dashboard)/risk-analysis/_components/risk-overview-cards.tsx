@@ -23,7 +23,7 @@ export function RiskOverviewCards({
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <Link href="/students" className="block text-left transition-transform hover:-translate-y-0.5">
+      <Link href="/students" className="block text-left ">
         <MetricCard
           title="นักเรียนทั้งหมด"
           value={total.toLocaleString("th-TH")}
@@ -34,7 +34,7 @@ export function RiskOverviewCards({
           className="hover:border-primary/40 transition-colors"
         />
       </Link>
-      <Link href="/students?status=high" className="block text-left transition-transform hover:-translate-y-0.5">
+      <Link href="/students?status=high" className="block text-left ">
         <MetricCard
           title="เสี่ยงสูง"
           value={highRisk.toLocaleString("th-TH")}
@@ -44,7 +44,7 @@ export function RiskOverviewCards({
           className="hover:border-rose-400 dark:hover:border-rose-700 transition-colors"
         />
       </Link>
-      <Link href="/students?status=watch" className="block text-left transition-transform hover:-translate-y-0.5">
+      <Link href="/students?status=watch" className="block text-left ">
         <MetricCard
           title="เฝ้าระวัง"
           value={watch.toLocaleString("th-TH")}
@@ -54,7 +54,7 @@ export function RiskOverviewCards({
           className="hover:border-amber-400 dark:hover:border-amber-700 transition-colors"
         />
       </Link>
-      <Link href="/students?status=normal" className="block text-left transition-transform hover:-translate-y-0.5">
+      <Link href="/students?status=normal" className="block text-left ">
         <MetricCard
           title="ปกติ"
           value={normal.toLocaleString("th-TH")}

@@ -387,7 +387,7 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
             icon={ShieldAlert}
             status="primary"
             size="compact"
-            className="transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-xs"
+            className="transition-colors group-hover:border-primary/40 group-hover:shadow-xs"
           />
         </Link>
         <MetricCard

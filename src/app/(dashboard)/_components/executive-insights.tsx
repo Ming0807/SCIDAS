@@ -177,8 +177,19 @@ export function ExecutiveInsights({ insights }: { insights: ExecutiveInsights })
                     <div className="w-full rounded-sm bg-amber-500/80" style={{ height: `${(t.watchCount / max) * 100}%` }} title={`เฝ้าระวัง ${t.watchCount}`} />
                     <div className="w-full rounded-sm bg-rose-500/80" style={{ height: `${(t.highCount / max) * 100}%` }} title={`เสี่ยงสูง ${t.highCount}`} />
                   </div>
-                  <p className="mt-1.5 text-xs tabular-nums text-muted-foreground">
-                    🔴 {t.highCount} 🟡 {t.watchCount} 🟢 {t.normalCount}
+                  <p className="mt-1.5 flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <span aria-hidden="true" className="size-2 rounded-full bg-rose-500" />
+                      {t.highCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span aria-hidden="true" className="size-2 rounded-full bg-amber-500" />
+                      {t.watchCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span aria-hidden="true" className="size-2 rounded-full bg-emerald-500" />
+                      {t.normalCount}
+                    </span>
                   </p>
                 </div>
               )

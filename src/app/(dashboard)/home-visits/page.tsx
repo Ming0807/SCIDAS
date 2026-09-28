@@ -316,7 +316,7 @@ export default async function HomeVisitsPage({ searchParams }: HomeVisitsPagePro
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Link href="/home-visits" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/home-visits" className="block text-left ">
           <MetricCard
             title="เยี่ยมบ้านทั้งหมด"
             value={summary.total.toLocaleString("th-TH")}
@@ -327,7 +327,7 @@ export default async function HomeVisitsPage({ searchParams }: HomeVisitsPagePro
             className={filters.status === "" ? "ring-2 ring-primary" : undefined}
           />
         </Link>
-        <Link href="/home-visits?status=follow_up" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/home-visits?status=follow_up" className="block text-left ">
           <MetricCard
             title="ต้องติดตาม"
             value={summary.followUpNeeded.toLocaleString("th-TH")}
@@ -338,7 +338,7 @@ export default async function HomeVisitsPage({ searchParams }: HomeVisitsPagePro
             className={filters.status === "follow_up" ? "ring-2 ring-amber-500" : undefined}
           />
         </Link>
-        <Link href="/home-visits?status=urgent" className="block text-left transition-transform hover:-translate-y-0.5">
+        <Link href="/home-visits?status=urgent" className="block text-left ">
           <MetricCard
             title="เร่งดูแล"
             value={summary.urgent.toLocaleString("th-TH")}

@@ -57,13 +57,13 @@ export function QuickActionsRibbon() {
           <Link
             key={act.href}
             href={act.href}
-            className="group relative flex flex-col justify-between rounded-xl border border-border bg-card p-3 shadow-2xs transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+            className="group relative flex flex-col justify-between rounded-xl border border-border bg-card p-3 shadow-2xs transition-colors hover:border-primary/40 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
           >
             <div className="flex items-center justify-between">
               <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground transition-all duration-150 group-hover:bg-primary/10 group-hover:text-primary">
                 <Icon className="size-4" />
               </span>
-              <span className="flex size-5 items-center justify-center rounded-full text-muted-foreground/60 transition-all duration-150 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+              <span className="flex size-5 items-center justify-center rounded-full text-muted-foreground/60 transition-all duration-150 group-hover:text-primary group-hover:translate-x-0.5">
                 <ArrowUpRight className="size-3" />
               </span>
             </div>

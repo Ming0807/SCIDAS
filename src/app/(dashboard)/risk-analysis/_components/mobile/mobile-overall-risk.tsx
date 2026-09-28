@@ -17,13 +17,13 @@ export function MobileOverallRisk({
   const level = riskLevel ?? "normal"
 
   const levelLabel =
-    level === "high" ? "เสี่ยงสูง (High Risk)" : level === "watch" ? "ต้องติดตาม (Watch)" : "ปกติ (Normal)"
+    level === "high" ? "เสี่ยงสูง" : level === "watch" ? "ต้องติดตาม" : "ปกติ"
   const levelColor =
     level === "high"
-      ? "text-red-700 bg-red-50 border-red-200"
+      ? "text-red-700 bg-red-50 border-red-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60"
       : level === "watch"
-        ? "text-amber-700 bg-amber-50 border-amber-200"
-        : "text-emerald-700 bg-emerald-50 border-emerald-200"
+        ? "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60"
+        : "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60"
 
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
@@ -54,17 +54,17 @@ export function MobileOverallRisk({
 
             {isSchoolOverview && riskCounts ? (
               <div className="mt-4 grid grid-cols-3 gap-2 w-full pt-3 border-t border-border text-center">
-                <div className="rounded-lg bg-red-50/60 p-1.5">
-                  <div className="text-base font-bold text-red-600">{riskCounts.high}</div>
-                  <div className="text-micro text-red-700 font-medium">เสี่ยงสูง</div>
+                <div className="rounded-lg bg-red-50/60 p-1.5 dark:bg-rose-950/30">
+                  <div className="text-base font-bold text-red-600 dark:text-rose-300">{riskCounts.high}</div>
+                  <div className="text-micro text-red-700 font-medium dark:text-rose-300">เสี่ยงสูง</div>
                 </div>
-                <div className="rounded-lg bg-amber-50/60 p-1.5">
-                  <div className="text-base font-bold text-amber-600">{riskCounts.watch}</div>
-                  <div className="text-micro text-amber-700 font-medium">ต้องติดตาม</div>
+                <div className="rounded-lg bg-amber-50/60 p-1.5 dark:bg-amber-950/30">
+                  <div className="text-base font-bold text-amber-600 dark:text-amber-300">{riskCounts.watch}</div>
+                  <div className="text-micro text-amber-700 font-medium dark:text-amber-300">ต้องติดตาม</div>
                 </div>
-                <div className="rounded-lg bg-emerald-50/60 p-1.5">
-                  <div className="text-base font-bold text-emerald-600">{riskCounts.normal}</div>
-                  <div className="text-micro text-emerald-700 font-medium">ปกติ</div>
+                <div className="rounded-lg bg-emerald-50/60 p-1.5 dark:bg-emerald-950/30">
+                  <div className="text-base font-bold text-emerald-600 dark:text-emerald-300">{riskCounts.normal}</div>
+                  <div className="text-micro text-emerald-700 font-medium dark:text-emerald-300">ปกติ</div>
                 </div>
               </div>
             ) : null}

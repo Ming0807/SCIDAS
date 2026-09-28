@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,22 @@ export const metadata: Metadata = {
   title: "SCIDAS - ระบบสารสนเทศเพื่อวิเคราะห์และดูแลช่วยเหลือนักเรียน",
   description: "ระบบสารสนเทศเพื่อวิเคราะห์และดูแลช่วยเหลือนักเรียนรายบุคคลสำหรับโรงเรียนขนาดเล็ก",
   keywords: ["education", "student care", "SCIDAS", "โรงเรียน", "ดูแลนักเรียน"],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SCIDAS",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({

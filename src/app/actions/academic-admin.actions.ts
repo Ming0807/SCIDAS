@@ -408,7 +408,7 @@ const SubjectSchema = z.object({
   name: z.string().min(1, "กรุณาระบุชื่อวิชา"),
   nameEn: z.string().nullable().optional(),
   learningArea: z.string().nullable().optional(),
-  gradeLevel: z.enum(["p1", "p2", "p3", "p4", "p5", "p6", "m1", "m2", "m3", "m4", "m5", "m6"]).nullable().optional(),
+  gradeLevel: z.enum(["k1", "k2", "k3", "p1", "p2", "p3", "p4", "p5", "p6", "m1", "m2", "m3", "m4", "m5", "m6"]).nullable().optional(),
   credit: z.coerce.number().min(0.5).max(10).default(1.0),
   hoursPerWeek: z.coerce.number().int().min(1).max(20).default(1),
   description: z.string().nullable().optional(),

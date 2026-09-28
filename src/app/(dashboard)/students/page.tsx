@@ -118,7 +118,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
             statusLabel="ทั้งหมด"
             size="compact"
             className={cn(
-              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-xs",
+              "transition-colors group-hover:border-primary/40 group-hover:shadow-xs",
               !filters.status && "border-primary/50 shadow-2xs",
             )}
           />
@@ -132,7 +132,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
             status="normal"
             size="compact"
             className={cn(
-              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-emerald-500/40 group-hover:shadow-xs",
+              "transition-colors group-hover:border-emerald-500/40 group-hover:shadow-xs",
               filters.status === "normal" && "border-emerald-500 ring-1 ring-emerald-500 shadow-xs",
             )}
           />
@@ -146,7 +146,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
             status="watch"
             size="compact"
             className={cn(
-              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-amber-500/40 group-hover:shadow-xs",
+              "transition-colors group-hover:border-amber-500/40 group-hover:shadow-xs",
               filters.status === "watch" && "border-amber-500 ring-1 ring-amber-500 shadow-xs",
             )}
           />
@@ -161,7 +161,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
             statusLabel="พิเศษ"
             size="compact"
             className={cn(
-              "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-rose-500/40 group-hover:shadow-xs",
+              "transition-colors group-hover:border-rose-500/40 group-hover:shadow-xs",
               filters.status === "high" && "border-rose-500 ring-1 ring-rose-500 shadow-xs",
             )}
           />

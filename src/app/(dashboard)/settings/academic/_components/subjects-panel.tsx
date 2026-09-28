@@ -11,6 +11,9 @@ import type { SubjectItem } from "@/lib/server/academic-admin-read-models"
 import { SubjectDialog } from "./academic-forms"
 
 const GRADE_LABELS: Record<string, string> = {
+  k1: "อ.1",
+  k2: "อ.2",
+  k3: "อ.3",
   p1: "ป.1",
   p2: "ป.2",
   p3: "ป.3",

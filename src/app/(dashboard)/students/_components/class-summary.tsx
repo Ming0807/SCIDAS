@@ -39,7 +39,7 @@ export function ClassSummary({
                 key={item.id}
                 href={href}
                 className={cn(
-                  "group flex min-h-24 flex-col justify-between rounded-xl border border-border/80 bg-background p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xs",
+                  "group flex min-h-24 flex-col justify-between rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/40 hover:shadow-xs",
                   isActive && "border-primary bg-primary/5 ring-1 ring-primary shadow-xs",
                 )}
               >

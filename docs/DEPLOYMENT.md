@@ -523,6 +523,17 @@ npm install
 
 ## 10. Troubleshooting
 
+### 0. ลำดับ migration และ background jobs (อ่านก่อน deploy เสมอ)
+
+- Apply migration ตามลำดับไฟล์ `0001` → ปัจจุบัน (`0028`) ห้ามข้ามหรือสลับลำดับ
+- Migration `0024` จะลงทะเบียน cron `idp-due-reminders` (ทุกวัน 07:00) **เฉพาะที่ที่มี
+  pg_cron** (Supabase Cloud) — ตรวจด้วย `SELECT * FROM cron.job WHERE jobname = 'idp-due-reminders'`
+- Report worker ใช้ Next.js `after()` (request-scoped, ไม่ durable): ถ้า instance ดับระหว่าง
+  สร้างไฟล์ งานจะค้าง `running` — ระบบมี stale recovery (10 นาที) ให้อัตโนมัติเมื่อเปิดหน้า
+  `/reports` ด้วยสิทธิ์ admin/director; งาน `failed` กด "ลองใหม่" จาก UI ได้
+- การตัดสินใจ: สำหรับโรงเรียนขนาดเล็ก (<120 คน) `after()` + recovery เพียงพอแล้ว
+  ถ้าจะย้ายเป็น durable worker ให้ใช้ pg_cron + pg_net ยิง HTTP ไป endpoint ภายในแทน
+
 ### ปัญหาที่พบบ่อย
 
 #### 1. Login ไม่ได้
@@ -583,6 +594,8 @@ npm install
 | `NEXT_PUBLIC_APP_URL` | ✅ | Client + Server | Application URL |
 | `NEXT_PUBLIC_APP_NAME` | ❌ | Client | Application name (default: SCIDAS) |
 | `NEXT_PUBLIC_STORAGE_BUCKET` | ❌ | Client | Storage bucket name |
+| `LINE_CHANNEL_ACCESS_TOKEN` | ❌ | Server only | LINE push (ไม่ตั้ง = provider ปิดตัวเองอย่างปลอดภัย) |
+| `LINE_DEFAULT_TARGET` | ❌ | Server only | userId/groupId ปลายทาง LINE (ผูกภายหลังได้) |
 
 ---
 
