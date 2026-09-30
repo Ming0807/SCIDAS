@@ -339,61 +339,104 @@ export async function executeStudentImportRpc(
     )
 
     if (targetStudentId && hasGuardianData) {
-      // Check if student has a linked guardian in student_guardians
-      const { data: sg } = await supabase
-        .from("student_guardians")
-        .select("id, guardian_id, is_primary")
-        .eq("student_id", targetStudentId)
-        .order("is_primary", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      const gUpdate: Database["public"]["Tables"]["guardians"]["Update"] = {}
-      if (s.guardianOccupation) gUpdate.occupation = s.guardianOccupation.trim()
-      if (typeof s.guardianMonthlyIncome === "number") gUpdate.monthly_income = s.guardianMonthlyIncome
-      if (s.guardianPhone) gUpdate.phone = s.guardianPhone.trim()
-      if (s.guardianNationalId) gUpdate.national_id = s.guardianNationalId.trim()
-      if (s.guardianPrefix) gUpdate.prefix = s.guardianPrefix.trim()
-      if (s.guardianFirstName) gUpdate.first_name = s.guardianFirstName.trim()
-      if (s.guardianLastName) gUpdate.last_name = s.guardianLastName.trim()
-
-      if (sg?.guardian_id) {
-        // Guardian already linked to student -> update directly by ID
-        if (Object.keys(gUpdate).length > 0) {
-          await supabase
-            .from("guardians")
-            .update(gUpdate)
-            .eq("id", sg.guardian_id)
-        }
-      } else if (s.guardianFirstName) {
-        // No guardian linked yet -> insert guardian and create student_guardians link
-        const gInsert: Database["public"]["Tables"]["guardians"]["Insert"] = {
-          school_id: context.schoolId,
-          first_name: s.guardianFirstName.trim(),
-          last_name: s.guardianLastName?.trim() || "-",
-          prefix: s.guardianPrefix?.trim() || null,
-          phone: s.guardianPhone?.trim() || null,
-          national_id: s.guardianNationalId?.trim() || null,
-          occupation: s.guardianOccupation?.trim() || null,
-          monthly_income: typeof s.guardianMonthlyIncome === "number" ? s.guardianMonthlyIncome : null,
-        }
-        const { data: newG } = await supabase
-          .from("guardians")
-          .insert(gInsert)
-          .select("id")
+      try {
+        // Check if student already has a linked primary guardian
+        const { data: sg } = await supabase
+          .from("student_guardians")
+          .select("id, guardian_id, is_primary")
+          .eq("student_id", targetStudentId)
+          .order("is_primary", { ascending: false })
+          .limit(1)
           .maybeSingle()
 
-        if (newG?.id) {
-          const relation = s.guardianRelation || "guardian"
-          await supabase.from("student_guardians").insert({
-            school_id: context.schoolId,
-            student_id: targetStudentId,
-            guardian_id: newG.id,
-            relation: relation as Database["public"]["Enums"]["guardian_relation"],
-            is_primary: true,
-            can_pickup: true,
-          })
+        let resolvedGuardianId = sg?.guardian_id || null
+
+        // If not linked yet, check if a guardian with this national_id already exists in school
+        if (!resolvedGuardianId && s.guardianNationalId) {
+          const { data: existingG } = await supabase
+            .from("guardians")
+            .select("id")
+            .eq("national_id", s.guardianNationalId.trim())
+            .maybeSingle()
+          if (existingG) {
+            resolvedGuardianId = existingG.id
+          }
         }
+
+        const gUpdate: Database["public"]["Tables"]["guardians"]["Update"] = {}
+        if (s.guardianOccupation) gUpdate.occupation = s.guardianOccupation.trim()
+        if (typeof s.guardianMonthlyIncome === "number") gUpdate.monthly_income = s.guardianMonthlyIncome
+        if (s.guardianPhone) gUpdate.phone = s.guardianPhone.trim()
+        if (s.guardianPrefix) gUpdate.prefix = s.guardianPrefix.trim()
+        if (s.guardianFirstName) gUpdate.first_name = s.guardianFirstName.trim()
+        if (s.guardianLastName) gUpdate.last_name = s.guardianLastName.trim()
+
+        if (resolvedGuardianId) {
+          // Guardian exists -> update details directly by ID
+          if (Object.keys(gUpdate).length > 0) {
+            await supabase
+              .from("guardians")
+              .update(gUpdate)
+              .eq("id", resolvedGuardianId)
+          }
+
+          // Ensure student_guardians link exists
+          const { data: link } = await supabase
+            .from("student_guardians")
+            .select("id")
+            .eq("student_id", targetStudentId)
+            .eq("guardian_id", resolvedGuardianId)
+            .maybeSingle()
+
+          if (!link) {
+            await supabase
+              .from("student_guardians")
+              .update({ is_primary: false })
+              .eq("student_id", targetStudentId)
+              .eq("is_primary", true)
+
+            const relation = s.guardianRelation || "guardian"
+            await supabase.from("student_guardians").insert({
+              school_id: context.schoolId,
+              student_id: targetStudentId,
+              guardian_id: resolvedGuardianId,
+              relation: relation as Database["public"]["Enums"]["guardian_relation"],
+              is_primary: true,
+              can_pickup: true,
+            })
+          }
+        } else if (s.guardianFirstName) {
+          // No guardian found anywhere -> insert new guardian
+          const gInsert: Database["public"]["Tables"]["guardians"]["Insert"] = {
+            school_id: context.schoolId,
+            first_name: s.guardianFirstName.trim(),
+            last_name: s.guardianLastName?.trim() || "-",
+            prefix: s.guardianPrefix?.trim() || null,
+            phone: s.guardianPhone?.trim() || null,
+            national_id: s.guardianNationalId?.trim() || null,
+            occupation: s.guardianOccupation?.trim() || null,
+            monthly_income: typeof s.guardianMonthlyIncome === "number" ? s.guardianMonthlyIncome : null,
+          }
+          const { data: newG } = await supabase
+            .from("guardians")
+            .insert(gInsert)
+            .select("id")
+            .maybeSingle()
+
+          if (newG?.id) {
+            const relation = s.guardianRelation || "guardian"
+            await supabase.from("student_guardians").insert({
+              school_id: context.schoolId,
+              student_id: targetStudentId,
+              guardian_id: newG.id,
+              relation: relation as Database["public"]["Enums"]["guardian_relation"],
+              is_primary: true,
+              can_pickup: true,
+            })
+          }
+        }
+      } catch (err) {
+        console.warn("Guardian sync warning for student:", targetStudentId, err)
       }
     }
   }

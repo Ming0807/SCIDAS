@@ -1,12 +1,9 @@
 -- ===================================================================
--- MIGRATION 0030: Comprehensive Student Import & Sync
+-- MIGRATION 0031: Fix Guardian Import Conflict & Shared Guardians
 --
--- Enhances import_students_atomic RPC to store full DMC attributes:
--- address components (subdistrict, district, province, postal_code),
--- distance_to_school_km, travel_method, family_status, religion,
--- nationality, ethnicity, and guardian profile details (national_id,
--- occupation, monthly_income).
--- Also syncs/updates existing students when re-imported.
+-- Prevents duplicate key violation on "guardians_national_id_key".
+-- Reuses existing guardians across students (siblings/same parent)
+-- and updates guardian details atomically with ON CONFLICT resolution.
 -- ===================================================================
 
 CREATE OR REPLACE FUNCTION public.import_students_atomic(
