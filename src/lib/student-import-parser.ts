@@ -155,7 +155,10 @@ export function splitThaiFullName(fullName: string): {
   lastName: string
   inferredGender: "male" | "female" | null
 } {
-  let raw = (fullName || "").trim()
+  let raw = (fullName || "")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\r\n\t]+/g, " ")
+    .trim()
   let prefix: string | null = null
   let inferredGender: "male" | "female" | null = null
 
@@ -164,18 +167,33 @@ export function splitThaiFullName(fullName: string): {
     "เด็กหญิง",
     "ด.ช.",
     "ด.ญ.",
+    "ด.ช ",
+    "ด.ญ ",
+    "ดช.",
+    "ดญ.",
     "นางสาว",
     "น.ส.",
+    "น.ส ",
+    "นส.",
     "นาย",
     "นาง",
   ]
 
   for (const p of KNOWN_PREFIXES) {
     if (raw.startsWith(p)) {
-      prefix = p
+      const matched = p.trim()
+      if (matched === "ดช." || matched === "ด.ช") {
+        prefix = "ด.ช."
+      } else if (matched === "ดญ." || matched === "ด.ญ") {
+        prefix = "ด.ญ."
+      } else if (matched === "นส." || matched === "น.ส") {
+        prefix = "น.ส."
+      } else {
+        prefix = matched
+      }
       raw = raw.slice(p.length).trim()
-      if (["เด็กชาย", "ด.ช.", "นาย"].includes(p)) inferredGender = "male"
-      if (["เด็กหญิง", "ด.ญ.", "นางสาว", "น.ส.", "นาง"].includes(p)) inferredGender = "female"
+      if (["เด็กชาย", "ด.ช.", "นาย"].includes(prefix)) inferredGender = "male"
+      if (["เด็กหญิง", "ด.ญ.", "นางสาว", "น.ส.", "นาง"].includes(prefix)) inferredGender = "female"
       break
     }
   }
@@ -442,18 +460,31 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroo
   เลขประจำตัวนักเรียน: "studentCode",
   เลขประจำตัว: "studentCode",
   รหัสประจำตัว: "studentCode",
+  รหัสประจำตัวนักเรียน: "studentCode",
+  เลขรหัส: "studentCode",
+  เลขที่ประจำตัว: "studentCode",
   student_code: "studentCode",
   studentcode: "studentCode",
+  student_id: "studentCode",
+  studentid: "studentCode",
+  sid: "studentCode",
   code: "studentCode",
   รหัส: "studentCode",
+  id: "studentCode",
 
   // เลขประจำตัวประชาชน
   เลขประจำตัวประชาชน: "nationalId",
   เลขบัตรประชาชน: "nationalId",
   เลขบัตรประจำตัวประชาชน: "nationalId",
+  เลขบัตร: "nationalId",
+  บัตรประชาชน: "nationalId",
   national_id: "nationalId",
   nationalid: "nationalId",
   id_card: "nationalId",
+  idcard: "nationalId",
+  citizen_id: "nationalId",
+  citizenid: "nationalId",
+  cid: "nationalId",
   เลขประชาชน: "nationalId",
 
   // คำนำหน้า
@@ -480,9 +511,19 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroo
   "ชื่อ-สกุล": "fullName",
   "ชื่อ-นามสกุล": "fullName",
   "ชื่อ - สกุล": "fullName",
+  "ชื่อ - นามสกุล": "fullName",
   "ชื่อ_สกุล": "fullName",
+  "ชื่อ_นามสกุล": "fullName",
   "ชื่อสกุล": "fullName",
+  "ชื่อนามสกุล": "fullName",
   "ชื่อและนามสกุล": "fullName",
+  "ชื่อ และ นามสกุล": "fullName",
+  "ชื่อนักเรียน": "fullName",
+  "รายชื่อ": "fullName",
+  "รายชื่อนักเรียน": "fullName",
+  "ชื่อผู้เรียน": "fullName",
+  "ชื่อ-สกุลนักเรียน": "fullName",
+  "ชื่อ-นามสกุลนักเรียน": "fullName",
   fullname: "fullName",
   full_name: "fullName",
 
@@ -520,6 +561,9 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroo
   ที่: "studentNumber",
   student_number: "studentNumber",
   no: "studentNumber",
+  "no.": "studentNumber",
+  "#": "studentNumber",
+  number: "studentNumber",
 
   // ผู้ปกครอง
   คำนำหน้าผู้ปกครอง: "guardianPrefix",
@@ -671,6 +715,7 @@ export async function parseAndValidateStudentRows(
     sheet?: string | number
     skipInFileDuplicates?: boolean
     autoGenerateMissingCode?: boolean
+    allowInvalidNationalIdAsNull?: boolean
   },
 ): Promise<ParseImportResult> {
   let table: string[][]
@@ -737,28 +782,54 @@ export async function parseAndValidateStudentRows(
     }
   }
 
-  const rawHeaders = table[0]
-  const headerMap: Record<number, keyof ParsedStudentRow | "fullName"> = {}
+  // Auto-detect header row within first 5 rows (in case row 0 is a title or banner)
+  let headerRowIndex = 0
+  let headerMap: Record<number, keyof ParsedStudentRow | "fullName" | "classroomName"> = {}
+  let bestScore = 0
 
-  rawHeaders.forEach((header, index) => {
-    const directKey = HEADER_MAP[header.trim()]
-    if (directKey) {
-      headerMap[index] = directKey
-    } else {
-      const normalized = normalizeHeaderKey(header)
-      for (const [thaiKey, propName] of Object.entries(HEADER_MAP)) {
-        if (normalizeHeaderKey(thaiKey) === normalized) {
-          headerMap[index] = propName
-          break
+  for (let r = 0; r < Math.min(table.length, 5); r++) {
+    const candidateRow = table[r]
+    const currentMap: Record<number, keyof ParsedStudentRow | "fullName" | "classroomName"> = {}
+    let score = 0
+
+    candidateRow.forEach((header, index) => {
+      const trimmed = header.trim()
+      if (!trimmed) return
+      const directKey = HEADER_MAP[trimmed]
+      if (directKey) {
+        currentMap[index] = directKey
+        score++
+      } else {
+        const normalized = normalizeHeaderKey(trimmed)
+        for (const [thaiKey, propName] of Object.entries(HEADER_MAP)) {
+          if (normalizeHeaderKey(thaiKey) === normalized) {
+            currentMap[index] = propName
+            score++
+            break
+          }
         }
       }
+    })
+
+    const mappedValues = Object.values(currentMap)
+    const hasName = mappedValues.includes("firstName") || mappedValues.includes("fullName")
+    const hasCode = mappedValues.includes("studentCode")
+    if (hasName && (hasCode || options?.autoGenerateMissingCode)) {
+      headerRowIndex = r
+      headerMap = currentMap
+      bestScore = score
+      break
+    } else if (score > bestScore) {
+      headerRowIndex = r
+      headerMap = currentMap
+      bestScore = score
     }
-  })
+  }
 
   // Ensure mandatory header columns are present
   const mappedProps = Object.values(headerMap)
   const missingHeaders: string[] = []
-  if (!mappedProps.includes("studentCode")) {
+  if (!mappedProps.includes("studentCode") && !options?.autoGenerateMissingCode) {
     missingHeaders.push("รหัสนักเรียน (student_code หรือ เลขประจำตัว)")
   }
 
@@ -773,11 +844,11 @@ export async function parseAndValidateStudentRows(
       validRows: [],
       invalidRows: [
         {
-          rowNumber: 1,
+          rowNumber: headerRowIndex + 1,
           errors: [`ไม่พบคอลัมน์บังคับ: ${missingHeaders.join(", ")}`],
         },
       ],
-      totalRows: table.length - 1,
+      totalRows: Math.max(0, table.length - (headerRowIndex + 1)),
       summary: { validCount: 0, invalidCount: 1 },
       availableSheets,
       selectedSheet,
@@ -790,7 +861,7 @@ export async function parseAndValidateStudentRows(
   const seenStudentCodes = new Set<string>()
   const seenNationalIds = new Set<string>()
 
-  for (let rowIndex = 1; rowIndex < table.length; rowIndex++) {
+  for (let rowIndex = headerRowIndex + 1; rowIndex < table.length; rowIndex++) {
     const row = table[rowIndex]
     const rowNumber = rowIndex + 1
     const rowErrors: string[] = []
@@ -883,7 +954,12 @@ export async function parseAndValidateStudentRows(
     if (rowObj.nationalId) {
       const cleanId = String(rowObj.nationalId).replace(/[\s\-]/g, "")
       if (!/^\d{13}$/.test(cleanId)) {
-        rowErrors.push(`เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก (ปัจจุบันมี ${cleanId.length} หลัก)`)
+        if (options?.allowInvalidNationalIdAsNull !== false) {
+          // Gracefully relax invalid ID by setting to null so the student can be enrolled without breaking DB constraint
+          rowObj.nationalId = null
+        } else {
+          rowErrors.push(`เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก (ปัจจุบันมี ${cleanId.length} หลัก)`)
+        }
       } else {
         if (seenNationalIds.has(cleanId)) {
           if (options?.skipInFileDuplicates) {
@@ -1048,6 +1124,7 @@ export async function parseAndValidateAllGroups(
   options?: {
     skipInFileDuplicates?: boolean
     autoGenerateMissingCode?: boolean
+    allowInvalidNationalIdAsNull?: boolean
   },
 ): Promise<MultiGroupParseResult> {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
@@ -1071,6 +1148,7 @@ export async function parseAndValidateAllGroups(
           sheet: sheetName,
           skipInFileDuplicates: options?.skipInFileDuplicates,
           autoGenerateMissingCode: options?.autoGenerateMissingCode,
+          allowInvalidNationalIdAsNull: options?.allowInvalidNationalIdAsNull,
         })
 
         // Skip sheets that have no data at all (e.g. blank trailing sheets)

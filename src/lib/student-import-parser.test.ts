@@ -325,12 +325,52 @@ describe("Student Import Parser", () => {
         // When autoGenerateMissingCode is enabled, K1 rows become valid
         const resultWithAutoGen = await parseAndValidateAllGroups(buffer, "รายชื่อนักเรียน_เทอม1.xlsx", {
           autoGenerateMissingCode: true,
+          allowInvalidNationalIdAsNull: false,
         })
         const k1WithGen = resultWithAutoGen.groups[0]
         expect(k1WithGen.validRows.length).toBe(12)
         expect(k1WithGen.invalidRows.length).toBe(0)
         expect(k1WithGen.validRows[0].studentCode).toMatch(/^AUTO\d+/)
+
+        // When both autoGenerateMissingCode and allowInvalidNationalIdAsNull are enabled, all 113 students are valid
+        const resultFullSmart = await parseAndValidateAllGroups(buffer, "รายชื่อนักเรียน_เทอม1.xlsx", {
+          autoGenerateMissingCode: true,
+          allowInvalidNationalIdAsNull: true,
+        })
+        expect(resultFullSmart.allValidCount).toBe(113)
+        expect(resultFullSmart.allInvalidCount).toBe(0)
       }
+    })
+
+    it("should auto-detect header row when row 0 is a title banner", async () => {
+      const csv = `โรงเรียนบ้านหนองบัว รายชื่อนักเรียน ปีการศึกษา 2567\nที่,เลขประจำตัว,ชื่อ-สกุล,เลขประชาชน\n1.,STD901,ด.ช.มานะ ดีใจ,1100500123456`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.validRows[0].studentCode).toBe("STD901")
+      expect(res.validRows[0].firstName).toBe("มานะ")
+      expect(res.validRows[0].lastName).toBe("ดีใจ")
+    })
+
+    it("should allow missing studentCode header if autoGenerateMissingCode is enabled", async () => {
+      const csv = `ชื่อ-สกุล,เลขประชาชน\nด.ญ.มานี มีแชร์,1100500123457`
+      const res = await parseAndValidateStudentRows(csv, "data.csv", {
+        autoGenerateMissingCode: true,
+      })
+      expect(res.validRows.length).toBe(1)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.validRows[0].studentCode).toMatch(/^AUTO\d+/)
+      expect(res.validRows[0].firstName).toBe("มานี")
+    })
+
+    it("should gracefully set invalid nationalId to null when allowInvalidNationalIdAsNull is enabled", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เลขบัตรประชาชน\nS001,สมปอง,สุขสำราญ,12345678901234` // 14 digits
+      const res = await parseAndValidateStudentRows(csv, "data.csv", {
+        allowInvalidNationalIdAsNull: true,
+      })
+      expect(res.validRows.length).toBe(1)
+      expect(res.invalidRows.length).toBe(0)
+      expect(res.validRows[0].nationalId).toBeNull()
     })
   })
 })

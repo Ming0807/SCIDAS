@@ -127,10 +127,14 @@ export async function parseStudentFileAction(
 
     const targetSheet = (formData.get("sheet") as string | null) || undefined
     const skipInFileDuplicates = formData.get("skipInFileDuplicates") === "true"
+    const autoGenerateMissingCode = formData.get("autoGenerateMissingCode") === "true"
+    const allowInvalidNationalIdAsNull = formData.get("allowInvalidNationalIdAsNull") !== "false"
 
     const result = await parseAndValidateStudentRows(buffer, file.name, {
       sheet: targetSheet,
       skipInFileDuplicates,
+      autoGenerateMissingCode,
+      allowInvalidNationalIdAsNull,
     })
 
     if (result.totalRows === 0) {
@@ -385,10 +389,12 @@ export async function parseAllStudentGroupsAction(
 
     const skipInFileDuplicates = formData.get("skipInFileDuplicates") === "true"
     const autoGenerateMissingCode = formData.get("autoGenerateMissingCode") === "true"
+    const allowInvalidNationalIdAsNull = formData.get("allowInvalidNationalIdAsNull") !== "false"
 
     const multiResult = await parseAndValidateAllGroups(buffer, file.name, {
       skipInFileDuplicates,
       autoGenerateMissingCode,
+      allowInvalidNationalIdAsNull,
     })
 
     if (multiResult.allTotalCount === 0) {

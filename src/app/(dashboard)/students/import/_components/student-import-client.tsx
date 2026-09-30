@@ -148,6 +148,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   const [selectedSheet, setSelectedSheet] = useState<string>("")
   const [duplicateMode, setDuplicateMode] = useState<ImportDuplicateMode>("skip")
   const [autoGenerateMissingCode, setAutoGenerateMissingCode] = useState<boolean>(true)
+  const [allowInvalidNationalIdAsNull, setAllowInvalidNationalIdAsNull] = useState<boolean>(true)
   const [parseResult, setParseResult] = useState<ParseImportResult | null>(null)
   const [activeTab, setActiveTab] = useState<"valid" | "invalid">("valid")
   const [isParsing, startParseTransition] = useTransition()
@@ -243,6 +244,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     targetSheet?: string,
     modeOverride?: ImportDuplicateMode,
     autoGenOverride?: boolean,
+    allowInvalidNidOverride?: boolean,
   ) => {
     const ext = selected.name.split(".").pop()?.toLowerCase() ?? ""
     if (ext !== "csv" && ext !== "xlsx") {
@@ -261,6 +263,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
     const effectiveMode = modeOverride ?? duplicateMode
     const effectiveAutoGen = autoGenOverride ?? autoGenerateMissingCode
+    const effectiveAllowInvalidNid = allowInvalidNidOverride ?? allowInvalidNationalIdAsNull
 
     startParseTransition(async () => {
       // 1. Run Multi-Group Action
@@ -268,6 +271,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
       multiFormData.set("file", selected)
       multiFormData.set("skipInFileDuplicates", effectiveMode === "skip" ? "true" : "false")
       multiFormData.set("autoGenerateMissingCode", effectiveAutoGen ? "true" : "false")
+      multiFormData.set("allowInvalidNationalIdAsNull", effectiveAllowInvalidNid ? "true" : "false")
 
       const multiRes = await parseAllStudentGroupsAction(null, multiFormData)
 
@@ -305,6 +309,7 @@ export function StudentImportClient({ context }: { context: ImportContextData })
       }
       singleFormData.set("skipInFileDuplicates", effectiveMode === "skip" ? "true" : "false")
       singleFormData.set("autoGenerateMissingCode", effectiveAutoGen ? "true" : "false")
+      singleFormData.set("allowInvalidNationalIdAsNull", effectiveAllowInvalidNid ? "true" : "false")
 
       const singleRes = await parseStudentFileAction(null, singleFormData)
       if (singleRes.ok && singleRes.data) {
@@ -356,7 +361,14 @@ export function StudentImportClient({ context }: { context: ImportContextData })
   const handleAutoGenToggle = (enabled: boolean) => {
     setAutoGenerateMissingCode(enabled)
     if (file) {
-      processFile(file, selectedSheet, duplicateMode, enabled)
+      processFile(file, selectedSheet, duplicateMode, enabled, allowInvalidNationalIdAsNull)
+    }
+  }
+
+  const handleAllowInvalidNidToggle = (enabled: boolean) => {
+    setAllowInvalidNationalIdAsNull(enabled)
+    if (file) {
+      processFile(file, selectedSheet, duplicateMode, autoGenerateMissingCode, enabled)
     }
   }
 
@@ -677,16 +689,28 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             <h3 className="text-base font-semibold">อัปโหลดไฟล์รายชื่อนักเรียน</h3>
           </div>
 
-          {/* Auto-generate Missing Student Code Checkbox */}
-          <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground bg-muted/40 hover:bg-muted/70 px-3 py-1.5 rounded-xl border border-border transition">
-            <input
-              type="checkbox"
-              checked={autoGenerateMissingCode}
-              onChange={(e) => handleAutoGenToggle(e.target.checked)}
-              className="size-4 rounded text-primary focus:ring-primary"
-            />
-            <span>สร้างรหัสชั่วคราวอัตโนมัติ (กรณีเด็กอนุบาล/เข้าใหม่ยังไม่มีเลขประจำตัว)</span>
-          </label>
+          {/* Option Checkboxes */}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground bg-muted/40 hover:bg-muted/70 px-3 py-1.5 rounded-xl border border-border transition">
+              <input
+                type="checkbox"
+                checked={autoGenerateMissingCode}
+                onChange={(e) => handleAutoGenToggle(e.target.checked)}
+                className="size-4 rounded text-primary focus:ring-primary"
+              />
+              <span>สร้างรหัสชั่วคราวอัตโนมัติ (กรณีเด็กอนุบาล/เข้าใหม่ยังไม่มีเลขประจำตัว)</span>
+            </label>
+
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground bg-muted/40 hover:bg-muted/70 px-3 py-1.5 rounded-xl border border-border transition">
+              <input
+                type="checkbox"
+                checked={allowInvalidNationalIdAsNull}
+                onChange={(e) => handleAllowInvalidNidToggle(e.target.checked)}
+                className="size-4 rounded text-primary focus:ring-primary"
+              />
+              <span>ผ่อนปรนเลขประชาชนที่ไม่ครบ 13 หลัก (บันทึกเป็นค่าว่างชั่วคราว)</span>
+            </label>
+          </div>
         </div>
 
         <p className="mt-1 text-sm text-muted-foreground">
