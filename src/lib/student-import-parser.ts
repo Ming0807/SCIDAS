@@ -444,16 +444,31 @@ export async function parseFileContent(
 // ----------------------------------------------------------------------------
 // Header Mapping
 // ----------------------------------------------------------------------------
-const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroomName"> = {
-  // ห้องเรียน / ชั้นเรียน
-  ห้อง: "classroomName",
-  ชั้น: "classroomName",
-  ระดับชั้น: "classroomName",
+const HEADER_MAP: Record<
+  string,
+  keyof ParsedStudentRow | "fullName" | "classroomName" | "gradeName" | "roomName"
+> = {
+  // ชั้นเรียน / ระดับชั้น (Grade)
+  ชั้น: "gradeName",
+  ระดับชั้น: "gradeName",
+  ชั้นเรียน: "gradeName",
+  grade: "gradeName",
+  level: "gradeName",
+
+  // ห้องเรียน / ห้อง (Room / Section)
+  ห้อง: "roomName",
+  ห้องที่: "roomName",
+  room: "roomName",
+  section: "roomName",
+
+  // รวม ชั้น/ห้อง (Combined Classroom)
   ห้องเรียน: "classroomName",
-  ชั้นเรียน: "classroomName",
+  "ชั้น/ห้อง": "classroomName",
+  "ชั้น / ห้อง": "classroomName",
+  "ชั้น-ห้อง": "classroomName",
+  "ชั้น_ห้อง": "classroomName",
   class: "classroomName",
   classroom: "classroomName",
-  room: "classroomName",
 
   // รหัสนักเรียน
   รหัสนักเรียน: "studentCode",
@@ -567,6 +582,7 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroo
 
   // ผู้ปกครอง
   คำนำหน้าผู้ปกครอง: "guardianPrefix",
+  คำนำหน้าชื่อผู้ปกครอง: "guardianPrefix",
   guardian_prefix: "guardianPrefix",
 
   ชื่อผู้ปกครอง: "guardianFirstName",
@@ -581,11 +597,22 @@ const HEADER_MAP: Record<string, keyof ParsedStudentRow | "fullName" | "classroo
   เบอร์โทรศัพท์ผู้ปกครอง: "guardianPhone",
   เบอร์ติดต่อผู้ปกครอง: "guardianPhone",
   โทรศัพท์ผู้ปกครอง: "guardianPhone",
+  หมายเลขโทรศัพท์ของผู้ปกครอง: "guardianPhone",
+  หมายเลขโทรศัพท์ผู้ปกครอง: "guardianPhone",
+  หมายเลขโทรศัพท์บิดา: "guardianPhone",
+  หมายเลขโทรศัพท์มารดา: "guardianPhone",
+  หมายเลขโทรศัพท์ของบิดา: "guardianPhone",
+  หมายเลขโทรศัพท์ของมารดา: "guardianPhone",
+  เบอร์โทรศัพท์ของบิดา: "guardianPhone",
+  เบอร์โทรศัพท์ของมารดา: "guardianPhone",
   guardian_phone: "guardianPhone",
   phone: "guardianPhone",
 
   ความสัมพันธ์: "guardianRelation",
   ความสัมพันธ์ผู้ปกครอง: "guardianRelation",
+  ความเกี่ยวข้องของผู้ปกครองกับนักเรียน: "guardianRelation",
+  ความเกี่ยวข้องของผู้ปกครอง: "guardianRelation",
+  ความเกี่ยวข้อง: "guardianRelation",
   เกี่ยวข้องเป็น: "guardianRelation",
   guardian_relation: "guardianRelation",
   relation: "guardianRelation",
@@ -666,10 +693,10 @@ function normalizeCalendarDate(year: number, month: number, day: number): string
 export function normalizeGender(rawGender: string, prefix?: string | null): "male" | "female" | "other" {
   const g = (rawGender || "").trim().toLowerCase()
 
-  if (["ชาย", "ด.ช.", "เด็กชาย", "นาย", "m", "male", "boy", "man"].includes(g)) {
+  if (["ชาย", "ด.ช.", "เด็กชาย", "นาย", "m", "male", "boy", "man", "ช"].includes(g)) {
     return "male"
   }
-  if (["หญิง", "ด.ญ.", "เด็กหญิง", "นางสาว", "นาง", "น.ส.", "f", "female", "girl", "woman"].includes(g)) {
+  if (["หญิง", "ด.ญ.", "เด็กหญิง", "นางสาว", "นาง", "น.ส.", "f", "female", "girl", "woman", "ญ"].includes(g)) {
     return "female"
   }
 
@@ -784,12 +811,18 @@ export async function parseAndValidateStudentRows(
 
   // Auto-detect header row within first 5 rows (in case row 0 is a title or banner)
   let headerRowIndex = 0
-  let headerMap: Record<number, keyof ParsedStudentRow | "fullName" | "classroomName"> = {}
+  let headerMap: Record<
+    number,
+    keyof ParsedStudentRow | "fullName" | "classroomName" | "gradeName" | "roomName"
+  > = {}
   let bestScore = 0
 
   for (let r = 0; r < Math.min(table.length, 5); r++) {
     const candidateRow = table[r]
-    const currentMap: Record<number, keyof ParsedStudentRow | "fullName" | "classroomName"> = {}
+    const currentMap: Record<
+      number,
+      keyof ParsedStudentRow | "fullName" | "classroomName" | "gradeName" | "roomName"
+    > = {}
     let score = 0
 
     candidateRow.forEach((header, index) => {
@@ -883,6 +916,21 @@ export async function parseAndValidateStudentRows(
         rowObj[propName] = cleanVal
       }
     })
+
+    // Auto-combine gradeName and roomName into classroomName if classroomName is not explicitly provided
+    if (!rowObj.classroomName) {
+      const g = (rowObj.gradeName as string || "").trim()
+      const r = (rowObj.roomName as string || "").trim()
+      if (g && r) {
+        rowObj.classroomName = g.includes("/") ? g : `${g}/${r}`
+      } else if (g) {
+        rowObj.classroomName = g
+      } else if (r) {
+        rowObj.classroomName = r
+      }
+    }
+    delete rowObj.gradeName
+    delete rowObj.roomName
 
     // Skip empty or numbering-only rows (e.g. "13.", null, null, null)
     const hasIdentifyingData = Boolean(
@@ -1130,158 +1178,191 @@ export async function parseAndValidateAllGroups(
   const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
   const isXlsx = ext === "xlsx"
 
-  // 1. If XLSX, check if there are multiple sheets
+  // Helper to sort classroom groups logically (Kindergarten -> Primary -> Secondary)
+  const sortClassrooms = (rooms: string[]): string[] => {
+    const gradeOrder: Record<string, number> = {
+      k1: 1,
+      k2: 2,
+      k3: 3,
+      p1: 10,
+      p2: 11,
+      p3: 12,
+      p4: 13,
+      p5: 14,
+      p6: 15,
+      m1: 20,
+      m2: 21,
+      m3: 22,
+      m4: 23,
+      m5: 24,
+      m6: 25,
+    }
+    return [...rooms].sort((a, b) => {
+      const infA = inferGradeAndSection(a)
+      const infB = inferGradeAndSection(b)
+      if (!infA && !infB) return a.localeCompare(b, "th")
+      if (!infA) return 1
+      if (!infB) return -1
+      const orderA = gradeOrder[infA.gradeLevel] || 99
+      const orderB = gradeOrder[infB.gradeLevel] || 99
+      if (orderA !== orderB) return orderA - orderB
+      return infA.section - infB.section
+    })
+  }
+
+  // 1. If XLSX, check sheet structure
   if (isXlsx) {
     const sheetNames = await getExcelSheetNames(
       typeof input === "string" ? Buffer.from(input) : input,
     )
 
-    if (sheetNames.length > 1) {
-      const groups: ParsedStudentGroup[] = []
-      let allValid = 0
-      let allInvalid = 0
-      let allTotal = 0
+    if (sheetNames.length > 0) {
+      // Check if the primary sheet (first sheet) is a consolidated Master Sheet with multiple classrooms
+      const firstSheetRes = await parseAndValidateStudentRows(input, fileName, {
+        sheet: sheetNames[0],
+        skipInFileDuplicates: options?.skipInFileDuplicates,
+        autoGenerateMissingCode: options?.autoGenerateMissingCode,
+        allowInvalidNationalIdAsNull: options?.allowInvalidNationalIdAsNull,
+      })
 
-      for (let i = 0; i < sheetNames.length; i++) {
-        const sheetName = sheetNames[i]
-        const res = await parseAndValidateStudentRows(input, fileName, {
-          sheet: sheetName,
-          skipInFileDuplicates: options?.skipInFileDuplicates,
-          autoGenerateMissingCode: options?.autoGenerateMissingCode,
-          allowInvalidNationalIdAsNull: options?.allowInvalidNationalIdAsNull,
-        })
-
-        // Skip sheets that have no data at all (e.g. blank trailing sheets)
-        if (
-          res.totalRows === 0 &&
-          res.invalidRows.length === 1 &&
-          res.invalidRows[0].errors[0]?.includes("ไม่พบข้อมูลในไฟล์")
-        ) {
-          continue
+      if (firstSheetRes.validRows.length > 0) {
+        const classroomMap = new Map<string, ParsedStudentRow[]>()
+        for (const s of firstSheetRes.validRows) {
+          const roomKey = s.classroomName?.trim() || "ไม่ระบุห้อง"
+          if (!classroomMap.has(roomKey)) classroomMap.set(roomKey, [])
+          classroomMap.get(roomKey)!.push(s)
         }
 
-        const inferred = inferGradeAndSection(sheetName)
-        groups.push({
-          groupId: `sheet_${i}_${encodeURIComponent(sheetName)}`,
-          groupName: sheetName,
-          sourceType: "sheet",
-          validRows: res.validRows,
-          invalidRows: res.invalidRows,
-          totalRows: res.totalRows,
-          inferred,
-        })
+        // If the first sheet has multiple classrooms (like DMC / CCT export with อ.1/1, ป.1/1, etc.):
+        if (classroomMap.size > 1) {
+          const sortedRooms = sortClassrooms(Array.from(classroomMap.keys()))
+          const groups: ParsedStudentGroup[] = []
+          let idx = 0
 
-        allValid += res.validRows.length
-        allInvalid += res.invalidRows.length
-        allTotal += res.totalRows
+          for (const roomName of sortedRooms) {
+            const roomRows = classroomMap.get(roomName)!
+            const inferred = roomName !== "ไม่ระบุห้อง" ? inferGradeAndSection(roomName) : null
+            groups.push({
+              groupId: `col_${idx++}_${encodeURIComponent(roomName)}`,
+              groupName: roomName,
+              sourceType: "column",
+              validRows: roomRows,
+              invalidRows: [],
+              totalRows: roomRows.length,
+              inferred,
+            })
+          }
+
+          return {
+            isMultiGroup: true,
+            groups,
+            allValidCount: firstSheetRes.validRows.length,
+            allInvalidCount: firstSheetRes.invalidRows.length,
+            allTotalCount: firstSheetRes.totalRows,
+            availableSheets: sheetNames,
+          }
+        }
       }
 
-      if (groups.length > 0) {
-        return {
-          isMultiGroup: groups.length > 1,
-          groups,
-          allValidCount: allValid,
-          allInvalidCount: allInvalid,
-          allTotalCount: allTotal,
-          availableSheets: sheetNames,
+      // If the first sheet didn't have multiple classrooms, but there are multiple sheets (e.g. รายชื่อนักเรียน_เทอม1.xlsx):
+      if (sheetNames.length > 1) {
+        const groups: ParsedStudentGroup[] = []
+        let allValid = 0
+        let allInvalid = 0
+        let allTotal = 0
+
+        for (let i = 0; i < sheetNames.length; i++) {
+          const sheetName = sheetNames[i]
+          const res = await parseAndValidateStudentRows(input, fileName, {
+            sheet: sheetName,
+            skipInFileDuplicates: options?.skipInFileDuplicates,
+            autoGenerateMissingCode: options?.autoGenerateMissingCode,
+            allowInvalidNationalIdAsNull: options?.allowInvalidNationalIdAsNull,
+          })
+
+          if (
+            res.totalRows === 0 &&
+            res.invalidRows.length === 1 &&
+            res.invalidRows[0].errors[0]?.includes("ไม่พบข้อมูลในไฟล์")
+          ) {
+            continue
+          }
+
+          const inferred = inferGradeAndSection(sheetName)
+          groups.push({
+            groupId: `sheet_${i}_${encodeURIComponent(sheetName)}`,
+            groupName: sheetName,
+            sourceType: "sheet",
+            validRows: res.validRows,
+            invalidRows: res.invalidRows,
+            totalRows: res.totalRows,
+            inferred,
+          })
+
+          allValid += res.validRows.length
+          allInvalid += res.invalidRows.length
+          allTotal += res.totalRows
+        }
+
+        if (groups.length > 0) {
+          return {
+            isMultiGroup: groups.length > 1,
+            groups,
+            allValidCount: allValid,
+            allInvalidCount: allInvalid,
+            allTotalCount: allTotal,
+            availableSheets: sheetNames,
+          }
         }
       }
     }
   }
 
-  // 2. Single-sheet XLSX or CSV: Parse entire content into table first
-  const parsedTable = await parseFileContent(input, fileName)
-  if (parsedTable.length < 2) {
-    const singleRes = await parseAndValidateStudentRows(input, fileName, options)
-    return {
-      isMultiGroup: false,
-      groups: [
-        {
-          groupId: "default",
-          groupName: fileName.replace(/\.[^/.]+$/, "") || "รายชื่อนักเรียน",
-          sourceType: "file",
-          validRows: singleRes.validRows,
-          invalidRows: singleRes.invalidRows,
-          totalRows: singleRes.totalRows,
-          inferred: inferGradeAndSection(fileName),
-        },
-      ],
-      allValidCount: singleRes.validRows.length,
-      allInvalidCount: singleRes.invalidRows.length,
-      allTotalCount: singleRes.totalRows,
-      availableSheets: parsedTable.availableSheets || [],
-    }
-  }
+  // 2. CSV or single-sheet file
+  const singleRes = await parseAndValidateStudentRows(input, fileName, options)
 
-  // 3. Inspect headers for classroom column
-  const headerRow = parsedTable[0]
-  let classroomColIdx = -1
-  headerRow.forEach((h, idx) => {
-    const norm = normalizeHeaderKey(h)
-    for (const [key, val] of Object.entries(HEADER_MAP)) {
-      if (val === "classroomName" && normalizeHeaderKey(key) === norm) {
-        classroomColIdx = idx
-        break
-      }
-    }
-  })
-
-  if (classroomColIdx !== -1) {
-    const dataRows = parsedTable.slice(1)
-    const classroomMap = new Map<string, string[][]>()
-
-    for (const row of dataRows) {
-      const roomVal = (row[classroomColIdx] || "").trim()
-      const roomKey = roomVal || "ไม่ระบุห้อง"
-      if (!classroomMap.has(roomKey)) {
-        classroomMap.set(roomKey, [])
-      }
-      classroomMap.get(roomKey)!.push(row)
+  if (singleRes.validRows.length > 0) {
+    const classroomMap = new Map<string, ParsedStudentRow[]>()
+    for (const s of singleRes.validRows) {
+      const roomKey = s.classroomName?.trim() || "ไม่ระบุห้อง"
+      if (!classroomMap.has(roomKey)) classroomMap.set(roomKey, [])
+      classroomMap.get(roomKey)!.push(s)
     }
 
     if (classroomMap.size > 1) {
+      const sortedRooms = sortClassrooms(Array.from(classroomMap.keys()))
       const groups: ParsedStudentGroup[] = []
-      let allValid = 0
-      let allInvalid = 0
-      let allTotal = 0
       let idx = 0
 
-      for (const [roomName, roomRows] of classroomMap.entries()) {
-        const subTable = [headerRow, ...roomRows]
-        const res = await parseAndValidateStudentRows(subTable, fileName, options)
-
+      for (const roomName of sortedRooms) {
+        const roomRows = classroomMap.get(roomName)!
         const inferred = roomName !== "ไม่ระบุห้อง" ? inferGradeAndSection(roomName) : null
         groups.push({
           groupId: `col_${idx++}_${encodeURIComponent(roomName)}`,
           groupName: roomName,
           sourceType: "column",
-          validRows: res.validRows,
-          invalidRows: res.invalidRows,
-          totalRows: res.totalRows,
+          validRows: roomRows,
+          invalidRows: [],
+          totalRows: roomRows.length,
           inferred,
         })
-
-        allValid += res.validRows.length
-        allInvalid += res.invalidRows.length
-        allTotal += res.totalRows
       }
 
       return {
         isMultiGroup: true,
         groups,
-        allValidCount: allValid,
-        allInvalidCount: allInvalid,
-        allTotalCount: allTotal,
-        availableSheets: parsedTable.availableSheets || [],
+        allValidCount: singleRes.validRows.length,
+        allInvalidCount: singleRes.invalidRows.length,
+        allTotalCount: singleRes.totalRows,
+        availableSheets: singleRes.availableSheets || [],
       }
     }
   }
 
-  // 4. Default: Single group
-  const singleRes = await parseAndValidateStudentRows(input, fileName, options)
+  // 3. Fallback: single group
   const defaultGroupName =
-    parsedTable.selectedSheet && parsedTable.selectedSheet !== "Sheet1"
-      ? parsedTable.selectedSheet
+    singleRes.selectedSheet && singleRes.selectedSheet !== "Sheet1"
+      ? singleRes.selectedSheet
       : fileName.replace(/\.[^/.]+$/, "") || "รายชื่อนักเรียน"
 
   return {
@@ -1290,7 +1371,7 @@ export async function parseAndValidateAllGroups(
       {
         groupId: "default",
         groupName: defaultGroupName,
-        sourceType: parsedTable.selectedSheet ? "sheet" : "file",
+        sourceType: singleRes.selectedSheet ? "sheet" : "file",
         validRows: singleRes.validRows,
         invalidRows: singleRes.invalidRows,
         totalRows: singleRes.totalRows,
@@ -1300,7 +1381,7 @@ export async function parseAndValidateAllGroups(
     allValidCount: singleRes.validRows.length,
     allInvalidCount: singleRes.invalidRows.length,
     allTotalCount: singleRes.totalRows,
-    availableSheets: parsedTable.availableSheets || [],
+    availableSheets: singleRes.availableSheets || [],
   }
 }
 

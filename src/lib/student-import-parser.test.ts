@@ -342,6 +342,46 @@ describe("Student Import Parser", () => {
       }
     })
 
+    it("should parse consolidated master sheet Excel (DMC format) into 9 classrooms with อ.1/1 to ป.6/1", async () => {
+      const filePath = path.join(process.cwd(), "data-import", "นักเรียน.xlsx")
+      if (fs.existsSync(filePath)) {
+        const buffer = fs.readFileSync(filePath)
+        const result = await parseAndValidateAllGroups(buffer, "นักเรียน.xlsx", {
+          autoGenerateMissingCode: true,
+          allowInvalidNationalIdAsNull: true,
+        })
+
+        expect(result.isMultiGroup).toBe(true)
+        expect(result.groups).toHaveLength(9)
+        expect(result.allValidCount).toBe(118)
+        expect(result.allInvalidCount).toBe(0)
+
+        // Verify group names and inferred levels
+        const groupNames = result.groups.map((g) => g.groupName)
+        expect(groupNames).toEqual([
+          "อ.1/1",
+          "อ.2/1",
+          "อ.3/1",
+          "ป.1/1",
+          "ป.2/1",
+          "ป.3/1",
+          "ป.4/1",
+          "ป.5/1",
+          "ป.6/1",
+        ])
+
+        const k1 = result.groups.find((g) => g.groupName === "อ.1/1")
+        expect(k1?.validRows).toHaveLength(9)
+        expect(k1?.inferred?.gradeLevel).toBe("k1")
+        expect(k1?.inferred?.section).toBe(1)
+
+        const p6 = result.groups.find((g) => g.groupName === "ป.6/1")
+        expect(p6?.validRows).toHaveLength(18)
+        expect(p6?.inferred?.gradeLevel).toBe("p6")
+        expect(p6?.inferred?.section).toBe(1)
+      }
+    })
+
     it("should auto-detect header row when row 0 is a title banner", async () => {
       const csv = `โรงเรียนบ้านหนองบัว รายชื่อนักเรียน ปีการศึกษา 2567\nที่,เลขประจำตัว,ชื่อ-สกุล,เลขประชาชน\n1.,STD901,ด.ช.มานะ ดีใจ,1100500123456`
       const res = await parseAndValidateStudentRows(csv)
