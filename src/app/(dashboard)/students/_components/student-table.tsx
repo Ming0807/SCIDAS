@@ -1,8 +1,21 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
-import { CheckSquare, Download, Edit2, Eye, SlidersHorizontal, Square, X } from "lucide-react"
+import { useRouter } from "next/navigation"
+import {
+  AlertTriangle,
+  CheckSquare,
+  Download,
+  Edit2,
+  Eye,
+  Loader2,
+  SlidersHorizontal,
+  Square,
+  Trash2,
+  X,
+} from "lucide-react"
+import { toast } from "sonner"
 
 import { StudentIdentity } from "@/components/dashboard"
 import { StatusBadge } from "@/components/dashboard/status-badge"
@@ -10,6 +23,11 @@ import { DataTable, Pagination, type DataTableColumn } from "@/components/data"
 import { EmptyState } from "@/components/feedback"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import {
+  deleteStudentAction,
+  deleteStudentsBatchAction,
+  clearAllStudentsInSchoolAction,
+} from "@/app/actions/student.actions"
 
 import type { StudentFilterState, StudentListItem, StudentSummary } from "./student-data"
 import { createStudentPageHref } from "./student-data"
@@ -23,6 +41,7 @@ export function StudentTable({
   pageSize,
   filters,
   canEdit,
+  allFilteredIds,
 }: {
   students: StudentListItem[]
   summary: StudentSummary
@@ -32,9 +51,27 @@ export function StudentTable({
   pageSize: number
   filters: StudentFilterState
   canEdit: boolean
+  allFilteredIds?: string[]
 }) {
+  const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isCompact, setIsCompact] = useState(false)
+
+  // Deletion modals state
+  const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false)
+  const [isBatchDeleting, startBatchDeleteTransition] = useTransition()
+
+  const [studentToDelete, setStudentToDelete] = useState<{
+    id: string
+    name: string
+    studentCode: string
+  } | null>(null)
+  const [isSingleDeleting, startSingleDeleteTransition] = useTransition()
+
+  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false)
+  const [clearConfirmText, setClearConfirmText] = useState("")
+  const [isClearingAll, startClearAllTransition] = useTransition()
+
   const getPageHref = createStudentPageHref(filters)
 
   const isAllSelected = students.length > 0 && students.every((s) => selectedIds.has(s.id))
@@ -83,6 +120,67 @@ export function StudentTable({
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  const selectAllFiltered = useCallback(() => {
+    if (allFilteredIds && allFilteredIds.length > 0) {
+      setSelectedIds(new Set(allFilteredIds))
+    }
+  }, [allFilteredIds])
+
+  const selectedStudentsPreview = useMemo(() => {
+    return students.filter((s) => selectedIds.has(s.id))
+  }, [students, selectedIds])
+
+  const handleExecuteBatchDelete = () => {
+    if (selectedIds.size === 0) return
+    startBatchDeleteTransition(async () => {
+      const ids = Array.from(selectedIds)
+      const res = await deleteStudentsBatchAction(ids)
+      if (res.ok) {
+        toast.success(res.message)
+        setSelectedIds(new Set())
+        setIsBatchDeleteModalOpen(false)
+        router.refresh()
+      } else {
+        toast.error(res.message || "ไม่สามารถลบนักเรียนได้")
+      }
+    })
+  }
+
+  const handleExecuteSingleDelete = () => {
+    if (!studentToDelete) return
+    startSingleDeleteTransition(async () => {
+      const res = await deleteStudentAction(studentToDelete.id)
+      if (res.ok) {
+        toast.success(res.message)
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(studentToDelete.id)
+          return next
+        })
+        setStudentToDelete(null)
+        router.refresh()
+      } else {
+        toast.error(res.message || "ไม่สามารถลบนักเรียนได้")
+      }
+    })
+  }
+
+  const handleExecuteClearAll = () => {
+    if (clearConfirmText.trim() !== "ยืนยัน") return
+    startClearAllTransition(async () => {
+      const res = await clearAllStudentsInSchoolAction()
+      if (res.ok) {
+        toast.success(res.message)
+        setSelectedIds(new Set())
+        setIsClearAllModalOpen(false)
+        setClearConfirmText("")
+        router.refresh()
+      } else {
+        toast.error(res.message || "ไม่สามารถล้างข้อมูลนักเรียนได้")
+      }
+    })
   }
 
   const columns: Array<DataTableColumn<StudentListItem>> = useMemo(() => {
@@ -197,7 +295,7 @@ export function StudentTable({
         header: "จัดการ",
         align: "right",
         sticky: "right",
-        className: "w-32",
+        className: "w-36",
         cell: (student) => (
           <div className="flex items-center justify-end gap-1.5">
             <Link
@@ -210,14 +308,34 @@ export function StudentTable({
               <span>ประวัติ</span>
             </Link>
             {canEdit && (
-              <Link
-                aria-label={`แก้ไขข้อมูล ${student.name}`}
-                title="แก้ไขข้อมูลนักเรียน"
-                href={`/students/${student.id}/edit`}
-                className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-              >
-                <Edit2 className="size-3.5" />
-              </Link>
+              <>
+                <Link
+                  aria-label={`แก้ไขข้อมูล ${student.name}`}
+                  title="แก้ไขข้อมูลนักเรียน"
+                  href={`/students/${student.id}/edit`}
+                  className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+                >
+                  <Edit2 className="size-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  aria-label={`ลบข้อมูล ${student.name}`}
+                  title="ลบข้อมูลนักเรียน"
+                  onClick={() =>
+                    setStudentToDelete({
+                      id: student.id,
+                      name: student.name,
+                      studentCode: student.studentCode,
+                    })
+                  }
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                    "text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer",
+                  )}
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </>
             )}
           </div>
         ),
@@ -229,6 +347,37 @@ export function StudentTable({
 
   return (
     <div className="relative flex flex-col h-full">
+      {/* Banner when selecting all on current page while more exist across other pages */}
+      {isAllSelected && allFilteredIds && allFilteredIds.length > students.length && selectedIds.size < allFilteredIds.length && (
+        <div className="mb-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs text-primary animate-in fade-in-0 duration-150">
+          <span>
+            เลือกนักเรียนในหน้านี้แล้ว <strong>{students.length}</strong> คน
+          </span>
+          <button
+            type="button"
+            onClick={selectAllFiltered}
+            className="font-bold underline hover:opacity-80 cursor-pointer"
+          >
+            เลือกนักเรียนทั้งหมด {allFilteredIds.length} คนในผลการค้นหานี้
+          </button>
+        </div>
+      )}
+
+      {allFilteredIds && selectedIds.size === allFilteredIds.length && allFilteredIds.length > students.length && (
+        <div className="mb-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs text-primary animate-in fade-in-0 duration-150">
+          <span>
+            เลือกนักเรียนทั้งหมด <strong>{allFilteredIds.length}</strong> คนในผลการค้นหานี้แล้ว
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="font-bold underline hover:opacity-80 cursor-pointer"
+          >
+            ยกเลิกการเลือก
+          </button>
+        </div>
+      )}
+
       <DataTable
         className="h-full min-h-[420px]"
         columns={columns}
@@ -271,6 +420,17 @@ export function StudentTable({
             </div>
 
             <div className="flex items-center gap-2">
+              {canEdit && summary.total > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsClearAllModalOpen(true)}
+                  title="ล้างข้อมูลนักเรียนทั้งหมดในโรงเรียน"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>ล้างข้อมูลทั้งหมด ({summary.total})</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setIsCompact((prev) => !prev)}
@@ -323,6 +483,16 @@ export function StudentTable({
               <Download className="size-3.5" />
               <span>ส่งออก CSV (Excel)</span>
             </button>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground shadow-xs transition-colors hover:bg-destructive/90 cursor-pointer"
+              >
+                <Trash2 className="size-3.5" />
+                <span>ลบที่เลือก ({selectedIds.size})</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
@@ -331,6 +501,205 @@ export function StudentTable({
               <X className="size-3.5" />
               <span>ยกเลิก</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 1: Batch Delete Confirmation */}
+      {isBatchDeleteModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-foreground">
+                  ยืนยันการลบนักเรียน {selectedIds.size} คน
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  ข้อมูลที่เกี่ยวข้องทั้งหมด เช่น ประวัติการเข้าเรียน ข้อมูลผู้ปกครอง และบันทึกพฤติกรรม จะถูกลบถาวรออกจากระบบและไม่สามารถกู้คืนได้
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 max-h-36 overflow-y-auto rounded-lg border border-border bg-muted/40 p-2.5 text-xs text-muted-foreground divide-y divide-border/50">
+              {selectedStudentsPreview.map((s) => (
+                <div key={s.id} className="py-1 flex items-center justify-between">
+                  <span className="font-medium text-foreground">{s.name}</span>
+                  <span className="font-mono text-muted-foreground">
+                    {s.studentCode} ({s.grade}/{s.classroom})
+                  </span>
+                </div>
+              ))}
+              {selectedIds.size > selectedStudentsPreview.length && (
+                <div className="py-1 text-center font-medium text-muted-foreground">
+                  ...และอีก {selectedIds.size - selectedStudentsPreview.length} คน
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isBatchDeleting}
+                onClick={() => setIsBatchDeleteModalOpen(false)}
+                className="rounded-xl border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isBatchDeleting}
+                onClick={handleExecuteBatchDelete}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground shadow-xs hover:bg-destructive/90 disabled:opacity-50 cursor-pointer"
+              >
+                {isBatchDeleting ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    กำลังลบ...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="size-3.5" />
+                    ยืนยันการลบ ({selectedIds.size} คน)
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Single Student Delete Confirmation */}
+      {studentToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-foreground">
+                  ยืนยันการลบข้อมูลนักเรียน
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  คุณต้องการลบ <strong className="text-foreground">{studentToDelete.name}</strong> (รหัสประจำตัว: <span className="font-mono">{studentToDelete.studentCode}</span>) ใช่หรือไม่? ข้อมูลทั้งหมดที่เกี่ยวข้องจะถูกลบถาวร
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isSingleDeleting}
+                onClick={() => setStudentToDelete(null)}
+                className="rounded-xl border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isSingleDeleting}
+                onClick={handleExecuteSingleDelete}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground shadow-xs hover:bg-destructive/90 disabled:opacity-50 cursor-pointer"
+              >
+                {isSingleDeleting ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    กำลังลบ...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="size-3.5" />
+                    ลบนักเรียน
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Clear All Students Confirmation */}
+      {isClearAllModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card p-6 shadow-2xl animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <AlertTriangle className="size-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-destructive">
+                  ล้างข้อมูลนักเรียนทั้งหมดในโรงเรียน
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  การดำเนินการนี้จะลบข้อมูลนักเรียนทั้งหมด <strong className="text-foreground font-semibold">{summary.total} คน</strong> ในโรงเรียน เพื่อให้คุณสามารถเริ่มต้นระบบใหม่หรือนำเข้าไฟล์นักเรียนใหม่ได้
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20">
+              คำเตือน: ข้อมูลการเข้าเรียน บันทึกพฤติกรรม และประวัติทั้งหมดของนักเรียนจะถูกลบถาวร ไม่สามารถกู้คืนได้
+            </div>
+
+            <div className="mt-4">
+              <label htmlFor="clearConfirmInput" className="block text-xs font-medium text-foreground">
+                พิมพ์คำว่า <span className="font-bold text-destructive">ยืนยัน</span> เพื่อดำเนินการ:
+              </label>
+              <input
+                id="clearConfirmInput"
+                type="text"
+                value={clearConfirmText}
+                onChange={(e) => setClearConfirmText(e.target.value)}
+                placeholder="พิมพ์ 'ยืนยัน'"
+                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-destructive"
+              />
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isClearingAll}
+                onClick={() => {
+                  setIsClearAllModalOpen(false)
+                  setClearConfirmText("")
+                }}
+                className="rounded-xl border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isClearingAll || clearConfirmText.trim() !== "ยืนยัน"}
+                onClick={handleExecuteClearAll}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground shadow-xs hover:bg-destructive/90 disabled:opacity-40 cursor-pointer"
+              >
+                {isClearingAll ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    กำลังล้างข้อมูล...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="size-3.5" />
+                    ล้างข้อมูลทั้งหมด ({summary.total} คน)
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

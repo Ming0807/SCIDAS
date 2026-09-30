@@ -4,6 +4,9 @@ import {
   createStudentAction,
   updateStudentAction,
   searchStudentsQuickAction,
+  deleteStudentAction,
+  deleteStudentsBatchAction,
+  clearAllStudentsInSchoolAction,
 } from "./student.actions"
 
 vi.mock("next/cache", () => ({
@@ -514,5 +517,177 @@ describe("student.actions", () => {
       expect(mockClient.from).toHaveBeenCalledWith("v_student_worklist")
     })
   })
+
+  describe("deleteStudentAction", () => {
+    it("fails with FORBIDDEN if role is not allowed to delete", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "student",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await deleteStudentAction("11111111-1111-4111-8111-111111111111")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+      }
+    })
+
+    it("fails with VALIDATION_ERROR on invalid student uuid", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await deleteStudentAction("invalid-uuid")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+      }
+    })
+
+    it("successfully deletes student and revalidates paths", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockStudentSelect = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: "11111111-1111-4111-8111-111111111111",
+            student_code: "1001",
+            first_name: "สมชาย",
+            last_name: "ใจดี",
+          },
+          error: null,
+        }),
+      }
+
+      const mockStudentDelete: Record<string, unknown> = {}
+      mockStudentDelete.delete = vi.fn(() => mockStudentDelete)
+      mockStudentDelete.eq = vi.fn(() => mockStudentDelete)
+      mockStudentDelete.then = (onF: (v: unknown) => unknown) =>
+        Promise.resolve({ error: null }).then(onF)
+
+      let callCount = 0
+      const mockFrom = vi.fn().mockImplementation(() => {
+        callCount++
+        if (callCount === 1) return mockStudentSelect
+        return mockStudentDelete
+      })
+
+      // @ts-expect-error mock client
+      vi.mocked(createClient).mockResolvedValueOnce({ from: mockFrom })
+
+      const result = await deleteStudentAction("11111111-1111-4111-8111-111111111111")
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.success).toBe(true)
+      }
+      expect(revalidatePath).toHaveBeenCalledWith("/students")
+    })
+  })
+
+  describe("deleteStudentsBatchAction", () => {
+    it("fails with VALIDATION_ERROR on empty studentIds array", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await deleteStudentsBatchAction([])
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+      }
+    })
+
+    it("successfully batch deletes students and returns deleted count", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const studentIds = [
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+      ]
+
+      const mockQuery = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        select: vi.fn().mockResolvedValue({
+          data: [{ id: studentIds[0] }, { id: studentIds[1] }],
+          error: null,
+        }),
+      }
+
+      // @ts-expect-error mock client
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn().mockReturnValue(mockQuery),
+      })
+
+      const result = await deleteStudentsBatchAction(studentIds)
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.deletedCount).toBe(2)
+        expect(result.data.success).toBe(true)
+      }
+      expect(revalidatePath).toHaveBeenCalledWith("/students")
+    })
+  })
+
+  describe("clearAllStudentsInSchoolAction", () => {
+    it("clears all students for the school and returns count", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockQuery = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockResolvedValue({
+          data: [{ id: "s1" }, { id: "s2" }, { id: "s3" }],
+          error: null,
+        }),
+      }
+
+      // @ts-expect-error mock client
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn().mockReturnValue(mockQuery),
+      })
+
+      const result = await clearAllStudentsInSchoolAction()
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.deletedCount).toBe(3)
+        expect(result.data.success).toBe(true)
+      }
+      expect(revalidatePath).toHaveBeenCalledWith("/students")
+    })
+  })
 })
+
 

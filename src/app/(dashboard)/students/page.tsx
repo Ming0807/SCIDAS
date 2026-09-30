@@ -190,6 +190,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
               students={pagedStudents}
               summary={summary}
               totalFiltered={filteredStudents.length}
+              allFilteredIds={filteredStudents.map((s) => s.id)}
               page={currentPage}
               totalPages={totalPages}
               pageSize={PAGE_SIZE}

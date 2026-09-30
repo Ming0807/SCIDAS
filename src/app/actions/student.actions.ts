@@ -35,7 +35,7 @@ type StudentFormData = {
 }
 
 export type StudentArchiveStatus = "transferred" | "dropped_out"
-const studentEditors = new Set(["admin", "homeroom_teacher", "counselor"])
+const studentEditors = new Set(["admin", "homeroom_teacher", "counselor", "director"])
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const guardianRelationSchema = z.enum([
   "father",
@@ -747,4 +747,180 @@ export async function searchStudentsQuickAction(
     return getActionFailure(err)
   }
 }
+
+export async function deleteStudentAction(
+  studentId: string,
+): Promise<ActionResult<{ id: string; success: boolean }>> {
+  try {
+    const context = await getCurrentUserContext()
+
+    if (!context.profileId || !context.schoolId || !studentEditors.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ลบข้อมูลนักเรียน")
+    }
+
+    if (!studentId || !uuidPattern.test(studentId)) {
+      return actionFail("VALIDATION_ERROR", "รหัสนักเรียนไม่ถูกต้อง")
+    }
+
+    const client = await createClient()
+
+    const { data: student, error: fetchErr } = await client
+      .from("students")
+      .select("id, student_code, first_name, last_name")
+      .eq("id", studentId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.error("Error finding student to delete:", fetchErr)
+      return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการตรวจสอบข้อมูลนักเรียน")
+    }
+
+    if (!student) {
+      return actionFail("NOT_FOUND", "ไม่พบข้อมูลนักเรียนที่ต้องการลบ")
+    }
+
+    const { error: deleteErr } = await client
+      .from("students")
+      .delete()
+      .eq("id", studentId)
+      .eq("school_id", context.schoolId)
+
+    if (deleteErr) {
+      console.error("Error deleting student:", deleteErr)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถลบข้อมูลนักเรียนได้")
+    }
+
+    revalidatePath("/students")
+    revalidatePath("/students/import")
+    revalidatePath("/dashboard")
+    revalidatePath(`/students/${studentId}`)
+
+    logAudit({
+      action: "DELETE",
+      tableName: "students",
+      recordId: student.id,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      oldData: {
+        student_code: student.student_code,
+        first_name: student.first_name,
+        last_name: student.last_name,
+      },
+    }).catch(() => {})
+
+    return actionOk(`ลบข้อมูลนักเรียน ${student.first_name} ${student.last_name} เรียบร้อยแล้ว`, {
+      data: { id: student.id, success: true },
+    })
+  } catch (err) {
+    return getActionFailure(err)
+  }
+}
+
+export async function deleteStudentsBatchAction(
+  studentIds: string[],
+): Promise<ActionResult<{ deletedCount: number; success: boolean }>> {
+  try {
+    const context = await getCurrentUserContext()
+
+    if (!context.profileId || !context.schoolId || !studentEditors.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ลบข้อมูลนักเรียน")
+    }
+
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      return actionFail("VALIDATION_ERROR", "กรุณาเลือกนักเรียนที่ต้องการลบอย่างน้อย 1 คน")
+    }
+
+    const validIds = studentIds.filter((id) => uuidPattern.test(id))
+    if (validIds.length === 0) {
+      return actionFail("VALIDATION_ERROR", "รหัสนักเรียนไม่ถูกต้อง")
+    }
+
+    const client = await createClient()
+
+    let totalDeleted = 0
+    const chunkSize = 200
+    for (let i = 0; i < validIds.length; i += chunkSize) {
+      const chunk = validIds.slice(i, i + chunkSize)
+      const { data, error } = await client
+        .from("students")
+        .delete()
+        .eq("school_id", context.schoolId)
+        .in("id", chunk)
+        .select("id")
+
+      if (error) {
+        console.error("Error batch deleting students:", error)
+        return actionFail("INTERNAL_ERROR", "ไม่สามารถลบข้อมูลนักเรียนบางส่วนได้")
+      }
+      totalDeleted += data?.length ?? 0
+    }
+
+    revalidatePath("/students")
+    revalidatePath("/students/import")
+    revalidatePath("/dashboard")
+
+    logAudit({
+      action: "DELETE",
+      tableName: "students",
+      recordId: context.schoolId,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      oldData: { deletedCount: totalDeleted, studentIds: validIds },
+    }).catch(() => {})
+
+    return actionOk(`ลบข้อมูลนักเรียนเรียบร้อยแล้ว (${totalDeleted} คน)`, {
+      data: { deletedCount: totalDeleted, success: true },
+    })
+  } catch (err) {
+    return getActionFailure(err)
+  }
+}
+
+export async function clearAllStudentsInSchoolAction(): Promise<
+  ActionResult<{ deletedCount: number; success: boolean }>
+> {
+  try {
+    const context = await getCurrentUserContext()
+
+    if (!context.profileId || !context.schoolId || !studentEditors.has(context.role)) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ล้างข้อมูลนักเรียน")
+    }
+
+    const client = await createClient()
+
+    const { data, error } = await client
+      .from("students")
+      .delete()
+      .eq("school_id", context.schoolId)
+      .select("id")
+
+    if (error) {
+      console.error("Error clearing all students:", error)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถล้างข้อมูลนักเรียนได้")
+    }
+
+    const totalDeleted = data?.length ?? 0
+
+    revalidatePath("/students")
+    revalidatePath("/students/import")
+    revalidatePath("/dashboard")
+
+    logAudit({
+      action: "DELETE",
+      tableName: "students",
+      recordId: context.schoolId,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      oldData: { action: "CLEAR_ALL_STUDENTS", deletedCount: totalDeleted },
+    }).catch(() => {})
+
+    return actionOk(`ล้างข้อมูลนักเรียนทั้งหมดในโรงเรียนเรียบร้อยแล้ว (${totalDeleted} คน)`, {
+      data: { deletedCount: totalDeleted, success: true },
+    })
+  } catch (err) {
+    return getActionFailure(err)
+  }
+}
+
 

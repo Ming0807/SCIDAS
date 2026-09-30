@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   Square,
+  Trash2,
   Upload,
   UserCheck,
   Users,
@@ -25,6 +26,7 @@ import {
 import { toast } from "sonner"
 
 import { EmptyState } from "@/components/feedback/empty-state"
+import { clearAllStudentsInSchoolAction } from "@/app/actions/student.actions"
 import type {
   ImportDuplicateMode,
   ParseImportResult,
@@ -175,6 +177,28 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     name: "",
   })
   const [isCreatingRoom, startCreateRoomTransition] = useTransition()
+
+  // Reset/Clear all existing students state
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+  const [resetConfirmText, setResetConfirmText] = useState("")
+  const [isResetting, startResetTransition] = useTransition()
+
+  const handleResetStudents = () => {
+    if (resetConfirmText.trim() !== "ยืนยัน") return
+    startResetTransition(async () => {
+      const res = await clearAllStudentsInSchoolAction()
+      if (res.ok) {
+        toast.success(res.message)
+        setIsResetModalOpen(false)
+        setResetConfirmText("")
+        if (file) {
+          processFile(file)
+        }
+      } else {
+        toast.error(res.message || "ไม่สามารถล้างข้อมูลนักเรียนได้")
+      }
+    })
+  }
 
   // Download CSV template via Server Action
   const handleDownloadCsvTemplate = async () => {
@@ -570,6 +594,12 @@ export function StudentImportClient({ context }: { context: ImportContextData })
 
   const selectedClassroom = classroomsList.find((c) => c.id === selectedClassroomId)
 
+  const hasSecondaryInSchool = classroomsList.some((c) =>
+    ["m1", "m2", "m3", "m4", "m5", "m6"].includes(c.gradeLevel) ||
+    c.name.includes("ม.") ||
+    c.name.includes("มัธยม"),
+  )
+
   return (
     <div className="space-y-6">
       {/* 1. Header & Download Templates */}
@@ -602,6 +632,15 @@ export function StudentImportClient({ context }: { context: ImportContextData })
             >
               <FileSpreadsheet className="size-4 text-emerald-600 dark:text-emerald-400" />
               แบบฟอร์ม Excel (.xlsx)
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsResetModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-3.5 py-2 text-xs font-semibold hover:bg-destructive/20 shadow-xs transition-colors cursor-pointer"
+              title="ล้างข้อมูลนักเรียนเดิมในโรงเรียนเพื่อนำเข้าใหม่"
+            >
+              <Trash2 className="size-4" />
+              ล้างข้อมูลเดิมเพื่อเริ่มใหม่
             </button>
           </div>
         </div>
@@ -1523,14 +1562,16 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                     <option value="p5">ประถมศึกษาปีที่ 5 (ป.5)</option>
                     <option value="p6">ประถมศึกษาปีที่ 6 (ป.6)</option>
                   </optgroup>
-                  <optgroup label="ระดับมัธยมศึกษา">
-                    <option value="m1">มัธยมศึกษาปีที่ 1 (ม.1)</option>
-                    <option value="m2">มัธยมศึกษาปีที่ 2 (ม.2)</option>
-                    <option value="m3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
-                    <option value="m4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
-                    <option value="m5">มัธยมศึกษาปีที่ 5 (ม.5)</option>
-                    <option value="m6">มัธยมศึกษาปีที่ 6 (ม.6)</option>
-                  </optgroup>
+                  {hasSecondaryInSchool && (
+                    <optgroup label="ระดับมัธยมศึกษา">
+                      <option value="m1">มัธยมศึกษาปีที่ 1 (ม.1)</option>
+                      <option value="m2">มัธยมศึกษาปีที่ 2 (ม.2)</option>
+                      <option value="m3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
+                      <option value="m4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
+                      <option value="m5">มัธยมศึกษาปีที่ 5 (ม.5)</option>
+                      <option value="m6">มัธยมศึกษาปีที่ 6 (ม.6)</option>
+                    </optgroup>
+                  )}
                 </select>
               </div>
 
@@ -1775,6 +1816,82 @@ export function StudentImportClient({ context }: { context: ImportContextData })
           </div>
         </div>
       )}
+
+      {/* 9. CLEAR / RESET ALL STUDENTS MODAL */}
+      {isResetModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card p-6 shadow-2xl animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <AlertTriangle className="size-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-destructive">
+                  ล้างข้อมูลนักเรียนเดิมทั้งหมดในโรงเรียน
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  เหมาะสำหรับใช้เมื่อต้องการเคลียร์ข้อมูลเก่า หรือทดสอบนำเข้าไฟล์ใหม่ตั้งแต่ต้น ระบบจะลบข้อมูลนักเรียนเดิมทั้งหมดอย่างถาวร
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20">
+              คำเตือน: ข้อมูลนักเรียนทั้งหมด การเข้าเรียน และประวัติในระบบจะถูกลบถาวร ไม่สามารถย้อนกลับได้
+            </div>
+
+            <div className="mt-4">
+              <label htmlFor="importResetInput" className="block text-xs font-medium text-foreground">
+                พิมพ์คำว่า <span className="font-bold text-destructive">ยืนยัน</span> เพื่อดำเนินการ:
+              </label>
+              <input
+                id="importResetInput"
+                type="text"
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="พิมพ์ 'ยืนยัน'"
+                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-destructive"
+              />
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isResetting}
+                onClick={() => {
+                  setIsResetModalOpen(false)
+                  setResetConfirmText("")
+                }}
+                className="rounded-xl border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isResetting || resetConfirmText.trim() !== "ยืนยัน"}
+                onClick={handleResetStudents}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground shadow-xs hover:bg-destructive/90 disabled:opacity-40 cursor-pointer"
+              >
+                {isResetting ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    กำลังล้างข้อมูล...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="size-3.5" />
+                    ยืนยันล้างข้อมูลนักเรียนเดิม
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
