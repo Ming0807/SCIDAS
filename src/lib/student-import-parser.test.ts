@@ -7,6 +7,7 @@ import {
   generateStudentImportTemplateXlsx,
   inferGradeAndSection,
   parseAndValidateAllGroups,
+  composeThaiAddress,
 } from "./student-import-parser"
 import * as fs from "fs"
 import * as path from "path"
@@ -411,6 +412,51 @@ describe("Student Import Parser", () => {
       expect(res.validRows.length).toBe(1)
       expect(res.invalidRows.length).toBe(0)
       expect(res.validRows[0].nationalId).toBeNull()
+    })
+
+    it("should auto-compose address from DMC current address columns", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เลขที่บ้าน (ที่อยู่ปัจจุบัน),หมู่ (ที่อยู่ปัจจุบัน),ถนน (ที่อยู่ปัจจุบัน),ตำบล (ที่อยู่ปัจจุบัน),อำเภอ (ที่อยู่ปัจจุบัน),จังหวัด (ที่อยู่ปัจจุบัน),รหัสไปรษณีย์ (ที่อยู่ปัจจุบัน)\n1081,ฐิรดา,จันศรี,13,6,-,โพธิ์ไทร,ป่าติ้ว,ยโสธร,35150`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      expect(res.validRows[0].address).toBe("บ้านเลขที่ 13 หมู่ 6 ต.โพธิ์ไทร อ.ป่าติ้ว จ.ยโสธร 35150")
+    })
+
+    it("should auto-compose address from registered address columns when current is not provided", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เลขที่บ้าน (ทะเบียนบ้าน),หมู่ (ทะเบียนบ้าน),ตำบล (ทะเบียนบ้าน),อำเภอ (ทะเบียนบ้าน),จังหวัด (ทะเบียนบ้าน),รหัสไปรษณีย์ (ทะเบียนบ้าน)\n1082,ธนภูมิ,ทองสิงห์,104,6,โพธิ์ไทร,ป่าติ้ว,ยโสธร,35150`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      expect(res.validRows[0].address).toBe("บ้านเลขที่ 104 หมู่ 6 ต.โพธิ์ไทร อ.ป่าติ้ว จ.ยโสธร 35150")
+    })
+  })
+
+  describe("composeThaiAddress", () => {
+    it("should compose provincial address correctly", () => {
+      const addr = composeThaiAddress({
+        houseNo: "19",
+        moo: "4",
+        street: "-",
+        subdistrict: "ตะมะยูง",
+        district: "ศรีสาคร",
+        province: "นราธิวาส",
+        postalCode: "96210",
+      })
+      expect(addr).toBe("บ้านเลขที่ 19 หมู่ 4 ต.ตะมะยูง อ.ศรีสาคร จ.นราธิวาส 96210")
+    })
+
+    it("should compose Bangkok address with แขวง and เขต", () => {
+      const addr = composeThaiAddress({
+        houseNo: "99/1",
+        street: "สุขุมวิท 21",
+        subdistrict: "คลองเตยเหนือ",
+        district: "วัฒนา",
+        province: "กรุงเทพมหานคร",
+        postalCode: "10110",
+      })
+      expect(addr).toBe("บ้านเลขที่ 99/1 ถ.สุขุมวิท 21 แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร 10110")
+    })
+
+    it("should return null when all fields are empty or dashes", () => {
+      expect(composeThaiAddress({ houseNo: "-", moo: "", street: "null" })).toBeNull()
     })
   })
 })

@@ -217,6 +217,107 @@ export function splitThaiFullName(fullName: string): {
 }
 
 // ----------------------------------------------------------------------------
+// Thai Address Composition Helper
+// ----------------------------------------------------------------------------
+export function composeThaiAddress(parts: {
+  houseNo?: string | null
+  moo?: string | null
+  street?: string | null
+  subdistrict?: string | null
+  district?: string | null
+  province?: string | null
+  postalCode?: string | null
+}): string | null {
+  const clean = (val?: string | null) => {
+    if (!val) return ""
+    const trimmed = String(val).trim()
+    return trimmed === "-" ||
+      trimmed === "--" ||
+      trimmed === "null" ||
+      trimmed === "undefined"
+      ? ""
+      : trimmed
+  }
+
+  const houseNo = clean(parts.houseNo)
+  const moo = clean(parts.moo)
+  const street = clean(parts.street)
+  const subdistrict = clean(parts.subdistrict)
+  const district = clean(parts.district)
+  const province = clean(parts.province)
+  const postalCode = clean(parts.postalCode)
+
+  if (
+    !houseNo &&
+    !moo &&
+    !street &&
+    !subdistrict &&
+    !district &&
+    !province &&
+    !postalCode
+  ) {
+    return null
+  }
+
+  const isBkk = /กรุงเทพ|กทม/i.test(province)
+  const tokens: string[] = []
+
+  if (houseNo) {
+    if (/^(บ้านเลขที่|เลขที่)/.test(houseNo)) {
+      tokens.push(houseNo)
+    } else {
+      tokens.push(`บ้านเลขที่ ${houseNo}`)
+    }
+  }
+
+  if (moo) {
+    if (/^หมู่/.test(moo)) {
+      tokens.push(moo)
+    } else {
+      tokens.push(`หมู่ ${moo}`)
+    }
+  }
+
+  if (street) {
+    if (/^(ถ\.|ถนน|ซอย)/.test(street)) {
+      tokens.push(street)
+    } else {
+      tokens.push(`ถ.${street}`)
+    }
+  }
+
+  if (subdistrict) {
+    if (/^(ต\.|ตำบล|แขวง)/.test(subdistrict)) {
+      tokens.push(subdistrict)
+    } else {
+      tokens.push(isBkk ? `แขวง${subdistrict}` : `ต.${subdistrict}`)
+    }
+  }
+
+  if (district) {
+    if (/^(อ\.|อำเภอ|เขต)/.test(district)) {
+      tokens.push(district)
+    } else {
+      tokens.push(isBkk ? `เขต${district}` : `อ.${district}`)
+    }
+  }
+
+  if (province) {
+    if (/^(จ\.|จังหวัด)/.test(province) || isBkk) {
+      tokens.push(province)
+    } else {
+      tokens.push(`จ.${province}`)
+    }
+  }
+
+  if (postalCode) {
+    tokens.push(postalCode)
+  }
+
+  return tokens.join(" ")
+}
+
+// ----------------------------------------------------------------------------
 // Excel Sheet Names Inspector
 // ----------------------------------------------------------------------------
 export async function getExcelSheetNames(
@@ -444,10 +545,35 @@ export async function parseFileContent(
 // ----------------------------------------------------------------------------
 // Header Mapping
 // ----------------------------------------------------------------------------
-const HEADER_MAP: Record<
-  string,
-  keyof ParsedStudentRow | "fullName" | "classroomName" | "gradeName" | "roomName"
-> = {
+export type IntermediateHeaderKey =
+  | keyof ParsedStudentRow
+  | "fullName"
+  | "classroomName"
+  | "gradeName"
+  | "roomName"
+  | "currentHouseNo"
+  | "currentMoo"
+  | "currentStreet"
+  | "currentSubdistrict"
+  | "currentDistrict"
+  | "currentProvince"
+  | "currentPostalCode"
+  | "registeredHouseNo"
+  | "registeredMoo"
+  | "registeredStreet"
+  | "registeredSubdistrict"
+  | "registeredDistrict"
+  | "registeredProvince"
+  | "registeredPostalCode"
+  | "genericHouseNo"
+  | "genericMoo"
+  | "genericStreet"
+  | "genericSubdistrict"
+  | "genericDistrict"
+  | "genericProvince"
+  | "genericPostalCode"
+
+const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   // ชั้นเรียน / ระดับชั้น (Grade)
   ชั้น: "gradeName",
   ระดับชั้น: "gradeName",
@@ -565,9 +691,80 @@ const HEADER_MAP: Record<
   blood_type: "bloodType",
   bloodtype: "bloodType",
 
-  // ที่อยู่
+  // ที่อยู่แบบเต็ม (Full Address)
   ที่อยู่: "address",
   address: "address",
+  ที่อยู่ปัจจุบัน: "address",
+  ที่อยู่ตามทะเบียนบ้าน: "address",
+  ที่อยู่ทะเบียนบ้าน: "address",
+
+  // ที่อยู่ปัจจุบัน แยกส่วน (Current Address Components)
+  "เลขที่บ้าน (ที่อยู่ปัจจุบัน)": "currentHouseNo",
+  "บ้านเลขที่ (ที่อยู่ปัจจุบัน)": "currentHouseNo",
+  "เลขที่ (ที่อยู่ปัจจุบัน)": "currentHouseNo",
+  "หมู่ (ที่อยู่ปัจจุบัน)": "currentMoo",
+  "หมู่ที่ (ที่อยู่ปัจจุบัน)": "currentMoo",
+  "ถนน (ที่อยู่ปัจจุบัน)": "currentStreet",
+  "ซอย (ที่อยู่ปัจจุบัน)": "currentStreet",
+  "ตำบล (ที่อยู่ปัจจุบัน)": "currentSubdistrict",
+  "แขวง (ที่อยู่ปัจจุบัน)": "currentSubdistrict",
+  "ตำบล/แขวง (ที่อยู่ปัจจุบัน)": "currentSubdistrict",
+  "อำเภอ (ที่อยู่ปัจจุบัน)": "currentDistrict",
+  "เขต (ที่อยู่ปัจจุบัน)": "currentDistrict",
+  "อำเภอ/เขต (ที่อยู่ปัจจุบัน)": "currentDistrict",
+  "จังหวัด (ที่อยู่ปัจจุบัน)": "currentProvince",
+  "รหัสไปรษณีย์ (ที่อยู่ปัจจุบัน)": "currentPostalCode",
+
+  // ทะเบียนบ้าน แยกส่วน (Registered Address Components)
+  "เลขที่บ้าน (ทะเบียนบ้าน)": "registeredHouseNo",
+  "บ้านเลขที่ (ทะเบียนบ้าน)": "registeredHouseNo",
+  "เลขที่ (ทะเบียนบ้าน)": "registeredHouseNo",
+  "หมู่ (ทะเบียนบ้าน)": "registeredMoo",
+  "หมู่ที่ (ทะเบียนบ้าน)": "registeredMoo",
+  "ถนน (ทะเบียนบ้าน)": "registeredStreet",
+  "ซอย (ทะเบียนบ้าน)": "registeredStreet",
+  "ตำบล (ทะเบียนบ้าน)": "registeredSubdistrict",
+  "แขวง (ทะเบียนบ้าน)": "registeredSubdistrict",
+  "ตำบล/แขวง (ทะเบียนบ้าน)": "registeredSubdistrict",
+  "อำเภอ (ทะเบียนบ้าน)": "registeredDistrict",
+  "เขต (ทะเบียนบ้าน)": "registeredDistrict",
+  "อำเภอ/เขต (ทะเบียนบ้าน)": "registeredDistrict",
+  "จังหวัด (ทะเบียนบ้าน)": "registeredProvince",
+  "รหัสไปรษณีย์ (ทะเบียนบ้าน)": "registeredPostalCode",
+
+  // ที่อยู่ทั่วไป แยกส่วน (Generic Address Components)
+  เลขที่บ้าน: "genericHouseNo",
+  บ้านเลขที่: "genericHouseNo",
+  house_no: "genericHouseNo",
+  houseno: "genericHouseNo",
+  หมู่: "genericMoo",
+  หมู่ที่: "genericMoo",
+  moo: "genericMoo",
+  ถนน: "genericStreet",
+  ซอย: "genericStreet",
+  road: "genericStreet",
+  street: "genericStreet",
+  ตำบล: "genericSubdistrict",
+  แขวง: "genericSubdistrict",
+  "ตำบล/แขวง": "genericSubdistrict",
+  subdistrict: "genericSubdistrict",
+  tambon: "genericSubdistrict",
+  tumbol: "genericSubdistrict",
+  อำเภอ: "genericDistrict",
+  เขต: "genericDistrict",
+  "อำเภอ/เขต": "genericDistrict",
+  district: "genericDistrict",
+  amphur: "genericDistrict",
+  amphoe: "genericDistrict",
+  จังหวัด: "genericProvince",
+  province: "genericProvince",
+  changwat: "genericProvince",
+  รหัสไปรษณีย์: "genericPostalCode",
+  postal_code: "genericPostalCode",
+  postalcode: "genericPostalCode",
+  zip: "genericPostalCode",
+  zipcode: "genericPostalCode",
+  zip_code: "genericPostalCode",
 
   // เลขที่
   เลขที่: "studentNumber",
@@ -811,18 +1008,12 @@ export async function parseAndValidateStudentRows(
 
   // Auto-detect header row within first 5 rows (in case row 0 is a title or banner)
   let headerRowIndex = 0
-  let headerMap: Record<
-    number,
-    keyof ParsedStudentRow | "fullName" | "classroomName" | "gradeName" | "roomName"
-  > = {}
+  let headerMap: Record<number, IntermediateHeaderKey> = {}
   let bestScore = 0
 
   for (let r = 0; r < Math.min(table.length, 5); r++) {
     const candidateRow = table[r]
-    const currentMap: Record<
-      number,
-      keyof ParsedStudentRow | "fullName" | "classroomName" | "gradeName" | "roomName"
-    > = {}
+    const currentMap: Record<number, IntermediateHeaderKey> = {}
     let score = 0
 
     candidateRow.forEach((header, index) => {
@@ -931,6 +1122,64 @@ export async function parseAndValidateStudentRows(
     }
     delete rowObj.gradeName
     delete rowObj.roomName
+
+    // Auto-assemble Thai address if not already explicitly provided
+    if (!rowObj.address) {
+      const currentAddress = composeThaiAddress({
+        houseNo: rowObj.currentHouseNo as string | undefined,
+        moo: rowObj.currentMoo as string | undefined,
+        street: rowObj.currentStreet as string | undefined,
+        subdistrict: rowObj.currentSubdistrict as string | undefined,
+        district: rowObj.currentDistrict as string | undefined,
+        province: rowObj.currentProvince as string | undefined,
+        postalCode: rowObj.currentPostalCode as string | undefined,
+      })
+
+      const registeredAddress = composeThaiAddress({
+        houseNo: rowObj.registeredHouseNo as string | undefined,
+        moo: rowObj.registeredMoo as string | undefined,
+        street: rowObj.registeredStreet as string | undefined,
+        subdistrict: rowObj.registeredSubdistrict as string | undefined,
+        district: rowObj.registeredDistrict as string | undefined,
+        province: rowObj.registeredProvince as string | undefined,
+        postalCode: rowObj.registeredPostalCode as string | undefined,
+      })
+
+      const genericAddress = composeThaiAddress({
+        houseNo: rowObj.genericHouseNo as string | undefined,
+        moo: rowObj.genericMoo as string | undefined,
+        street: rowObj.genericStreet as string | undefined,
+        subdistrict: rowObj.genericSubdistrict as string | undefined,
+        district: rowObj.genericDistrict as string | undefined,
+        province: rowObj.genericProvince as string | undefined,
+        postalCode: rowObj.genericPostalCode as string | undefined,
+      })
+
+      rowObj.address = currentAddress || registeredAddress || genericAddress || null
+    }
+
+    // Clean up temporary address component fields
+    delete rowObj.currentHouseNo
+    delete rowObj.currentMoo
+    delete rowObj.currentStreet
+    delete rowObj.currentSubdistrict
+    delete rowObj.currentDistrict
+    delete rowObj.currentProvince
+    delete rowObj.currentPostalCode
+    delete rowObj.registeredHouseNo
+    delete rowObj.registeredMoo
+    delete rowObj.registeredStreet
+    delete rowObj.registeredSubdistrict
+    delete rowObj.registeredDistrict
+    delete rowObj.registeredProvince
+    delete rowObj.registeredPostalCode
+    delete rowObj.genericHouseNo
+    delete rowObj.genericMoo
+    delete rowObj.genericStreet
+    delete rowObj.genericSubdistrict
+    delete rowObj.genericDistrict
+    delete rowObj.genericProvince
+    delete rowObj.genericPostalCode
 
     // Skip empty or numbering-only rows (e.g. "13.", null, null, null)
     const hasIdentifyingData = Boolean(

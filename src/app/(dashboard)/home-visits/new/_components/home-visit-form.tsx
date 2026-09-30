@@ -17,6 +17,7 @@ type StudentOption = {
   name: string
   classroom?: string
   code: string
+  address?: string
 }
 
 type HomeVisitFormProps = {
@@ -30,7 +31,21 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
     FormData
   >(createHomeVisitAction, null)
 
+  const initialStudent = studentOptions.find((s) => s.id === (defaultStudentId ?? ""))
   const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId ?? "")
+  const [addressVisited, setAddressVisited] = useState<string>(initialStudent?.address ?? "")
+
+  const handleStudentChange = (studentId: string) => {
+    setSelectedStudentId(studentId)
+    const student = studentOptions.find((s) => s.id === studentId)
+    if (student?.address) {
+      setAddressVisited(student.address)
+    } else {
+      setAddressVisited("")
+    }
+  }
+
+  const currentStudent = studentOptions.find((s) => s.id === selectedStudentId)
 
   const visitCreated = state?.ok && state.data?.id
 
@@ -99,7 +114,7 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     name="studentId"
                     required
                     value={selectedStudentId}
-                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                    onChange={(e) => handleStudentChange(e.target.value)}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                   >
                     <option value="">เลือกนักเรียน...</option>
@@ -144,13 +159,41 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="addressVisited" className="text-sm font-medium">
-                  ที่อยู่ที่เยี่ยม
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="addressVisited" className="text-sm font-medium">
+                    ที่อยู่ที่เยี่ยม
+                  </label>
+                  {currentStudent && (
+                    <div className="flex items-center gap-2">
+                      {currentStudent.address ? (
+                        <>
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                            🔗 ดึงที่อยู่จากข้อมูลนักเรียนอัตโนมัติ
+                          </span>
+                          {addressVisited !== currentStudent.address && (
+                            <button
+                              type="button"
+                              onClick={() => setAddressVisited(currentStudent.address || "")}
+                              className="text-xs text-primary underline hover:text-primary/80 cursor-pointer"
+                            >
+                              คืนค่าที่อยู่ตามประวัติ
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          (ยังไม่มีที่อยู่ในข้อมูลนักเรียน สามารถพิมพ์ระบุได้)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <Input
                   id="addressVisited"
                   name="addressVisited"
-                  placeholder="ที่อยู่..."
+                  placeholder="เช่น บ้านเลขที่ 13 หมู่ 6 ต.โพธิ์ไทร อ.ป่าติ้ว..."
+                  value={addressVisited}
+                  onChange={(e) => setAddressVisited(e.target.value)}
                 />
               </div>
 

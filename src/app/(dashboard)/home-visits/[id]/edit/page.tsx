@@ -47,11 +47,42 @@ export default async function EditHomeVisitPage({ params }: PageProps) {
     )
   }
 
+  // Fetch linked addresses for students
+  const studentIds = students.map((s) => s.studentId)
+  const addressMap = new Map<string, string>()
+
+  if (studentIds.length > 0) {
+    const { createClient } = await import("@/utils/supabase/server")
+    const supabase = await createClient()
+    const { data: studentRows } = await supabase
+      .from("students")
+      .select("id, address, subdistrict, district, province, postal_code")
+      .in("id", studentIds)
+
+    if (studentRows) {
+      for (const row of studentRows) {
+        let addr = (row.address || "").trim()
+        if (!addr) {
+          const parts: string[] = []
+          if (row.subdistrict) parts.push(`ต.${row.subdistrict}`)
+          if (row.district) parts.push(`อ.${row.district}`)
+          if (row.province) parts.push(`จ.${row.province}`)
+          if (row.postal_code) parts.push(row.postal_code)
+          addr = parts.join(" ")
+        }
+        if (addr) {
+          addressMap.set(row.id, addr)
+        }
+      }
+    }
+  }
+
   const studentOptions = students.map((student) => ({
     id: student.studentId,
     name: student.fullName,
     classroom: student.classroomName ?? undefined,
     code: student.studentCode,
+    address: addressMap.get(student.studentId) || "",
   }))
 
   return (

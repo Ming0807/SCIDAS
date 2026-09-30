@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, type ReactNode } from "react"
+import { useActionState, useEffect, useState, type ReactNode } from "react"
 import { Loader2, Save } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -18,6 +18,7 @@ type StudentOption = {
   name: string
   classroom?: string
   code: string
+  address?: string
 }
 
 type HomeVisitEditFormProps = {
@@ -31,6 +32,19 @@ export function HomeVisitEditForm({ record, studentOptions }: HomeVisitEditFormP
     ActionResult<{ id: string }> | null,
     FormData
   >(updateHomeVisitAction, null)
+
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(record.studentId)
+  const [addressVisited, setAddressVisited] = useState<string>(record.address ?? "")
+
+  const handleStudentChange = (newStudentId: string) => {
+    setSelectedStudentId(newStudentId)
+    const st = studentOptions.find((s) => s.id === newStudentId)
+    if (st?.address && !addressVisited) {
+      setAddressVisited(st.address)
+    }
+  }
+
+  const currentStudent = studentOptions.find((s) => s.id === selectedStudentId)
 
   useEffect(() => {
     if (state?.ok && state.redirectTo) router.push(state.redirectTo)
@@ -59,7 +73,8 @@ export function HomeVisitEditForm({ record, studentOptions }: HomeVisitEditFormP
                 id="studentId"
                 name="studentId"
                 required
-                defaultValue={record.studentId}
+                value={selectedStudentId}
+                onChange={(e) => handleStudentChange(e.target.value)}
                 aria-invalid={!!fieldErrors?.studentId}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
               >
@@ -97,14 +112,28 @@ export function HomeVisitEditForm({ record, studentOptions }: HomeVisitEditFormP
           </div>
 
           <Field id="addressVisited" label="ที่อยู่ที่เยี่ยม" error={fieldErrors?.addressVisited?.[0]}>
-            <Input
-              id="addressVisited"
-              name="addressVisited"
-              defaultValue={record.address ?? ""}
-              maxLength={2000}
-              placeholder="ที่อยู่ที่ไปเยี่ยม..."
-              aria-invalid={!!fieldErrors?.addressVisited}
-            />
+            <div className="space-y-1.5">
+              <Input
+                id="addressVisited"
+                name="addressVisited"
+                value={addressVisited}
+                onChange={(e) => setAddressVisited(e.target.value)}
+                maxLength={2000}
+                placeholder="ที่อยู่ที่ไปเยี่ยม..."
+                aria-invalid={!!fieldErrors?.addressVisited}
+              />
+              {currentStudent?.address && currentStudent.address !== addressVisited && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setAddressVisited(currentStudent.address || "")}
+                    className="text-xs text-primary underline hover:text-primary/80 cursor-pointer"
+                  >
+                    🔗 ใช้ที่อยู่ตามข้อมูลนักเรียน ({currentStudent.address})
+                  </button>
+                </div>
+              )}
+            </div>
           </Field>
 
           <div className="space-y-2">

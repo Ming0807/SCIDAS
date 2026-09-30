@@ -270,6 +270,21 @@ export async function executeStudentImportRpc(
     enrolled_existing_count?: number
   } | null
 
+  // Backfill / sync address for existing students if their address in database is currently null
+  const studentsWithAddress = students.filter(
+    (s) => s.address && s.address.trim().length > 0,
+  )
+  if (studentsWithAddress.length > 0) {
+    for (const s of studentsWithAddress) {
+      await supabase
+        .from("students")
+        .update({ address: s.address!.trim() })
+        .eq("school_id", context.schoolId)
+        .eq("student_code", s.studentCode)
+        .is("address", null)
+    }
+  }
+
   return {
     success: true,
     count: result?.imported_count ?? 0,
