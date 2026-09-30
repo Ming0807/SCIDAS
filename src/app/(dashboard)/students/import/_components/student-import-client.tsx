@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useTransition } from "react"
+import React, { useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import {
   AlertCircle,
@@ -27,12 +27,13 @@ import { toast } from "sonner"
 
 import { EmptyState } from "@/components/feedback/empty-state"
 import { clearAllStudentsInSchoolAction } from "@/app/actions/student.actions"
-import type {
-  ImportDuplicateMode,
-  ParseImportResult,
-  MultiGroupParseResult,
-  ParsedStudentGroup,
-  InferredRoomInfo,
+import {
+  type ImportDuplicateMode,
+  type ParseImportResult,
+  type MultiGroupParseResult,
+  type ParsedStudentGroup,
+  type InferredRoomInfo,
+  inferGradeAndSection,
 } from "@/lib/student-import-parser"
 import {
   executeStudentImportAction,
@@ -41,6 +42,7 @@ import {
   parseStudentFileAction,
   parseAllStudentGroupsAction,
   quickCreateClassroomAction,
+  batchQuickCreateClassroomsAction,
   type BatchRoomImportPayload,
   type BatchImportSummaryResult,
 } from "@/app/actions/student-import.actions"
@@ -499,6 +501,75 @@ export function StudentImportClient({ context }: { context: ImportContextData })
         setQuickCreateModal((prev) => ({ ...prev, isOpen: false }))
       } else {
         toast.error(res.message || "ไม่สามารถสร้างห้องเรียนได้")
+      }
+    })
+  }
+
+  const [isBatchCreatingRooms, startBatchCreateRoomsTransition] = useTransition()
+
+  // Calculate unmatched groups that are currently selected and have no target classroom assigned
+  const unmatchedGroups = useMemo(() => {
+    if (!multiGroupResult) return []
+    return multiGroupResult.groups.filter(
+      (g: ParsedStudentGroup) => roomSelections[g.groupId] && !roomTargets[g.groupId],
+    )
+  }, [multiGroupResult, roomSelections, roomTargets])
+
+  const handleAutoCreateAllMissingRooms = () => {
+    if (unmatchedGroups.length === 0) return
+    const yearId = context.activeAcademicYearId || context.academicYears[0]?.id || ""
+    if (!yearId) {
+      toast.error("ไม่พบปีการศึกษาที่เปิดใช้งาน")
+      return
+    }
+
+    const items = unmatchedGroups.map((g: ParsedStudentGroup) => {
+      const inf = g.inferred || inferGradeAndSection(g.groupName)
+      return {
+        sourceGroupId: g.groupId,
+        academicYearId: yearId,
+        gradeLevel: inf?.gradeLevel || "k1",
+        section: inf?.section || 1,
+        name: inf?.thaiName || g.groupName,
+      }
+    })
+
+    startBatchCreateRoomsTransition(async () => {
+      const res = await batchQuickCreateClassroomsAction(items)
+      if (res.ok && res.data) {
+        const createdItems = res.data
+        const newClassroomOptions: ImportClassroomOption[] = []
+        const newTargets: Record<string, string> = {}
+
+        for (const item of createdItems) {
+          const c = item.classroom
+          newTargets[item.sourceGroupId] = c.id
+          if (!classroomsList.some((existing) => existing.id === c.id)) {
+            newClassroomOptions.push({
+              id: c.id,
+              name: c.name,
+              gradeLevel: c.grade_level,
+              section: c.section,
+              academicYear: 2567,
+              isHomeroom: false,
+            })
+          }
+        }
+
+        if (newClassroomOptions.length > 0) {
+          setClassroomsList((prev) => [...prev, ...newClassroomOptions])
+        }
+
+        setRoomTargets((prev) => ({
+          ...prev,
+          ...newTargets,
+        }))
+
+        toast.success(
+          `สร้างห้องเรียนอัตโนมัติสำเร็จ ${createdItems.length} ห้อง พร้อมนำเข้าได้ทันที`,
+        )
+      } else {
+        toast.error(res.message || "เกิดข้อผิดพลาดในการสร้างห้องเรียนอัตโนมัติ")
       }
     })
   }
@@ -969,6 +1040,28 @@ export function StudentImportClient({ context }: { context: ImportContextData })
                 <Plus className="size-3.5" />
                 สร้างห้องเรียนใหม่
               </button>
+
+              {unmatchedGroups.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleAutoCreateAllMissingRooms}
+                  disabled={isBatchCreatingRooms}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition disabled:opacity-50"
+                  title="สร้างห้องเรียนทั้งหมดที่ยังไม่ได้จับคู่ตามชื่อที่พบในไฟล์"
+                >
+                  {isBatchCreatingRooms ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      กำลังสร้างห้องเรียน...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-3.5" />
+                      สร้างห้องเรียนอัตโนมัติตามไฟล์ ({unmatchedGroups.length} ห้อง)
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 

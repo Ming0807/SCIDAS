@@ -473,9 +473,60 @@ export async function getStudentWorklist(
     throw new Error(error.message)
   }
 
-  return (data ?? [])
+  const mapped = (data ?? [])
     .map(mapWorklistRow)
     .filter((student): student is StudentWorklistItem => student !== null)
+
+  const missingClassroomStudentIds = mapped
+    .filter((s) => !s.classroomId || !s.gradeLevel)
+    .map((s) => s.studentId)
+
+  if (missingClassroomStudentIds.length > 0) {
+    const { data: enrollments } = await client
+      .from("classroom_students")
+      .select("student_id, student_number, classrooms(id, name, grade_level, section)")
+      .eq("school_id", context.schoolId)
+      .eq("is_active", true)
+      .in("student_id", missingClassroomStudentIds)
+
+    if (enrollments && enrollments.length > 0) {
+      type JoinedClassroom = {
+        id: string
+        name: string
+        grade_level: GradeLevel
+        section: number
+      }
+      const enrollmentMap = new Map<
+        string,
+        { studentNumber: number | null; classroom: JoinedClassroom | null }
+      >()
+      for (const e of enrollments) {
+        if (!enrollmentMap.has(e.student_id)) {
+          enrollmentMap.set(e.student_id, {
+            studentNumber: e.student_number,
+            classroom: (e.classrooms as unknown as JoinedClassroom) || null,
+          })
+        }
+      }
+
+      for (const student of mapped) {
+        if (!student.classroomId || !student.gradeLevel) {
+          const match = enrollmentMap.get(student.studentId)
+          if (match?.classroom) {
+            student.classroomId = match.classroom.id
+            student.classroomName = match.classroom.name
+            student.gradeLevel = match.classroom.grade_level
+            student.section = match.classroom.section
+            if (student.studentNumber === null && match.studentNumber !== null) {
+              student.studentNumber = match.studentNumber
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return mapped
 }
 
 export async function getStudentCareProfile(

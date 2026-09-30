@@ -561,6 +561,106 @@ export async function quickCreateClassroomAction(input: {
   }
 }
 
+export type BatchQuickCreateItem = {
+  sourceGroupId: string
+  academicYearId: string
+  gradeLevel: string
+  section: number
+  name: string
+}
+
+export type BatchQuickCreateResultItem = {
+  sourceGroupId: string
+  classroom: CreatedClassroomInfo
+  alreadyExisted: boolean
+}
+
+export async function batchQuickCreateClassroomsAction(
+  items: BatchQuickCreateItem[],
+): Promise<ActionResult<BatchQuickCreateResultItem[]>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!["admin", "director"].includes(context.role)) {
+      return actionFail(
+        "FORBIDDEN",
+        "คุณไม่มีสิทธิ์ในการสร้างห้องเรียน (เฉพาะผู้ดูแลระบบหรือผู้บริหาร)",
+      )
+    }
+
+    if (!items || items.length === 0) {
+      return actionFail("VALIDATION_ERROR", "ไม่มีข้อมูลห้องเรียนที่จะสร้าง")
+    }
+
+    const supabase = await createClient()
+    const results: BatchQuickCreateResultItem[] = []
+
+    for (const item of items) {
+      const parsed = QuickCreateClassroomSchema.safeParse(item)
+      if (!parsed.success) {
+        continue
+      }
+      const d = parsed.data
+
+      // Check if room with same year, grade_level, section already exists
+      const { data: existing } = await supabase
+        .from("classrooms")
+        .select("id, name, grade_level, section")
+        .eq("school_id", context.schoolId)
+        .eq("academic_year_id", d.academicYearId)
+        .eq("grade_level", d.gradeLevel as Database["public"]["Enums"]["grade_level"])
+        .eq("section", d.section)
+        .maybeSingle()
+
+      if (existing) {
+        results.push({
+          sourceGroupId: item.sourceGroupId,
+          classroom: existing as CreatedClassroomInfo,
+          alreadyExisted: true,
+        })
+        continue
+      }
+
+      const { data: created, error } = await supabase
+        .from("classrooms")
+        .insert({
+          school_id: context.schoolId,
+          academic_year_id: d.academicYearId,
+          grade_level: d.gradeLevel as Database["public"]["Enums"]["grade_level"],
+          section: d.section,
+          name: d.name,
+          is_active: true,
+          max_students: 40,
+        })
+        .select("id, name, grade_level, section")
+        .single()
+
+      if (error) {
+        console.error("batchQuickCreateClassroomsAction error on item:", item.name, error)
+        continue
+      }
+
+      if (created) {
+        results.push({
+          sourceGroupId: item.sourceGroupId,
+          classroom: created as CreatedClassroomInfo,
+          alreadyExisted: false,
+        })
+      }
+    }
+
+    revalidatePath("/students")
+    revalidatePath("/students/import")
+    revalidatePath("/settings/academic")
+
+    return actionOk(`สร้างห้องเรียนอัตโนมัติสำเร็จ ${results.length} ห้อง`, {
+      data: results,
+    })
+  } catch (error) {
+    console.error("batchQuickCreateClassroomsAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการสร้างห้องเรียนอัตโนมัติ")
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Batch Multi-Room Import Coordinator Action
 // ----------------------------------------------------------------------------

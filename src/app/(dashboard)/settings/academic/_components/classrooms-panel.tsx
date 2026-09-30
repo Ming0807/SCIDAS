@@ -15,6 +15,9 @@ import type {
 import { ClassroomDialog } from "./academic-forms"
 
 const GRADE_LABELS: Record<string, string> = {
+  k1: "อนุบาล 1",
+  k2: "อนุบาล 2",
+  k3: "อนุบาล 3",
   p1: "ประถมศึกษาปีที่ 1",
   p2: "ประถมศึกษาปีที่ 2",
   p3: "ประถมศึกษาปีที่ 3",

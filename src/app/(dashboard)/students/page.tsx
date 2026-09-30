@@ -5,6 +5,7 @@ import { AlertTriangle, Heart, Plus, Smile, Upload, Users } from "lucide-react"
 import { MetricCard, PageHeader, PageShell } from "@/components/dashboard"
 import { ErrorState } from "@/components/feedback"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/utils/supabase/server"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
 
@@ -65,16 +66,40 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
   const filters = normalizeFilters(params)
   let loadError: string | null = null
   let studentRows: StudentListItem[] = []
+  let schoolClassrooms: Array<{
+    id: string
+    name: string
+    grade_level: string
+    section: number
+  }> = []
 
   try {
-    studentRows = (await getStudentWorklist({ limit: 500 })).map(toStudentListItem)
+    const supabase = await createClient()
+    const [worklistData, classroomsData] = await Promise.all([
+      getStudentWorklist({ limit: 500 }),
+      supabase
+        .from("classrooms")
+        .select("id, name, grade_level, section")
+        .eq("school_id", context.schoolId)
+        .eq("is_active", true)
+        .order("grade_level", { ascending: true })
+        .order("section", { ascending: true }),
+    ])
+
+    studentRows = worklistData.map(toStudentListItem)
+    schoolClassrooms = (classroomsData.data || []) as unknown as Array<{
+      id: string
+      name: string
+      grade_level: string
+      section: number
+    }>
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown student data error"
   }
 
   const summary = createStudentSummary(studentRows)
   const classSummary = createClassSummary(studentRows)
-  const filterOptions = createStudentFilterOptions(studentRows)
+  const filterOptions = createStudentFilterOptions(studentRows, schoolClassrooms)
   const filteredStudents = filterStudentRows(studentRows, filters)
   const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE))
   const currentPage = getCurrentPage(params, totalPages)

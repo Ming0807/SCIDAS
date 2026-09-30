@@ -1,10 +1,15 @@
 import type { StatusTone } from "@/lib/design/status"
 import {
+  compareGradeLevels,
+  formatClassroomLabel,
   formatClassroomSection,
+  formatFullGradeLevel,
   formatGradeLevel,
   getStudentRiskLabel,
   getStudentRiskTone,
+  GRADE_SORT_ORDER,
 } from "@/lib/student-care-formatters"
+import { inferGradeAndSection } from "@/lib/student-import-parser"
 import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
 
 export type StudentListItem = {
@@ -63,20 +68,34 @@ export type StudentFilterState = {
 
 export type StudentFilterOptions = {
   grades: Array<{ value: string; label: string; count: number }>
-  classrooms: Array<{ value: string; label: string; count: number }>
+  classrooms: Array<{ value: string; label: string; count: number; gradeLevel?: string }>
   statuses: Array<{ value: string; label: string; count: number }>
 }
 
 export function toStudentListItem(student: StudentWorklistItem): StudentListItem {
+  let gradeLevel = student.gradeLevel
+  let section = student.section
+
+  // If gradeLevel is missing, try inferring from classroomName
+  if (!gradeLevel && student.classroomName) {
+    const inferred = inferGradeAndSection(student.classroomName)
+    if (inferred) {
+      gradeLevel = inferred.gradeLevel
+      if (section === null) {
+        section = inferred.section
+      }
+    }
+  }
+
   return {
     id: student.studentId,
     name: student.fullName,
     studentCode: student.studentCode,
-    grade: formatGradeLevel(student.gradeLevel),
-    gradeLevel: student.gradeLevel,
-    classroom: formatClassroomSection(student.section),
+    grade: formatGradeLevel(gradeLevel),
+    gradeLevel,
+    classroom: formatClassroomSection(section),
     classroomName: student.classroomName,
-    section: student.section,
+    section,
     studentNumber: student.studentNumber,
     status: getStudentRiskTone(student.riskLevel),
     statusLabel: getStudentRiskLabel(student.riskLevel),
@@ -152,33 +171,68 @@ export function createClassSummary(students: StudentListItem[]): ClassSummaryIte
     rows.set(id, current)
   }
 
-  return Array.from(rows.values()).sort((a, b) => a.label.localeCompare(b.label, "th"))
+  return Array.from(rows.values()).sort((a, b) =>
+    compareGradeLevels(a.gradeLevel, b.gradeLevel),
+  )
+}
+
+function compareClassroomLabels(a: string, b: string): number {
+  const infA = inferGradeAndSection(a)
+  const infB = inferGradeAndSection(b)
+  if (infA && infB) {
+    const ordA = GRADE_SORT_ORDER[infA.gradeLevel] ?? 99
+    const ordB = GRADE_SORT_ORDER[infB.gradeLevel] ?? 99
+    if (ordA !== ordB) return ordA - ordB
+    if (infA.section !== infB.section) return infA.section - infB.section
+  }
+  return a.localeCompare(b, "th", { numeric: true })
 }
 
 export function createStudentFilterOptions(
   students: StudentListItem[],
+  schoolClassrooms?: Array<{
+    id?: string
+    name: string
+    gradeLevel?: string | null
+    grade_level?: string | null
+    section?: number | null
+  }>,
 ): StudentFilterOptions {
   const grades = new Map<string, { value: string; label: string; count: number }>()
-  const classrooms = new Map<string, { value: string; label: string; count: number }>()
+  const classrooms = new Map<
+    string,
+    { value: string; label: string; count: number; gradeLevel?: string }
+  >()
   const statuses = new Map<string, { value: string; label: string; count: number }>()
 
   for (const student of students) {
     if (student.gradeLevel) {
       const current = grades.get(student.gradeLevel) ?? {
         value: student.gradeLevel,
-        label: student.grade,
+        label: formatFullGradeLevel(student.gradeLevel),
         count: 0,
       }
       current.count += 1
       grades.set(student.gradeLevel, current)
     }
 
-    if (student.section !== null) {
-      const value = String(student.section)
+    const classroomLabel =
+      student.classroomName ||
+      formatClassroomLabel({
+        gradeLevel: student.gradeLevel,
+        section: student.section,
+      })
+
+    if (classroomLabel && classroomLabel !== "-") {
+      const value = classroomLabel
       const current = classrooms.get(value) ?? {
         value,
-        label: `ห้อง ${value}`,
+        label: classroomLabel,
         count: 0,
+        gradeLevel:
+          student.gradeLevel ||
+          inferGradeAndSection(classroomLabel)?.gradeLevel ||
+          undefined,
       }
       current.count += 1
       classrooms.set(value, current)
@@ -193,10 +247,40 @@ export function createStudentFilterOptions(
     statuses.set(student.riskLevel, currentStatus)
   }
 
+  // Incorporate registered school classrooms even if student worklist has 0 currently active
+  if (schoolClassrooms) {
+    for (const c of schoolClassrooms) {
+      const grade = c.gradeLevel || c.grade_level
+      if (grade && !grades.has(grade)) {
+        grades.set(grade, {
+          value: grade,
+          label: formatFullGradeLevel(grade),
+          count: 0,
+        })
+      }
+
+      const label =
+        c.name ||
+        formatClassroomLabel({
+          gradeLevel: grade,
+          section: c.section,
+        })
+
+      if (label && label !== "-" && !classrooms.has(label)) {
+        classrooms.set(label, {
+          value: label,
+          label,
+          count: 0,
+          gradeLevel: grade || inferGradeAndSection(label)?.gradeLevel || undefined,
+        })
+      }
+    }
+  }
+
   return {
-    grades: Array.from(grades.values()).sort((a, b) => a.label.localeCompare(b.label, "th")),
+    grades: Array.from(grades.values()).sort((a, b) => compareGradeLevels(a.value, b.value)),
     classrooms: Array.from(classrooms.values()).sort((a, b) =>
-      a.label.localeCompare(b.label, "th", { numeric: true }),
+      compareClassroomLabels(a.label, b.label),
     ),
     statuses: ["normal", "watch", "high"]
       .map((value) => statuses.get(value))
@@ -209,6 +293,9 @@ export function filterStudentRows(
   filters: StudentFilterState,
 ) {
   const query = filters.q.trim().toLowerCase()
+  const filterGrade = filters.grade.trim().toLowerCase()
+  const filterClassroom = filters.classroom.trim().toLowerCase()
+  const filterStatus = filters.status.trim().toLowerCase()
 
   return students.filter((student) => {
     const matchesQuery =
@@ -217,10 +304,32 @@ export function filterStudentRows(
       student.studentCode.toLowerCase().includes(query) ||
       student.guardian.toLowerCase().includes(query)
 
-    const matchesGrade = !filters.grade || student.gradeLevel === filters.grade
-    const matchesClassroom =
-      !filters.classroom || String(student.section ?? "") === filters.classroom
-    const matchesStatus = !filters.status || student.riskLevel === filters.status
+    const studentGrade = (student.gradeLevel || "").toLowerCase()
+    const matchesGrade = !filterGrade || studentGrade === filterGrade
+
+    let matchesClassroom = true
+    if (filterClassroom) {
+      const cName = (student.classroomName || "").toLowerCase()
+      const cFormatted = formatClassroomLabel({
+        gradeLevel: student.gradeLevel,
+        section: student.section,
+        classroomName: student.classroomName,
+      }).toLowerCase()
+      const cSection = String(student.section ?? "")
+      const cGradeSlashSection =
+        student.gradeLevel && student.section !== null
+          ? `${student.gradeLevel}/${student.section}`.toLowerCase()
+          : ""
+
+      matchesClassroom =
+        cName === filterClassroom ||
+        cFormatted === filterClassroom ||
+        cSection === filterClassroom ||
+        cGradeSlashSection === filterClassroom ||
+        cName.includes(filterClassroom)
+    }
+
+    const matchesStatus = !filterStatus || student.riskLevel === filterStatus
 
     return matchesQuery && matchesGrade && matchesClassroom && matchesStatus
   })

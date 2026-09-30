@@ -20,6 +20,52 @@ const gradeLabels: Record<string, string> = {
   m6: "ม.6",
 }
 
+export const fullGradeLabels: Record<string, string> = {
+  k1: "อนุบาล 1 (อ.1)",
+  k2: "อนุบาล 2 (อ.2)",
+  k3: "อนุบาล 3 (อ.3)",
+  p1: "ประถมศึกษาปีที่ 1 (ป.1)",
+  p2: "ประถมศึกษาปีที่ 2 (ป.2)",
+  p3: "ประถมศึกษาปีที่ 3 (ป.3)",
+  p4: "ประถมศึกษาปีที่ 4 (ป.4)",
+  p5: "ประถมศึกษาปีที่ 5 (ป.5)",
+  p6: "ประถมศึกษาปีที่ 6 (ป.6)",
+  m1: "มัธยมศึกษาปีที่ 1 (ม.1)",
+  m2: "มัธยมศึกษาปีที่ 2 (ม.2)",
+  m3: "มัธยมศึกษาปีที่ 3 (ม.3)",
+  m4: "มัธยมศึกษาปีที่ 4 (ม.4)",
+  m5: "มัธยมศึกษาปีที่ 5 (ม.5)",
+  m6: "มัธยมศึกษาปีที่ 6 (ม.6)",
+}
+
+export const GRADE_SORT_ORDER: Record<string, number> = {
+  k1: 1,
+  k2: 2,
+  k3: 3,
+  p1: 11,
+  p2: 12,
+  p3: 13,
+  p4: 14,
+  p5: 15,
+  p6: 16,
+  m1: 21,
+  m2: 22,
+  m3: 23,
+  m4: 24,
+  m5: 25,
+  m6: 26,
+}
+
+export function compareGradeLevels(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): number {
+  const orderA = a ? (GRADE_SORT_ORDER[a.toLowerCase()] ?? 99) : 99
+  const orderB = b ? (GRADE_SORT_ORDER[b.toLowerCase()] ?? 99) : 99
+  if (orderA !== orderB) return orderA - orderB
+  return (a || "").localeCompare(b || "", "th")
+}
+
 const riskLabels: Record<StudentRiskLevel, string> = {
   normal: "ปกติ",
   watch: "ติดตาม",
@@ -38,6 +84,14 @@ export function formatGradeLevel(gradeLevel?: string | null) {
   }
 
   return gradeLabels[gradeLevel] ?? gradeLevel.toUpperCase()
+}
+
+export function formatFullGradeLevel(gradeLevel?: string | null) {
+  if (!gradeLevel) {
+    return "-"
+  }
+
+  return fullGradeLabels[gradeLevel] ?? gradeLabels[gradeLevel] ?? gradeLevel.toUpperCase()
 }
 
 export function formatClassroomSection(section?: number | string | null) {
