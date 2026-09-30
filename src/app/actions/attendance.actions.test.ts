@@ -283,5 +283,23 @@ describe("attendance.actions", () => {
       }
       expect(revalidatePath).toHaveBeenCalledWith("/attendance")
     })
+
+    it("fails with VALIDATION_ERROR if date is in the future", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const records: AttendanceInput[] = [{ student_id: "stu-1", status: "present" }]
+      const result = await upsertAttendance("class-1", "2099-12-31", records)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION_ERROR")
+        expect(result.message).toContain("ไม่สามารถบันทึกการมาเรียนล่วงหน้าได้")
+      }
+    })
   })
 })

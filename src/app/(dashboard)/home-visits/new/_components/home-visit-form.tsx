@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { StudentAttachmentForm } from "@/components/care/student-attachment-form"
-import { getFamilyStatusLabel } from "@/lib/student-care-formatters"
+import { getFamilyStatusLabel, getTodayBangkok } from "@/lib/student-care-formatters"
 import type { ActionResult } from "@/lib/server/action-result"
 
 type StudentOption = {
@@ -404,7 +404,7 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     name="visitDate"
                     type="date"
                     required
-                    defaultValue={new Date().toISOString().split("T")[0]}
+                    defaultValue={getTodayBangkok()}
                   />
                   {state?.ok === false && state.fieldErrors?.visitDate ? (
                     <p className="text-xs text-destructive">

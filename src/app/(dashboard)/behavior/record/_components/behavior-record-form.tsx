@@ -26,6 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import type { ActionResult } from "@/lib/server/action-result"
 import { behaviorCategoryOptions, behaviorSeverityOptions } from "@/lib/behavior-constants"
+import { getTodayBangkok } from "@/lib/student-care-formatters"
 
 type StudentOption = {
   id: string
@@ -51,7 +52,7 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
   }, [router, state])
 
   const fieldErrors = state?.ok === false ? state.fieldErrors : undefined
-  const today = new Date().toISOString().slice(0, 10)
+  const today = getTodayBangkok()
 
   return (
     <form action={formAction} className="w-full">

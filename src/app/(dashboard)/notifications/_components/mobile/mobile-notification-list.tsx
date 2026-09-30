@@ -97,13 +97,29 @@ export function MobileNotificationList({
   currentStatus,
   currentType,
 }: MobileNotificationListProps) {
+  const isFiltered = currentStatus !== "all" || Boolean(currentType)
+
   if (notifications.length === 0) {
     return (
       <div className="px-4 py-4 mb-20">
         <EmptyState
           icon={Bell}
-          title="ไม่มีการแจ้งเตือน"
-          description="คุณไม่มีรายการแจ้งเตือนในขณะนี้"
+          title={isFiltered ? "ไม่พบการแจ้งเตือนตามตัวกรอง" : "ไม่มีการแจ้งเตือน"}
+          description={
+            isFiltered
+              ? "ลองเปลี่ยนตัวกรองหรือล้างตัวกรองเพื่อดูการแจ้งเตือนทั้งหมด"
+              : "คุณไม่มีรายการแจ้งเตือนในขณะนี้"
+          }
+          action={
+            isFiltered ? (
+              <Link
+                href="/notifications"
+                className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-primary hover:bg-muted transition-colors"
+              >
+                ล้างตัวกรองทั้งหมด
+              </Link>
+            ) : undefined
+          }
           size="compact"
         />
       </div>

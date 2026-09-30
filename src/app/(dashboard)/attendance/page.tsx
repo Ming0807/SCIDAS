@@ -8,6 +8,7 @@ import {
   type MonthlyAttendanceSummary,
 } from "@/lib/server/attendance-read-models"
 import { getAttendanceForDate, getClassroomStudents } from "@/app/actions/attendance.actions"
+import { getCurrentUserContext } from "@/lib/server/current-user"
 import { AttendanceForm } from "./attendance-form"
 
 type AttendancePageProps = {
@@ -18,12 +19,16 @@ type AttendancePageProps = {
   }>
 }
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/
-const today = () => new Date().toISOString().slice(0, 10)
+const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date())
 
 export default async function AttendancePage({ searchParams }: AttendancePageProps) {
   const params = await searchParams
   const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date
-  const date = requestedDate && isoDatePattern.test(requestedDate) ? requestedDate : today()
+  const todayStr = today()
+  const isInvalidDateRequested = Boolean(
+    requestedDate && (!isoDatePattern.test(requestedDate) || requestedDate > todayStr)
+  )
+  const date = requestedDate && isoDatePattern.test(requestedDate) && requestedDate <= todayStr ? requestedDate : todayStr
 
   const requestedClassroomId = Array.isArray(params.classroomId)
     ? params.classroomId[0]
@@ -71,6 +76,8 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
     )
   }
 
+  const context = await getCurrentUserContext().catch(() => null)
+  const canEdit = context?.role === "admin" || context?.role === "homeroom_teacher"
   const { summary, records } = dashboard
   const dateLabel = new Intl.DateTimeFormat("th-TH", {
     day: "numeric",
@@ -85,6 +92,14 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
         description={`ข้อมูลวันที่ ${dateLabel} ${classroom ? `· ${classroom.name}` : ""}`}
         actions={null}
       />
+      {isInvalidDateRequested ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 mb-4">
+          <p className="font-semibold">⚠️ วันที่ที่ระบุในลิงก์ ({requestedDate}) ไม่ถูกต้อง หรือเป็นวันที่ในอนาคต</p>
+          <p className="mt-0.5 text-muted-foreground">
+            ระบบได้ปรับกลับมาแสดงข้อมูลการเช็คชื่อของวันนี้ ({dateLabel}) ให้โดยอัตโนมัติ
+          </p>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <MetricCard
           title="ทั้งหมด"
@@ -128,6 +143,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
           initialRecords={initialRecords}
           dateStr={date}
           monthlySummary={monthlySummary}
+          canEdit={canEdit}
         />
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-sm">

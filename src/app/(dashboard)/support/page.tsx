@@ -36,6 +36,9 @@ import {
 } from "@/app/actions/support.actions"
 import {
   getActionQueue,
+  getDueActionItemsMetrics,
+  getDueSoonActionItemsCount,
+  type DueActionItemsMetrics,
   getStudentAttachments,
   getStudentCareDashboard,
   getStudentNotes,
@@ -307,18 +310,21 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
   let supportCases: SupportRecordListItem[] = []
   let supportCaseError: string | null = null
   let loadError: string | null = null
+  let dueMetrics: DueActionItemsMetrics = { overdueCount: 0, dueSoonCount: 0, totalDueCount: 0 }
 
   try {
-    const [dashboardData, worklistData, actionData, supportResult] = await Promise.all([
+    const [dashboardData, worklistData, actionData, supportResult, dueMetricsData] = await Promise.all([
       getStudentCareDashboard(),
       getStudentWorklist({ limit: 500 }),
       getActionQueue({ limit: 24 }),
       getSupportRecords(),
+      getDueActionItemsMetrics().catch(() => ({ overdueCount: 0, dueSoonCount: 0, totalDueCount: 0 })),
     ])
 
     dashboard = dashboardData
     worklist = worklistData
     actionQueue = actionData
+    dueMetrics = dueMetricsData
     if (supportResult.ok) supportCases = supportResult.data ?? []
     else supportCaseError = supportResult.message
   } catch (error) {
@@ -336,6 +342,9 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
     .sort((a, b) => b.priorityScore - a.priorityScore)
 
   const requestedStudentId = getSearchParam(params, "studentId")
+  const isRequestedStudentNotFound = Boolean(
+    requestedStudentId && !worklist.some((s) => s.studentId === requestedStudentId),
+  )
   const fallbackStudentId = studentsNeedingCare[0]?.studentId ?? worklist[0]?.studentId ?? ""
   const selectedStudent =
     worklist.find((student) => student.studentId === requestedStudentId) ??
@@ -399,24 +408,27 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
           size="compact"
         />
         <MetricCard
-          title="ใกล้ครบกำหนด (7 วัน)"
-          value={actionQueue
-            .filter((item) => {
-              if (!item.dueDate) return false
-              const due = new Date(`${item.dueDate}T00:00:00`)
-              if (Number.isNaN(due.getTime())) return false
-              const nowStart = new Date()
-              nowStart.setHours(0, 0, 0, 0)
-              const diffDays = (due.getTime() - nowStart.getTime()) / 86_400_000
-              return diffDays <= 7
-            })
-            .length.toLocaleString("th-TH")}
-          description="งานครบกำหนดใน 7 วันรวมที่เลยกำหนด"
+          title="งานครบกำหนด (7 วัน)"
+          value={dueMetrics.totalDueCount.toLocaleString("th-TH")}
+          description={
+            dueMetrics.overdueCount > 0
+              ? `เกินกำหนด ${dueMetrics.overdueCount.toLocaleString("th-TH")} · ใกล้ถึง ${dueMetrics.dueSoonCount.toLocaleString("th-TH")} รายการ`
+              : `ครบกำหนดใน 7 วัน ${dueMetrics.dueSoonCount.toLocaleString("th-TH")} รายการ`
+          }
           icon={CalendarClock}
-          status="watch"
+          status={dueMetrics.overdueCount > 0 ? "high-risk" : dueMetrics.totalDueCount > 0 ? "watch" : "normal"}
           size="compact"
         />
       </div>
+
+      {isRequestedStudentNotFound ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200">
+          <p className="font-semibold">⚠️ ไม่พบข้อมูลนักเรียนตามรหัสที่ระบุในลิงก์</p>
+          <p className="mt-0.5 text-muted-foreground">
+            นักเรียนอาจไม่ได้อยู่ในรายชื่อที่ต้องดูแลต่อ ระบบจึงเลือกแสดงนักเรียนลำดับแรกในคิวให้แทน
+          </p>
+        </div>
+      ) : null}
 
       {loadError ? (
         <ErrorState
@@ -509,7 +521,7 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
           />
         </div>
 
-        <section className="flex min-w-0 flex-col gap-3">
+        <section className="flex min-w-0 flex-col gap-3 order-first xl:order-last">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-foreground">นักเรียนที่ต้องดูแลต่อ</h2>
             <p className="text-sm text-muted-foreground">

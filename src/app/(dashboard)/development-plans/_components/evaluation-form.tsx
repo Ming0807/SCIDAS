@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { ActionResult } from "@/lib/server/action-result"
+import { getTodayBangkok } from "@/lib/student-care-formatters"
 
 type EvaluationFormProps = { planId: string; evaluation?: DevelopmentEvaluation }
 
@@ -23,7 +24,7 @@ export function EvaluationForm({ planId, evaluation }: EvaluationFormProps) {
   return (
     <form action={formAction} className="grid gap-3 rounded-lg border border-border bg-muted/20 p-4 sm:grid-cols-2">
       <input type="hidden" name={isEdit ? "id" : "plan_id"} value={isEdit ? evaluation?.id : planId} />
-      <div className="space-y-2"><label htmlFor={`${isEdit ? "evaluation-edit" : "evaluation-new"}-date`} className="text-sm font-medium">วันที่ประเมิน <span className="text-destructive">*</span></label><Input id={`${isEdit ? "evaluation-edit" : "evaluation-new"}-date`} name="evaluation_date" type="date" required defaultValue={evaluation?.evaluation_date ?? new Date().toISOString().slice(0, 10)} /></div>
+      <div className="space-y-2"><label htmlFor={`${isEdit ? "evaluation-edit" : "evaluation-new"}-date`} className="text-sm font-medium">วันที่ประเมิน <span className="text-destructive">*</span></label><Input id={`${isEdit ? "evaluation-edit" : "evaluation-new"}-date`} name="evaluation_date" type="date" required defaultValue={evaluation?.evaluation_date ?? getTodayBangkok()} /></div>
       <div className="space-y-2"><label htmlFor={`${isEdit ? "evaluation-edit" : "evaluation-new"}-round`} className="text-sm font-medium">รอบที่</label><Input id={`${isEdit ? "evaluation-edit" : "evaluation-new"}-round`} name="evaluation_round" type="number" min="1" step="1" required defaultValue={evaluation?.evaluation_round ?? 1} /></div>
       <div className="space-y-2"><label htmlFor={`${isEdit ? "evaluation-edit" : "evaluation-new"}-pre`} className="text-sm font-medium">คะแนนก่อนช่วยเหลือ (0-100)</label><Input id={`${isEdit ? "evaluation-edit" : "evaluation-new"}-pre`} name="pre_score" type="number" min="0" max="100" step="0.01" placeholder="เช่น 45" defaultValue={evaluation?.pre_score ?? ""} /></div>
       <div className="space-y-2"><label htmlFor={`${isEdit ? "evaluation-edit" : "evaluation-new"}-post`} className="text-sm font-medium">คะแนนหลังช่วยเหลือ (0-100)</label><Input id={`${isEdit ? "evaluation-edit" : "evaluation-new"}-post`} name="post_score" type="number" min="0" max="100" step="0.01" placeholder="เช่น 72" defaultValue={evaluation?.post_score ?? ""} /></div>

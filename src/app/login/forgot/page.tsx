@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, BookMarked, CheckCircle2, Loader2 } from 'lucide-react'
 
@@ -16,7 +16,16 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+  const [cooldown, setCooldown] = useState(60)
   const supabase = createClient()
+
+  useEffect(() => {
+    if (!sent || cooldown <= 0) return
+    const timer = setInterval(() => {
+      setCooldown((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [sent, cooldown])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -35,7 +44,28 @@ export default function ForgotPasswordPage() {
         setError('ส่งลิงก์รีเซ็ตรหัสผ่านไม่สำเร็จ กรุณาตรวจสอบอีเมลแล้วลองอีกครั้ง')
         return
       }
+      setCooldown(60)
       setSent(true)
+    } catch {
+      setError('ส่งลิงก์รีเซ็ตรหัสผ่านไม่สำเร็จ กรุณาลองอีกครั้ง')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (cooldown > 0 || isLoading) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset`,
+      })
+      if (resetError) {
+        setError('ส่งลิงก์รีเซ็ตรหัสผ่านไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')
+        return
+      }
+      setCooldown(60)
     } catch {
       setError('ส่งลิงก์รีเซ็ตรหัสผ่านไม่สำเร็จ กรุณาลองอีกครั้ง')
     } finally {
@@ -69,15 +99,55 @@ export default function ForgotPasswordPage() {
                 ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว
               </p>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                กรุณาตรวจสอบกล่องจดหมายของ <span className="font-semibold">{email.trim()}</span> แล้วทำตามขั้นตอนในอีเมล (ลิงก์มีอายุจำกัด)
+                กรุณาตรวจสอบกล่องจดหมายของ <span className="font-semibold text-foreground">{email.trim()}</span> แล้วทำตามขั้นตอนในอีเมล (ลิงก์มีอายุจำกัด)
               </p>
-              <Link
-                href="/login"
-                className={cn(buttonVariants({ variant: "outline" }), "w-full h-11 rounded-xl text-sm")}
-              >
-                <ArrowLeft className="size-4" />
-                กลับไปหน้าเข้าสู่ระบบ
-              </Link>
+
+              {error ? (
+                <p role="alert" className="text-xs font-medium text-destructive">
+                  {error}
+                </p>
+              ) : null}
+
+              <div className="space-y-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResend}
+                  disabled={cooldown > 0 || isLoading}
+                  className="w-full h-11 rounded-xl text-sm"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin mr-1.5" />
+                      กำลังส่งอีกครั้ง...
+                    </>
+                  ) : cooldown > 0 ? (
+                    `ส่งอีกครั้ง (${cooldown} วิ)`
+                  ) : (
+                    'ส่งอีเมลอีกครั้ง'
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setSent(false)
+                    setError(null)
+                  }}
+                  className="w-full h-10 rounded-xl text-sm text-muted-foreground"
+                >
+                  เปลี่ยนอีเมล
+                </Button>
+
+                <Link
+                  href="/login"
+                  className={cn(buttonVariants({ variant: "ghost" }), "w-full h-10 rounded-xl text-sm")}
+                >
+                  <ArrowLeft className="size-4 mr-1" />
+                  กลับไปหน้าเข้าสู่ระบบ
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">

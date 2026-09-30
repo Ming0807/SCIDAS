@@ -313,6 +313,42 @@ export function StudentForm({ mode, student, classrooms }: StudentFormProps) {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <label htmlFor="nationality" className="text-sm font-medium">
+                  สัญชาติ
+                </label>
+                <Input
+                  id="nationality"
+                  name="nationality"
+                  defaultValue={student?.nationality ?? "ไทย"}
+                  placeholder="เช่น ไทย"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="ethnicity" className="text-sm font-medium">
+                  เชื้อชาติ
+                </label>
+                <Input
+                  id="ethnicity"
+                  name="ethnicity"
+                  defaultValue={student?.ethnicity ?? "ไทย"}
+                  placeholder="เช่น ไทย"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="religion" className="text-sm font-medium">
+                  ศาสนา
+                </label>
+                <Input
+                  id="religion"
+                  name="religion"
+                  defaultValue={student?.religion ?? "พุทธ"}
+                  placeholder="เช่น พุทธ, อิสลาม, คริสต์"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label htmlFor="medical_conditions" className="text-sm font-medium">
                 โรคประจำตัว / ประวัติการแพ้

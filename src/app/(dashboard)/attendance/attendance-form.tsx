@@ -37,6 +37,7 @@ type AttendanceFormProps = {
   initialRecords: InitialRecord[]
   dateStr: string
   monthlySummary?: MonthlyAttendanceSummary
+  canEdit?: boolean
 }
 type Entry = { status: AttendanceStatus; checkInTime: string; remark: string }
 
@@ -45,11 +46,13 @@ function AttendanceStatusButtons({
   value,
   onChange,
   size = "default",
+  disabled = false,
 }: {
   studentName: string
   value: AttendanceStatus
   onChange: (status: AttendanceStatus) => void
   size?: "default" | "sm"
+  disabled?: boolean
 }) {
   const configs: Array<{
     status: AttendanceStatus
@@ -103,10 +106,11 @@ function AttendanceStatusButtons({
             type="button"
             role="radio"
             aria-checked={isSelected}
+            disabled={disabled}
             onClick={() => onChange(c.status)}
             className={`rounded-md transition-all ${
               size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-xs"
-            } ${isSelected ? c.activeClass : c.inactiveClass}`}
+            } ${isSelected ? c.activeClass : c.inactiveClass} ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             {c.label}
           </button>
@@ -123,6 +127,7 @@ export function AttendanceForm({
   initialRecords,
   dateStr,
   monthlySummary,
+  canEdit = true,
 }: AttendanceFormProps) {
   const router = useRouter()
   const { lastAttendanceChange } = useRealtime()
@@ -140,6 +145,25 @@ export function AttendanceForm({
   })))
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(entries))
   const dirty = JSON.stringify(entries) !== savedSnapshot
+  const todayBangkok = useMemo(() => {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date())
+  }, [])
+  const dirtyCount = useMemo(() => {
+    if (!dirty) return 0
+    let count = 0
+    try {
+      const saved = JSON.parse(savedSnapshot) as Record<string, Entry>
+      for (const [id, entry] of Object.entries(entries)) {
+        const s = saved[id]
+        if (!s || s.status !== entry.status || s.checkInTime !== entry.checkInTime || s.remark !== entry.remark) {
+          count++
+        }
+      }
+    } catch {
+      count = 1
+    }
+    return count
+  }, [entries, savedSnapshot, dirty])
   const draftKey = `scidas_att_draft_${classroom.id}_${date}`
   const [hasDraft, setHasDraft] = useState<boolean>(() => {
     try {
@@ -410,17 +434,28 @@ export function AttendanceForm({
           )}
           <label className="space-y-1 text-sm">
             <span className="block text-xs font-medium text-muted-foreground">วันที่</span>
-            <Input type="date" value={date} onChange={(event) => changeDate(event.target.value)} />
+            <Input
+              type="date"
+              value={date}
+              max={todayBangkok}
+              onChange={(event) => changeDate(event.target.value)}
+            />
           </label>
-          <Button
-            type="button"
-            onClick={save}
-            disabled={pending || students.length === 0 || !dirty}
-            className="gap-2"
-          >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-          </Button>
+          {canEdit ? (
+            <Button
+              type="button"
+              onClick={save}
+              disabled={pending || students.length === 0 || !dirty}
+              className="gap-2"
+            >
+              {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              {pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+            </Button>
+          ) : (
+            <span className="inline-flex items-center rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground font-medium">
+              โหมดดูข้อมูล (เฉพาะครูประจำชั้นหรือผู้ดูแลระบบ)
+            </span>
+          )}
         </div>
       </div>
 
@@ -462,16 +497,18 @@ export function AttendanceForm({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={markAllPresent}
-            className="gap-1.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-          >
-            <CheckCircle2 className="size-3.5" />
-            มาเรียนทุกคน (One-Click)
-          </Button>
+          {canEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={markAllPresent}
+              className="gap-1.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+            >
+              <CheckCircle2 className="size-3.5" />
+              มาเรียนทุกคน (One-Click)
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -572,6 +609,7 @@ export function AttendanceForm({
                     <AttendanceStatusButtons
                       studentName={student.name}
                       value={entry.status}
+                      disabled={!canEdit}
                       onChange={(status) => updateEntry(student.id, { status })}
                     />
                   </div>
@@ -584,6 +622,7 @@ export function AttendanceForm({
                           aria-label={`เวลาเข้าของ ${student.name}`}
                           type="time"
                           value={entry.checkInTime}
+                          disabled={!canEdit}
                           onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })}
                           className="h-9 font-mono tabular-nums text-xs"
                         />
@@ -601,6 +640,7 @@ export function AttendanceForm({
                               : "ระบุหมายเหตุ (ถ้ามี)"
                         }
                         value={entry.remark}
+                        disabled={!canEdit}
                         onChange={(event) => updateEntry(student.id, { remark: event.target.value })}
                         className="h-9 text-xs"
                       />
@@ -668,6 +708,7 @@ export function AttendanceForm({
                       <AttendanceStatusButtons
                         studentName={student.name}
                         value={entry.status}
+                        disabled={!canEdit}
                         onChange={(status) => updateEntry(student.id, { status })}
                         size="sm"
                       />
@@ -677,6 +718,7 @@ export function AttendanceForm({
                         aria-label={`เวลาเข้าของ ${student.name}`}
                         type="time"
                         value={entry.checkInTime}
+                        disabled={!canEdit}
                         onChange={(event) => updateEntry(student.id, { checkInTime: event.target.value })}
                         className="h-8 font-mono text-xs tabular-nums"
                       />
@@ -692,6 +734,7 @@ export function AttendanceForm({
                               : "เพิ่มหมายเหตุ"
                         }
                         value={entry.remark}
+                        disabled={!canEdit}
                         onChange={(event) => updateEntry(student.id, { remark: event.target.value })}
                         className="h-8 text-xs"
                       />
@@ -709,6 +752,32 @@ export function AttendanceForm({
           </tbody>
         </table>
       </div>
+
+      {/* Sticky Save Bar when dirty */}
+      {canEdit && dirty ? (
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-xl border border-primary/20 bg-background/95 p-3.5 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+            </span>
+            <span className="font-medium text-foreground">
+              มีรายการที่แก้ไขค้างอยู่ ({dirtyCount} คน)
+            </span>
+            <span className="hidden sm:inline text-muted-foreground">· อย่าลืมกดบันทึกข้อมูล</span>
+          </div>
+          <Button
+            type="button"
+            onClick={save}
+            disabled={pending}
+            size="sm"
+            className="gap-2 shadow-xs"
+          >
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+          </Button>
+        </div>
+      ) : null}
 
       {monthlySummary && (
         <AttendancePrintableDialog

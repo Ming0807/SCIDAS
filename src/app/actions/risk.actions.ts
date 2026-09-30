@@ -17,6 +17,7 @@ import {
 const uuidSchema = z.string().uuid("รหัสไม่ถูกต้อง")
 
 const riskRecalculateAllowedRoles = new Set(["admin", "director", "counselor", "homeroom_teacher"])
+const riskRecalculateAllAllowedRoles = new Set(["admin", "director"])
 
 export type RecalculatedRiskData = {
   studentId: string
@@ -108,7 +109,7 @@ export async function recalculateAllRiskScores(): Promise<{ success: boolean; pr
       return { success: false, error: "Unauthorized" }
     }
 
-    if (!riskRecalculateAllowedRoles.has(context.role)) {
+    if (!riskRecalculateAllAllowedRoles.has(context.role)) {
       return { success: false, error: "Forbidden" }
     }
 

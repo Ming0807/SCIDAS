@@ -341,16 +341,22 @@ export async function markAllNotificationsRead(): Promise<{ count: number }> {
   }
 
   const client = await createClient()
+  const muted = await getMutedNotificationTypes().catch(() => [] as NotificationType[])
 
   const now = new Date().toISOString()
 
-  const { data, error } = await client
+  let updateQuery = client
     .from("notifications")
     .update({ is_read: true, read_at: now })
     .eq("recipient_id", context.profileId)
     .eq("school_id", context.schoolId)
     .eq("is_read", false)
-    .select("id")
+
+  if (muted.length > 0) {
+    updateQuery = updateQuery.not("type", "in", `(${muted.map((t) => `"${t}"`).join(",")})`)
+  }
+
+  const { data, error } = await updateQuery.select("id")
 
   if (error) {
     throw new Error(error.message)

@@ -114,6 +114,7 @@ export default async function RiskAnalysisPage() {
           factorDistribution={factorDistribution}
           dimensionBenchmarks={dimensionBenchmarks}
           studentRiskFactors={studentRiskFactors}
+          canRecalculate={canManageWeights}
         />
       </div>
 
@@ -122,7 +123,7 @@ export default async function RiskAnalysisPage() {
           <PageHeader
             title="วิเคราะห์ความเสี่ยง"
             description="จัดลำดับนักเรียนที่ควรดูแลก่อนจากคะแนนความเสี่ยง การมาเรียน เคส และงานติดตาม"
-            actions={<RecalculateButton />}
+            actions={<RecalculateButton canRecalculate={canManageWeights} />}
           />
 
           {loadError ? (

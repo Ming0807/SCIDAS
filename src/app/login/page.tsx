@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { BookMarked, Loader2, ShieldCheck } from 'lucide-react'
+import { BookMarked, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react'
 import { FcGoogle } from 'react-icons/fc'
 
 import { createClient } from '@/utils/supabase/client'
@@ -31,6 +31,7 @@ export default function LoginPage() {
   const [isEmailLoading, setIsEmailLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -60,7 +61,7 @@ export default function LoginPage() {
     setError(null)
     setIsEmailLoading(true)
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       })
@@ -68,7 +69,22 @@ export default function LoginPage() {
         setError(mapAuthError(signInError.message))
         return
       }
-      router.push('/')
+
+      if (signInData?.user?.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', signInData.user.id)
+          .maybeSingle()
+
+        if (profile?.role === 'parent') {
+          router.push('/parent')
+        } else {
+          router.push('/')
+        }
+      } else {
+        router.push('/')
+      }
       router.refresh()
     } catch {
       setError('เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง')
@@ -123,16 +139,31 @@ export default function LoginPage() {
                   ลืมรหัสผ่าน?
                 </Link>
               </div>
-              <Input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="กรอกรหัสผ่าน"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isEmailLoading}
-                className="h-11 rounded-xl text-sm"
-              />
+              <div className="relative">
+                <Input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="กรอกรหัสผ่าน"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isEmailLoading}
+                  className="h-11 rounded-xl text-sm pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  disabled={isEmailLoading}
+                  aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-hidden disabled:opacity-50"
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error ? (

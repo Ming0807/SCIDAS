@@ -53,33 +53,19 @@ Goal: โรงเรียนอื่นเช่าใช้ → tenant isola
 `✓` = lead verified in code/DB. Rest are agent-reported, high-confidence.
 
 ### P1 verified (security/data correctness — do first)
-- [ ] **Risk recalc open to all roles** ✓ — `recalculateAllRiskScores()` (`risk.actions.ts:98`) checks
-  only profile/school; any teacher triggers school-wide RPC loop. Gate to admin/director +
-  confirm dialog; `RecalculateButton` hidden or disabled otherwise.
-- [ ] **Referral status change ungated** ✓ — `updateReferralStatusAction` checks only login/school;
-  `[id]/page.tsx` (39 lines, no gate) renders buttons for everyone. Add role check
-  (admin/director/counselor/homeroom) + hide buttons without `canEdit`.
-- [ ] **Referral print leaks national_id unmasked** ✓ (`referral-detail-view.tsx:391`) + raw priority
-  text (`:149,381`). Mask as `1-XXXX-XXXXX-12-3` with opt-in full print; map priority to Thai.
-- [ ] **Silent truncations lie**: students `limit:500` ✓, IDP `limit:50` ✓ (+ summary on 50 rows),
-  support queue `limit:24` metric. Add `แสดง X จาก N ทั้งหมด` + server counts; IDP add status/q filter.
-- [ ] **Attendance overwrite risk**: missing rows default `present`, save upserts all rows, dirty-guard
-  discards server updates; no future-date guard; time accepted with absent/leave. Add sticky save bar
-  with counters, `max=today`, cross-field validation, director/counselor Save hidden (else guaranteed 403).
+- [x] **Risk recalc open to all roles** ✓ — gated to admin/director with confirm dialog in recalculate button & action.
+- [x] **Referral status change ungated** ✓ — gated status transitions on `referral.canEdit` and care-loop roles.
+- [x] **Referral print leaks national_id unmasked** ✓ — masked as `1-XXXX-XXXXX-12-3` with opt-in full print toggle + Thai priority.
+- [x] **Silent truncations lie** ✓ — honest summary calculation + server counts, banner for >500 records, IDP server search & status filter.
+- [x] **Attendance overwrite risk** ✓ — sticky bottom save bar with dirty counter, max=today guard, director/counselor read-only.
 
 ### P2 verified (honesty/UX with evidence)
-- [ ] **Dashboard scope**: metrics/action-queue ignore classroom/semester params; semester has zero
-  effect on TrackingTable; mobile queue unfiltered. Scope queue by classroom + visible scope caption.
-- [ ] **Support due metric** counts any dated item (not 7-day); student picker below content;
-  `?studentId` fallback silent. Split overdue/due-soon; move picker up.
-- [ ] **SDQ table** shows EWS score under SDQ headers; search drops filters (fixed for `risk/studentId`
-  preservation pattern already proven on referrals/sdq elsewhere — apply same).
-- [ ] **Notifications**: mark-all clears muted types too; message single-line truncated; filtered-empty
-  has no clear-filter CTA; double bell icons in header.
-- [ ] **Auth**: parent lands via bounce (`/`→`/parent`) — add role-aware redirect; no show/hide password;
-  forgot resend/cooldown missing. (No loop, verified.)
-- [ ] **Dates**: UTC `toISOString` bugs (attendance `today()`, behavior record, home-visit default);
-  invalid `?date=` falls back silently; IDP due-edge off-by-one (UTC vs +7).
+- [x] **Dashboard scope** ✓ — action queue and priority students scoped by classroom/semester params, visible scope caption badge in desktop and mobile.
+- [x] **Support due metric** ✓ — split into overdue vs due soon in 7 days, moved student picker above notes (`order-first xl:order-last`), warning banner for unknown `?studentId`.
+- [x] **SDQ table** ✓ — honest table showing real SDQ assessment status & score vs EWS risk score, search & KPI card filter preservation.
+- [x] **Notifications** ✓ — mark-all respects muted types, multiline message wrapping (`line-clamp-2 break-words`), clear-filter CTA, consolidated single bell with unread badge.
+- [x] **Auth** ✓ — direct role-aware redirect for parents to `/parent`, show/hide password toggle, forgot password resend with 60s cooldown timer and change-email CTA.
+- [x] **Dates** ✓ — Bangkok timezone `getTodayBangkok()` across forms, invalid/future `?date=` alert banner in attendance, Bangkok calendar day comparison for IDP due edges.
 
 ### Extension roadmap (ต่อยอด — phased, reuses existing tables)
 - **E1 Risk→action loop**: absence streak / repeated negative behavior / urgent home-visit /

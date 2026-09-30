@@ -173,15 +173,12 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
 
             <div className="w-px h-8 bg-border"></div>
 
-            <div className="relative p-2 text-muted-foreground">
-              <Bell className="w-5 h-5" />
-              {safeCounts.unread > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
-              )}
-            </div>
-            <div className="flex items-center gap-3 ml-2">
-              <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center">
+            <div className="flex items-center gap-3">
+              <div className="relative w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center">
                 <Bell className="w-5 h-5 text-muted-foreground" />
+                {safeCounts.unread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
+                )}
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-foreground">การแจ้งเตือน</span>

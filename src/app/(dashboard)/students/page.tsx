@@ -80,27 +80,37 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
     loadError = error instanceof Error ? error.message : "Unknown student data error"
   }
 
+  let serverTotalActiveStudents: number | null = null
   try {
     const supabase = await createClient()
-    const { data } = await supabase
-      .from("classrooms")
-      .select("id, name, grade_level, section")
-      .eq("school_id", context.schoolId)
-      .eq("is_active", true)
-      .order("grade_level", { ascending: true })
-      .order("section", { ascending: true })
+    const [classroomsRes, countRes] = await Promise.all([
+      supabase
+        .from("classrooms")
+        .select("id, name, grade_level, section")
+        .eq("school_id", context.schoolId)
+        .eq("is_active", true)
+        .order("grade_level", { ascending: true })
+        .order("section", { ascending: true }),
+      supabase
+        .from("students")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", context.schoolId)
+        .eq("status", "active"),
+    ])
 
-    schoolClassrooms = (data || []) as unknown as Array<{
+    schoolClassrooms = (classroomsRes.data || []) as unknown as Array<{
       id: string
       name: string
       grade_level: string
       section: number
     }>
+    serverTotalActiveStudents = countRes.count
   } catch {
     schoolClassrooms = []
   }
 
   const summary = createStudentSummary(studentRows)
+  const effectiveTotalStudents = serverTotalActiveStudents ?? summary.total
   const classSummary = createClassSummary(studentRows)
   const filterOptions = createStudentFilterOptions(studentRows, schoolClassrooms)
   const filteredStudents = filterStudentRows(studentRows, filters)
@@ -204,11 +214,20 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
         />
       ) : null}
 
+      {effectiveTotalStudents > studentRows.length ? (
+        <div
+          role="note"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          โรงเรียนมีนักเรียนทั้งหมด {effectiveTotalStudents.toLocaleString("th-TH")} คน (ระบบแสดงข้อมูล 500 คนแรก กรุณาใช้ตัวกรองชั้น/ห้องเรียน หรือค้นหาด้วยชื่อ/รหัสเพื่อดูนักเรียนที่ต้องการ)
+        </div>
+      ) : null}
+
       <StudentFilters
         filters={filters}
         options={filterOptions}
         visibleCount={filteredStudents.length}
-        totalCount={summary.total}
+        totalCount={effectiveTotalStudents}
       />
 
       <div className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">

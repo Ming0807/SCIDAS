@@ -220,7 +220,7 @@ describe("risk.actions", () => {
       expect(result.error).toBe("Unauthorized")
     })
 
-    it("returns forbidden when role is outside the care loop (e.g. subject_teacher)", async () => {
+    it("returns forbidden when role is outside admin/director (e.g. subject_teacher or homeroom_teacher)", async () => {
       vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
         userId: "user-1",
         schoolId: "sch-1",
@@ -229,9 +229,21 @@ describe("risk.actions", () => {
         studentId: null,
       })
 
-      const result = await recalculateAllRiskScores()
-      expect(result.success).toBe(false)
-      expect(result.error).toBe("Forbidden")
+      const result1 = await recalculateAllRiskScores()
+      expect(result1.success).toBe(false)
+      expect(result1.error).toBe("Forbidden")
+
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-2",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-2",
+        studentId: null,
+      })
+
+      const result2 = await recalculateAllRiskScores()
+      expect(result2.success).toBe(false)
+      expect(result2.error).toBe("Forbidden")
       expect(createClient).not.toHaveBeenCalled()
     })
 

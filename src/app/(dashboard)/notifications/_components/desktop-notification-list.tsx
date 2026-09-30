@@ -95,7 +95,7 @@ function NotificationRow({ item }: { item: NotificationItem }) {
             {formatRelativeTime(item.createdAt)}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground mb-2 truncate">{item.message}</p>
+        <p className="text-xs text-muted-foreground mb-2 line-clamp-2 break-words leading-relaxed">{item.message}</p>
         <div className="flex items-center gap-2">
           <span className={`w-max px-2 py-0.5 rounded-md text-micro font-medium ${visual.bgClass} ${visual.textClass}`}>
             {getNotificationTypeLabel(item.type)}
@@ -141,7 +141,9 @@ export function DesktopNotificationList({
   currentStatus,
   currentType,
 }: DesktopNotificationListProps) {
-  return (
+    const isFiltered = currentStatus !== "all" || Boolean(currentType)
+
+    return (
     <div className="bg-card rounded-2xl p-5 border border-border shadow-xs flex flex-col h-full">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
         <h3 className="text-sm font-bold text-foreground font-mono tabular-nums">ทั้งหมด {totalCount} รายการ</h3>
@@ -149,11 +151,25 @@ export function DesktopNotificationList({
       </div>
 
       {notifications.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex flex-col items-center justify-center py-12">
           <EmptyState
             icon={Bell}
-            title="ไม่มีการแจ้งเตือน"
-            description="คุณไม่มีรายการแจ้งเตือนในขณะนี้"
+            title={isFiltered ? "ไม่พบการแจ้งเตือนตามตัวกรอง" : "ไม่มีการแจ้งเตือน"}
+            description={
+              isFiltered
+                ? "ลองเปลี่ยนตัวกรองหรือล้างตัวกรองเพื่อดูการแจ้งเตือนทั้งหมด"
+                : "คุณไม่มีรายการแจ้งเตือนในขณะนี้"
+            }
+            action={
+              isFiltered ? (
+                <Link
+                  href="/notifications"
+                  className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-primary hover:bg-muted transition-colors"
+                >
+                  ล้างตัวกรองทั้งหมด
+                </Link>
+              ) : undefined
+            }
             size="compact"
           />
         </div>

@@ -47,6 +47,7 @@ export function MobileDashboard({
   activeClassroomId = null,
   semesterOptions = [],
   activeSemesterId = null,
+  scopeCaption = null,
 }: {
   dashboard: StudentCareDashboard
   loadError: string | null
@@ -56,6 +57,7 @@ export function MobileDashboard({
   activeClassroomId?: string | null
   semesterOptions?: SemesterOption[]
   activeSemesterId?: string | null
+  scopeCaption?: string | null
 }) {  const metrics = dashboard.metrics
 
   return (
@@ -143,7 +145,14 @@ export function MobileDashboard({
 
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-foreground">งานที่ต้องติดตาม</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-foreground">งานที่ต้องติดตาม</h2>
+              {scopeCaption ? (
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-2xs font-semibold text-primary">
+                  {scopeCaption}
+                </span>
+              ) : null}
+            </div>
             <Link
               href="/support"
               className="inline-flex items-center gap-1 text-sm font-medium text-primary"

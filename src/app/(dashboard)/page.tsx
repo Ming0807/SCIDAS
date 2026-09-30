@@ -43,7 +43,10 @@ export default async function DashboardPage({
   const rawClassroom = typeof params.classroom === "string" ? params.classroom : ""
   const rawSemester = typeof params.semester === "string" ? params.semester : ""
   const [dashboardResult, insights] = await Promise.all([
-    getStudentCareDashboard()
+    getStudentCareDashboard({
+      classroomId: rawClassroom || undefined,
+      semesterId: rawSemester || undefined,
+    })
       .then((data) => ({ data, error: null }))
       .catch((error: unknown) => ({
         data: emptyDashboard,
@@ -69,7 +72,18 @@ export default async function DashboardPage({
     ),
   ])
   const dashboard = dashboardResult.data
-  const activeClassroomId = insights.activeClassroomId
+  const activeClassroomId = insights.activeClassroomId ?? (rawClassroom || null)
+  const activeClassroom = insights.classroomOptions.find((c) => c.id === activeClassroomId)
+  const classroomName = activeClassroom?.name ?? null
+  const activeSemesterId = insights.activeSemesterId ?? (rawSemester || null)
+  const activeSemester = insights.semesterOptions.find((s) => s.id === activeSemesterId)
+  const semesterName = activeSemester?.name ?? null
+  const scopeCaption = classroomName
+    ? `ห้อง ${classroomName}${semesterName ? ` · ${semesterName}` : ""}`
+    : semesterName
+      ? semesterName
+      : null
+
   const trackedStudents = activeClassroomId
     ? dashboard.priorityStudents.filter((s) => s.classroomId === activeClassroomId)
     : dashboard.priorityStudents
@@ -88,6 +102,7 @@ export default async function DashboardPage({
           activeClassroomId={insights.activeClassroomId}
           semesterOptions={insights.semesterOptions}
           activeSemesterId={insights.activeSemesterId}
+          scopeCaption={scopeCaption}
         />
       </div>
 
@@ -115,7 +130,7 @@ export default async function DashboardPage({
           {/* Core Intelligence: Risk Distribution & Care Action Center */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-stretch">
             <RiskOverviewCard metrics={m} className="col-span-1 lg:col-span-7" />
-            <ActionItems items={dashboard.actionQueue} className="col-span-1 lg:col-span-5" />
+            <ActionItems items={dashboard.actionQueue} scopeCaption={scopeCaption} className="col-span-1 lg:col-span-5" />
           </div>
 
           {/* Classroom/semester scope: filters the worklist table and insights below.

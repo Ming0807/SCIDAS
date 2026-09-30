@@ -51,6 +51,9 @@ export function getPlanStatusTone(
 
 export async function getDevelopmentPlanList(filters?: {
   studentId?: string
+  status?: string
+  q?: string
+  limit?: number
 }): Promise<DevelopmentPlanListItem[]> {
   const context = await getCurrentUserContext()
 
@@ -89,9 +92,19 @@ export async function getDevelopmentPlanList(filters?: {
     query = query.eq("student_id", filters.studentId)
   }
 
+  const validStatuses = new Set<PlanStatus>(["active", "cancelled", "draft", "completed"])
+  if (filters?.status && validStatuses.has(filters.status as PlanStatus)) {
+    query = query.eq("status", filters.status as PlanStatus)
+  }
+
+  if (filters?.q) {
+    query = query.ilike("title", `%${filters.q}%`)
+  }
+
+  const limit = filters?.limit ?? 50
   const { data, error } = await query
     .order("created_at", { ascending: false })
-    .limit(50)
+    .limit(limit)
 
   if (error) {
     throw new Error(error.message)
@@ -186,15 +199,29 @@ export type PlanSummary = {
 }
 
 export async function getPlanSummary(): Promise<PlanSummary> {
-  const plans = await getDevelopmentPlanList()
+  const context = await getCurrentUserContext()
+  if (!context.profileId || !context.schoolId) {
+    throw new Error("FORBIDDEN")
+  }
 
+  const client = await createClient()
+  const { data, error } = await client
+    .from("development_plans")
+    .select("status, overall_progress")
+    .eq("school_id", context.schoolId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const rows = data ?? []
   let activePlans = 0
   let completedPlans = 0
   let draftPlans = 0
   let cancelledPlans = 0
   let totalProgress = 0
 
-  for (const plan of plans) {
+  for (const plan of rows) {
     switch (plan.status) {
       case "active":
         activePlans++
@@ -209,17 +236,17 @@ export async function getPlanSummary(): Promise<PlanSummary> {
         cancelledPlans++
         break
     }
-    totalProgress += plan.overallProgress
+    totalProgress += plan.overall_progress ?? 0
   }
 
   return {
-    totalPlans: plans.length,
+    totalPlans: rows.length,
     activePlans,
     completedPlans,
     draftPlans,
     cancelledPlans,
     averageProgress:
-      plans.length > 0 ? Math.round(totalProgress / plans.length) : 0,
+      rows.length > 0 ? Math.round(totalProgress / rows.length) : 0,
   }
 }
 

@@ -17,6 +17,7 @@ import {
   getSubmissionStatusLabel,
   type SubmissionStatus,
 } from "@/lib/assignment-constants"
+import { getTodayBangkok } from "@/lib/student-care-formatters"
 import type {
   AssignmentItem,
   AssignmentSubjectOption,
@@ -29,7 +30,7 @@ type StudentOption = {
 }
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10)
+  return getTodayBangkok()
 }
 
 function RowEditor({ item }: { item: AssignmentItem }) {

@@ -65,9 +65,11 @@ function formatActionCategory(category: string) {
 
 export function ActionItems({
   items,
+  scopeCaption,
   className,
 }: {
   items: ActionQueueItem[]
+  scopeCaption?: string | null
   className?: string
 }) {
   return (
@@ -81,13 +83,18 @@ export function ActionItems({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/60">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ListChecks className="size-4" />
               </span>
               <h3 className="text-base font-bold text-foreground tracking-tight">
                 ศูนย์ปฏิบัติการดูแล (Care Action Queue)
               </h3>
+              {scopeCaption ? (
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-2xs font-semibold text-primary">
+                  {scopeCaption}
+                </span>
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {items.length > 0

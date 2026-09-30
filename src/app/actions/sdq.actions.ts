@@ -181,6 +181,49 @@ export async function getSdqAssessments(studentId: string): Promise<SdqHistoryIt
   }
 }
 
+export interface LatestSdqAssessment {
+  id: string
+  studentId: string
+  riskLevel: "normal" | "watch" | "high"
+  score: number
+  summary: string
+  assessedAt: string
+}
+
+export async function getLatestSchoolSdqAssessments(): Promise<Record<string, LatestSdqAssessment>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId || context.role === "student") return {}
+
+    const client = await createClient()
+    const { data, error } = await client
+      .from("risk_assessments")
+      .select("id, student_id, risk_level, risk_score, summary, assessed_at")
+      .eq("school_id", context.schoolId)
+      .ilike("summary", "แบบประเมิน SDQ%")
+      .order("assessed_at", { ascending: false })
+
+    if (error || !data) return {}
+
+    const result: Record<string, LatestSdqAssessment> = {}
+    for (const row of data) {
+      if (!result[row.student_id]) {
+        result[row.student_id] = {
+          id: row.id,
+          studentId: row.student_id,
+          riskLevel: (row.risk_level as "normal" | "watch" | "high") ?? "normal",
+          score: row.risk_score ?? 0,
+          summary: row.summary ?? "",
+          assessedAt: row.assessed_at,
+        }
+      }
+    }
+    return result
+  } catch {
+    return {}
+  }
+}
+
 export async function deleteSdqAssessmentAction(
   assessmentId: string,
 ): Promise<ActionResult<{ id: string }>> {

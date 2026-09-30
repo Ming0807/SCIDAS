@@ -22,6 +22,7 @@ type MobileRiskProfileProps = {
   factorDistribution: RiskFactorDistribution
   dimensionBenchmarks: RiskDimensionBenchmark[]
   studentRiskFactors: Record<string, StudentRiskFactorData>
+  canRecalculate?: boolean
 }
 
 export function MobileRiskProfile({
@@ -30,6 +31,7 @@ export function MobileRiskProfile({
   factorDistribution,
   dimensionBenchmarks,
   studentRiskFactors,
+  canRecalculate = true,
 }: MobileRiskProfileProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
 
@@ -73,7 +75,7 @@ export function MobileRiskProfile({
             </select>
           </div>
           <div className="mt-3 flex justify-end">
-            <RecalculateButton />
+            <RecalculateButton canRecalculate={canRecalculate} />
           </div>
         </div>
 

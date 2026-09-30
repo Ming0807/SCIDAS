@@ -135,6 +135,12 @@ export async function upsertAttendance(
     if (!classroomId || !isoDatePattern.test(date)) {
       return actionFail("VALIDATION_ERROR", "ห้องเรียนหรือวันที่ไม่ถูกต้อง")
     }
+
+    const todayBangkok = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date())
+    if (date > todayBangkok) {
+      return actionFail("VALIDATION_ERROR", "ไม่สามารถบันทึกการมาเรียนล่วงหน้าได้")
+    }
+
     if (!records.length) {
       return actionFail("VALIDATION_ERROR", "ไม่มีข้อมูลการมาเรียนให้บันทึก")
     }
@@ -188,7 +194,7 @@ export async function upsertAttendance(
       classroom_id: classroomId,
       date,
       status: record.status,
-      check_in_time: record.check_in_time || null,
+      check_in_time: ["absent", "leave", "sick"].includes(record.status) ? null : record.check_in_time || null,
       remark: record.remark?.trim() || null,
       recorded_by: context.profileId!,
     }))

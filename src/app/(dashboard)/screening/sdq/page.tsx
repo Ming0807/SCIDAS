@@ -16,6 +16,7 @@ import {
   StudentIdentity,
 } from "@/components/dashboard"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
+import { getLatestSchoolSdqAssessments } from "@/app/actions/sdq.actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SdqTableActions } from "./_components/sdq-table-actions"
@@ -28,16 +29,46 @@ interface SdqOverviewPageProps {
   searchParams?: Promise<SearchParams>
 }
 
+function buildSdqUrl(
+  base: { risk?: string; q?: string; studentId?: string },
+  overrides: { risk?: string | null; q?: string | null; studentId?: string | null }
+) {
+  const sp = new URLSearchParams()
+  const risk = overrides.risk !== undefined ? overrides.risk : base.risk
+  const q = overrides.q !== undefined ? overrides.q : base.q
+  const studentId = overrides.studentId !== undefined ? overrides.studentId : base.studentId
+
+  if (risk) sp.set("risk", risk)
+  if (q) sp.set("q", q)
+  if (studentId) sp.set("studentId", studentId)
+
+  const qs = sp.toString()
+  return qs ? `/screening/sdq?${qs}` : "/screening/sdq"
+}
+
 export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageProps) {
   const resolvedParams = searchParams ? await searchParams : {}
   const query = typeof resolvedParams.q === "string" ? resolvedParams.q.trim().toLowerCase() : ""
   const studentId = typeof resolvedParams.studentId === "string" ? resolvedParams.studentId.trim() : ""
   const riskFilter = typeof resolvedParams.risk === "string" ? resolvedParams.risk.trim() : ""
+  const baseParams = { risk: riskFilter, q: query, studentId }
 
-  const worklist = await getStudentWorklist()
+  const [worklist, sdqMap] = await Promise.all([
+    getStudentWorklist(),
+    getLatestSchoolSdqAssessments(),
+  ])
+
   const filteredStudents = worklist.filter((s) => {
     if (studentId && s.studentId !== studentId) return false
-    if (riskFilter && s.riskLevel !== riskFilter) return false
+    if (riskFilter) {
+      const studentSdq = sdqMap[s.studentId]
+      if (riskFilter === "unassessed") {
+        if (studentSdq) return false
+      } else {
+        const effectiveLevel = studentSdq ? studentSdq.riskLevel : s.riskLevel
+        if (effectiveLevel !== riskFilter) return false
+      }
+    }
     if (!query) return true
     return (
       s.fullName.toLowerCase().includes(query) ||
@@ -48,9 +79,10 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
 
   // Group metrics
   const total = worklist.length
-  const normalCount = worklist.filter((s) => s.riskLevel === "normal").length
-  const riskCount = worklist.filter((s) => s.riskLevel === "watch").length
-  const problemCount = worklist.filter((s) => s.riskLevel === "high").length
+  const assessedCount = worklist.filter((s) => Boolean(sdqMap[s.studentId])).length
+  const normalCount = worklist.filter((s) => (sdqMap[s.studentId] ? sdqMap[s.studentId].riskLevel === "normal" : s.riskLevel === "normal")).length
+  const riskCount = worklist.filter((s) => (sdqMap[s.studentId] ? sdqMap[s.studentId].riskLevel === "watch" : s.riskLevel === "watch")).length
+  const problemCount = worklist.filter((s) => (sdqMap[s.studentId] ? sdqMap[s.studentId].riskLevel === "high" : s.riskLevel === "high")).length
   const bannerStudent = studentId
     ? (filteredStudents[0] ?? worklist.find((s) => s.studentId === studentId) ?? null)
     : null
@@ -79,11 +111,15 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
 
       {/* Summary KPI Cards with Clickable Filters */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/screening/sdq" className="group block focus-visible:outline-none">
+        <Link href={buildSdqUrl(baseParams, { risk: null })} className="group block focus-visible:outline-none">
           <MetricCard
             title="นักเรียนทั้งหมด"
             value={`${total.toLocaleString("th-TH")} คน`}
-            description="แสดงรายชื่อทั้งหมดในระบบ"
+            description={
+              assessedCount > 0
+                ? `ประเมิน SDQ แล้ว ${assessedCount.toLocaleString("th-TH")} คน (${formatPercent((assessedCount / (total || 1)) * 100)})`
+                : "ยังไม่มีการบันทึกผลประเมิน SDQ"
+            }
             icon={Users}
             status="primary"
             size="compact"
@@ -94,7 +130,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           />
         </Link>
 
-        <Link href="/screening/sdq?risk=normal" className="group block focus-visible:outline-none">
+        <Link href={buildSdqUrl(baseParams, { risk: "normal" })} className="group block focus-visible:outline-none">
           <MetricCard
             title="กลุ่มปกติ"
             value={`${normalCount.toLocaleString("th-TH")} คน`}
@@ -113,7 +149,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           />
         </Link>
 
-        <Link href="/screening/sdq?risk=watch" className="group block focus-visible:outline-none">
+        <Link href={buildSdqUrl(baseParams, { risk: "watch" })} className="group block focus-visible:outline-none">
           <MetricCard
             title="กลุ่มเสี่ยง"
             value={`${riskCount.toLocaleString("th-TH")} คน`}
@@ -128,7 +164,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           />
         </Link>
 
-        <Link href="/screening/sdq?risk=high" className="group block focus-visible:outline-none">
+        <Link href={buildSdqUrl(baseParams, { risk: "high" })} className="group block focus-visible:outline-none">
           <MetricCard
             title="กลุ่มมีปัญหา"
             value={`${problemCount.toLocaleString("th-TH")} คน`}
@@ -155,11 +191,11 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
             )}
             {riskFilter && (
               <span className="ml-2 font-medium">
-                ระดับความเสี่ยง: {riskFilter === "high" ? "กลุ่มมีปัญหา" : riskFilter === "watch" ? "กลุ่มเสี่ยง" : "กลุ่มปกติ"}
+                ระดับ: {riskFilter === "high" ? "กลุ่มมีปัญหา" : riskFilter === "watch" ? "กลุ่มเสี่ยง" : riskFilter === "unassessed" ? "ยังไม่ประเมิน" : "กลุ่มปกติ"}
               </span>
             )}
           </div>
-          <Link href="/screening/sdq" className="font-semibold text-primary hover:underline">
+          <Link href={buildSdqUrl(baseParams, { risk: null, studentId: null })} className="font-semibold text-primary hover:underline">
             ล้างตัวกรอง (แสดงทั้งหมด) &times;
           </Link>
         </div>
@@ -179,7 +215,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
 
           <div className="flex items-center gap-2 max-w-sm w-full sm:w-auto">
             {query ? (
-              <Link href="/screening/sdq">
+              <Link href={buildSdqUrl(baseParams, { q: null })}>
                 <Button variant="ghost" size="sm" className="h-9 text-xs text-muted-foreground hover:text-foreground shrink-0">
                   ล้างคำค้น (&ldquo;{query}&rdquo;)
                 </Button>
@@ -204,24 +240,26 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium min-w-64">นักเรียน</th>
-                <th className="px-4 py-3 font-medium min-w-24">ห้องเรียน</th>
-                <th className="px-4 py-3 font-medium min-w-28">ระดับความเสี่ยง (EWS)</th>
-                <th className="px-4 py-3 font-medium min-w-24">คะแนน EWS</th>
+                <th className="px-4 py-3 font-medium min-w-56">นักเรียน</th>
+                <th className="px-4 py-3 font-medium min-w-20">ห้องเรียน</th>
+                <th className="px-4 py-3 font-medium min-w-32">ผลประเมิน SDQ</th>
+                <th className="px-4 py-3 font-medium min-w-24">คะแนน SDQ</th>
+                <th className="px-4 py-3 font-medium min-w-28">ความเสี่ยงรวม (EWS)</th>
                 <th className="px-4 py-3 text-right font-medium min-w-44">การดำเนินการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                     ไม่พบรายชื่อนักเรียนตามเงื่อนไขที่กำหนด
                   </td>
                 </tr>
               ) : (
                 filteredStudents.map((student) => {
-                  const isRisk = student.riskLevel === "watch"
-                  const isProblem = student.riskLevel === "high"
+                  const sdq = sdqMap[student.studentId]
+                  const isEwsRisk = student.riskLevel === "watch"
+                  const isEwsProblem = student.riskLevel === "high"
 
                   return (
                     <tr key={student.studentId} className="hover:bg-muted/30 transition-colors">
@@ -248,14 +286,34 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge
-                          status={isProblem ? "high-risk" : isRisk ? "watch" : "normal"}
-                          label={isProblem ? "กลุ่มมีปัญหา" : isRisk ? "กลุ่มเสี่ยง" : "กลุ่มปกติ"}
-                          size="sm"
-                        />
+                        {sdq ? (
+                          <StatusBadge
+                            status={sdq.riskLevel === "high" ? "high-risk" : sdq.riskLevel === "watch" ? "watch" : "normal"}
+                            label={sdq.riskLevel === "high" ? "กลุ่มมีปัญหา" : sdq.riskLevel === "watch" ? "กลุ่มเสี่ยง" : "ปกติ"}
+                            size="sm"
+                          />
+                        ) : (
+                          <StatusBadge
+                            status="neutral"
+                            label="ยังไม่ประเมิน"
+                            size="sm"
+                          />
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs font-mono font-semibold tabular-nums text-foreground">
-                        {student.riskScore}
+                        {sdq ? `${sdq.score}/40` : <span className="text-muted-foreground">-</span>}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <StatusBadge
+                            status={isEwsProblem ? "high-risk" : isEwsRisk ? "watch" : "normal"}
+                            label={isEwsProblem ? "สูง" : isEwsRisk ? "เฝ้าระวัง" : "ปกติ"}
+                            size="sm"
+                          />
+                          <span className="font-mono text-muted-foreground tabular-nums">
+                            ({student.riskScore})
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <SdqTableActions

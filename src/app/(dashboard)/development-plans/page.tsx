@@ -1,6 +1,6 @@
 import React from "react"
 import Link from "next/link"
-import { ClipboardList, Plus, Target, TrendingUp } from "lucide-react"
+import { ClipboardList, Plus, Search, Target, TrendingUp } from "lucide-react"
 
 import { PageShell } from "@/components/dashboard/page-shell"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/dashboard/status-badge"
 import { StudentIdentity } from "@/components/dashboard/student-identity"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import {
   getDevelopmentPlanList,
@@ -17,12 +18,14 @@ import {
   getPlanStatusTone,
 } from "@/lib/server/idp-read-models"
 import { getCurrentUserContext } from "@/lib/server/current-user"
-import { formatGradeLevel } from "@/lib/student-care-formatters"
+import { formatGradeLevel, getTodayBangkok } from "@/lib/student-care-formatters"
 
 import { canEditDevelopmentPlans } from "./_lib/permissions"
 
 type SearchParams = Promise<{
   studentId?: string
+  status?: string
+  q?: string
 }>
 
 export default async function DevelopmentPlansPage({
@@ -32,13 +35,19 @@ export default async function DevelopmentPlansPage({
 }) {
   const params = searchParams ? await searchParams : {}
   const selectedStudentId = params.studentId || ""
+  const selectedStatus = params.status || ""
+  const searchQuery = params.q || ""
   let plans: Awaited<ReturnType<typeof getDevelopmentPlanList>>
   let summary: Awaited<ReturnType<typeof getPlanSummary>>
   let canCreatePlan = false
 
   try {
     const [planRows, planSummary, context] = await Promise.all([
-      getDevelopmentPlanList(selectedStudentId ? { studentId: selectedStudentId } : undefined),
+      getDevelopmentPlanList({
+        studentId: selectedStudentId || undefined,
+        status: selectedStatus || undefined,
+        q: searchQuery || undefined,
+      }),
       getPlanSummary(),
       getCurrentUserContext(),
     ])
@@ -57,17 +66,18 @@ export default async function DevelopmentPlansPage({
   }
 
   // FR-09-09: surface plans that need attention — active/draft plans whose
-  // end date has passed or falls within the next 7 days.
-  const nowStart = new Date()
-  nowStart.setHours(0, 0, 0, 0)
-  const dueSoonLimit = new Date(nowStart)
-  dueSoonLimit.setDate(dueSoonLimit.getDate() + 7)
+  // end date has passed or falls within the next 7 days in Asia/Bangkok time.
+  const todayBangkok = getTodayBangkok()
+  const dueSoonTarget = new Date(`${todayBangkok}T00:00:00+07:00`)
+  dueSoonTarget.setDate(dueSoonTarget.getDate() + 7)
+  const dueSoonLimit = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(dueSoonTarget)
+
   const duePlans = plans.filter((plan) => {
     if (plan.status !== "active" && plan.status !== "draft") return false
     if (!plan.endDate) return false
-    return new Date(plan.endDate) <= dueSoonLimit
+    return plan.endDate <= dueSoonLimit
   })
-  const overduePlans = duePlans.filter((plan) => new Date(plan.endDate as string) < nowStart)
+  const overduePlans = duePlans.filter((plan) => (plan.endDate as string) < todayBangkok)
 
   return (
     <PageShell>
@@ -181,10 +191,86 @@ export default async function DevelopmentPlansPage({
         </div>
       ) : null}
       <div className="bg-card rounded-xl border border-border shadow-sm flex flex-col min-h-0">
-        <div className="p-5 border-b border-border">
-          <h2 className="text-base font-semibold text-foreground">
-            แผนพัฒนาทั้งหมด
-          </h2>
+        <div className="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">
+              แผนพัฒนาทั้งหมด
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                (แสดง {plans.length.toLocaleString("th-TH")} จากทั้งหมด {summary.totalPlans.toLocaleString("th-TH")} แผน)
+              </span>
+            </h2>
+            {summary.totalPlans > plans.length && !searchQuery && (!selectedStatus || selectedStatus === "all") ? (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                จำกัดการแสดงผล 50 รายการล่าสุด กรุณาใช้ช่องค้นหาหรือตัวกรองสถานะเพื่อค้นหาแผนที่ต้องการ
+              </p>
+            ) : null}
+          </div>
+
+          <form method="GET" action="/development-plans" className="relative w-full sm:w-64">
+            {selectedStatus && <input type="hidden" name="status" value={selectedStatus} />}
+            {selectedStudentId && <input type="hidden" name="studentId" value={selectedStudentId} />}
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <Input
+              name="q"
+              defaultValue={searchQuery}
+              placeholder="ค้นหาชื่อแผน..."
+              className="pl-9 h-8 text-xs rounded-lg"
+            />
+          </form>
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 p-3 sm:px-5 border-b border-border bg-muted/20">
+          <Link
+            href={`/development-plans?status=all${selectedStudentId ? `&studentId=${selectedStudentId}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              !selectedStatus || selectedStatus === "all"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            ทั้งหมด ({summary.totalPlans})
+          </Link>
+          <Link
+            href={`/development-plans?status=active${selectedStudentId ? `&studentId=${selectedStudentId}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              selectedStatus === "active"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            กำลังดำเนินการ ({summary.activePlans})
+          </Link>
+          <Link
+            href={`/development-plans?status=draft${selectedStudentId ? `&studentId=${selectedStudentId}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              selectedStatus === "draft"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            ฉบับร่าง ({summary.draftPlans})
+          </Link>
+          <Link
+            href={`/development-plans?status=completed${selectedStudentId ? `&studentId=${selectedStudentId}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              selectedStatus === "completed"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            เสร็จสิ้น ({summary.completedPlans})
+          </Link>
+          <Link
+            href={`/development-plans?status=cancelled${selectedStudentId ? `&studentId=${selectedStudentId}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              selectedStatus === "cancelled"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            ยกเลิก ({summary.cancelledPlans})
+          </Link>
         </div>
 
         {plans.length === 0 ? (

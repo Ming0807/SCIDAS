@@ -223,3 +223,8 @@ export function formatThaiDateTime(value?: string | null) {
     minute: "2-digit",
   }).format(date)
 }
+
+export function getTodayBangkok(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(date)
+}
+

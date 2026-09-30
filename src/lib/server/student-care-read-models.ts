@@ -173,10 +173,16 @@ type StudentWorklistOptions = {
   classroomId?: string
 }
 
-type ActionQueueOptions = {
+export type ActionQueueOptions = {
   limit?: number
   statuses?: ActionItemStatus[]
   assignedToMe?: boolean
+  classroomId?: string
+}
+
+export type StudentCareDashboardOptions = {
+  classroomId?: string
+  semesterId?: string
 }
 
 const actionStatuses: ActionItemStatus[] = ["todo", "in_progress", "done", "cancelled"]
@@ -686,6 +692,20 @@ export async function getActionQueue(
     query = query.eq("assigned_to", context.profileId)
   }
 
+  if (options.classroomId) {
+    const { data: enrollments } = await client
+      .from("classroom_students")
+      .select("student_id")
+      .eq("school_id", context.schoolId)
+      .eq("classroom_id", options.classroomId)
+      .eq("is_active", true)
+    const classStudentIds = (enrollments ?? []).map((e) => e.student_id)
+    if (classStudentIds.length === 0) {
+      return []
+    }
+    query = query.in("student_id", classStudentIds)
+  }
+
   if (options.limit) {
     query = query.limit(options.limit)
   }
@@ -948,7 +968,9 @@ export async function createStudentNote(input: {
   return mapNoteRow(data, new Map([[author.id, author]]))
 }
 
-export async function getStudentCareDashboard(): Promise<StudentCareDashboard> {
+export async function getStudentCareDashboard(
+  options: StudentCareDashboardOptions = {},
+): Promise<StudentCareDashboard> {
   const context = await getCurrentUserContext()
   const client = await createClient()
 
@@ -963,9 +985,9 @@ export async function getStudentCareDashboard(): Promise<StudentCareDashboard> {
     plansCountRes,
     actionItemsCountRes,
   ] = await Promise.all([
-    getCurrentSemesterId(context.schoolId),
-    getStudentWorklist({ limit: 8 }),
-    getActionQueue({ limit: 10 }),
+    options.semesterId ? Promise.resolve(options.semesterId) : getCurrentSemesterId(context.schoolId),
+    getStudentWorklist({ limit: 8, classroomId: options.classroomId }),
+    getActionQueue({ limit: 10, classroomId: options.classroomId }),
     client
       .from("students")
       .select("id", { count: "exact", head: true })
@@ -1033,6 +1055,54 @@ export async function getStudentCareDashboard(): Promise<StudentCareDashboard> {
     priorityStudents,
     actionQueue,
   }
+}
+
+export type DueActionItemsMetrics = {
+  overdueCount: number
+  dueSoonCount: number
+  totalDueCount: number
+}
+
+export async function getDueActionItemsMetrics(): Promise<DueActionItemsMetrics> {
+  const context = await getCurrentUserContext()
+  const client = await createClient()
+  const now = new Date()
+  const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(now)
+  const limitDate = new Date(now)
+  limitDate.setDate(limitDate.getDate() + 7)
+  const limitDateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(limitDate)
+
+  const [overdueRes, dueSoonRes] = await Promise.all([
+    client
+      .from("action_items")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .in("status", ["todo", "in_progress"])
+      .not("due_date", "is", null)
+      .lt("due_date", todayStr),
+    client
+      .from("action_items")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", context.schoolId)
+      .in("status", ["todo", "in_progress"])
+      .not("due_date", "is", null)
+      .gte("due_date", todayStr)
+      .lte("due_date", limitDateStr),
+  ])
+
+  const overdueCount = overdueRes.count ?? 0
+  const dueSoonCount = dueSoonRes.count ?? 0
+
+  return {
+    overdueCount,
+    dueSoonCount,
+    totalDueCount: overdueCount + dueSoonCount,
+  }
+}
+
+export async function getDueSoonActionItemsCount(): Promise<number> {
+  const metrics = await getDueActionItemsMetrics()
+  return metrics.totalDueCount
 }
 
 export async function updateActionItemStatus(

@@ -33,6 +33,9 @@ type StudentFormData = {
   medical_conditions: string | null
   special_needs: string | null
   family_status: string | null
+  nationality: string | null
+  ethnicity: string | null
+  religion: string | null
 }
 
 export type StudentArchiveStatus = "transferred" | "dropped_out"
@@ -70,6 +73,9 @@ const studentFormFields = [
   "medical_conditions",
   "special_needs",
   "family_status",
+  "nationality",
+  "ethnicity",
+  "religion",
 ] as const
 
 const validBloodTypes = new Set([
@@ -108,6 +114,9 @@ function readStudentFormData(formData: FormData): StudentFormData {
     medical_conditions: values.medical_conditions || null,
     special_needs: values.special_needs || null,
     family_status: values.family_status || null,
+    nationality: values.nationality || null,
+    ethnicity: values.ethnicity || null,
+    religion: values.religion || null,
   }
 }
 
@@ -302,6 +311,9 @@ export async function createStudentAction(
         medical_conditions: values.medical_conditions,
         special_needs: values.special_needs,
         family_status: values.family_status,
+        nationality: values.nationality || "ไทย",
+        ethnicity: values.ethnicity || "ไทย",
+        religion: values.religion || "พุทธ",
         status: "active",
       })
       .select("id")
@@ -393,6 +405,9 @@ export async function updateStudentAction(
       medical_conditions: values.medical_conditions,
       special_needs: values.special_needs,
       family_status: values.family_status,
+      nationality: values.nationality,
+      ethnicity: values.ethnicity,
+      religion: values.religion,
     }
 
     if (statusToUpdate) {
