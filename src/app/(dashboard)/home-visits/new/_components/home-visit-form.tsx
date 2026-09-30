@@ -25,6 +25,10 @@ type StudentOption = {
   guardianOccupation?: string | null
   guardianMonthlyIncome?: number | null
   guardianRelation?: string | null
+  previousHousingCondition?: string | null
+  previousHousingType?: string | null
+  previousHousingOwnership?: string | null
+  previousFamilyMembersCount?: number | null
 }
 
 type HomeVisitFormProps = {
@@ -93,6 +97,14 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
   const [hasFamilyProblem, setHasFamilyProblem] = useState<boolean>(
     Boolean(initialStudent?.familyStatus === "orphan" || initialStudent?.familyStatus === "separated")
   )
+  const [housingCondition, setHousingCondition] = useState<string>(initialStudent?.previousHousingCondition ?? "")
+  const [housingType, setHousingType] = useState<string>(initialStudent?.previousHousingType ?? "")
+  const [housingOwnership, setHousingOwnership] = useState<string>(initialStudent?.previousHousingOwnership ?? "")
+  const [familyMembersCount, setFamilyMembersCount] = useState<string>(
+    initialStudent?.previousFamilyMembersCount !== null && initialStudent?.previousFamilyMembersCount !== undefined
+      ? String(initialStudent.previousFamilyMembersCount)
+      : ""
+  )
 
   const [selectedClassroomFilter, setSelectedClassroomFilter] = useState<string>(
     initialStudent?.classroom ?? "",
@@ -145,6 +157,14 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
       setTravelDifficultyDetail(getTravelDetailText(student))
       setTravelDifficulty(Boolean(student.distanceToSchoolKm && student.distanceToSchoolKm > 10))
       setHasFamilyProblem(Boolean(student.familyStatus === "orphan" || student.familyStatus === "separated"))
+      setHousingCondition(student.previousHousingCondition ?? "")
+      setHousingType(student.previousHousingType ?? "")
+      setHousingOwnership(student.previousHousingOwnership ?? "")
+      setFamilyMembersCount(
+        student.previousFamilyMembersCount !== null && student.previousFamilyMembersCount !== undefined
+          ? String(student.previousFamilyMembersCount)
+          : ""
+      )
     } else {
       setAddressVisited("")
       setFamilyIncome("")
@@ -152,6 +172,10 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
       setTravelDifficultyDetail("")
       setTravelDifficulty(false)
       setHasFamilyProblem(false)
+      setHousingCondition("")
+      setHousingType("")
+      setHousingOwnership("")
+      setFamilyMembersCount("")
     }
   }
 
@@ -437,13 +461,21 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="housingCondition" className="text-sm font-medium">
-                    สภาพบ้าน
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="housingCondition" className="text-sm font-medium">
+                      สภาพบ้าน
+                    </label>
+                    {currentStudent?.previousHousingCondition && (
+                      <span className="text-micro text-emerald-600 dark:text-emerald-400 font-medium">
+                        🔗 จากประวัติเดิม
+                      </span>
+                    )}
+                  </div>
                   <select
                     id="housingCondition"
                     name="housingCondition"
-                    defaultValue=""
+                    value={housingCondition}
+                    onChange={(e) => setHousingCondition(e.target.value)}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                   >
                     <option value="">ไม่ระบุ</option>
@@ -454,32 +486,57 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="housingType" className="text-sm font-medium">
-                    ประเภทที่อยู่อาศัย
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="housingType" className="text-sm font-medium">
+                      ประเภทที่อยู่อาศัย
+                    </label>
+                    {currentStudent?.previousHousingType && (
+                      <span className="text-micro text-emerald-600 dark:text-emerald-400 font-medium">
+                        🔗 จากประวัติเดิม
+                      </span>
+                    )}
+                  </div>
                   <Input
                     id="housingType"
                     name="housingType"
                     placeholder="เช่น บ้านไม้, บ้านปูน, ห้องเช่า"
+                    value={housingType}
+                    onChange={(e) => setHousingType(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="housingOwnership" className="text-sm font-medium">
-                    การครอบครอง
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="housingOwnership" className="text-sm font-medium">
+                      การครอบครอง
+                    </label>
+                    {currentStudent?.previousHousingOwnership && (
+                      <span className="text-micro text-emerald-600 dark:text-emerald-400 font-medium">
+                        🔗 จากประวัติเดิม
+                      </span>
+                    )}
+                  </div>
                   <Input
                     id="housingOwnership"
                     name="housingOwnership"
                     placeholder="เช่น เป็นของตนเอง, เช่า, อาศัยญาติ"
+                    value={housingOwnership}
+                    onChange={(e) => setHousingOwnership(e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="familyMembersCount" className="text-sm font-medium">
-                    จำนวนสมาชิกในบ้าน (คน)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="familyMembersCount" className="text-sm font-medium">
+                      จำนวนสมาชิกในบ้าน (คน)
+                    </label>
+                    {currentStudent?.previousFamilyMembersCount !== null && currentStudent?.previousFamilyMembersCount !== undefined && (
+                      <span className="text-micro text-emerald-600 dark:text-emerald-400 font-medium">
+                        🔗 จากประวัติเดิม
+                      </span>
+                    )}
+                  </div>
                   <Input
                     id="familyMembersCount"
                     name="familyMembersCount"
@@ -487,6 +544,8 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     min={0}
                     step={1}
                     placeholder="เช่น 4"
+                    value={familyMembersCount}
+                    onChange={(e) => setFamilyMembersCount(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">

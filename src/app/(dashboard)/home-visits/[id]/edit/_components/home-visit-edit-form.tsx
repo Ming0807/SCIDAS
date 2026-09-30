@@ -26,6 +26,10 @@ type StudentOption = {
   guardianOccupation?: string | null
   guardianMonthlyIncome?: number | null
   guardianRelation?: string | null
+  previousHousingCondition?: string | null
+  previousHousingType?: string | null
+  previousHousingOwnership?: string | null
+  previousFamilyMembersCount?: number | null
 }
 
 type HomeVisitEditFormProps = {

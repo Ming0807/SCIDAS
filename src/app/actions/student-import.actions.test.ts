@@ -302,6 +302,62 @@ describe("student-import.actions", () => {
         "skip",
       )
     })
+
+    it("preserves guardian income, occupation, and DMC attributes when executing RPC", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+      vi.mocked(executeStudentImportRpc).mockResolvedValueOnce({
+        success: true,
+        count: 1,
+        skippedCount: 0,
+        enrolledExistingCount: 0,
+      })
+
+      const dmcStudent: ParsedStudentRow = {
+        ...sampleStudent,
+        nationalId: "1969000117658",
+        bloodType: "A",
+        address: "บ้านเลขที่ 19 หมู่ 4 ต.ตะมะยูง อ.ศรีสาคร จ.นราธิวาส 96210",
+        subdistrict: "ตะมะยูง",
+        district: "ศรีสาคร",
+        province: "นราธิวาส",
+        postalCode: "96210",
+        distanceToSchoolKm: 0.7,
+        travelMethod: "เดินเท้า",
+        familyStatus: "together",
+        specialNeeds: "บกพร่องทางการเรียนรู้",
+        guardianPrefix: "นาย",
+        guardianFirstName: "พีรกานต์",
+        guardianLastName: "คำมะขุย",
+        guardianNationalId: "1302401026679",
+        guardianOccupation: "รับจ้าง",
+        guardianMonthlyIncome: 2000,
+        guardianRelation: "father",
+      }
+
+      const result = await executeStudentImportAction(validUuid1, validUuid2, [dmcStudent])
+      expect(result.ok).toBe(true)
+      expect(executeStudentImportRpc).toHaveBeenCalledWith(
+        validUuid1,
+        validUuid2,
+        expect.arrayContaining([
+          expect.objectContaining({
+            guardianMonthlyIncome: 2000,
+            guardianOccupation: "รับจ้าง",
+            guardianNationalId: "1302401026679",
+            specialNeeds: "บกพร่องทางการเรียนรู้",
+            distanceToSchoolKm: 0.7,
+            travelMethod: "เดินเท้า",
+            familyStatus: "together",
+          }),
+        ]),
+      )
+    })
   })
 
   describe("getStudentImportTemplateAction", () => {

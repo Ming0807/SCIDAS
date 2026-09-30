@@ -152,10 +152,10 @@ export function StudentHealthCard({ student }: StudentHealthCardProps) {
         <div className="rounded-lg border border-border bg-background p-3">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Sparkles className="size-3.5 text-primary" />
-            <span className="font-medium">ความต้องการจำเป็นพิเศษ</span>
+            <span className="font-medium">ความต้องการจำเป็นพิเศษ / ความพิการ (DMC)</span>
           </div>
           <p className="mt-1 text-sm text-foreground leading-relaxed">
-            {student.special_needs || "ปกติ (ไม่มีความต้องการพิเศษ)"}
+            {student.special_needs || "ปกติ (ไม่มีความพิการหรือความต้องการพิเศษ)"}
           </p>
         </div>
 

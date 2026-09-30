@@ -52,6 +52,8 @@ export type ParsedStudentRow = {
   religion?: string | null
   nationality?: string | null
   ethnicity?: string | null
+  specialNeeds?: string | null
+  medicalConditions?: string | null
   studentNumber?: number | null
   classroomName?: string | null
   guardianPrefix?: string | null

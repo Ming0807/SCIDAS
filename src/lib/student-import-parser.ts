@@ -383,6 +383,22 @@ export type IntermediateHeaderKey =
   | "dirtDistance"
   | "pavedDistance"
   | "waterDistance"
+  | "specialNeeds"
+  | "medicalConditions"
+  | "fatherPrefix"
+  | "fatherFirstName"
+  | "fatherLastName"
+  | "fatherPhone"
+  | "fatherNationalId"
+  | "fatherOccupation"
+  | "fatherMonthlyIncome"
+  | "motherPrefix"
+  | "motherFirstName"
+  | "motherLastName"
+  | "motherPhone"
+  | "motherNationalId"
+  | "motherOccupation"
+  | "motherMonthlyIncome"
 
 const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   // ชั้นเรียน / ระดับชั้น (Grade)
@@ -647,12 +663,6 @@ const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   โทรศัพท์ผู้ปกครอง: "guardianPhone",
   หมายเลขโทรศัพท์ของผู้ปกครอง: "guardianPhone",
   หมายเลขโทรศัพท์ผู้ปกครอง: "guardianPhone",
-  หมายเลขโทรศัพท์บิดา: "guardianPhone",
-  หมายเลขโทรศัพท์มารดา: "guardianPhone",
-  หมายเลขโทรศัพท์ของบิดา: "guardianPhone",
-  หมายเลขโทรศัพท์ของมารดา: "guardianPhone",
-  เบอร์โทรศัพท์ของบิดา: "guardianPhone",
-  เบอร์โทรศัพท์ของมารดา: "guardianPhone",
   guardian_phone: "guardianPhone",
   phone: "guardianPhone",
 
@@ -684,6 +694,63 @@ const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   รายได้ผู้ปกครอง: "guardianMonthlyIncome",
   guardian_monthly_income: "guardianMonthlyIncome",
   guardian_income: "guardianMonthlyIncome",
+
+  // ความต้องการพิเศษ / ความพิการ
+  ความพิการ: "specialNeeds",
+  ความต้องการพิเศษ: "specialNeeds",
+  ความต้องการจำเป็นพิเศษ: "specialNeeds",
+  special_needs: "specialNeeds",
+  specialneeds: "specialNeeds",
+
+  // โรคประจำตัว / สุขภาพ
+  โรคประจำตัว: "medicalConditions",
+  โรคประจำตัวหรือประวัติการแพ้: "medicalConditions",
+  ประวัติแพ้ยา: "medicalConditions",
+  ประวัติแพ้อาหาร: "medicalConditions",
+  medical_conditions: "medicalConditions",
+  medicalconditions: "medicalConditions",
+
+  // ข้อมูลบิดา
+  คำนำหน้าบิดา: "fatherPrefix",
+  คำนำหน้าชื่อบิดา: "fatherPrefix",
+  ชื่อบิดา: "fatherFirstName",
+  ชื่อจริงบิดา: "fatherFirstName",
+  นามสกุลบิดา: "fatherLastName",
+  หมายเลขบัตรประชาชนบิดา: "fatherNationalId",
+  เลขประจำตัวประชาชนบิดา: "fatherNationalId",
+  เลขบัตรประชาชนบิดา: "fatherNationalId",
+  เลขบัตรบิดา: "fatherNationalId",
+  รายได้ต่อเดือนของบิดา: "fatherMonthlyIncome",
+  รายได้ต่อเดือนบิดา: "fatherMonthlyIncome",
+  รายได้บิดา: "fatherMonthlyIncome",
+  หมายเลขโทรศัพท์ของบิดา: "fatherPhone",
+  หมายเลขโทรศัพท์บิดา: "fatherPhone",
+  เบอร์โทรศัพท์ของบิดา: "fatherPhone",
+  เบอร์โทรบิดา: "fatherPhone",
+  โทรศัพท์บิดา: "fatherPhone",
+  อาชีพบิดา: "fatherOccupation",
+  อาชีพของบิดา: "fatherOccupation",
+
+  // ข้อมูลมารดา
+  คำนำหน้ามารดา: "motherPrefix",
+  คำนำหน้าชื่อมารดา: "motherPrefix",
+  ชื่อมารดา: "motherFirstName",
+  ชื่อจริงมารดา: "motherFirstName",
+  นามสกุลมารดา: "motherLastName",
+  หมายเลขบัตรประชาชนมารดา: "motherNationalId",
+  เลขประจำตัวประชาชนมารดา: "motherNationalId",
+  เลขบัตรประชาชนมารดา: "motherNationalId",
+  เลขบัตรมารดา: "motherNationalId",
+  รายได้ต่อเดือนของมารดา: "motherMonthlyIncome",
+  รายได้ต่อเดือนมารดา: "motherMonthlyIncome",
+  รายได้มารดา: "motherMonthlyIncome",
+  หมายเลขโทรศัพท์ของมารดา: "motherPhone",
+  หมายเลขโทรศัพท์มารดา: "motherPhone",
+  เบอร์โทรศัพท์ของมารดา: "motherPhone",
+  เบอร์โทรมารดา: "motherPhone",
+  โทรศัพท์มารดา: "motherPhone",
+  อาชีพมารดา: "motherOccupation",
+  อาชีพของมารดา: "motherOccupation",
 }
 
 function normalizeHeaderKey(rawHeader: string): string {
@@ -1125,19 +1192,111 @@ export async function parseAndValidateStudentRows(
       rowObj.ethnicity = eth && eth !== "-" ? eth : null
     }
 
+    // Process specialNeeds and medicalConditions
+    if (rowObj.specialNeeds) {
+      const sn = String(rowObj.specialNeeds).trim()
+      rowObj.specialNeeds = sn && sn !== "-" && sn !== "ไม่มี" && sn !== "ปกติ" && sn !== "null" ? sn : null
+    }
+    if (rowObj.medicalConditions) {
+      const mc = String(rowObj.medicalConditions).trim()
+      rowObj.medicalConditions = mc && mc !== "-" && mc !== "ไม่มี" && mc !== "ปกติ" && mc !== "null" ? mc : null
+    }
+
+    // Process Father & Mother fallbacks
+    const cleanNum = (val: unknown): number | null => {
+      if (val === undefined || val === null) return null
+      const num = parseFloat(String(val).replace(/[^0-9.]/g, ""))
+      return isNaN(num) ? null : num
+    }
+    const cleanId13 = (val: unknown): string | null => {
+      if (!val) return null
+      const clean = String(val).replace(/\D/g, "")
+      return clean.length === 13 ? clean : null
+    }
+    const cleanStr = (val: unknown): string | null => {
+      if (!val) return null
+      const s = String(val).trim()
+      return s && s !== "-" && s !== "--" && s !== "null" && s !== "undefined" ? s : null
+    }
+
+    const fatherName = cleanStr(rowObj.fatherFirstName)
+    const motherName = cleanStr(rowObj.motherFirstName)
+    const fatherIncome = cleanNum(rowObj.fatherMonthlyIncome)
+    const motherIncome = cleanNum(rowObj.motherMonthlyIncome)
+    const fatherOcc = cleanStr(rowObj.fatherOccupation)
+    const motherOcc = cleanStr(rowObj.motherOccupation)
+    const fatherNid = cleanId13(rowObj.fatherNationalId)
+    const motherNid = cleanId13(rowObj.motherNationalId)
+    const fatherPhone = cleanStr(rowObj.fatherPhone)
+    const motherPhone = cleanStr(rowObj.motherPhone)
+
+    // If guardian name is missing, auto-fallback to father or mother
+    if (!cleanStr(rowObj.guardianFirstName)) {
+      if (fatherName) {
+        rowObj.guardianPrefix = cleanStr(rowObj.fatherPrefix)
+        rowObj.guardianFirstName = fatherName
+        rowObj.guardianLastName = cleanStr(rowObj.fatherLastName)
+        rowObj.guardianNationalId = fatherNid
+        rowObj.guardianPhone = fatherPhone
+        rowObj.guardianOccupation = fatherOcc
+        rowObj.guardianMonthlyIncome = fatherIncome
+        rowObj.guardianRelation = "father"
+      } else if (motherName) {
+        rowObj.guardianPrefix = cleanStr(rowObj.motherPrefix)
+        rowObj.guardianFirstName = motherName
+        rowObj.guardianLastName = cleanStr(rowObj.motherLastName)
+        rowObj.guardianNationalId = motherNid
+        rowObj.guardianPhone = motherPhone
+        rowObj.guardianOccupation = motherOcc
+        rowObj.guardianMonthlyIncome = motherIncome
+        rowObj.guardianRelation = "mother"
+      }
+    }
+
     // Process guardian details
     if (rowObj.guardianNationalId) {
-      const cleanGId = String(rowObj.guardianNationalId).replace(/\D/g, "")
-      rowObj.guardianNationalId = cleanGId.length === 13 ? cleanGId : null
+      rowObj.guardianNationalId = cleanId13(rowObj.guardianNationalId)
     }
     if (rowObj.guardianOccupation) {
-      const occ = String(rowObj.guardianOccupation).trim()
-      rowObj.guardianOccupation = occ && occ !== "-" ? occ : null
+      rowObj.guardianOccupation = cleanStr(rowObj.guardianOccupation)
     }
     if (rowObj.guardianMonthlyIncome !== undefined && rowObj.guardianMonthlyIncome !== null) {
-      const incNum = parseFloat(String(rowObj.guardianMonthlyIncome).replace(/[^0-9.]/g, ""))
-      rowObj.guardianMonthlyIncome = isNaN(incNum) ? null : incNum
+      rowObj.guardianMonthlyIncome = cleanNum(rowObj.guardianMonthlyIncome)
     }
+
+    // If guardian relation matches father/mother, fallback missing guardian fields from parent columns
+    const gRel = String(rowObj.guardianRelation || "").toLowerCase()
+    if (gRel === "father" || gRel === "บิดา") {
+      if (rowObj.guardianMonthlyIncome === null || rowObj.guardianMonthlyIncome === undefined) {
+        if (fatherIncome !== null) rowObj.guardianMonthlyIncome = fatherIncome
+      }
+      if (!rowObj.guardianOccupation && fatherOcc) rowObj.guardianOccupation = fatherOcc
+      if (!rowObj.guardianNationalId && fatherNid) rowObj.guardianNationalId = fatherNid
+      if (!rowObj.guardianPhone && fatherPhone) rowObj.guardianPhone = fatherPhone
+    } else if (gRel === "mother" || gRel === "มารดา") {
+      if (rowObj.guardianMonthlyIncome === null || rowObj.guardianMonthlyIncome === undefined) {
+        if (motherIncome !== null) rowObj.guardianMonthlyIncome = motherIncome
+      }
+      if (!rowObj.guardianOccupation && motherOcc) rowObj.guardianOccupation = motherOcc
+      if (!rowObj.guardianNationalId && motherNid) rowObj.guardianNationalId = motherNid
+      if (!rowObj.guardianPhone && motherPhone) rowObj.guardianPhone = motherPhone
+    }
+
+    // Clean up temporary parent fields
+    delete rowObj.fatherPrefix
+    delete rowObj.fatherFirstName
+    delete rowObj.fatherLastName
+    delete rowObj.fatherPhone
+    delete rowObj.fatherNationalId
+    delete rowObj.fatherOccupation
+    delete rowObj.fatherMonthlyIncome
+    delete rowObj.motherPrefix
+    delete rowObj.motherFirstName
+    delete rowObj.motherLastName
+    delete rowObj.motherPhone
+    delete rowObj.motherNationalId
+    delete rowObj.motherOccupation
+    delete rowObj.motherMonthlyIncome
 
     // Clean up temporary address component fields
     delete rowObj.currentHouseNo

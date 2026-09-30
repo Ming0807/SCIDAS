@@ -47,15 +47,31 @@ const studentImportRowSchema = z.object({
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   bloodType: nullableText(5),
   address: nullableText(2000),
+  subdistrict: nullableText(100),
+  district: nullableText(100),
+  province: nullableText(100),
+  postalCode: nullableText(20),
+  distanceToSchoolKm: z.number().nullable().optional(),
+  travelMethod: nullableText(100),
+  familyStatus: z.enum(["together", "separated", "single_parent", "orphan", "guardian", "other"]).nullable().optional(),
+  religion: nullableText(50),
+  nationality: nullableText(50),
+  ethnicity: nullableText(50),
+  specialNeeds: nullableText(200),
+  medicalConditions: nullableText(500),
   studentNumber: z.number().int().positive().max(9999).nullable().optional(),
+  classroomName: nullableText(100),
   guardianPrefix: nullableText(50),
   guardianFirstName: nullableText(100),
   guardianLastName: nullableText(100),
   guardianPhone: nullableText(20),
   guardianRelation: z.enum(guardianRelations).nullable().optional(),
+  guardianNationalId: z.string().regex(/^\d{13}$/).nullable().optional(),
+  guardianOccupation: nullableText(100),
+  guardianMonthlyIncome: z.number().nullable().optional(),
   isExistingInDb: z.boolean().optional(),
   existingStudentName: z.string().optional(),
-})
+}).passthrough()
 const studentImportBatchSchema = z
   .array(studentImportRowSchema)
   .min(1)

@@ -447,6 +447,49 @@ describe("Student Import Parser", () => {
       expect(s.guardianOccupation).toBe("รับจ้าง")
       expect(s.guardianMonthlyIncome).toBe(1000)
     })
+
+    it("should parse disability / special needs and medical conditions from DMC headers", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,ความพิการ,โรคประจำตัว\n1401,อับดุล,ดอเลาะ,บกพร่องทางการเรียนรู้,หอบหืด`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      const s = res.validRows[0]
+      expect(s.specialNeeds).toBe("บกพร่องทางการเรียนรู้")
+      expect(s.medicalConditions).toBe("หอบหืด")
+    })
+
+    it("should fallback to father or mother details when guardian info is omitted or relation matches", async () => {
+      // Sheet with only father info
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,คำนำหน้าชื่อบิดา,ชื่อบิดา,นามสกุลบิดา,หมายเลขบัตรประชาชนบิดา,อาชีพบิดา,รายได้ต่อเดือนของบิดา,หมายเลขโทรศัพท์ของบิดา\n1402,ซุบฮี,คำมะขุย,นาย,พีรกานต์,คำมะขุย,1302401026679,รับจ้าง,2000.0,0812345678`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      const s = res.validRows[0]
+      expect(s.guardianPrefix).toBe("นาย")
+      expect(s.guardianFirstName).toBe("พีรกานต์")
+      expect(s.guardianLastName).toBe("คำมะขุย")
+      expect(s.guardianNationalId).toBe("1302401026679")
+      expect(s.guardianOccupation).toBe("รับจ้าง")
+      expect(s.guardianMonthlyIncome).toBe(2000)
+      expect(s.guardianPhone).toBe("0812345678")
+      expect(s.guardianRelation).toBe("father")
+    })
+
+    it("should parse real นักเรียน.xlsx Sheet1 with full 118 student rows and guardians", async () => {
+      const filePath = path.resolve(process.cwd(), "data-import/นักเรียน.xlsx")
+      if (fs.existsSync(filePath)) {
+        const buf = fs.readFileSync(filePath)
+        const res = await parseAndValidateStudentRows(buf, "นักเรียน.xlsx", { sheet: "Sheet1" })
+        expect(res.validRows.length).toBe(118)
+        expect(res.invalidRows.length).toBe(0)
+        // Check that guardian incomes and occupations were properly parsed
+        const withIncome = res.validRows.filter((r) => r.guardianMonthlyIncome !== null && r.guardianMonthlyIncome !== undefined)
+        expect(withIncome.length).toBe(118)
+        const withOcc = res.validRows.filter((r) => r.guardianOccupation)
+        expect(withOcc.length).toBe(118)
+        // Check special needs count (3 students have learning disability)
+        const withDisability = res.validRows.filter((r) => r.specialNeeds)
+        expect(withDisability.length).toBe(3)
+      }
+    })
   })
 
   describe("composeThaiAddress", () => {
