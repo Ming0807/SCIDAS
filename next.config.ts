@@ -28,6 +28,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["read-excel-file", "write-excel-file", "unzipper-esm"],
   async headers() {
     return [
       {

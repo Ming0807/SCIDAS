@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { getFamilyStatusLabel } from "@/lib/student-care-formatters"
 import type { ActionResult } from "@/lib/server/action-result"
 import type { HomeVisitRecord } from "@/lib/server/home-visit-read-models"
 
@@ -19,6 +20,12 @@ type StudentOption = {
   classroom?: string
   code: string
   address?: string
+  distanceToSchoolKm?: number | null
+  travelMethod?: string | null
+  familyStatus?: string | null
+  guardianOccupation?: string | null
+  guardianMonthlyIncome?: number | null
+  guardianRelation?: string | null
 }
 
 type HomeVisitEditFormProps = {
@@ -206,17 +213,17 @@ export function HomeVisitEditForm({ record, studentOptions }: HomeVisitEditFormP
                 <FieldError message={fieldErrors?.studentId?.[0]} />
               </div>
 
-              {/* Selected Student Information & Address Status Card */}
+              {/* Selected Student Information & Auto-fill Card */}
               {currentStudent && (
                 <div
-                  className={`p-3 rounded-lg text-xs border ${
+                  className={`p-3.5 rounded-xl text-xs border ${
                     currentStudent.address
                       ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
                       : "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5 flex-1">
                       <div className="font-semibold text-sm flex items-center gap-1.5 flex-wrap">
                         <span>👤 {currentStudent.name}</span>
                         {currentStudent.classroom && (
@@ -228,24 +235,45 @@ export function HomeVisitEditForm({ record, studentOptions }: HomeVisitEditFormP
                           (รหัส: {currentStudent.code})
                         </span>
                       </div>
-                      <div>
-                        {currentStudent.address ? (
-                          <p className="flex items-baseline gap-1 flex-wrap">
-                            <span className="font-medium">📍 ที่อยู่ตามฐานข้อมูล:</span>
-                            <span>{currentStudent.address}</span>
-                          </p>
-                        ) : (
-                          <p>
-                            ⚠️ นักเรียนคนนี้ยังไม่มีข้อมูลที่อยู่ในฐานข้อมูล (สามารถพิมพ์ระบุในช่องด้านล่างได้)
-                          </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/40 text-xs">
+                        <div>
+                          <span className="font-medium text-muted-foreground">📍 ที่อยู่: </span>
+                          <span>{currentStudent.address || "ยังไม่ได้ระบุในฐานข้อมูล"}</span>
+                        </div>
+                        {currentStudent.guardianMonthlyIncome !== null && currentStudent.guardianMonthlyIncome !== undefined && (
+                          <div>
+                            <span className="font-medium text-muted-foreground">💰 รายได้ผู้ปกครอง: </span>
+                            <span>{currentStudent.guardianMonthlyIncome.toLocaleString("th-TH")} บาท/เดือน</span>
+                          </div>
+                        )}
+                        {currentStudent.guardianOccupation && (
+                          <div>
+                            <span className="font-medium text-muted-foreground">💼 อาชีพผู้ปกครอง: </span>
+                            <span>{currentStudent.guardianOccupation}</span>
+                          </div>
+                        )}
+                        {currentStudent.familyStatus && (
+                          <div>
+                            <span className="font-medium text-muted-foreground">👨‍👩‍👧 สถานะครอบครัว: </span>
+                            <span>{getFamilyStatusLabel(currentStudent.familyStatus)}</span>
+                          </div>
+                        )}
+                        {(currentStudent.travelMethod || currentStudent.distanceToSchoolKm !== null) && (
+                          <div>
+                            <span className="font-medium text-muted-foreground">🛵 การเดินทาง: </span>
+                            <span>
+                              {currentStudent.travelMethod || "ไม่ระบุ"}
+                              {currentStudent.distanceToSchoolKm !== null ? ` (${currentStudent.distanceToSchoolKm} กม.)` : ""}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
-                    {currentStudent.address && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 shrink-0">
-                        ✓ ดึงที่อยู่อัตโนมัติแล้ว
-                      </span>
-                    )}
+
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-600 text-white shrink-0">
+                      ✓ ลิงก์ข้อมูลอัตโนมัติแล้ว
+                    </span>
                   </div>
                 </div>
               )}

@@ -3,6 +3,8 @@
 import React, { useState, useTransition } from "react"
 import {
   Briefcase,
+  CreditCard,
+  DollarSign,
   HeartHandshake,
   Loader2,
   Phone,
@@ -344,15 +346,27 @@ export function StudentGuardianManager({
                 )}
               </div>
 
-              <div className="mt-3 grid grid-cols-1 gap-1 text-xs text-muted-foreground pt-2 border-t border-border/50">
+              <div className="mt-3 grid grid-cols-1 gap-1.5 text-xs text-muted-foreground pt-2 border-t border-border/50">
                 <div className="flex items-center gap-1.5">
-                  <Phone className="size-3" />
+                  <Phone className="size-3 shrink-0" />
                   <span>{g.phone || "ไม่ระบุเบอร์โทร"}</span>
                 </div>
+                {g.nationalId && (
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <CreditCard className="size-3 shrink-0" />
+                    <span>เลข ปชช: {g.nationalId.length === 13 ? `${g.nationalId[0]}-${g.nationalId.slice(1, 5)}-${g.nationalId.slice(5, 10)}-${g.nationalId.slice(10, 12)}-${g.nationalId[12]}` : g.nationalId}</span>
+                  </div>
+                )}
                 {g.occupation && (
                   <div className="flex items-center gap-1.5">
-                    <Briefcase className="size-3" />
-                    <span>{g.occupation}</span>
+                    <Briefcase className="size-3 shrink-0" />
+                    <span>อาชีพ: {g.occupation}</span>
+                  </div>
+                )}
+                {g.monthlyIncome !== null && g.monthlyIncome !== undefined && (
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="size-3 shrink-0" />
+                    <span>รายได้: {g.monthlyIncome.toLocaleString("th-TH")} บาท/เดือน</span>
                   </div>
                 )}
               </div>

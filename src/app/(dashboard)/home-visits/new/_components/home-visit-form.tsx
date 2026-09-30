@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { StudentAttachmentForm } from "@/components/care/student-attachment-form"
+import { getFamilyStatusLabel } from "@/lib/student-care-formatters"
 import type { ActionResult } from "@/lib/server/action-result"
 
 type StudentOption = {
@@ -18,11 +19,41 @@ type StudentOption = {
   classroom?: string
   code: string
   address?: string
+  distanceToSchoolKm?: number | null
+  travelMethod?: string | null
+  familyStatus?: string | null
+  guardianOccupation?: string | null
+  guardianMonthlyIncome?: number | null
+  guardianRelation?: string | null
 }
 
 type HomeVisitFormProps = {
   studentOptions: StudentOption[]
   defaultStudentId?: string
+}
+
+function getFamilySituationText(student?: StudentOption): string {
+  if (!student) return ""
+  const parts: string[] = []
+  if (student.familyStatus) {
+    parts.push(`สถานะครอบครัว: ${getFamilyStatusLabel(student.familyStatus)}`)
+  }
+  if (student.guardianOccupation) {
+    parts.push(`อาชีพผู้ปกครอง: ${student.guardianOccupation}`)
+  }
+  return parts.join(" · ")
+}
+
+function getTravelDetailText(student?: StudentOption): string {
+  if (!student) return ""
+  const parts: string[] = []
+  if (student.travelMethod) {
+    parts.push(`วิธีเดินทาง: ${student.travelMethod}`)
+  }
+  if (student.distanceToSchoolKm !== null && student.distanceToSchoolKm !== undefined) {
+    parts.push(`ระยะทาง: ${student.distanceToSchoolKm} กม.`)
+  }
+  return parts.join(" · ")
 }
 
 function compareClassroomNames(a: string, b: string): number {
@@ -49,6 +80,19 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
   const initialStudent = studentOptions.find((s) => s.id === (defaultStudentId ?? ""))
   const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId ?? "")
   const [addressVisited, setAddressVisited] = useState<string>(initialStudent?.address ?? "")
+  const [familyIncome, setFamilyIncome] = useState<string>(
+    initialStudent?.guardianMonthlyIncome !== null && initialStudent?.guardianMonthlyIncome !== undefined
+      ? String(initialStudent.guardianMonthlyIncome)
+      : ""
+  )
+  const [familySituation, setFamilySituation] = useState<string>(getFamilySituationText(initialStudent))
+  const [travelDifficultyDetail, setTravelDifficultyDetail] = useState<string>(getTravelDetailText(initialStudent))
+  const [travelDifficulty, setTravelDifficulty] = useState<boolean>(
+    Boolean(initialStudent?.distanceToSchoolKm && initialStudent.distanceToSchoolKm > 10)
+  )
+  const [hasFamilyProblem, setHasFamilyProblem] = useState<boolean>(
+    Boolean(initialStudent?.familyStatus === "orphan" || initialStudent?.familyStatus === "separated")
+  )
 
   const [selectedClassroomFilter, setSelectedClassroomFilter] = useState<string>(
     initialStudent?.classroom ?? "",
@@ -90,10 +134,24 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
   const handleStudentChange = (studentId: string) => {
     setSelectedStudentId(studentId)
     const student = studentOptions.find((s) => s.id === studentId)
-    if (student?.address && student.address.trim()) {
-      setAddressVisited(student.address.trim())
+    if (student) {
+      setAddressVisited(student.address?.trim() ?? "")
+      if (student.guardianMonthlyIncome !== null && student.guardianMonthlyIncome !== undefined) {
+        setFamilyIncome(String(student.guardianMonthlyIncome))
+      } else {
+        setFamilyIncome("")
+      }
+      setFamilySituation(getFamilySituationText(student))
+      setTravelDifficultyDetail(getTravelDetailText(student))
+      setTravelDifficulty(Boolean(student.distanceToSchoolKm && student.distanceToSchoolKm > 10))
+      setHasFamilyProblem(Boolean(student.familyStatus === "orphan" || student.familyStatus === "separated"))
     } else {
       setAddressVisited("")
+      setFamilyIncome("")
+      setFamilySituation("")
+      setTravelDifficultyDetail("")
+      setTravelDifficulty(false)
+      setHasFamilyProblem(false)
     }
   }
 
@@ -247,17 +305,17 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     ) : null}
                   </div>
 
-                  {/* Selected Student Information & Address Status Card */}
+                  {/* Selected Student Information & Auto-fill Card */}
                   {currentStudent && (
                     <div
-                      className={`p-3 rounded-lg text-xs border ${
+                      className={`p-3.5 rounded-xl text-xs border ${
                         currentStudent.address
                           ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
                           : "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-1">
+                        <div className="space-y-1.5 flex-1">
                           <div className="font-semibold text-sm flex items-center gap-1.5 flex-wrap">
                             <span>👤 {currentStudent.name}</span>
                             {currentStudent.classroom && (
@@ -269,24 +327,45 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                               (รหัส: {currentStudent.code})
                             </span>
                           </div>
-                          <div>
-                            {currentStudent.address ? (
-                              <p className="flex items-baseline gap-1 flex-wrap">
-                                <span className="font-medium">📍 ที่อยู่ตามฐานข้อมูล:</span>
-                                <span>{currentStudent.address}</span>
-                              </p>
-                            ) : (
-                              <p>
-                                ⚠️ นักเรียนคนนี้ยังไม่มีข้อมูลที่อยู่ในฐานข้อมูล (สามารถพิมพ์ระบุในช่องด้านล่างได้)
-                              </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/40 text-xs">
+                            <div>
+                              <span className="font-medium text-muted-foreground">📍 ที่อยู่: </span>
+                              <span>{currentStudent.address || "ยังไม่ได้ระบุในฐานข้อมูล"}</span>
+                            </div>
+                            {currentStudent.guardianMonthlyIncome !== null && currentStudent.guardianMonthlyIncome !== undefined && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">💰 รายได้ผู้ปกครอง: </span>
+                                <span>{currentStudent.guardianMonthlyIncome.toLocaleString("th-TH")} บาท/เดือน</span>
+                              </div>
+                            )}
+                            {currentStudent.guardianOccupation && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">💼 อาชีพผู้ปกครอง: </span>
+                                <span>{currentStudent.guardianOccupation}</span>
+                              </div>
+                            )}
+                            {currentStudent.familyStatus && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">👨‍👩‍👧 สถานะครอบครัว: </span>
+                                <span>{getFamilyStatusLabel(currentStudent.familyStatus)}</span>
+                              </div>
+                            )}
+                            {(currentStudent.travelMethod || currentStudent.distanceToSchoolKm !== null) && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">🛵 การเดินทาง: </span>
+                                <span>
+                                  {currentStudent.travelMethod || "ไม่ระบุ"}
+                                  {currentStudent.distanceToSchoolKm !== null ? ` (${currentStudent.distanceToSchoolKm} กม.)` : ""}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>
-                        {currentStudent.address && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 shrink-0">
-                            ✓ ดึงที่อยู่อัตโนมัติแล้ว
-                          </span>
-                        )}
+
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-600 text-white shrink-0">
+                          ✓ ลิงก์ข้อมูลอัตโนมัติแล้ว
+                        </span>
                       </div>
                     </div>
                   )}
@@ -411,9 +490,16 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <label htmlFor="familyIncome" className="text-sm font-medium">
-                    รายได้ครอบครัว/เดือน (บาท)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="familyIncome" className="text-sm font-medium">
+                      รายได้ครอบครัว/เดือน (บาท)
+                    </label>
+                    {currentStudent?.guardianMonthlyIncome !== null && currentStudent?.guardianMonthlyIncome !== undefined && (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                        🔗 ดึงจากข้อมูลผู้ปกครอง
+                      </span>
+                    )}
+                  </div>
                   <Input
                     id="familyIncome"
                     name="familyIncome"
@@ -421,19 +507,30 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     min={0}
                     step="0.01"
                     placeholder="เช่น 9000"
+                    value={familyIncome}
+                    onChange={(e) => setFamilyIncome(e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="familySituation" className="text-sm font-medium">
-                  สภาพครอบครัว
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="familySituation" className="text-sm font-medium">
+                    สภาพครอบครัว
+                  </label>
+                  {(currentStudent?.familyStatus || currentStudent?.guardianOccupation) && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      🔗 ดึงสถานะและอาชีพผู้ปกครอง
+                    </span>
+                  )}
+                </div>
                 <Textarea
                   id="familySituation"
                   name="familySituation"
                   placeholder="เช่น อยู่พร้อมหน้า บิดาทำงานรับจ้าง มารดาทำงาน..."
                   className="min-h-[80px]"
+                  value={familySituation}
+                  onChange={(e) => setFamilySituation(e.target.value)}
                 />
               </div>
 
@@ -474,13 +571,22 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="travelDifficultyDetail" className="text-sm font-medium">
-                  รายละเอียดการเดินทางลำบาก
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="travelDifficultyDetail" className="text-sm font-medium">
+                    รายละเอียดการเดินทางลำบาก
+                  </label>
+                  {(currentStudent?.travelMethod || currentStudent?.distanceToSchoolKm !== null) && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      🔗 ดึงวิธีและระยะทางจากข้อมูลนักเรียน
+                    </span>
+                  )}
+                </div>
                 <Input
                   id="travelDifficultyDetail"
                   name="travelDifficultyDetail"
                   placeholder="เช่น ระยะทาง 12 กม. ไม่มีรถส่วนตัว"
+                  value={travelDifficultyDetail}
+                  onChange={(e) => setTravelDifficultyDetail(e.target.value)}
                 />
               </div>
 
@@ -526,6 +632,8 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     type="checkbox"
                     name="hasFamilyProblem"
                     className="size-4 rounded border-input"
+                    checked={hasFamilyProblem}
+                    onChange={(e) => setHasFamilyProblem(e.target.checked)}
                   />
                   มีปัญหาครอบครัว
                 </label>
@@ -534,6 +642,8 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
                     type="checkbox"
                     name="travelDifficulty"
                     className="size-4 rounded border-input"
+                    checked={travelDifficulty}
+                    onChange={(e) => setTravelDifficulty(e.target.checked)}
                   />
                   เดินทางลำบาก
                 </label>

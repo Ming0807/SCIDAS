@@ -34,7 +34,7 @@ import {
   type ParsedStudentGroup,
   type InferredRoomInfo,
   inferGradeAndSection,
-} from "@/lib/student-import-parser"
+} from "@/lib/student-room-inference"
 import {
   executeStudentImportAction,
   executeBatchStudentImportAction,

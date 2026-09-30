@@ -9,7 +9,7 @@ import {
   getStudentRiskTone,
   GRADE_SORT_ORDER,
 } from "@/lib/student-care-formatters"
-import { inferGradeAndSection } from "@/lib/student-import-parser"
+import { inferGradeAndSection } from "@/lib/student-room-inference"
 import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
 
 export type StudentListItem = {

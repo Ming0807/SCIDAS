@@ -3,7 +3,9 @@ import { notFound } from "next/navigation"
 import {
   Activity,
   ArrowLeft,
+  Calendar,
   CalendarClock,
+  CreditCard,
   Edit2,
   HeartHandshake,
   ListChecks,
@@ -11,6 +13,7 @@ import {
   Phone,
   ShieldAlert,
   UserRound,
+  Users,
 } from "lucide-react"
 
 import {
@@ -34,6 +37,7 @@ import {
   formatClassroomLabel,
   formatPercent,
   formatThaiShortDate,
+  getFamilyStatusLabel,
   getStudentRiskLabel,
   getStudentRiskTone,
 } from "@/lib/student-care-formatters"
@@ -119,6 +123,28 @@ function getGenderLabel(gender: StudentCareProfile["gender"]) {
   if (gender === "female") return "หญิง"
   if (gender === "other") return "อื่นๆ"
   return "-"
+}
+
+function formatNationalId(id?: string | null) {
+  if (!id) return "-"
+  const clean = id.replace(/\D/g, "")
+  if (clean.length === 13) {
+    return `${clean[0]}-${clean.slice(1, 5)}-${clean.slice(5, 10)}-${clean.slice(10, 12)}-${clean[12]}`
+  }
+  return id
+}
+
+function calculateAge(dob?: string | null): string | null {
+  if (!dob) return null
+  const birthDate = new Date(dob)
+  if (isNaN(birthDate.getTime())) return null
+  const now = new Date()
+  let age = now.getFullYear() - birthDate.getFullYear()
+  const m = now.getMonth() - birthDate.getMonth()
+  if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age >= 0 ? `${age} ปี` : null
 }
 
 function DetailItem({
@@ -384,7 +410,35 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
             />
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <DetailItem
+                icon={CreditCard}
+                label="เลขประจำตัวประชาชน"
+                value={<span className="font-mono">{formatNationalId(studentDetails?.national_id)}</span>}
+              />
+              <DetailItem
+                icon={Calendar}
+                label="วันเกิด / อายุ"
+                value={
+                  studentDetails?.date_of_birth ? (
+                    <span>
+                      {formatThaiShortDate(studentDetails.date_of_birth)}
+                      {calculateAge(studentDetails.date_of_birth) ? (
+                        <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                          ({calculateAge(studentDetails.date_of_birth)})
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
               <DetailItem icon={UserRound} label="เพศ" value={getGenderLabel(profile.gender)} />
+              <DetailItem
+                icon={Users}
+                label="สถานะครอบครัว"
+                value={getFamilyStatusLabel(studentDetails?.family_status)}
+              />
               <DetailItem
                 icon={Phone}
                 label="ผู้ปกครองหลัก"

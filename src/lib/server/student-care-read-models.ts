@@ -1078,6 +1078,7 @@ export type StudentGuardianItem = {
   lastName: string
   fullName: string
   phone: string | null
+  nationalId: string | null
   relationship: string
   isPrimary: boolean
   canPickup: boolean
@@ -1111,7 +1112,7 @@ export async function getStudentGuardians(
     .from("student_guardians")
     .select(`
       id, student_id, guardian_id, relation, is_primary, can_pickup,
-      guardians(id, prefix, first_name, last_name, phone, occupation, monthly_income, user_id)
+      guardians(id, prefix, first_name, last_name, phone, national_id, occupation, monthly_income, user_id)
     `)
     .eq("student_id", studentId)
     .eq("school_id", context.schoolId)
@@ -1128,6 +1129,7 @@ export async function getStudentGuardians(
       first_name: string
       last_name: string
       phone: string | null
+      national_id: string | null
       occupation: string | null
       monthly_income: number | null
       user_id: string | null
@@ -1149,6 +1151,7 @@ export async function getStudentGuardians(
       lastName,
       fullName,
       phone: g?.phone || null,
+      nationalId: g?.national_id || null,
       relationship: item.relation || "guardian",
       isPrimary: Boolean(item.is_primary),
       canPickup: Boolean(item.can_pickup),

@@ -8,7 +8,7 @@ import { Search, X } from "lucide-react"
 import { FilterBar } from "@/components/data"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { inferGradeAndSection } from "@/lib/student-import-parser"
+import { inferGradeAndSection } from "@/lib/student-room-inference"
 
 import type { StudentFilterOptions, StudentFilterState } from "./student-data"
 

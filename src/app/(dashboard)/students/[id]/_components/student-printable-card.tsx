@@ -72,14 +72,17 @@ export function StudentPrintableCard({
           <h2 className="font-bold underline text-xs">หมวดที่ 1: ข้อมูลทั่วไปและสุขภาพของนักเรียน</h2>
           <div className="grid grid-cols-3 gap-2">
             <p><strong>ชื่อ-สกุล:</strong> {profile.fullName}</p>
+            <p><strong>เลขประจำตัวประชาชน:</strong> {student?.national_id ? (student.national_id.length === 13 ? `${student.national_id[0]}-${student.national_id.slice(1, 5)}-${student.national_id.slice(5, 10)}-${student.national_id.slice(10, 12)}-${student.national_id[12]}` : student.national_id) : "-"}</p>
+            <p><strong>วันเกิด:</strong> {student?.date_of_birth ? formatThaiShortDate(student.date_of_birth) : "-"}</p>
             <p><strong>ชื่อเล่น:</strong> {profile.nickname || "-"}</p>
             <p><strong>เลขที่:</strong> {profile.studentNumber ?? "-"}</p>
             <p><strong>เพศ:</strong> {profile.gender === "male" ? "ชาย" : profile.gender === "female" ? "หญิง" : "-"}</p>
-            <p><strong>สถานะภาพ:</strong> {profile.status === "active" ? "กำลังศึกษา" : "อื่น ๆ"}</p>
+            <p><strong>สถานภาพ:</strong> {profile.status === "active" ? "กำลังศึกษา" : "อื่น ๆ"}</p>
             <p><strong>หมู่โลหิต:</strong> {student?.blood_type ? `กรุ๊ป ${student.blood_type}` : "-"}</p>
             <p><strong>การเดินทาง:</strong> {profile.travelMethod || "-"}</p>
             <p><strong>ระยะทาง:</strong> {profile.distanceToSchoolKm ? `${profile.distanceToSchoolKm} กม.` : "-"}</p>
             <p><strong>ศาสนา/สัญชาติ:</strong> {student?.religion || "พุทธ"} / {student?.nationality || "ไทย"}</p>
+            <p><strong>สถานะครอบครัว:</strong> {student?.family_status || "-"}</p>
           </div>
           <div className="border-t border-gray-300 pt-1.5 grid grid-cols-2 gap-2 text-xs">
             <p><strong>โรคประจำตัว/ประวัติแพ้:</strong> {student?.medical_conditions || "ไม่มี"}</p>
@@ -92,11 +95,13 @@ export function StudentPrintableCard({
         <div className="border border-black p-3 space-y-2">
           <h2 className="font-bold underline text-xs">หมวดที่ 2: ข้อมูลผู้ปกครองและการติดต่อ</h2>
           {primaryGuardian ? (
-            <div className="grid grid-cols-2 gap-2">
-              <p><strong>ชื่อผู้ปกครองหลัก:</strong> {primaryGuardian.fullName}</p>
+            <div className="grid grid-cols-3 gap-2">
+              <p><strong>ชื่อผู้ปกครอง:</strong> {primaryGuardian.fullName}</p>
               <p><strong>ความสัมพันธ์:</strong> {primaryGuardian.relationship || "ผู้ปกครอง"}</p>
               <p><strong>เบอร์โทรศัพท์:</strong> {primaryGuardian.phone || profile.primaryGuardianPhone || "-"}</p>
-              <p><strong>สถานะการติดต่อ:</strong> สามารถติดต่อได้ตามปกติ</p>
+              <p><strong>เลข ปชช. ผู้ปกครอง:</strong> {primaryGuardian.nationalId ? (primaryGuardian.nationalId.length === 13 ? `${primaryGuardian.nationalId[0]}-${primaryGuardian.nationalId.slice(1, 5)}-${primaryGuardian.nationalId.slice(5, 10)}-${primaryGuardian.nationalId.slice(10, 12)}-${primaryGuardian.nationalId[12]}` : primaryGuardian.nationalId) : "-"}</p>
+              <p><strong>อาชีพ:</strong> {primaryGuardian.occupation || "-"}</p>
+              <p><strong>รายได้ต่อเดือน:</strong> {primaryGuardian.monthlyIncome ? `${primaryGuardian.monthlyIncome.toLocaleString("th-TH")} บาท` : "-"}</p>
             </div>
           ) : (
             <p>ผู้ปกครอง: {profile.primaryGuardianName || "-"} (โทร: {profile.primaryGuardianPhone || "-"})</p>
