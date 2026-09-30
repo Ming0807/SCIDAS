@@ -427,6 +427,26 @@ describe("Student Import Parser", () => {
       expect(res.validRows.length).toBe(1)
       expect(res.validRows[0].address).toBe("บ้านเลขที่ 104 หมู่ 6 ต.โพธิ์ไทร อ.ป่าติ้ว จ.ยโสธร 35150")
     })
+
+    it("should parse full DMC attributes (address components, distance, travel, family status, guardian details)", async () => {
+      const csv = `รหัสนักเรียน,ชื่อ,นามสกุล,เลขที่บ้าน (ที่อยู่ปัจจุบัน),หมู่ (ที่อยู่ปัจจุบัน),ตำบล (ที่อยู่ปัจจุบัน),อำเภอ (ที่อยู่ปัจจุบัน),จังหวัด (ที่อยู่ปัจจุบัน),รหัสไปรษณีย์ (ที่อยู่ปัจจุบัน),ระยะทางจากบ้านถึงโรงเรียน (ถนนลาดยาง),ลักษณะการเดินทางมาโรงเรียน,สถานภาพสมรสของบิดามารดา,ศาสนา,สัญชาติ,เชื้อชาติ,หมายเลขบัตรประชาชนผู้ปกครอง,อาชีพผู้ปกครอง,รายได้ต่อเดือนของผู้ปกครอง\n1337,นูรุลอาซีกีน,ลาซาวา,27/3,3,บาเระใต้,บาเจาะ,นราธิวาส,96170,700,เดินเท้า,แยกกันอยู่,อิสลาม,ไทย,ไทย,1960300067186,รับจ้าง,1000.0`
+      const res = await parseAndValidateStudentRows(csv)
+      expect(res.validRows.length).toBe(1)
+      const s = res.validRows[0]
+      expect(s.subdistrict).toBe("บาเระใต้")
+      expect(s.district).toBe("บาเจาะ")
+      expect(s.province).toBe("นราธิวาส")
+      expect(s.postalCode).toBe("96170")
+      expect(s.distanceToSchoolKm).toBe(0.7) // 700m -> 0.7 km
+      expect(s.travelMethod).toBe("เดินเท้า")
+      expect(s.familyStatus).toBe("separated")
+      expect(s.religion).toBe("อิสลาม")
+      expect(s.nationality).toBe("ไทย")
+      expect(s.ethnicity).toBe("ไทย")
+      expect(s.guardianNationalId).toBe("1960300067186")
+      expect(s.guardianOccupation).toBe("รับจ้าง")
+      expect(s.guardianMonthlyIncome).toBe(1000)
+    })
   })
 
   describe("composeThaiAddress", () => {

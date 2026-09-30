@@ -1,8 +1,8 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useActionState, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, CheckCircle2, Eye, Loader2, Save } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Eye, Loader2, Save, Search, X } from "lucide-react"
 
 import { createHomeVisitAction } from "@/app/actions/home-visit.actions"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,21 @@ type HomeVisitFormProps = {
   defaultStudentId?: string
 }
 
+function compareClassroomNames(a: string, b: string): number {
+  const getWeight = (name: string) => {
+    const k = name.match(/^(?:อ\.?|อนุบาล)\s*([1-3])(?:\/(\d+))?/i)
+    if (k) return 10 * parseInt(k[1], 10) + (k[2] ? parseInt(k[2], 10) : 0)
+    const p = name.match(/^(?:ป\.?|ประถม)\s*([1-6])(?:\/(\d+))?/i)
+    if (p) return 100 + 10 * parseInt(p[1], 10) + (p[2] ? parseInt(p[2], 10) : 0)
+    const m = name.match(/^(?:ม\.?|มัธยม)\s*([1-6])(?:\/(\d+))?/i)
+    if (m) return 200 + 10 * parseInt(m[1], 10) + (m[2] ? parseInt(m[2], 10) : 0)
+    return 999
+  }
+  const diff = getWeight(a) - getWeight(b)
+  if (diff !== 0) return diff
+  return a.localeCompare(b, "th")
+}
+
 export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFormProps) {
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
@@ -35,11 +50,48 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
   const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId ?? "")
   const [addressVisited, setAddressVisited] = useState<string>(initialStudent?.address ?? "")
 
+  const [selectedClassroomFilter, setSelectedClassroomFilter] = useState<string>(
+    initialStudent?.classroom ?? "",
+  )
+  const [searchKeyword, setSearchKeyword] = useState<string>("")
+
+  const availableClassrooms = useMemo(() => {
+    const set = new Set<string>()
+    for (const opt of studentOptions) {
+      if (opt.classroom && opt.classroom.trim()) {
+        set.add(opt.classroom.trim())
+      }
+    }
+    return Array.from(set).sort(compareClassroomNames)
+  }, [studentOptions])
+
+  const filteredStudentOptions = useMemo(() => {
+    return studentOptions.filter((opt) => {
+      if (
+        selectedClassroomFilter &&
+        opt.classroom !== selectedClassroomFilter &&
+        opt.id !== selectedStudentId
+      ) {
+        return false
+      }
+      if (searchKeyword.trim()) {
+        const q = searchKeyword.trim().toLowerCase()
+        const matchName = opt.name.toLowerCase().includes(q)
+        const matchCode = opt.code.toLowerCase().includes(q)
+        const matchClass = (opt.classroom || "").toLowerCase().includes(q)
+        if (!matchName && !matchCode && !matchClass && opt.id !== selectedStudentId) {
+          return false
+        }
+      }
+      return true
+    })
+  }, [studentOptions, selectedClassroomFilter, searchKeyword, selectedStudentId])
+
   const handleStudentChange = (studentId: string) => {
     setSelectedStudentId(studentId)
     const student = studentOptions.find((s) => s.id === studentId)
-    if (student?.address) {
-      setAddressVisited(student.address)
+    if (student?.address && student.address.trim()) {
+      setAddressVisited(student.address.trim())
     } else {
       setAddressVisited("")
     }
@@ -104,33 +156,140 @@ export function HomeVisitForm({ studentOptions, defaultStudentId }: HomeVisitFor
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Student Selector */}
-                <div className="space-y-2 sm:col-span-2">
-                  <label htmlFor="studentId" className="text-sm font-medium">
-                    นักเรียน
-                  </label>
-                  <select
-                    id="studentId"
-                    name="studentId"
-                    required
-                    value={selectedStudentId}
-                    onChange={(e) => handleStudentChange(e.target.value)}
-                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
-                  >
-                    <option value="">เลือกนักเรียน...</option>
-                    {studentOptions.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                        {s.classroom ? ` (${s.classroom})` : ""}
-                        {s.code ? ` — ${s.code}` : ""}
+                {/* Student Selector with Classroom Filter and Search */}
+                <div className="space-y-3 sm:col-span-2 p-3.5 rounded-xl bg-muted/40 border border-border/70">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Classroom Dropdown Filter */}
+                    <div>
+                      <label htmlFor="classroomFilter" className="text-xs font-medium text-muted-foreground mb-1 block">
+                        กรองตามห้องเรียน
+                      </label>
+                      <select
+                        id="classroomFilter"
+                        value={selectedClassroomFilter}
+                        onChange={(e) => setSelectedClassroomFilter(e.target.value)}
+                        className="w-full h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring/50"
+                      >
+                        <option value="">ทุกห้องเรียน ({studentOptions.length} คน)</option>
+                        {availableClassrooms.map((c) => {
+                          const count = studentOptions.filter((s) => s.classroom === c).length
+                          return (
+                            <option key={c} value={c}>
+                              ห้อง {c} ({count} คน)
+                            </option>
+                          )
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Search Input Filter */}
+                    <div>
+                      <label htmlFor="searchFilter" className="text-xs font-medium text-muted-foreground mb-1 block">
+                        ค้นหาชื่อ หรือ รหัสนักเรียน
+                      </label>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          id="searchFilter"
+                          type="text"
+                          placeholder="พิมพ์ชื่อ นามสกุล หรือรหัส..."
+                          value={searchKeyword}
+                          onChange={(e) => setSearchKeyword(e.target.value)}
+                          className="h-9 pl-8 pr-7 text-xs bg-background"
+                        />
+                        {searchKeyword && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchKeyword("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-0.5 cursor-pointer"
+                            title="ล้างคำค้นหา"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Student Select Dropdown */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label htmlFor="studentId" className="text-xs font-medium text-foreground">
+                        เลือกนักเรียน <span className="text-destructive">*</span>
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        พบ {filteredStudentOptions.length} จาก {studentOptions.length} คน
+                      </span>
+                    </div>
+                    <select
+                      id="studentId"
+                      name="studentId"
+                      required
+                      value={selectedStudentId}
+                      onChange={(e) => handleStudentChange(e.target.value)}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 font-medium"
+                    >
+                      <option value="">
+                        {filteredStudentOptions.length === 0
+                          ? "-- ไม่พบรายชื่อนักเรียนที่ตรงกับเงื่อนไข --"
+                          : `-- เลือกนักเรียน (${filteredStudentOptions.length} คน) --`}
                       </option>
-                    ))}
-                  </select>
-                  {state?.ok === false && state.fieldErrors?.studentId ? (
-                    <p className="text-xs text-destructive">
-                      {state.fieldErrors.studentId[0]}
-                    </p>
-                  ) : null}
+                      {filteredStudentOptions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} {s.classroom ? `(${s.classroom})` : ""} — รหัส {s.code}
+                        </option>
+                      ))}
+                    </select>
+                    {state?.ok === false && state.fieldErrors?.studentId ? (
+                      <p className="text-xs text-destructive mt-1">
+                        {state.fieldErrors.studentId[0]}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {/* Selected Student Information & Address Status Card */}
+                  {currentStudent && (
+                    <div
+                      className={`p-3 rounded-lg text-xs border ${
+                        currentStudent.address
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                          : "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-sm flex items-center gap-1.5 flex-wrap">
+                            <span>👤 {currentStudent.name}</span>
+                            {currentStudent.classroom && (
+                              <span className="px-1.5 py-0.5 rounded bg-background/80 text-xs border">
+                                {currentStudent.classroom}
+                              </span>
+                            )}
+                            <span className="text-muted-foreground text-xs font-normal">
+                              (รหัส: {currentStudent.code})
+                            </span>
+                          </div>
+                          <div>
+                            {currentStudent.address ? (
+                              <p className="flex items-baseline gap-1 flex-wrap">
+                                <span className="font-medium">📍 ที่อยู่ตามฐานข้อมูล:</span>
+                                <span>{currentStudent.address}</span>
+                              </p>
+                            ) : (
+                              <p>
+                                ⚠️ นักเรียนคนนี้ยังไม่มีข้อมูลที่อยู่ในฐานข้อมูล (สามารถพิมพ์ระบุในช่องด้านล่างได้)
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {currentStudent.address && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 shrink-0">
+                            ✓ ดึงที่อยู่อัตโนมัติแล้ว
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

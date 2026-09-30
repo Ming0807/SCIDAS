@@ -74,27 +74,30 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
   }> = []
 
   try {
-    const supabase = await createClient()
-    const [worklistData, classroomsData] = await Promise.all([
-      getStudentWorklist({ limit: 500 }),
-      supabase
-        .from("classrooms")
-        .select("id, name, grade_level, section")
-        .eq("school_id", context.schoolId)
-        .eq("is_active", true)
-        .order("grade_level", { ascending: true })
-        .order("section", { ascending: true }),
-    ])
-
+    const worklistData = await getStudentWorklist({ limit: 500 })
     studentRows = worklistData.map(toStudentListItem)
-    schoolClassrooms = (classroomsData.data || []) as unknown as Array<{
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Unknown student data error"
+  }
+
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from("classrooms")
+      .select("id, name, grade_level, section")
+      .eq("school_id", context.schoolId)
+      .eq("is_active", true)
+      .order("grade_level", { ascending: true })
+      .order("section", { ascending: true })
+
+    schoolClassrooms = (data || []) as unknown as Array<{
       id: string
       name: string
       grade_level: string
       section: number
     }>
-  } catch (error) {
-    loadError = error instanceof Error ? error.message : "Unknown student data error"
+  } catch {
+    schoolClassrooms = []
   }
 
   const summary = createStudentSummary(studentRows)

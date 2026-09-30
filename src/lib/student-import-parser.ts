@@ -13,6 +13,23 @@ export type ParsedStudentRow = {
   dateOfBirth?: string | null // YYYY-MM-DD (optional)
   bloodType?: string | null
   address?: string | null
+  subdistrict?: string | null
+  district?: string | null
+  province?: string | null
+  postalCode?: string | null
+  distanceToSchoolKm?: number | null
+  travelMethod?: string | null
+  familyStatus?:
+    | "together"
+    | "separated"
+    | "single_parent"
+    | "orphan"
+    | "guardian"
+    | "other"
+    | null
+  religion?: string | null
+  nationality?: string | null
+  ethnicity?: string | null
   studentNumber?: number | null
   classroomName?: string | null
   guardianPrefix?: string | null
@@ -30,6 +47,9 @@ export type ParsedStudentRow = {
     | "other_relative"
     | "guardian"
     | null
+  guardianNationalId?: string | null
+  guardianOccupation?: string | null
+  guardianMonthlyIncome?: number | null
   isExistingInDb?: boolean
   existingStudentName?: string
 }
@@ -572,6 +592,9 @@ export type IntermediateHeaderKey =
   | "genericDistrict"
   | "genericProvince"
   | "genericPostalCode"
+  | "dirtDistance"
+  | "pavedDistance"
+  | "waterDistance"
 
 const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   // ชั้นเรียน / ระดับชั้น (Grade)
@@ -688,8 +711,48 @@ const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   // กรุ๊ปเลือด
   กรุ๊ปเลือด: "bloodType",
   หมู่เลือด: "bloodType",
+  หมู่โลหิต: "bloodType",
   blood_type: "bloodType",
   bloodtype: "bloodType",
+
+  // สัญชาติ
+  สัญชาติ: "nationality",
+  nationality: "nationality",
+
+  // เชื้อชาติ
+  เชื้อชาติ: "ethnicity",
+  ethnicity: "ethnicity",
+
+  // ศาสนา
+  ศาสนา: "religion",
+  religion: "religion",
+
+  // สถานภาพสมรสของบิดามารดา
+  สถานภาพสมรสของบิดามารดา: "familyStatus",
+  สถานภาพสมรสบิดามารดา: "familyStatus",
+  สถานภาพสมรส: "familyStatus",
+  สถานภาพของบิดามารดา: "familyStatus",
+  สถานภาพครอบครัว: "familyStatus",
+  family_status: "familyStatus",
+  familystatus: "familyStatus",
+
+  // ระยะทางจากบ้านถึงโรงเรียน
+  "ระยะทางจากบ้านถึงโรงเรียน (ถนนลูกรัง)": "dirtDistance",
+  "ระยะทางจากบ้านถึงโรงเรียน (ถนนลาดยาง)": "pavedDistance",
+  "ระยะทางจากบ้านถึงโรงเรียน (ทางน้ำ)": "waterDistance",
+  ระยะทางจากบ้านถึงโรงเรียน: "distanceToSchoolKm",
+  ระยะทางถึงโรงเรียน: "distanceToSchoolKm",
+  ระยะทาง: "distanceToSchoolKm",
+  distance_to_school: "distanceToSchoolKm",
+  distance_to_school_km: "distanceToSchoolKm",
+
+  // ลักษณะการเดินทางมาโรงเรียน
+  ลักษณะการเดินทางมาโรงเรียน: "travelMethod",
+  ลักษณะการเดินทาง: "travelMethod",
+  การเดินทางมาโรงเรียน: "travelMethod",
+  การเดินทาง: "travelMethod",
+  travel_method: "travelMethod",
+  travelmethod: "travelMethod",
 
   // ที่อยู่แบบเต็ม (Full Address)
   ที่อยู่: "address",
@@ -813,6 +876,26 @@ const HEADER_MAP: Record<string, IntermediateHeaderKey> = {
   เกี่ยวข้องเป็น: "guardianRelation",
   guardian_relation: "guardianRelation",
   relation: "guardianRelation",
+
+  // ผู้ปกครอง: หมายเลขบัตรประชาชน
+  หมายเลขบัตรประชาชนผู้ปกครอง: "guardianNationalId",
+  เลขประจำตัวประชาชนผู้ปกครอง: "guardianNationalId",
+  เลขบัตรประชาชนผู้ปกครอง: "guardianNationalId",
+  เลขบัตรผู้ปกครอง: "guardianNationalId",
+  guardian_national_id: "guardianNationalId",
+  guardian_idcard: "guardianNationalId",
+
+  // ผู้ปกครอง: อาชีพ
+  อาชีพผู้ปกครอง: "guardianOccupation",
+  อาชีพของผู้ปกครอง: "guardianOccupation",
+  guardian_occupation: "guardianOccupation",
+
+  // ผู้ปกครอง: รายได้
+  รายได้ต่อเดือนของผู้ปกครอง: "guardianMonthlyIncome",
+  รายได้ต่อเดือนผู้ปกครอง: "guardianMonthlyIncome",
+  รายได้ผู้ปกครอง: "guardianMonthlyIncome",
+  guardian_monthly_income: "guardianMonthlyIncome",
+  guardian_income: "guardianMonthlyIncome",
 }
 
 function normalizeHeaderKey(rawHeader: string): string {
@@ -927,8 +1010,33 @@ export function normalizeGuardianRelation(
 }
 
 // ----------------------------------------------------------------------------
-// Master Row Parser & Validator
+// Family Status Normalizer
 // ----------------------------------------------------------------------------
+export function normalizeFamilyStatus(
+  rawStatus?: string | null,
+): "together" | "separated" | "single_parent" | "orphan" | "guardian" | "other" | null {
+  if (!rawStatus) return null
+  const s = rawStatus.trim().toLowerCase()
+  if (!s || s === "-" || s === "ไม่ระบุ") return null
+
+  if (/together|อยู่ด้วยกัน|สมรส|คู่/.test(s)) {
+    return "together"
+  }
+  if (/separated|divorced|แยกกันอยู่|หย่า|ร้าง|แยกทาง/.test(s)) {
+    return "separated"
+  }
+  if (/single_parent|หม้าย|เลี้ยงเดี่ยว|บิดาถึงแก่กรรม|มารดาถึงแก่กรรม|บิดาเสียชีวิต|มารดาเสียชีวิต/.test(s)) {
+    return "single_parent"
+  }
+  if (/orphan|กำพร้า|บิดามารดาถึงแก่กรรม|บิดามารดาเสียชีวิต/.test(s)) {
+    return "orphan"
+  }
+  if (/guardian|ผู้ปกครอง/.test(s)) {
+    return "guardian"
+  }
+  return "other"
+}
+
 // ----------------------------------------------------------------------------
 // Master Row Parser & Validator
 // ----------------------------------------------------------------------------
@@ -1123,6 +1231,36 @@ export async function parseAndValidateStudentRows(
     delete rowObj.gradeName
     delete rowObj.roomName
 
+    // Helper to clean empty/dash values from address fields
+    const cleanAddrPart = (val?: unknown): string | null => {
+      if (val === null || val === undefined) return null
+      const t = String(val).trim()
+      return !t || t === "-" || t === "--" || t === "ไม่มี" || t === "null" || t === "undefined" ? null : t
+    }
+
+    // Extract structured address parts
+    const subdistrict =
+      cleanAddrPart(rowObj.currentSubdistrict) ||
+      cleanAddrPart(rowObj.registeredSubdistrict) ||
+      cleanAddrPart(rowObj.genericSubdistrict)
+    const district =
+      cleanAddrPart(rowObj.currentDistrict) ||
+      cleanAddrPart(rowObj.registeredDistrict) ||
+      cleanAddrPart(rowObj.genericDistrict)
+    const province =
+      cleanAddrPart(rowObj.currentProvince) ||
+      cleanAddrPart(rowObj.registeredProvince) ||
+      cleanAddrPart(rowObj.genericProvince)
+    const postalCode =
+      cleanAddrPart(rowObj.currentPostalCode) ||
+      cleanAddrPart(rowObj.registeredPostalCode) ||
+      cleanAddrPart(rowObj.genericPostalCode)
+
+    if (subdistrict) rowObj.subdistrict = subdistrict
+    if (district) rowObj.district = district
+    if (province) rowObj.province = province
+    if (postalCode) rowObj.postalCode = postalCode
+
     // Auto-assemble Thai address if not already explicitly provided
     if (!rowObj.address) {
       const currentAddress = composeThaiAddress({
@@ -1156,6 +1294,61 @@ export async function parseAndValidateStudentRows(
       })
 
       rowObj.address = currentAddress || registeredAddress || genericAddress || null
+    }
+
+    // Process distance to school
+    const dirt = parseFloat(String(rowObj.dirtDistance || "0").replace(/[^0-9.]/g, "")) || 0
+    const paved = parseFloat(String(rowObj.pavedDistance || "0").replace(/[^0-9.]/g, "")) || 0
+    const water = parseFloat(String(rowObj.waterDistance || "0").replace(/[^0-9.]/g, "")) || 0
+    if (dirt > 0 || paved > 0 || water > 0) {
+      const totalMeters = dirt + paved + water
+      rowObj.distanceToSchoolKm = Math.round((totalMeters / 1000) * 100) / 100
+    } else if (rowObj.distanceToSchoolKm !== undefined && rowObj.distanceToSchoolKm !== null) {
+      const distNum = parseFloat(String(rowObj.distanceToSchoolKm).replace(/[^0-9.]/g, "")) || 0
+      rowObj.distanceToSchoolKm =
+        distNum > 50 ? Math.round((distNum / 1000) * 100) / 100 : Math.round(distNum * 100) / 100
+    } else {
+      rowObj.distanceToSchoolKm = null
+    }
+    delete rowObj.dirtDistance
+    delete rowObj.pavedDistance
+    delete rowObj.waterDistance
+
+    // Process family status
+    if (rowObj.familyStatus) {
+      rowObj.familyStatus = normalizeFamilyStatus(String(rowObj.familyStatus))
+    }
+
+    // Process travel method, religion, nationality, ethnicity
+    if (rowObj.travelMethod) {
+      const tm = String(rowObj.travelMethod).trim()
+      rowObj.travelMethod = tm && tm !== "-" ? tm : null
+    }
+    if (rowObj.religion) {
+      const rel = String(rowObj.religion).trim()
+      rowObj.religion = rel && rel !== "-" ? rel : null
+    }
+    if (rowObj.nationality) {
+      const nat = String(rowObj.nationality).trim()
+      rowObj.nationality = nat && nat !== "-" ? nat : null
+    }
+    if (rowObj.ethnicity) {
+      const eth = String(rowObj.ethnicity).trim()
+      rowObj.ethnicity = eth && eth !== "-" ? eth : null
+    }
+
+    // Process guardian details
+    if (rowObj.guardianNationalId) {
+      const cleanGId = String(rowObj.guardianNationalId).replace(/\D/g, "")
+      rowObj.guardianNationalId = cleanGId.length === 13 ? cleanGId : null
+    }
+    if (rowObj.guardianOccupation) {
+      const occ = String(rowObj.guardianOccupation).trim()
+      rowObj.guardianOccupation = occ && occ !== "-" ? occ : null
+    }
+    if (rowObj.guardianMonthlyIncome !== undefined && rowObj.guardianMonthlyIncome !== null) {
+      const incNum = parseFloat(String(rowObj.guardianMonthlyIncome).replace(/[^0-9.]/g, ""))
+      rowObj.guardianMonthlyIncome = isNaN(incNum) ? null : incNum
     }
 
     // Clean up temporary address component fields

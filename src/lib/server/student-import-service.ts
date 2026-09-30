@@ -237,12 +237,25 @@ export async function executeStudentImportRpc(
     date_of_birth: s.dateOfBirth || null,
     blood_type: s.bloodType || null,
     address: s.address || null,
+    subdistrict: s.subdistrict || null,
+    district: s.district || null,
+    province: s.province || null,
+    postal_code: s.postalCode || null,
+    distance_to_school_km: s.distanceToSchoolKm ?? null,
+    travel_method: s.travelMethod || null,
+    nationality: s.nationality || null,
+    ethnicity: s.ethnicity || null,
+    religion: s.religion || null,
+    family_status: s.familyStatus || null,
     student_number: s.studentNumber || null,
     guardian_prefix: s.guardianPrefix || null,
     guardian_first_name: s.guardianFirstName || null,
     guardian_last_name: s.guardianLastName || null,
     guardian_phone: s.guardianPhone || null,
     guardian_relation: s.guardianRelation || null,
+    guardian_national_id: s.guardianNationalId || null,
+    guardian_occupation: s.guardianOccupation || null,
+    guardian_monthly_income: s.guardianMonthlyIncome ?? null,
   }))
 
   const { data, error } = await supabase.rpc("import_students_atomic", {
@@ -270,18 +283,53 @@ export async function executeStudentImportRpc(
     enrolled_existing_count?: number
   } | null
 
-  // Backfill / sync address for existing students if their address in database is currently null
-  const studentsWithAddress = students.filter(
-    (s) => s.address && s.address.trim().length > 0,
-  )
-  if (studentsWithAddress.length > 0) {
-    for (const s of studentsWithAddress) {
-      await supabase
-        .from("students")
-        .update({ address: s.address!.trim() })
-        .eq("school_id", context.schoolId)
-        .eq("student_code", s.studentCode)
-        .is("address", null)
+  // Backfill & sync full profile & address for all students in the import batch
+  for (const s of students) {
+    const updateStudentPayload: Database["public"]["Tables"]["students"]["Update"] = {}
+    if (s.address && s.address.trim()) updateStudentPayload.address = s.address.trim()
+    if (s.subdistrict && s.subdistrict.trim()) updateStudentPayload.subdistrict = s.subdistrict.trim()
+    if (s.district && s.district.trim()) updateStudentPayload.district = s.district.trim()
+    if (s.province && s.province.trim()) updateStudentPayload.province = s.province.trim()
+    if (s.postalCode && s.postalCode.trim()) updateStudentPayload.postal_code = s.postalCode.trim()
+    if (typeof s.distanceToSchoolKm === "number") updateStudentPayload.distance_to_school_km = s.distanceToSchoolKm
+    if (s.travelMethod && s.travelMethod.trim()) updateStudentPayload.travel_method = s.travelMethod.trim()
+    if (s.familyStatus) updateStudentPayload.family_status = s.familyStatus
+    if (s.religion && s.religion.trim()) updateStudentPayload.religion = s.religion.trim()
+    if (s.nationality && s.nationality.trim()) updateStudentPayload.nationality = s.nationality.trim()
+    if (s.ethnicity && s.ethnicity.trim()) updateStudentPayload.ethnicity = s.ethnicity.trim()
+    if (s.bloodType && s.bloodType.trim()) updateStudentPayload.blood_type = s.bloodType.trim()
+
+    if (Object.keys(updateStudentPayload).length > 0) {
+      if (s.studentCode) {
+        await supabase
+          .from("students")
+          .update(updateStudentPayload)
+          .eq("school_id", context.schoolId)
+          .eq("student_code", s.studentCode)
+      }
+      if (s.nationalId) {
+        await supabase
+          .from("students")
+          .update(updateStudentPayload)
+          .eq("school_id", context.schoolId)
+          .eq("national_id", s.nationalId)
+      }
+    }
+
+    // Guardian update if present
+    if (s.guardianNationalId || s.guardianOccupation || typeof s.guardianMonthlyIncome === "number") {
+      const gUpdate: Database["public"]["Tables"]["guardians"]["Update"] = {}
+      if (s.guardianOccupation) gUpdate.occupation = s.guardianOccupation.trim()
+      if (typeof s.guardianMonthlyIncome === "number") gUpdate.monthly_income = s.guardianMonthlyIncome
+      if (s.guardianPhone) gUpdate.phone = s.guardianPhone.trim()
+
+      if (Object.keys(gUpdate).length > 0 && s.guardianNationalId) {
+        await supabase
+          .from("guardians")
+          .update(gUpdate)
+          .eq("school_id", context.schoolId)
+          .eq("national_id", s.guardianNationalId)
+      }
     }
   }
 
