@@ -9,6 +9,7 @@ import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/curren
 import { logAudit } from "@/lib/server/audit-logger"
 import { validFamilyStatuses } from "@/lib/student-constants"
 import { createClient } from "@/utils/supabase/server"
+import { createAdminClient } from "@/lib/server/admin-client"
 import type { Database } from "@/types/database.types"
 
 export type StudentRow = Database["public"]["Tables"]["students"]["Row"]
@@ -762,9 +763,9 @@ export async function deleteStudentAction(
       return actionFail("VALIDATION_ERROR", "รหัสนักเรียนไม่ถูกต้อง")
     }
 
-    const client = await createClient()
+    const adminClient = createAdminClient()
 
-    const { data: student, error: fetchErr } = await client
+    const { data: student, error: fetchErr } = await adminClient
       .from("students")
       .select("id, student_code, first_name, last_name")
       .eq("id", studentId)
@@ -780,7 +781,7 @@ export async function deleteStudentAction(
       return actionFail("NOT_FOUND", "ไม่พบข้อมูลนักเรียนที่ต้องการลบ")
     }
 
-    const { error: deleteErr } = await client
+    const { error: deleteErr } = await adminClient
       .from("students")
       .delete()
       .eq("id", studentId)
@@ -836,13 +837,13 @@ export async function deleteStudentsBatchAction(
       return actionFail("VALIDATION_ERROR", "รหัสนักเรียนไม่ถูกต้อง")
     }
 
-    const client = await createClient()
+    const adminClient = createAdminClient()
 
     let totalDeleted = 0
     const chunkSize = 200
     for (let i = 0; i < validIds.length; i += chunkSize) {
       const chunk = validIds.slice(i, i + chunkSize)
-      const { data, error } = await client
+      const { data, error } = await adminClient
         .from("students")
         .delete()
         .eq("school_id", context.schoolId)
@@ -887,9 +888,9 @@ export async function clearAllStudentsInSchoolAction(): Promise<
       return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ล้างข้อมูลนักเรียน")
     }
 
-    const client = await createClient()
+    const adminClient = createAdminClient()
 
-    const { data, error } = await client
+    const { data, error } = await adminClient
       .from("students")
       .delete()
       .eq("school_id", context.schoolId)

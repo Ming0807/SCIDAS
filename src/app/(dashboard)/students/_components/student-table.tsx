@@ -72,18 +72,27 @@ export function StudentTable({
   const [clearConfirmText, setClearConfirmText] = useState("")
   const [isClearingAll, startClearAllTransition] = useTransition()
 
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+
+  // Filter out any optimistically deleted students
+  const visibleStudents = useMemo(() => {
+    return students.filter((s) => !deletedIds.has(s.id))
+  }, [students, deletedIds])
+
   const getPageHref = createStudentPageHref(filters)
 
-  const isAllSelected = students.length > 0 && students.every((s) => selectedIds.has(s.id))
-  const isSomeSelected = students.some((s) => selectedIds.has(s.id)) && !isAllSelected
+  const isAllSelected =
+    visibleStudents.length > 0 && visibleStudents.every((s) => selectedIds.has(s.id))
+  const isSomeSelected =
+    visibleStudents.some((s) => selectedIds.has(s.id)) && !isAllSelected
 
   const toggleSelectAll = useCallback(() => {
     if (isAllSelected) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(students.map((s) => s.id)))
+      setSelectedIds(new Set(visibleStudents.map((s) => s.id)))
     }
-  }, [isAllSelected, students])
+  }, [isAllSelected, visibleStudents])
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -98,7 +107,7 @@ export function StudentTable({
   }, [])
 
   const handleExportSelected = () => {
-    const selectedStudents = students.filter((s) => selectedIds.has(s.id))
+    const selectedStudents = visibleStudents.filter((s) => selectedIds.has(s.id))
     if (selectedStudents.length === 0) return
 
     const headers = ["รหัสนักเรียน", "ชื่อ-สกุล", "ชั้นเรียน", "ระดับความเสี่ยง", "ผู้ปกครอง", "เบอร์โทร"]
@@ -129,20 +138,29 @@ export function StudentTable({
   }, [allFilteredIds])
 
   const selectedStudentsPreview = useMemo(() => {
-    return students.filter((s) => selectedIds.has(s.id))
-  }, [students, selectedIds])
+    return visibleStudents.filter((s) => selectedIds.has(s.id))
+  }, [visibleStudents, selectedIds])
 
   const handleExecuteBatchDelete = () => {
     if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
     startBatchDeleteTransition(async () => {
-      const ids = Array.from(selectedIds)
+      // Optimistically remove from view immediately
+      setDeletedIds((prev) => new Set([...prev, ...ids]))
+      setSelectedIds(new Set())
+      setIsBatchDeleteModalOpen(false)
+
       const res = await deleteStudentsBatchAction(ids)
       if (res.ok) {
         toast.success(res.message)
-        setSelectedIds(new Set())
-        setIsBatchDeleteModalOpen(false)
         router.refresh()
       } else {
+        // Rollback optimistic delete on failure
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          ids.forEach((id) => next.delete(id))
+          return next
+        })
         toast.error(res.message || "ไม่สามารถลบนักเรียนได้")
       }
     })
@@ -150,18 +168,28 @@ export function StudentTable({
 
   const handleExecuteSingleDelete = () => {
     if (!studentToDelete) return
+    const targetId = studentToDelete.id
     startSingleDeleteTransition(async () => {
-      const res = await deleteStudentAction(studentToDelete.id)
+      // Optimistically remove from view immediately
+      setDeletedIds((prev) => new Set([...prev, targetId]))
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(targetId)
+        return next
+      })
+      setStudentToDelete(null)
+
+      const res = await deleteStudentAction(targetId)
       if (res.ok) {
         toast.success(res.message)
-        setSelectedIds((prev) => {
-          const next = new Set(prev)
-          next.delete(studentToDelete.id)
-          return next
-        })
-        setStudentToDelete(null)
         router.refresh()
       } else {
+        // Rollback optimistic delete on failure
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(targetId)
+          return next
+        })
         toast.error(res.message || "ไม่สามารถลบนักเรียนได้")
       }
     })
@@ -170,14 +198,18 @@ export function StudentTable({
   const handleExecuteClearAll = () => {
     if (clearConfirmText.trim() !== "ยืนยัน") return
     startClearAllTransition(async () => {
+      const allCurrentIds = students.map((s) => s.id)
+      setDeletedIds((prev) => new Set([...prev, ...allCurrentIds]))
+      setSelectedIds(new Set())
+      setIsClearAllModalOpen(false)
+      setClearConfirmText("")
+
       const res = await clearAllStudentsInSchoolAction()
       if (res.ok) {
         toast.success(res.message)
-        setSelectedIds(new Set())
-        setIsClearAllModalOpen(false)
-        setClearConfirmText("")
         router.refresh()
       } else {
+        setDeletedIds(new Set())
         toast.error(res.message || "ไม่สามารถล้างข้อมูลนักเรียนได้")
       }
     })
@@ -188,40 +220,41 @@ export function StudentTable({
       {
         id: "select",
         header: (
-          <button
-            type="button"
-            onClick={toggleSelectAll}
-            aria-label={isAllSelected ? "ยกเลิกเลือกทั้งหมด" : "เลือกทั้งหมดในหน้านี้"}
-            className="flex items-center justify-center p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+          <label
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center p-2 cursor-pointer"
+            title={isAllSelected ? "ยกเลิกเลือกทั้งหมด" : "เลือกทั้งหมดในหน้านี้"}
           >
-            {isAllSelected ? (
-              <CheckSquare className="size-4 text-primary" />
-            ) : isSomeSelected ? (
-              <div className="size-4 rounded-xs border-2 border-primary bg-primary/20 flex items-center justify-center">
-                <div className="size-2 bg-primary rounded-2xs" />
-              </div>
-            ) : (
-              <Square className="size-4 text-muted-foreground/60" />
-            )}
-          </button>
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = isSomeSelected
+              }}
+              onChange={toggleSelectAll}
+              aria-label={isAllSelected ? "ยกเลิกเลือกทั้งหมด" : "เลือกทั้งหมดในหน้านี้"}
+              className="size-4.5 rounded border-input text-primary accent-primary cursor-pointer transition"
+            />
+          </label>
         ),
-        className: "w-10 px-2",
-        headerClassName: "w-10 px-2",
+        className: "w-12 px-2 text-center",
+        headerClassName: "w-12 px-2 text-center",
         cell: (student) => {
           const isSelected = selectedIds.has(student.id)
           return (
-            <button
-              type="button"
-              onClick={() => toggleSelect(student.id)}
-              aria-label={`เลือก ${student.name}`}
-              className="flex items-center justify-center p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+            <label
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center justify-center p-2 cursor-pointer"
+              title={`เลือก ${student.name}`}
             >
-              {isSelected ? (
-                <CheckSquare className="size-4 text-primary" />
-              ) : (
-                <Square className="size-4 text-muted-foreground/40 hover:text-foreground" />
-              )}
-            </button>
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleSelect(student.id)}
+                aria-label={`เลือก ${student.name}`}
+                className="size-4.5 rounded border-input text-primary accent-primary cursor-pointer transition"
+              />
+            </label>
           )
         },
       },
@@ -381,7 +414,7 @@ export function StudentTable({
       <DataTable
         className="h-full min-h-[420px]"
         columns={columns}
-        data={students}
+        data={visibleStudents}
         emptyState={
           <EmptyState
             size="compact"
@@ -402,7 +435,7 @@ export function StudentTable({
               <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-secondary px-2.5 text-xs font-medium text-secondary-foreground">
                 แสดงอยู่
                 <span className="rounded-full bg-background px-1.5 py-0.5 text-xs font-bold tabular-nums">
-                  {totalFiltered.toLocaleString("th-TH")}
+                  {Math.max(0, totalFiltered - deletedIds.size).toLocaleString("th-TH")}
                 </span>
               </span>
               <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs font-medium text-muted-foreground">
@@ -420,6 +453,21 @@ export function StudentTable({
             </div>
 
             <div className="flex items-center gap-2">
+              {canEdit && visibleStudents.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer",
+                    isAllSelected
+                      ? "bg-primary/10 border-primary/30 text-primary font-semibold"
+                      : "bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <CheckSquare className="size-3.5" />
+                  <span>{isAllSelected ? "ยกเลิกเลือกทั้งหมด" : "เลือกทั้งหมดในหน้านี้"}</span>
+                </button>
+              )}
               {canEdit && summary.total > 0 && (
                 <button
                   type="button"

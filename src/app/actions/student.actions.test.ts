@@ -22,8 +22,13 @@ vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(),
 }))
 
+vi.mock("@/lib/server/admin-client", () => ({
+  createAdminClient: vi.fn(),
+}))
+
 import { getCurrentUserContext, getCurrentSemesterId } from "@/lib/server/current-user"
 import { createClient } from "@/utils/supabase/server"
+import { createAdminClient } from "@/lib/server/admin-client"
 import { revalidatePath } from "next/cache"
 
 describe("student.actions", () => {
@@ -587,8 +592,8 @@ describe("student.actions", () => {
         return mockStudentDelete
       })
 
-      // @ts-expect-error mock client
-      vi.mocked(createClient).mockResolvedValueOnce({ from: mockFrom })
+      // @ts-expect-error mock admin client
+      vi.mocked(createAdminClient).mockReturnValueOnce({ from: mockFrom })
 
       const result = await deleteStudentAction("11111111-1111-4111-8111-111111111111")
       expect(result.ok).toBe(true)
@@ -640,8 +645,8 @@ describe("student.actions", () => {
         }),
       }
 
-      // @ts-expect-error mock client
-      vi.mocked(createClient).mockResolvedValueOnce({
+      // @ts-expect-error mock admin client
+      vi.mocked(createAdminClient).mockReturnValueOnce({
         from: vi.fn().mockReturnValue(mockQuery),
       })
 
@@ -674,8 +679,8 @@ describe("student.actions", () => {
         }),
       }
 
-      // @ts-expect-error mock client
-      vi.mocked(createClient).mockResolvedValueOnce({
+      // @ts-expect-error mock admin client
+      vi.mocked(createAdminClient).mockReturnValueOnce({
         from: vi.fn().mockReturnValue(mockQuery),
       })
 
