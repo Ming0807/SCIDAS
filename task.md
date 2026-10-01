@@ -89,8 +89,7 @@ Goal: โรงเรียนอื่นเช่าใช้ → tenant isola
 
 ### Direction (unchanged + one addition)
 - Dual-tree cost, `after()` worker, PWA icons (done), one-command e2e (done), kindergarten labels (done).
-- NEW: permission model needs one standard (`canEdit` row-level vs role-only vs open actions) —
-  referrals + behavior-edit + SDQ-delete diverge today; pick row-level `canEdit` as the standard.
+- [x] **Permission model standard** ✓: row-level `canEdit`/`canDelete` standard unified across referrals (role + canEdit flag), behavior-edit (reported_by author + admin), and SDQ-delete (assessed_by author + counselor/admin/director).
 
 ## 2026-09-28 Finish-All: Kindergarten, UX Leftovers, PWA, One-Command E2E (446 Tests, 75 Suites)
 

@@ -265,5 +265,46 @@ describe("sdq.actions", () => {
       expect(result.ok).toBe(true)
       expect(revalidatePath).toHaveBeenCalledWith("/screening/sdq/stu-1")
     })
+
+    it("rejects deletion with FORBIDDEN if user is non-author subject teacher", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-2",
+        schoolId: "sch-1",
+        role: "subject_teacher",
+        profileId: "prof-other",
+        studentId: null,
+      })
+
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "risk_assessments") {
+            const chain: Record<string, unknown> = {}
+            chain.select = vi.fn().mockReturnValue(chain)
+            chain.eq = vi.fn().mockReturnValue(chain)
+            chain.maybeSingle = vi.fn().mockResolvedValue({
+              data: {
+                id: "assess-1",
+                student_id: "stu-1",
+                semester_id: "sem-1",
+                assessed_by: "prof-original",
+              },
+              error: null,
+            })
+            return chain
+          }
+          return {}
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(
+        mockClient as unknown as Awaited<ReturnType<typeof createClient>>,
+      )
+
+      const result = await deleteSdqAssessmentAction("assess-1")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("FORBIDDEN")
+        expect(result.message).toContain("คุณสามารถลบได้เฉพาะผลการประเมินที่คุณเป็นผู้บันทึก")
+      }
+    })
   })
 })

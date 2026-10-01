@@ -229,19 +229,33 @@ export async function deleteSdqAssessmentAction(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const context = await getCurrentUserContext()
-    if (!context.profileId || context.role === "student") {
+    if (!context.profileId || context.role === "student" || context.role === "parent") {
       return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ลบผลการประเมิน SDQ")
     }
 
     const client = await createClient()
     const { data: assessment } = await client
       .from("risk_assessments")
-      .select("id, student_id, semester_id")
+      .select("id, student_id, semester_id, assessed_by")
       .eq("id", assessmentId)
       .eq("school_id", context.schoolId)
       .maybeSingle()
 
     if (!assessment) return actionFail("NOT_FOUND", "ไม่พบผลการประเมิน")
+
+    const canDelete =
+      context.role === "admin" ||
+      context.role === "director" ||
+      context.role === "counselor" ||
+      assessment.assessed_by === context.profileId
+
+    if (!canDelete) {
+      return actionFail(
+        "FORBIDDEN",
+        "คุณสามารถลบได้เฉพาะผลการประเมินที่คุณเป็นผู้บันทึก หรือติดต่อครูแนะแนว/ผู้ดูแลระบบ",
+      )
+    }
+
     const studentId = assessment.student_id as string
 
     const { error: deleteError } = await client
