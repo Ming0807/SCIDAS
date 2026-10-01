@@ -660,7 +660,7 @@ export function AttendanceForm({
       {/* Desktop Attendance Table */}
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-xs md:block">
         <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+          <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xs text-xs text-muted-foreground shadow-2xs">
             <tr>
               <th className="w-12 px-4 py-3 font-medium">#</th>
               <th className="px-4 py-3 font-medium">นักเรียน</th>

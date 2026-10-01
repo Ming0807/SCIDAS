@@ -36,6 +36,7 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
         <div className="grid grid-cols-3 gap-2">
           <Link
             href={buildNotificationHref({ status: "all", type: currentType })}
+            aria-current={currentStatus === "all" ? "true" : undefined}
             className={`rounded-lg p-3 transition-colors ${
               currentStatus === "all" ? "ring-2 ring-primary/40 bg-muted" : "bg-muted/50 hover:bg-muted"
             }`}
@@ -45,6 +46,7 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
           </Link>
           <Link
             href={buildNotificationHref({ status: "unread", type: currentType })}
+            aria-current={currentStatus === "unread" ? "true" : undefined}
             className={`rounded-lg p-3 transition-colors ${
               currentStatus === "unread" ? "ring-2 ring-destructive/40 bg-destructive/10" : "bg-destructive/5 hover:bg-destructive/10"
             }`}
@@ -54,6 +56,7 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
           </Link>
           <Link
             href={buildNotificationHref({ status: "read", type: currentType })}
+            aria-current={currentStatus === "read" ? "true" : undefined}
             className={`rounded-lg p-3 transition-colors ${
               currentStatus === "read" ? "ring-2 ring-emerald-500/40 bg-emerald-500/10" : "bg-emerald-500/5 hover:bg-emerald-500/10"
             }`}
@@ -79,6 +82,7 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
                 <Link
                   key={type}
                   href={buildNotificationHref({ status: currentStatus, type })}
+                  aria-current={isActive ? "true" : undefined}
                   className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
                     isActive ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   }`}

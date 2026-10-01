@@ -111,7 +111,11 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
 
       {/* Summary KPI Cards with Clickable Filters */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href={buildSdqUrl(baseParams, { risk: null })} className="group block focus-visible:outline-none">
+        <Link
+          href={buildSdqUrl(baseParams, { risk: null })}
+          aria-current={!riskFilter && !studentId ? "true" : undefined}
+          className="group block focus-visible:outline-none"
+        >
           <MetricCard
             title="นักเรียนทั้งหมด"
             value={`${total.toLocaleString("th-TH")} คน`}
@@ -130,7 +134,11 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           />
         </Link>
 
-        <Link href={buildSdqUrl(baseParams, { risk: "normal" })} className="group block focus-visible:outline-none">
+        <Link
+          href={buildSdqUrl(baseParams, { risk: "normal" })}
+          aria-current={riskFilter === "normal" ? "true" : undefined}
+          className="group block focus-visible:outline-none"
+        >
           <MetricCard
             title="กลุ่มปกติ"
             value={`${normalCount.toLocaleString("th-TH")} คน`}
@@ -149,7 +157,11 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           />
         </Link>
 
-        <Link href={buildSdqUrl(baseParams, { risk: "watch" })} className="group block focus-visible:outline-none">
+        <Link
+          href={buildSdqUrl(baseParams, { risk: "watch" })}
+          aria-current={riskFilter === "watch" ? "true" : undefined}
+          className="group block focus-visible:outline-none"
+        >
           <MetricCard
             title="กลุ่มเสี่ยง"
             value={`${riskCount.toLocaleString("th-TH")} คน`}
@@ -164,7 +176,11 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
           />
         </Link>
 
-        <Link href={buildSdqUrl(baseParams, { risk: "high" })} className="group block focus-visible:outline-none">
+        <Link
+          href={buildSdqUrl(baseParams, { risk: "high" })}
+          aria-current={riskFilter === "high" ? "true" : undefined}
+          className="group block focus-visible:outline-none"
+        >
           <MetricCard
             title="กลุ่มมีปัญหา"
             value={`${problemCount.toLocaleString("th-TH")} คน`}
@@ -238,7 +254,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+            <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xs text-xs text-muted-foreground shadow-2xs">
               <tr>
                 <th className="px-4 py-3 font-medium min-w-56">นักเรียน</th>
                 <th className="px-4 py-3 font-medium min-w-20">ห้องเรียน</th>

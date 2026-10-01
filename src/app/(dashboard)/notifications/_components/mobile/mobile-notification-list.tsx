@@ -1,4 +1,6 @@
-import React from "react"
+"use client"
+
+import React, { useState } from "react"
 import Link from "next/link"
 import { ChevronRight, ChevronLeft, Bell, AlertCircle, TrendingDown, BookOpen, MessageSquare, CalendarIcon, ClipboardList, Settings } from "lucide-react"
 import type { NotificationItem, NotificationType, NotificationStatusFilter } from "@/lib/server/notification-read-models"
@@ -37,9 +39,11 @@ const mobileVisuals: Record<NotificationType, MobileVisual> = {
 }
 
 function MobileNotificationRow({ item }: { item: NotificationItem }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const visual = mobileVisuals[item.type] ?? mobileVisuals.general
   const Icon = visual.icon
   const hasLink = Boolean(item.link)
+  const isLongMessage = item.message.length > 70
 
   const body = (
     <>
@@ -51,8 +55,23 @@ function MobileNotificationRow({ item }: { item: NotificationItem }) {
           <h4 className="text-sm font-semibold text-slate-800 leading-tight pr-2 truncate">{item.title}</h4>
           <span className="text-xs text-slate-500 shrink-0">{formatRelativeTime(item.createdAt)}</span>
         </div>
-        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{item.message}</p>
-        <div className="flex items-center justify-between mt-2">
+        <p className={cn("text-xs text-slate-600 leading-relaxed break-words", !isExpanded && "line-clamp-2")}>
+          {item.message}
+        </p>
+        {isLongMessage ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsExpanded(!isExpanded)
+            }}
+            className="text-micro text-primary hover:underline font-medium inline-block my-1 w-max cursor-pointer"
+          >
+            {isExpanded ? "ย่อข้อความ" : "ดูข้อความเต็ม"}
+          </button>
+        ) : null}
+        <div className="flex items-center justify-between mt-1">
           <div className={`w-max px-2 py-0.5 rounded-md text-xs font-medium ${visual.bgClass} ${visual.textClass}`}>
             {getNotificationTypeLabel(item.type)}
           </div>

@@ -521,8 +521,8 @@ export function AcademicForm({
           <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-xs md:block">
           <table className="w-full min-w-[1180px] border-collapse text-sm">
             <caption className="sr-only">ตารางบันทึกผลการเรียนรายนักเรียนและรายวิชา</caption>
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold text-muted-foreground">
+            <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-xs shadow-2xs">
+              <tr className="border-b border-border text-left text-xs font-semibold text-muted-foreground">
                 <th className="w-14 px-4 py-3 text-center font-mono">#</th>
                 <th className="min-w-56 px-4 py-3">นักเรียน</th>
                 <th className="min-w-48 px-4 py-3">วิชา</th>

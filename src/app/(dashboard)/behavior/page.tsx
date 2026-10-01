@@ -157,8 +157,8 @@ export default async function BehaviorDashboardPage({
           ) : (
             <div className="p-0 overflow-x-auto">
               <table className="w-full min-w-[680px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-border text-xs font-semibold text-muted-foreground bg-muted/30">
+                <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-xs shadow-2xs">
+                  <tr className="border-b border-border text-xs font-semibold text-muted-foreground">
                     <th className="py-3 px-5 whitespace-nowrap">นักเรียน</th>
                     <th className="py-3 px-4 whitespace-nowrap">ประเภท</th>
                     <th className="py-3 px-4 whitespace-nowrap">พฤติกรรม</th>

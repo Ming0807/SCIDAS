@@ -1,4 +1,6 @@
-import React from "react"
+"use client"
+
+import React, { useState } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, AlertCircle, TrendingDown, Calendar as CalendarIcon, MessageSquare, ClipboardList, Bell, Settings, BookOpen } from "lucide-react"
 import type { NotificationItem, NotificationType, NotificationStatusFilter } from "@/lib/server/notification-read-models"
@@ -79,9 +81,11 @@ const notificationVisuals: Record<NotificationType, NotificationVisual> = {
 }
 
 function NotificationRow({ item }: { item: NotificationItem }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const visual = notificationVisuals[item.type] ?? notificationVisuals.general
   const Icon = visual.icon
   const hasLink = Boolean(item.link)
+  const isLongMessage = item.message.length > 90
 
   const body = (
     <>
@@ -95,7 +99,24 @@ function NotificationRow({ item }: { item: NotificationItem }) {
             {formatRelativeTime(item.createdAt)}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground mb-2 line-clamp-2 break-words leading-relaxed">{item.message}</p>
+        <p className={cn("text-xs text-muted-foreground mb-1 break-words leading-relaxed", !isExpanded && "line-clamp-2")}>
+          {item.message}
+        </p>
+        {isLongMessage ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsExpanded(!isExpanded)
+            }}
+            className="text-micro text-primary hover:underline font-medium inline-block mb-2 w-max cursor-pointer"
+          >
+            {isExpanded ? "ย่อข้อความ" : "ดูข้อความเต็ม"}
+          </button>
+        ) : (
+          <div className="mb-1" />
+        )}
         <div className="flex items-center gap-2">
           <span className={`w-max px-2 py-0.5 rounded-md text-micro font-medium ${visual.bgClass} ${visual.textClass}`}>
             {getNotificationTypeLabel(item.type)}
