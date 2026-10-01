@@ -1,5 +1,6 @@
 import Link from "next/link"
 import {
+  AlertTriangle,
   ArrowRight,
   Building2,
   CheckCircle2,
@@ -24,12 +25,15 @@ import {
 import { buttonVariants } from "@/components/ui/button"
 import { ErrorState } from "@/components/feedback/error-state"
 import { Input } from "@/components/ui/input"
+import { calculateReferralSla } from "@/lib/referral-constants"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
+import { AgencyDirectoryModal } from "./_components/agency-directory-modal"
 
 type SearchParams = Promise<{
   type?: string
   status?: string
+  sla?: string
   q?: string
   studentId?: string
 }>
@@ -75,6 +79,7 @@ export default async function ReferralsPage({
   const params = searchParams ? await searchParams : {}
   const selectedType = params.type || "all"
   const selectedStatus = params.status || "all"
+  const selectedSla = params.sla || "all"
   const searchQuery = params.q || ""
   const selectedStudentId = params.studentId || ""
 
@@ -85,7 +90,7 @@ export default async function ReferralsPage({
     studentId: selectedStudentId || undefined,
   })
 
-  const referrals = result.ok && result.data ? result.data : []
+  let referrals = result.ok && result.data ? result.data : []
   const listError = result.ok ? null : result.message
 
   // Metrics always reflect the full semester scope, never the active filter.
@@ -97,6 +102,16 @@ export default async function ReferralsPage({
   const internalCount = baseReferrals.filter((r) => r.referral_type === "internal").length
   const externalCount = baseReferrals.filter((r) => r.referral_type === "external").length
   const completedCount = baseReferrals.filter((r) => r.status === "completed").length
+  const overdueSlaCount = baseReferrals.filter((r) =>
+    calculateReferralSla(r.created_at, r.priority, r.status).isOverdue
+  ).length
+
+  // Filter referrals by SLA if requested
+  if (selectedSla === "overdue") {
+    referrals = referrals.filter((r) =>
+      calculateReferralSla(r.created_at, r.priority, r.status).isOverdue
+    )
+  }
 
   const bannerStudent = referrals[0]
   const bannerStudentLabel = bannerStudent?.student_name
@@ -109,13 +124,16 @@ export default async function ReferralsPage({
         title="ระบบส่งต่อนักเรียน (Referral Center)"
         description="การส่งต่อนักเรียนทั้งภายในสถานศึกษาและส่งต่อไปยังผู้เชี่ยวชาญภายนอก (ขั้นตอนที่ 5 ของระบบดูแลช่วยเหลือนักเรียน สพฐ.)"
         actions={
-          <Link
-            href="/referrals/new"
-            className={cn(buttonVariants({ variant: "default" }))}
-          >
-            <Plus className="size-4 mr-1.5" />
-            สร้างเคสส่งต่อใหม่
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <AgencyDirectoryModal />
+            <Link
+              href="/referrals/new"
+              className={cn(buttonVariants({ variant: "default" }))}
+            >
+              <Plus className="size-4 mr-1.5" />
+              สร้างเคสส่งต่อใหม่
+            </Link>
+          </div>
         }
       />
 
@@ -129,7 +147,7 @@ export default async function ReferralsPage({
             icon={Share2}
             status="normal"
             size="compact"
-            className={selectedType === "all" && selectedStatus === "all" ? "ring-2 ring-primary" : undefined}
+            className={selectedType === "all" && selectedStatus === "all" && selectedSla === "all" ? "ring-2 ring-primary" : undefined}
           />
         </Link>
         <Link href="/referrals?type=internal" className="block text-left ">
@@ -154,17 +172,31 @@ export default async function ReferralsPage({
             className={selectedType === "external" ? "ring-2 ring-purple-500" : undefined}
           />
         </Link>
-        <Link href="/referrals?status=completed" className="block text-left ">
-          <MetricCard
-            title="ตอบรับ/ส่งต่อสำเร็จ"
-            value={`${completedCount} เคส`}
-            description={total > 0 ? `${Math.round((completedCount / total) * 100)}% ของเคสทั้งหมด` : "ยังไม่มีเคสส่งต่อ"}
-            icon={CheckCircle2}
-            status="normal"
-            size="compact"
-            className={selectedStatus === "completed" ? "ring-2 ring-emerald-500" : undefined}
-          />
-        </Link>
+        {overdueSlaCount > 0 ? (
+          <Link href="/referrals?sla=overdue" className="block text-left ">
+            <MetricCard
+              title="เกินกำหนดติดตามผล (SLA)"
+              value={`${overdueSlaCount} เคส`}
+              description="เกินเป้าหมาย SLA ที่กำหนด"
+              icon={AlertTriangle}
+              status="critical"
+              size="compact"
+              className={selectedSla === "overdue" ? "ring-2 ring-rose-500" : undefined}
+            />
+          </Link>
+        ) : (
+          <Link href="/referrals?status=completed" className="block text-left ">
+            <MetricCard
+              title="ตอบรับ/ส่งต่อสำเร็จ"
+              value={`${completedCount} เคส`}
+              description={total > 0 ? `${Math.round((completedCount / total) * 100)}% ของเคสทั้งหมด` : "ยังไม่มีเคสส่งต่อ"}
+              icon={CheckCircle2}
+              status="normal"
+              size="compact"
+              className={selectedStatus === "completed" ? "ring-2 ring-emerald-500" : undefined}
+            />
+          </Link>
+        )}
       </div>
 
       {selectedStudentId ? (
@@ -187,7 +219,7 @@ export default async function ReferralsPage({
             <Link
               href={`/referrals?type=all&status=${selectedStatus}${searchQuery ? `&q=${searchQuery}` : ""}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                selectedType === "all"
+                selectedType === "all" && selectedSla === "all"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
@@ -197,7 +229,7 @@ export default async function ReferralsPage({
             <Link
               href={`/referrals?type=internal&status=${selectedStatus}${searchQuery ? `&q=${searchQuery}` : ""}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                selectedType === "internal"
+                selectedType === "internal" && selectedSla === "all"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
@@ -207,13 +239,25 @@ export default async function ReferralsPage({
             <Link
               href={`/referrals?type=external&status=${selectedStatus}${searchQuery ? `&q=${searchQuery}` : ""}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                selectedType === "external"
+                selectedType === "external" && selectedSla === "all"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
               ส่งต่อภายนอก ({externalCount})
             </Link>
+            {overdueSlaCount > 0 ? (
+              <Link
+                href={`/referrals?sla=overdue${searchQuery ? `&q=${searchQuery}` : ""}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  selectedSla === "overdue"
+                    ? "bg-rose-600 text-white"
+                    : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
+                }`}
+              >
+                เกิน SLA ({overdueSlaCount})
+              </Link>
+            ) : null}
           </div>
 
           <form method="GET" className="flex items-center gap-2 max-w-sm w-full sm:w-auto">
@@ -266,6 +310,7 @@ export default async function ReferralsPage({
             {referrals.map((item) => {
               const priority = getPriorityBadge(item.priority)
               const status = getStatusBadge(item.status)
+              const sla = calculateReferralSla(item.created_at, item.priority, item.status)
 
               return (
                 <div
@@ -299,6 +344,8 @@ export default async function ReferralsPage({
                       </span>
 
                       <StatusBadge status={status.tone} label={status.text} />
+
+                      <StatusBadge status={sla.tone} label={sla.label} />
                     </div>
 
                     <div>

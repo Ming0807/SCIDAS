@@ -20,6 +20,7 @@ import {
   getReferralDetail,
   createReferralAction,
   updateReferralStatusAction,
+  addReferralFollowupAction,
   type SupportStatus,
 } from "./referral.actions"
 
@@ -447,6 +448,115 @@ describe("referral.actions", () => {
         expect.objectContaining({
           support_record_id: "ref-123",
           description: "โรงพยาบาลตอบรับและนัดตรวจเรียบร้อย",
+        }),
+      )
+    })
+  })
+
+  describe("addReferralFollowupAction", () => {
+    const validUuid = "11111111-1111-4111-a111-111111111111"
+
+    it("rejects invalid UUID", async () => {
+      const res = await addReferralFollowupAction("invalid-id", "ติดตามผล")
+      expect(res.ok).toBe(false)
+      if (!res.ok) {
+        expect(res.code).toBe("VALIDATION_ERROR")
+      }
+    })
+
+    it("rejects empty description", async () => {
+      const res = await addReferralFollowupAction(validUuid, "   ")
+      expect(res.ok).toBe(false)
+      if (!res.ok) {
+        expect(res.code).toBe("VALIDATION_ERROR")
+      }
+    })
+
+    it("rejects unauthorized caller", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-unauth",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: null,
+        studentId: null,
+      })
+
+      const res = await addReferralFollowupAction(validUuid, "ติดตามผลแล้ว")
+      expect(res.ok).toBe(false)
+      if (!res.ok) {
+        expect(res.code).toBe("UNAUTHORIZED")
+      }
+    })
+
+    it("rejects forbidden user who is neither counselor, admin, nor creator", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-2",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-other",
+        studentId: null,
+      })
+
+      const mockRecordQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { id: validUuid, status: "referred", provided_by: "prof-creator" },
+          error: null,
+        }),
+      }
+
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn().mockReturnValue(mockRecordQuery),
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
+
+      const res = await addReferralFollowupAction(validUuid, "ติดตามผลแล้ว")
+      expect(res.ok).toBe(false)
+      if (!res.ok) {
+        expect(res.code).toBe("FORBIDDEN")
+      }
+    })
+
+    it("inserts followup note successfully for counselor or creator", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-counselor",
+        schoolId: "sch-1",
+        role: "counselor",
+        profileId: "prof-counselor",
+        studentId: null,
+      })
+
+      const mockRecordQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { id: validUuid, status: "referred", provided_by: "prof-creator" },
+          error: null,
+        }),
+      }
+      const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null })
+
+      vi.mocked(createClient).mockResolvedValueOnce({
+        from: vi.fn((table: string) => {
+          if (table === "support_records") return mockRecordQuery
+          if (table === "support_followups") return { insert: mockInsert }
+          return {}
+        }),
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
+
+      const res = await addReferralFollowupAction(
+        validUuid,
+        "โทรประสานงานกับ รพ.สต. เรียบร้อย",
+        "โทรติดตามความคืบหน้า",
+      )
+
+      expect(res.ok).toBe(true)
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          support_record_id: validUuid,
+          followed_by: "prof-counselor",
+          description: "โทรประสานงานกับ รพ.สต. เรียบร้อย",
+          result: "โทรติดตามความคืบหน้า",
         }),
       )
     })

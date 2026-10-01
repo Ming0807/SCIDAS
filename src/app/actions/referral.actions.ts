@@ -1,11 +1,14 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import type { ActionResult } from "@/lib/server/action-result"
 import { actionFail, actionOk } from "@/lib/server/action-result"
 import { getCurrentSemesterId, getCurrentUserContext } from "@/lib/server/current-user"
 import type { Database } from "@/types/database.types"
 import { createClient } from "@/utils/supabase/server"
+
+const uuidSchema = z.string().uuid("รหัสไม่ถูกต้อง")
 
 export type ReferralType = "internal" | "external"
 export type SupportStatus = Database["public"]["Enums"]["support_status"]
@@ -574,3 +577,73 @@ export async function updateReferralStatusAction(
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการอัปเดตสถานะการส่งต่อ")
   }
 }
+
+/**
+ * Record a standalone follow-up progress entry for a referral case (E6).
+ */
+export async function addReferralFollowupAction(
+  referralId: string,
+  description: string,
+  result?: string,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const idParsed = uuidSchema.safeParse(referralId)
+    if (!idParsed.success) {
+      return actionFail("VALIDATION_ERROR", "รหัสการส่งต่อไม่ถูกต้อง")
+    }
+
+    if (!description || description.trim().length === 0) {
+      return actionFail("VALIDATION_ERROR", "กรุณาระบุรายละเอียดการติดตามผล")
+    }
+
+    const context = await getCurrentUserContext()
+    if (!context.profileId || !context.schoolId) {
+      return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
+    }
+
+    const client = await createClient()
+
+    const { data: record, error: recordError } = await client
+      .from("support_records")
+      .select("id, status, provided_by")
+      .eq("id", referralId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+
+    if (recordError || !record) {
+      return actionFail("NOT_FOUND", "ไม่พบเคสการส่งต่อที่ต้องการบันทึกติดตามผล")
+    }
+
+    const canEdit =
+      context.role === "admin" ||
+      context.role === "counselor" ||
+      context.profileId === record.provided_by
+
+    if (!canEdit) {
+      return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์บันทึกการติดตามผลของเคสนี้")
+    }
+
+    const { error: insertError } = await client.from("support_followups").insert({
+      support_record_id: referralId,
+      followed_by: context.profileId,
+      followup_date: new Date().toISOString().slice(0, 10),
+      description: description.trim(),
+      result: result?.trim() || "ติดตามผลความคืบหน้า",
+    })
+
+    if (insertError) {
+      console.error("Error inserting referral followup:", insertError)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกการติดตามผลได้")
+    }
+
+    revalidatePath("/referrals")
+    revalidatePath(`/referrals/${referralId}`)
+    revalidatePath("/support")
+
+    return actionOk("บันทึกการติดตามผลเรียบร้อยแล้ว", { data: { id: referralId } })
+  } catch (error) {
+    console.error("Unexpected error in addReferralFollowupAction:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการบันทึกการติดตามผล")
+  }
+}
+

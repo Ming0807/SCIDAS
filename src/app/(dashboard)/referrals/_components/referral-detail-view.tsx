@@ -15,11 +15,13 @@ import {
 } from "lucide-react"
 
 import {
+  addReferralFollowupAction,
   updateReferralStatusAction,
   type ReferralDetail,
   type SupportStatus,
 } from "@/app/actions/referral.actions"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { formatGradeLevel, formatThaiShortDate } from "@/lib/student-care-formatters"
 
@@ -53,18 +55,43 @@ export function ReferralDetailView({
   referral: ReferralDetail
 }) {
   const [isPending, startTransition] = useTransition()
-  const [followupNote, setFollowupNote] = useState("")
   const [selectedStatus, setSelectedStatus] = useState<SupportStatus>(referral.status)
+  const [targetStatus, setTargetStatus] = useState<SupportStatus>(referral.status)
+  const [statusNote, setStatusNote] = useState("")
+
+  const [followupDescription, setFollowupDescription] = useState("")
+  const [followupResult, setFollowupResult] = useState("ติดตามผลความคืบหน้า")
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null)
 
-  const handleUpdateStatus = (newStatus: SupportStatus) => {
+  const handleUpdateStatus = () => {
     startTransition(async () => {
       setFeedback(null)
-      const res = await updateReferralStatusAction(referral.id, newStatus, followupNote)
+      const res = await updateReferralStatusAction(referral.id, targetStatus, statusNote)
       if (res.ok) {
-        setSelectedStatus(newStatus)
-        setFollowupNote("")
-        setFeedback({ ok: true, message: "อัปเดตสถานะและบันทึกการติดตามเรียบร้อย" })
+        setSelectedStatus(targetStatus)
+        setStatusNote("")
+        setFeedback({
+          ok: true,
+          message: `เปลี่ยนสถานะเป็น "${referralStatusLabels[targetStatus]}" เรียบร้อยแล้ว`,
+        })
+      } else {
+        setFeedback({ ok: false, message: res.message })
+      }
+    })
+  }
+
+  const handleAddFollowup = () => {
+    if (!followupDescription.trim()) return
+    startTransition(async () => {
+      setFeedback(null)
+      const res = await addReferralFollowupAction(
+        referral.id,
+        followupDescription,
+        followupResult,
+      )
+      if (res.ok) {
+        setFollowupDescription("")
+        setFeedback({ ok: true, message: "บันทึกความคืบหน้าการติดตามผลเรียบร้อยแล้ว" })
       } else {
         setFeedback({ ok: false, message: res.message })
       }
@@ -279,112 +306,187 @@ export function ReferralDetailView({
           </div>
         </div>
 
-        {/* Right Column: Status Transition & Quick Follow-up Form */}
+        {/* Right Column: Split Status Transition & Follow-up Forms (E6) */}
         <div className="space-y-6">
+          {/* Form 1: Status Transition */}
           <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">จัดการสถานะการส่งต่อ</h2>
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <h2 className="text-sm font-semibold text-foreground">จัดการสถานะการส่งต่อ</h2>
+              <span className="text-xs text-muted-foreground">
+                ปัจจุบัน: <strong className="text-foreground">{referralStatusLabels[selectedStatus]}</strong>
+              </span>
+            </div>
 
             {referral.canEdit ? (
-              <>
-                <div className="space-y-2" role="group" aria-label="เปลี่ยนสถานะการส่งต่อ">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateStatus("referred")}
-                    disabled={isPending}
-                    aria-pressed={selectedStatus === "referred" || selectedStatus === "pending"}
-                    className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
-                      selectedStatus === "referred" || selectedStatus === "pending"
-                        ? "border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800"
-                        : "border-border bg-card hover:bg-muted/60 text-foreground"
-                    }`}
-                  >
-                    <div className="font-semibold">1. รอหน่วยงานปลายทางตอบรับ</div>
-                    <div className="text-muted-foreground mt-0.5">ออกเอกสารส่งตัวแล้ว รอผลการตอบรับ</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateStatus("in_progress")}
-                    disabled={isPending}
-                    aria-pressed={selectedStatus === "in_progress"}
-                    className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
-                      selectedStatus === "in_progress"
-                        ? "border-blue-400 bg-blue-50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800"
-                        : "border-border bg-card hover:bg-muted/60 text-foreground"
-                    }`}
-                  >
-                    <div className="font-semibold">2. อยู่ระหว่างประสานงาน / รับบริการ</div>
-                    <div className="text-muted-foreground mt-0.5">นักเรียนกำลังรับคำปรึกษาหรือการรักษา</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateStatus("completed")}
-                    disabled={isPending}
-                    aria-pressed={selectedStatus === "completed"}
-                    className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
-                      selectedStatus === "completed"
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800"
-                        : "border-border bg-card hover:bg-muted/60 text-foreground"
-                    }`}
-                  >
-                    <div className="font-semibold">3. การส่งต่อเสร็จสมบูรณ์</div>
-                    <div className="text-muted-foreground mt-0.5">ได้รับการช่วยเหลือเสร็จสิ้น มีผลประเมินชัดเจน</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateStatus("cancelled")}
-                    disabled={isPending}
-                    aria-pressed={selectedStatus === "cancelled"}
-                    className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
-                      selectedStatus === "cancelled"
-                        ? "border-rose-400 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-800"
-                        : "border-border bg-card hover:bg-muted/60 text-foreground"
-                    }`}
-                  >
-                    <div className="font-semibold">ยกเลิกการส่งต่อ</div>
-                    <div className="text-muted-foreground mt-0.5">ยุติรายการนี้โดยไม่ส่งต่อ (ยังคงเก็บประวัติไว้)</div>
-                  </button>
+              <div className="space-y-3">
+                <div className="space-y-2" role="radiogroup" aria-label="เลือกสถานะการส่งต่อ">
+                  {[
+                    {
+                      id: "referred" as SupportStatus,
+                      title: "1. รอหน่วยงานปลายทางตอบรับ",
+                      desc: "ออกเอกสารส่งตัวแล้ว รอผลการตอบรับ",
+                      activeClass:
+                        "border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800",
+                    },
+                    {
+                      id: "in_progress" as SupportStatus,
+                      title: "2. อยู่ระหว่างประสานงาน / รับบริการ",
+                      desc: "นักเรียนกำลังรับคำปรึกษาหรือการรักษา",
+                      activeClass:
+                        "border-blue-400 bg-blue-50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800",
+                    },
+                    {
+                      id: "completed" as SupportStatus,
+                      title: "3. การส่งต่อเสร็จสมบูรณ์",
+                      desc: "ได้รับการช่วยเหลือเสร็จสิ้น มีผลประเมินชัดเจน",
+                      activeClass:
+                        "border-emerald-400 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800",
+                    },
+                    {
+                      id: "cancelled" as SupportStatus,
+                      title: "ยกเลิกการส่งต่อ",
+                      desc: "ยุติรายการนี้โดยไม่ส่งต่อ (ยังคงเก็บประวัติไว้)",
+                      activeClass:
+                        "border-rose-400 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-800",
+                    },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setTargetStatus(s.id)}
+                      disabled={isPending}
+                      aria-pressed={targetStatus === s.id}
+                      className={`w-full text-left p-3 rounded-xl border text-xs font-medium transition-colors ${
+                        targetStatus === s.id
+                          ? s.activeClass
+                          : "border-border bg-card hover:bg-muted/60 text-foreground"
+                      }`}
+                    >
+                      <div className="font-semibold">{s.title}</div>
+                      <div className="text-muted-foreground mt-0.5">{s.desc}</div>
+                    </button>
+                  ))}
                 </div>
 
-                <div className="pt-2 border-t border-border">
-                  <label htmlFor="followupNote" className="block text-xs font-medium text-foreground mb-1">
-                    บันทึกความคืบหน้าเพิ่มเติม
+                <div className="pt-2">
+                  <label
+                    htmlFor="statusNote"
+                    className="block text-xs font-medium text-foreground mb-1"
+                  >
+                    หมายเหตุการเปลี่ยนสถานะ (ระบุหรือไม่ก็ได้)
                   </label>
-                  <Textarea
-                    id="followupNote"
-                    value={followupNote}
-                    onChange={(e) => setFollowupNote(e.target.value)}
-                    placeholder="ระบุข้อความติดต่อหน่วยงาน ผลการพบแพทย์ หรือความก้าวหน้า..."
-                    rows={3}
+                  <Input
+                    id="statusNote"
+                    value={statusNote}
+                    onChange={(e) => setStatusNote(e.target.value)}
+                    placeholder="เช่น หนังสือตอบรับเลขที่... หรือผลสรุปเบื้องต้น"
                     className="text-xs rounded-xl"
                   />
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() => handleUpdateStatus(selectedStatus)}
-                    disabled={isPending || followupNote.trim().length === 0}
+                    onClick={handleUpdateStatus}
+                    disabled={isPending || targetStatus === selectedStatus}
                     className="w-full mt-2 text-xs"
                   >
                     {isPending ? (
                       <LoaderCircle className="size-3.5 animate-spin mr-1" />
-                    ) : (
-                      <Send className="size-3.5 mr-1" />
-                    )}
-                    บันทึกความคืบหน้านี้
+                    ) : null}
+                    บันทึกเปลี่ยนสถานะเป็น &quot;{referralStatusLabels[targetStatus]}&quot;
                   </Button>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-xs text-muted-foreground space-y-2">
                 <p className="font-medium text-foreground">
                   สถานะปัจจุบัน: {referralStatusLabels[referral.status] ?? referral.status}
                 </p>
-                <p>คุณไม่มีสิทธิ์แก้ไขสถานะหรือบันทึกความคืบหน้าของเคสนี้ (เฉพาะผู้บันทึกส่งต่อ, ครูแนะแนว, หรือผู้บริหาร)</p>
+                <p>คุณไม่มีสิทธิ์แก้ไขสถานะของเคสนี้ (เฉพาะผู้บันทึกส่งต่อ, ครูแนะแนว, หรือผู้บริหาร)</p>
               </div>
             )}
           </div>
+
+          {/* Form 2: Standalone Follow-up Progress Log */}
+          {referral.canEdit ? (
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2.5">
+                <h2 className="text-sm font-semibold text-foreground">บันทึกความคืบหน้าการติดตามผล</h2>
+                <span className="text-xs text-muted-foreground">ไม่เปลี่ยนสถานะ</span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="followupResult"
+                    className="block text-xs font-medium text-foreground"
+                  >
+                    ผลการประสานงาน / หัวข้อ
+                  </label>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {[
+                      "โทรติดตามความคืบหน้า",
+                      "หน่วยงานตอบรับหนังสือแล้ว",
+                      "ผู้ปกครองพานักเรียนไปรับบริการแล้ว",
+                      "อยู่ระหว่างรอผลการตรวจ",
+                      "เสร็จสิ้นการบำบัดรักษา",
+                    ].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setFollowupResult(preset)}
+                        className={`rounded-md px-2 py-0.5 text-xs font-medium border transition-colors ${
+                          followupResult === preset
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-muted border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                  <Input
+                    id="followupResult"
+                    value={followupResult}
+                    onChange={(e) => setFollowupResult(e.target.value)}
+                    placeholder="หัวข้อผลการติดตาม..."
+                    className="text-xs rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="followupDescription"
+                    className="block text-xs font-medium text-foreground"
+                  >
+                    รายละเอียดการติดตามผล <span className="text-destructive">*</span>
+                  </label>
+                  <Textarea
+                    id="followupDescription"
+                    value={followupDescription}
+                    onChange={(e) => setFollowupDescription(e.target.value)}
+                    placeholder="ระบุข้อความติดต่อหน่วยงาน ผลการพบแพทย์ หรือความก้าวหน้า..."
+                    rows={3}
+                    className="text-xs rounded-xl"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleAddFollowup}
+                  disabled={isPending || followupDescription.trim().length === 0}
+                  className="w-full text-xs"
+                >
+                  {isPending ? (
+                    <LoaderCircle className="size-3.5 animate-spin mr-1" />
+                  ) : (
+                    <Send className="size-3.5 mr-1" />
+                  )}
+                  เพิ่มบันทึกติดตามผลใหม่
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { StudentSearchCombobox } from "@/components/forms"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { AgencyDirectoryModal } from "./agency-directory-modal"
 
 type StudentOption = {
   id: string
@@ -168,6 +169,12 @@ export function ReferralForm({
                 + {agency}
               </button>
             ))}
+            <div className="w-full pt-1">
+              <AgencyDirectoryModal
+                onSelectAgency={(agencyName) => setTargetAgency(agencyName)}
+                triggerButtonText="ค้นหาจากทำเนียบหน่วยงานทั้งหมด (Directory)"
+              />
+            </div>
           </div>
         </div>
       </div>
