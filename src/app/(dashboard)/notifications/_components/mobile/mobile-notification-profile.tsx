@@ -1,7 +1,7 @@
 import React from "react"
 import { MobileNotificationHeader } from "./mobile-notification-header"
 import { MobileNotificationList } from "./mobile-notification-list"
-import type { NotificationItem, NotificationCounts, NotificationStatusFilter, NotificationType } from "@/lib/server/notification-read-models"
+import type { NotificationItem, NotificationCounts, NotificationStatusFilter, NotificationType } from "@/lib/notification-constants"
 
 export interface MobileNotificationProfileProps {
   notifications: NotificationItem[]

@@ -4,7 +4,7 @@ import { useActionState, useState } from "react"
 import { BellOff, CheckCircle2, Loader2, XCircle } from "lucide-react"
 
 import { updateNotificationPreferencesAction } from "@/app/actions/notifications.actions"
-import type { NotificationType } from "@/lib/server/notification-read-models"
+import type { NotificationType } from "@/lib/notification-constants"
 import type { ActionResult } from "@/lib/server/action-result"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"

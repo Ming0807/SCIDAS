@@ -17,8 +17,8 @@ import type {
   NotificationCounts,
   NotificationStatusFilter,
   NotificationType,
-} from "@/lib/server/notification-read-models"
-import { getNotificationTypeLabel } from "@/lib/server/notification-read-models"
+} from "@/lib/notification-constants"
+import { getNotificationTypeLabel } from "@/lib/notification-constants"
 import { buildNotificationHref } from "./notification-link-helpers"
 
 export interface DesktopNotificationSidebarProps {

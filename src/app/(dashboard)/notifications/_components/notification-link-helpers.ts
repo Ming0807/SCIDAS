@@ -1,4 +1,4 @@
-import type { NotificationStatusFilter, NotificationType } from "@/lib/server/notification-read-models"
+import type { NotificationStatusFilter, NotificationType } from "@/lib/notification-constants"
 
 export function buildNotificationHref(params: {
   status?: NotificationStatusFilter

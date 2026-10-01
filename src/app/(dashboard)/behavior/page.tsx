@@ -10,7 +10,7 @@ import { StudentIdentity } from "@/components/dashboard/student-identity"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { ErrorState } from "@/components/feedback/error-state"
 import { cn } from "@/lib/utils"
-import { formatRelativeTime } from "@/lib/server/notification-read-models"
+import { formatRelativeTime } from "@/lib/notification-constants"
 import {
   getBehaviorDashboard,
   getBehaviorTypeLabel,

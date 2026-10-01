@@ -83,13 +83,13 @@ Goal: โรงเรียนอื่นเช่าใช้ → tenant isola
 - **E9 Settings**: workload card, homeroom coverage banner, semester rollover wizard, audit export CSV.
 
 ### UX/UI emphasis backlog (new this round)
-- [ ] Sticky save bars with dirty counters (attendance, academics, behavior record).
-- [ ] Steppers replace mega-forms (new student 3-step, behavior record 2-step, import 4-step).
-- [ ] Searchable comboboxes replace raw UUID dropdowns (support/referral/IDP student selects).
-- [ ] Row-level links everywhere lists show (behavior related rows, home-visit cards → follow-up).
-- [ ] Expandable notification messages + `aria-current` on active KPI filters + sticky table headers.
-- [ ] Print parity: support printData = screen fields; home-visit print all images (not 3) + lightbox.
-- [ ] Kill fake controls on sight (already-removed pattern: fake sort, dead channels, raw-UUID banners).
+- [x] Sticky save bars with dirty counters (attendance, academics, behavior record).
+- [x] Steppers replace mega-forms (new student 3-step, behavior record 2-step, import 4-step).
+- [x] Searchable comboboxes replace raw UUID dropdowns (support/referral/IDP student selects).
+- [x] Row-level links everywhere lists show (behavior related rows, home-visit cards → follow-up).
+- [x] Expandable notification messages + `aria-current` on active KPI filters + sticky table headers.
+- [x] Print parity: support printData = screen fields; home-visit print all images (not 3) + lightbox.
+- [x] Kill fake controls on sight (already-removed pattern: fake sort, dead channels, raw-UUID banners).
 
 ### Direction (unchanged + one addition)
 - Dual-tree cost, `after()` worker, PWA icons (done), one-command e2e (done), kindergarten labels (done).

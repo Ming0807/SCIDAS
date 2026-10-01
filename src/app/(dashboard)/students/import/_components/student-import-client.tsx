@@ -50,6 +50,14 @@ import type {
   ImportClassroomOption,
   ImportContextData,
 } from "@/lib/server/student-import-service"
+import { cn } from "@/lib/utils"
+
+const IMPORT_WIZARD_STEPS = [
+  { id: 1, title: "1. เลือกและอัปโหลดไฟล์", desc: "แบบฟอร์ม & ไฟล์ Excel/CSV" },
+  { id: 2, title: "2. จัดการแมปห้องเรียน", desc: "จับคู่ชีตกับห้องเรียนในระบบ" },
+  { id: 3, title: "3. ตรวจสอบข้อมูลซ้ำ", desc: "นโยบายซ้ำ & ดูตัวอย่างข้อมูล" },
+  { id: 4, title: "4. นำเข้าสำเร็จ", desc: "สรุปผลการนำเข้านักเรียน" },
+]
 
 // ----------------------------------------------------------------------------
 // Room Matching Helper
@@ -671,8 +679,55 @@ export function StudentImportClient({ context }: { context: ImportContextData })
     c.name.includes("มัธยม"),
   )
 
+  const importWizardStep = useMemo(() => {
+    if (batchImportResult !== null || importResultStats !== null) return 4
+    if (file && (multiGroupResult || parseResult)) {
+      if (duplicateMode !== "skip" || previewGroup !== null) return 3
+      return 2
+    }
+    return 1
+  }, [batchImportResult, importResultStats, file, multiGroupResult, parseResult, duplicateMode, previewGroup])
+
   return (
     <div className="space-y-6">
+      {/* 4-Step Import Wizard Indicator */}
+      <nav aria-label="ขั้นตอนการนำเข้าข้อมูลนักเรียน" className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        {IMPORT_WIZARD_STEPS.map((s) => {
+          const isCompleted = importWizardStep > s.id
+          const isActive = importWizardStep === s.id
+          return (
+            <div
+              key={s.id}
+              className={cn(
+                "flex items-center gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-colors",
+                isActive
+                  ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30 shadow-xs"
+                  : isCompleted
+                  ? "border-emerald-500/30 bg-emerald-500/5 text-foreground"
+                  : "border-border bg-card text-muted-foreground opacity-75"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : isCompleted
+                    ? "bg-emerald-600 text-white"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {isCompleted ? <CheckCircle2 className="size-3.5" /> : s.id}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-foreground">{s.title}</p>
+                <p className="hidden sm:block truncate text-xs text-muted-foreground">{s.desc}</p>
+              </div>
+            </div>
+          )
+        })}
+      </nav>
+
       {/* 1. Header & Download Templates */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">

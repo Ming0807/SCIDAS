@@ -2,8 +2,8 @@ import React from "react"
 import Link from "next/link"
 import { Bell, CheckCircle2, MessageCircle, Monitor } from "lucide-react"
 
-import type { NotificationCounts, NotificationType, NotificationStatusFilter } from "@/lib/server/notification-read-models"
-import { getNotificationTypeLabel } from "@/lib/server/notification-read-models"
+import type { NotificationCounts, NotificationType, NotificationStatusFilter } from "@/lib/notification-constants"
+import { getNotificationTypeLabel } from "@/lib/notification-constants"
 import { buildNotificationHref } from "./notification-link-helpers"
 
 export interface DesktopNotificationFiltersProps {
