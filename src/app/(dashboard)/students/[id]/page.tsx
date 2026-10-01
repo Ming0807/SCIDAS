@@ -67,6 +67,10 @@ import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentById } from "@/app/actions/student.actions"
 import { getTeacherFlag } from "@/app/actions/flag.actions"
 import type { Tables } from "@/types/database.types"
+import {
+  getStudentRiskActionSuggestions,
+  type SuggestedActionItem,
+} from "@/lib/server/risk-action-rules"
 import { StudentGuardianManager } from "./_components/student-guardian-manager"
 import { StudentPrintableCard } from "./_components/student-printable-card"
 import { StudentCarePathway } from "./_components/student-care-pathway"
@@ -238,6 +242,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
   let loadError: string | null = null
   let teacherFlag = { flagged: false, reason: null as string | null, flaggedAt: null as string | null }
   let peerCount = 0
+  let suggestedActions: SuggestedActionItem[] = []
 
   try {
     const [
@@ -249,6 +254,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       guardiansData,
       studentData,
       flagData,
+      suggestedData,
     ] = await Promise.all([
       getStudentCareProfile(id),
       getStudentActionItems(id, { limit: 12 }),
@@ -258,6 +264,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       getStudentGuardians(id),
       getStudentById(id).catch(() => null),
       getTeacherFlag(id).catch(() => ({ flagged: false, reason: null, flaggedAt: null })),
+      getStudentRiskActionSuggestions(id).catch(() => []),
     ])
 
     profile = profileData
@@ -268,6 +275,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
     guardians = guardiansData
     studentDetails = studentData
     teacherFlag = flagData
+    suggestedActions = suggestedData
 
     if (profile && context.schoolId && profile.gradeLevel && profile.section) {
       try {
@@ -382,7 +390,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
         />
       </div>
 
-      <StudentCarePathway profile={profile} />
+      <StudentCarePathway profile={profile} suggestedActions={suggestedActions} />
 
       {/* Student 360° Quick Care Handoff */}
       <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 shadow-xs">

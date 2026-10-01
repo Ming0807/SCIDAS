@@ -13,17 +13,23 @@ import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/dashboard"
 import type { StudentCareProfile } from "@/lib/server/student-care-read-models"
 import { getStudentRiskLabel, getStudentRiskTone } from "@/lib/student-care-formatters"
+import type { SuggestedActionItem } from "@/lib/server/risk-action-rules"
+import { SuggestedActionButton } from "./suggested-action-button"
 
 interface StudentCarePathwayProps {
   profile: StudentCareProfile
+  suggestedActions?: SuggestedActionItem[]
 }
 
-export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
+export function StudentCarePathway({ profile, suggestedActions }: StudentCarePathwayProps) {
   const riskTone = getStudentRiskTone(profile.riskLevel)
   const riskLabel = getStudentRiskLabel(profile.riskLevel)
   const isAtRisk = profile.riskLevel === "high" || profile.riskLevel === "watch"
   // FR-08-09: proactively suggest IDP creation for at-risk students with no plan yet.
-  const shouldSuggestIdp = isAtRisk && profile.activePlanCount === 0
+  const shouldSuggestIdp =
+    isAtRisk &&
+    profile.activePlanCount === 0 &&
+    (!suggestedActions || !suggestedActions.some((a) => a.ruleId === "LOW_GPA"))
 
   const steps = [
     {
@@ -135,6 +141,75 @@ export function StudentCarePathway({ profile }: StudentCarePathwayProps) {
           <StatusBadge status={riskTone} label={riskLabel} size="sm" />
         </div>
       </div>
+
+      {suggestedActions && suggestedActions.length > 0 ? (
+        <div
+          role="region"
+          aria-label="ข้อเสนอแนะการช่วยเหลือเชิงรุก"
+          className="mt-4 space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-amber-600 dark:text-amber-400" />
+              <h3 className="text-xs font-semibold text-foreground">
+                ข้อเสนอแนะการดูแลเชิงรุก (Smart Risk→Action Signals)
+              </h3>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {suggestedActions.length.toLocaleString("th-TH")} สัญญาณที่ตรวจพบ
+            </span>
+          </div>
+
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {suggestedActions.map((action) => (
+              <div
+                key={action.ruleId}
+                className="flex flex-col justify-between rounded-lg border border-border bg-background p-3 shadow-xs space-y-2"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold text-foreground">{action.title}</p>
+                    <StatusBadge
+                      status={
+                        action.priority === "critical"
+                          ? "high-risk"
+                          : action.priority === "high"
+                            ? "watch"
+                            : "normal"
+                      }
+                      label={
+                        action.priority === "critical"
+                          ? "เร่งด่วน"
+                          : action.priority === "high"
+                            ? "ความสำคัญสูง"
+                            : "ปกติ"
+                      }
+                      size="sm"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {action.description}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                  <SuggestedActionButton
+                    studentId={profile.studentId}
+                    ruleId={action.ruleId}
+                  />
+                  <Link
+                    href={action.actionHref}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    <span>ดำเนินการ</span>
+                    <ArrowUpRight className="size-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {shouldSuggestIdp ? (
         <div

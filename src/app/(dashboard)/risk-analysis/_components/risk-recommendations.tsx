@@ -1,10 +1,13 @@
 import Link from "next/link"
 import {
+  AlertCircle,
   BookOpen,
   ChevronRight,
   Clock,
   FilePlus2,
+  GraduationCap,
   HeartPulse,
+  Home,
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react"
@@ -12,6 +15,7 @@ import {
 import { Section, StatusBadge } from "@/components/dashboard"
 import { buttonVariants } from "@/components/ui/button"
 import type { StudentWorklistItem } from "@/lib/server/student-care-read-models"
+import type { SchoolRiskActionSummary } from "@/lib/server/risk-action-rules"
 import { cn } from "@/lib/utils"
 
 function RecommendationItem({
@@ -52,22 +56,24 @@ function RecommendationItem({
 export function RiskRecommendations({
   students,
   idpSuggestionCount = 0,
+  actionSummary,
 }: {
   students: StudentWorklistItem[]
   idpSuggestionCount?: number
+  actionSummary?: SchoolRiskActionSummary | null
 }) {
   const highRisk = students.filter((student) => student.riskLevel === "high").length
   const watch = students.filter((student) => student.riskLevel === "watch").length
-  const attendanceIssues = students.filter(
-    (student) => student.absentDays30d > 0 || student.lateDays30d > 2,
-  ).length
+  const attendanceIssues =
+    actionSummary?.absenceStreakCount ??
+    students.filter((student) => student.absentDays30d > 0 || student.lateDays30d > 2).length
   const openActions = students.reduce((total, student) => total + student.openActionCount, 0)
 
   return (
     <Section
       variant="surface"
-      title="ข้อเสนอแนะ"
-      description="สร้างจากข้อมูลความเสี่ยง งานเปิด และการมาเรียนล่าสุด"
+      title="ข้อเสนอแนะเชิงรุก (Risk→Action Loop)"
+      description="วิเคราะห์สัญญาณขาดเรียน พฤติกรรม เยี่ยมบ้าน และผลการเรียนสู่การดูแลทันที"
       contentClassName="space-y-3"
       className="h-full"
     >
@@ -97,12 +103,42 @@ export function RiskRecommendations({
       />
       <RecommendationItem
         icon={BookOpen}
-        title="ประเด็นการมาเรียน"
-        description="ตรวจสอบการขาด สาย และการติดต่อผู้ปกครอง"
+        title="ขาดเรียนต่อเนื่อง (≥3 วัน)"
+        description="เสี่ยงต่อเวลาเรียนไม่ถึง 80% (มส.)"
         count={attendanceIssues}
         href="/attendance"
-        tone="info"
+        tone={attendanceIssues > 0 ? "high-risk" : "normal"}
       />
+      {actionSummary && actionSummary.repeatedBehaviorCount > 0 ? (
+        <RecommendationItem
+          icon={AlertCircle}
+          title="พฤติกรรมเชิงลบซ้ำ (≥2 ครั้ง)"
+          description="ควรนัดครูแนะแนวและผู้ปกครองร่วมวางแนวทางช่วยเหลือ"
+          count={actionSummary.repeatedBehaviorCount}
+          href="/behavior"
+          tone="high-risk"
+        />
+      ) : null}
+      {actionSummary && actionSummary.urgentHomeVisitCount > 0 ? (
+        <RecommendationItem
+          icon={Home}
+          title="เยี่ยมบ้านพบเหตุเร่งด่วน"
+          description="ต้องการความช่วยเหลือด้านครอบครัวหรือสวัสดิการ"
+          count={actionSummary.urgentHomeVisitCount}
+          href="/home-visits"
+          tone="high-risk"
+        />
+      ) : null}
+      {actionSummary && actionSummary.lowGpaCount > 0 ? (
+        <RecommendationItem
+          icon={GraduationCap}
+          title="ผลการเรียนวิกฤต (GPA < 1.50)"
+          description="ควรจัดแผนสอนซ่อมเสริมและประเมินผลสัมฤทธิ์"
+          count={actionSummary.lowGpaCount}
+          href="/academics"
+          tone="watch"
+        />
+      ) : null}
       <RecommendationItem
         icon={Clock}
         title="งานที่ยังเปิด"
@@ -118,3 +154,4 @@ export function RiskRecommendations({
     </Section>
   )
 }
+

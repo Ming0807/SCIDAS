@@ -15,6 +15,10 @@ import {
 import { getRiskWeightsAction } from "@/app/actions/risk.actions"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentIdsWithActivePlans } from "@/lib/server/idp-read-models"
+import {
+  getSchoolRiskActionSummary,
+  type SchoolRiskActionSummary,
+} from "@/lib/server/risk-action-rules"
 
 import { RecalculateButton } from "./RecalculateButton"
 import { RiskWeightsForm } from "./risk-weights-form"
@@ -37,6 +41,7 @@ export default async function RiskAnalysisPage() {
   let trendData: Awaited<ReturnType<typeof getRiskTrendHistory>> = []
   let dimensionBenchmarks: Awaited<ReturnType<typeof getRiskDimensionBenchmarks>> = []
   let studentRiskFactors: Awaited<ReturnType<typeof getStudentRiskFactorsByStudentIds>> = {}
+  let actionSummary: SchoolRiskActionSummary | null = null
   let riskWeights: Awaited<ReturnType<typeof getRiskWeightsAction>> = {
     ok: false,
     code: "INTERNAL_ERROR",
@@ -55,16 +60,19 @@ export default async function RiskAnalysisPage() {
   }
 
   try {
-    const [worklistResult, factorResult, trendResult, benchmarkResult] = await Promise.all([
-      getStudentWorklist({ limit: 500 }),
-      getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
-      getRiskTrendHistory().catch(() => []),
-      getRiskDimensionBenchmarks().catch(() => []),
-    ])
+    const [worklistResult, factorResult, trendResult, benchmarkResult, summaryResult] =
+      await Promise.all([
+        getStudentWorklist({ limit: 500 }),
+        getRiskFactorDistribution().catch(() => ({ factors: [], totalStudents: 0 })),
+        getRiskTrendHistory().catch(() => []),
+        getRiskDimensionBenchmarks().catch(() => []),
+        getSchoolRiskActionSummary().catch(() => null),
+      ])
     students = worklistResult
     factorDistribution = factorResult
     trendData = trendResult
     dimensionBenchmarks = benchmarkResult
+    actionSummary = summaryResult
     studentRiskFactors = await getStudentRiskFactorsByStudentIds(
       students.map((student) => student.studentId),
     ).catch(() => ({}))
@@ -149,7 +157,11 @@ export default async function RiskAnalysisPage() {
             <RiskDimensionRadar benchmarks={dimensionBenchmarks} />
             <RiskFactorsChart factorDistribution={factorDistribution} />
             <RiskHistoryChart trendData={trendData} />
-            <RiskRecommendations students={students} idpSuggestionCount={idpSuggestionCount} />
+            <RiskRecommendations
+              students={students}
+              idpSuggestionCount={idpSuggestionCount}
+              actionSummary={actionSummary}
+            />
           </div>
 
           {canManageWeights && riskWeights.ok && riskWeights.data ? (
