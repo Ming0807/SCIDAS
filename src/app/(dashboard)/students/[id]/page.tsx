@@ -3,18 +3,25 @@ import { notFound } from "next/navigation"
 import {
   Activity,
   ArrowLeft,
+  Brain,
   Calendar,
   CalendarClock,
   CreditCard,
   Edit2,
+  FileText,
   HeartHandshake,
+  Home,
   ListChecks,
   MapPinned,
   Phone,
+  Scale,
+  Share2,
   ShieldAlert,
+  Sparkles,
   UserRound,
   Users,
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/server"
 
 import {
   ActionStatusControls,
@@ -230,6 +237,7 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
   let studentDetails: Tables<"students"> | null = null
   let loadError: string | null = null
   let teacherFlag = { flagged: false, reason: null as string | null, flaggedAt: null as string | null }
+  let peerCount = 0
 
   try {
     const [
@@ -260,6 +268,22 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
     guardians = guardiansData
     studentDetails = studentData
     teacherFlag = flagData
+
+    if (profile && context.schoolId && profile.gradeLevel && profile.section) {
+      try {
+        const supabase = await createClient()
+        const { count } = await supabase
+          .from("v_current_student_directory")
+          .select("student_id", { count: "exact", head: true })
+          .eq("school_id", context.schoolId)
+          .eq("grade_level", profile.gradeLevel)
+          .eq("section", profile.section)
+          .eq("status", "active")
+        peerCount = count ?? 0
+      } catch {
+        // Fallback gracefully
+      }
+    }
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown student profile error"
   }
@@ -359,6 +383,73 @@ export default async function StudentProfilePage({ params }: StudentProfilePageP
       </div>
 
       <StudentCarePathway profile={profile} />
+
+      {/* Student 360° Quick Care Handoff */}
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Sparkles className="size-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">
+                การส่งต่องานดูแล 360° (Student 360° Care Handoff)
+              </h3>
+              {peerCount > 0 ? (
+                <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  เพื่อนร่วมห้อง {peerCount} คน
+                </span>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              สร้างงานดูแลหรือบันทึกใหม่โดยระบุข้อมูลของ {profile.fullName} อัตโนมัติ (1-Click Action)
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/home-visits/new?studentId=${profile.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs gap-1.5 bg-background shadow-2xs hover:bg-muted")}
+            >
+              <Home className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              เยี่ยมบ้าน
+            </Link>
+            <Link
+              href={`/behavior/record?studentId=${profile.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs gap-1.5 bg-background shadow-2xs hover:bg-muted")}
+            >
+              <Scale className="size-3.5 text-amber-600 dark:text-amber-400" />
+              บันทึกพฤติกรรม
+            </Link>
+            <Link
+              href={`/screening/sdq/${profile.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs gap-1.5 bg-background shadow-2xs hover:bg-muted")}
+            >
+              <Brain className="size-3.5 text-purple-600 dark:text-purple-400" />
+              ประเมิน SDQ
+            </Link>
+            <Link
+              href={`/support/new?studentId=${profile.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs gap-1.5 bg-background shadow-2xs hover:bg-muted")}
+            >
+              <HeartHandshake className="size-3.5 text-blue-600 dark:text-blue-400" />
+              เปิดเคสช่วยเหลือ
+            </Link>
+            <Link
+              href={`/development-plans/new?studentId=${profile.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs gap-1.5 bg-background shadow-2xs hover:bg-muted")}
+            >
+              <FileText className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+              สร้างแผน IDP
+            </Link>
+            <Link
+              href={`/referrals/new?studentId=${profile.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs gap-1.5 bg-background shadow-2xs hover:bg-muted")}
+            >
+              <Share2 className="size-3.5 text-rose-600 dark:text-rose-400" />
+              ส่งต่อเคส
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {(canEdit || teacherFlag.flagged) ? (
         <TeacherFlagControl

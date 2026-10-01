@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button"
 import { ErrorState } from "@/components/feedback/error-state"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { getStudentWorklist } from "@/lib/server/student-care-read-models"
+import { getLatestSchoolSdqAssessments } from "@/app/actions/sdq.actions"
 import { createClient } from "@/utils/supabase/server"
+import { cn } from "@/lib/utils"
 
 export const metadata = {
   title: "ศูนย์การคัดกรองนักเรียน (Screening Hub) | SCIDAS",
@@ -26,9 +28,16 @@ export const metadata = {
 export default async function ScreeningHubPage() {
   let context: Awaited<ReturnType<typeof getCurrentUserContext>>
   let worklist: Awaited<ReturnType<typeof getStudentWorklist>>
+  let sdqMap: Record<string, any> = {}
   try {
-    context = await getCurrentUserContext()
-    worklist = await getStudentWorklist()
+    const [cData, wData, sData] = await Promise.all([
+      getCurrentUserContext(),
+      getStudentWorklist(),
+      getLatestSchoolSdqAssessments().catch(() => ({})),
+    ])
+    context = cData
+    worklist = wData
+    sdqMap = sData
   } catch {
     return (
       <PageShell>
@@ -54,7 +63,6 @@ export default async function ScreeningHubPage() {
     section: number
     homeroom_teacher?: { first_name: string; last_name: string } | null
   }[] = []
-
   if (context.schoolId) {
     try {
       const supabase = await createClient()
@@ -111,6 +119,8 @@ export default async function ScreeningHubPage() {
     const atRiskInClass = studentsInClass.filter(
       (s) => s.riskLevel === "watch" || s.riskLevel === "high",
     ).length
+    const sdqCompleted = studentsInClass.filter((s) => Boolean(sdqMap[s.studentId])).length
+    const sdqPercent = count > 0 ? Math.round((sdqCompleted / count) * 100) : 0
 
     return {
       id: c.id,
@@ -121,6 +131,8 @@ export default async function ScreeningHubPage() {
       totalCount: count,
       normalCount: normalInClass,
       atRiskCount: atRiskInClass,
+      sdqCompletedCount: sdqCompleted,
+      sdqProgressPercent: sdqPercent,
     }
   })
 
@@ -253,8 +265,8 @@ export default async function ScreeningHubPage() {
                 <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                   คัดกรองรายบุคคล
                 </span>
-                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                  ระบบวิเคราะห์อัตโนมัติ
+                <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                  แบบฟอร์มเฉพาะเร็วๆ นี้ (ใช้วิเคราะห์ EWS)
                 </span>
               </div>
             </div>
@@ -262,7 +274,7 @@ export default async function ScreeningHubPage() {
             <div className="pt-4 mt-4 border-t border-border">
               <Link href="/risk-analysis" className="w-full block">
                 <Button variant="outline" size="sm" className="w-full text-xs gap-1">
-                  ดูการวิเคราะห์ความเสี่ยง
+                  ดูการวิเคราะห์ความเสี่ยง EWS
                   <ArrowRight className="size-3.5" />
                 </Button>
               </Link>
@@ -290,8 +302,8 @@ export default async function ScreeningHubPage() {
                 <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                   คิดเลขเป็น
                 </span>
-                <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                  สพฐ. จุดเน้น
+                <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                  บันทึกผ่านระบบวิชาการ
                 </span>
               </div>
             </div>
@@ -313,10 +325,10 @@ export default async function ScreeningHubPage() {
         <div className="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h2 className="text-base font-semibold text-foreground">
-              ความคืบหน้าการคัดกรองรายห้องเรียน
+              ความคืบหน้าการคัดกรอง SDQ รายห้องเรียน
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              ติดตามสถานะการคัดกรองของครูประจำชั้นในแต่ละห้องเรียน
+              ติดตามสถานะการคัดกรองของครูประจำชั้นในแต่ละห้องเรียนตามข้อมูลจริง
             </p>
           </div>
 
@@ -352,17 +364,24 @@ export default async function ScreeningHubPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                      <span className="size-2 rounded-full bg-emerald-500" />
-                      ปกติ: {room.normalCount}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex flex-col sm:items-end gap-1 text-xs">
+                    <span className="font-medium text-foreground">
+                      ประเมิน SDQ แล้ว: <strong className="text-primary">{room.sdqCompletedCount}</strong>/{room.totalCount} คน ({room.sdqProgressPercent}%)
                     </span>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                      <span className="size-2 rounded-full bg-amber-500" />
-                      เสี่ยง/มีปัญหา: {room.atRiskCount}
-                    </span>
+                    <div className="h-1.5 w-32 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          room.sdqProgressPercent === 100
+                            ? "bg-emerald-500"
+                            : room.sdqProgressPercent > 50
+                            ? "bg-primary"
+                            : "bg-amber-500"
+                        )}
+                        style={{ width: `${room.sdqProgressPercent}%` }}
+                      />
+                    </div>
                   </div>
 
                   <Link href={`/screening/sdq?classroomId=${room.id}&q=${encodeURIComponent(room.name)}`}>

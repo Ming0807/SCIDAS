@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 
 import type { AuditAction, AuditLogItem } from "@/app/actions/audit.actions"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 function getActionBadge(action: AuditAction) {
