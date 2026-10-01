@@ -1,6 +1,6 @@
 import React from "react"
 import Link from "next/link"
-import { Bell, CheckCircle2, Mail, MessageCircle, Monitor } from "lucide-react"
+import { Bell, CheckCircle2, MessageCircle, Monitor } from "lucide-react"
 
 import type { NotificationCounts, NotificationType, NotificationStatusFilter } from "@/lib/server/notification-read-models"
 import { getNotificationTypeLabel } from "@/lib/server/notification-read-models"
@@ -112,15 +112,6 @@ export function DesktopNotificationFilters({ counts, currentStatus, currentType 
             <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-3 w-3" />
               เปิด
-            </span>
-          </div>
-          <div className="flex items-center justify-between rounded-lg p-2">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">อีเมล</span>
-            </div>
-            <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-              ยังไม่เปิดใช้ในเวอร์ชันนี้
             </span>
           </div>
           <Link

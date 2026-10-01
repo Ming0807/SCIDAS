@@ -18,6 +18,7 @@ import {
   type BehaviorLeaderboardItem,
 } from "@/lib/server/behavior-read-models"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getStudentCareProfile } from "@/lib/server/student-care-read-models"
 
 import { ConductSummaryCard } from "./_components/conduct-summary-card"
 import { AssignmentPanel } from "./_components/assignment-panel"
@@ -51,6 +52,16 @@ export default async function BehaviorDashboardPage({
     )
   }
 
+  let filteredStudentName: string | null = null
+  if (selectedStudentId) {
+    if (dashboard.recentRecords[0]?.studentName) {
+      filteredStudentName = `${dashboard.recentRecords[0].studentName} (${dashboard.recentRecords[0].studentClass ?? "นักเรียน"})`
+    } else {
+      const sp = await getStudentCareProfile(selectedStudentId).catch(() => null)
+      filteredStudentName = sp ? `${sp.fullName} (${sp.studentCode})` : "นักเรียนที่เลือก"
+    }
+  }
+
   return (
     <PageShell>
       <PageHeader
@@ -71,11 +82,7 @@ export default async function BehaviorDashboardPage({
         <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-primary">กรองเฉพาะพฤติกรรมของนักเรียน:</span>
-            <span>
-              {dashboard.recentRecords[0]?.studentName
-                ? `${dashboard.recentRecords[0].studentName} (${dashboard.recentRecords[0].studentClass ?? "นักเรียน"})`
-                : selectedStudentId}
-            </span>
+            <span>{filteredStudentName}</span>
           </div>
           <Link href="/behavior" className="font-medium text-primary hover:underline">
             ล้างตัวกรอง (แสดงทั้งหมด)

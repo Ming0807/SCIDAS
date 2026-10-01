@@ -18,6 +18,7 @@ import {
   getPlanStatusTone,
 } from "@/lib/server/idp-read-models"
 import { getCurrentUserContext } from "@/lib/server/current-user"
+import { getStudentCareProfile } from "@/lib/server/student-care-read-models"
 import { formatGradeLevel, getTodayBangkok } from "@/lib/student-care-formatters"
 
 import { canEditDevelopmentPlans } from "./_lib/permissions"
@@ -78,6 +79,16 @@ export default async function DevelopmentPlansPage({
     return plan.endDate <= dueSoonLimit
   })
   const overduePlans = duePlans.filter((plan) => (plan.endDate as string) < todayBangkok)
+
+  let filteredStudentName: string | null = null
+  if (selectedStudentId) {
+    if (plans[0]?.studentName) {
+      filteredStudentName = `${plans[0].studentName} (${plans[0].studentCode ?? "รหัส"})`
+    } else {
+      const sp = await getStudentCareProfile(selectedStudentId).catch(() => null)
+      filteredStudentName = sp ? `${sp.fullName} (${sp.studentCode})` : "นักเรียนที่เลือก"
+    }
+  }
 
   return (
     <PageShell>
@@ -143,7 +154,7 @@ export default async function DevelopmentPlansPage({
         <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-primary">กรองเฉพาะแผนพัฒนารายบุคคลของนักเรียน:</span>
-            <span>{plans[0]?.studentName ? `${plans[0].studentName} (${plans[0].studentCode ?? "รหัส"})` : selectedStudentId}</span>
+            <span>{filteredStudentName}</span>
           </div>
           <Link href="/development-plans" className="font-medium text-primary hover:underline">
             ล้างตัวกรอง (แสดงทั้งหมด)
