@@ -5,6 +5,7 @@ import {
   processReportJobAction,
   retryReportJobAction,
   deleteReportJobAction,
+  rerunReportJobAction,
 } from "./reports.actions"
 
 vi.mock("next/cache", () => ({
@@ -16,6 +17,14 @@ vi.mock("next/server", () => ({
     // Immediately invoke or capture
     callback()
   }),
+}))
+
+vi.mock("@/lib/server/current-user", () => ({
+  getCurrentUserContext: vi.fn(),
+}))
+
+vi.mock("@/utils/supabase/server", () => ({
+  createClient: vi.fn(),
 }))
 
 vi.mock("@/lib/server/report-read-models", () => ({
@@ -62,6 +71,8 @@ import {
   deleteReportJob,
 } from "@/lib/server/report-read-models"
 import { checkRateLimit } from "@/lib/server/rate-limiter"
+import { getCurrentUserContext } from "@/lib/server/current-user"
+import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 
@@ -352,6 +363,89 @@ describe("reports.actions", () => {
         expect(result.code).toBe("INTERNAL_ERROR")
         expect(result.message).toContain("ไม่สามารถลบไฟล์รายงานจากพื้นที่จัดเก็บได้")
       }
+    })
+  })
+
+  describe("rerunReportJobAction", () => {
+    it("returns UNAUTHORIZED if user context is missing", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        profileId: null,
+        schoolId: null,
+        role: null,
+      } as any)
+
+      const result = await rerunReportJobAction("job-1")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("UNAUTHORIZED")
+      }
+    })
+
+    it("returns NOT_FOUND if job does not exist or fetch fails", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        profileId: "profile-1",
+        schoolId: "school-1",
+        role: "teacher",
+      } as any)
+
+      const mockSupabase = {
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: null, error: null }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockSupabase as any)
+
+      const result = await rerunReportJobAction("nonexistent-job")
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.code).toBe("NOT_FOUND")
+      }
+    })
+
+    it("successfully creates new report job and triggers background processing", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        profileId: "profile-1",
+        schoolId: "school-1",
+        role: "teacher",
+      } as any)
+
+      const mockJob = {
+        id: "source-job-1",
+        report_type: "student_summary",
+        title: "สรุปข้อมูลนักเรียน ม.1/1",
+        filters: { classroom: "ม.1/1" },
+        school_id: "school-1",
+      }
+
+      const mockSupabase = {
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: mockJob, error: null }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockSupabase as any)
+      vi.mocked(requestReportJob).mockResolvedValueOnce({ id: "new-job-2" } as any)
+      vi.mocked(processReportJobById).mockResolvedValueOnce({
+        id: "new-job-2",
+        status: "completed",
+        downloadUrl: "https://example.com/rerun.pdf",
+        errorMessage: null,
+      })
+
+      const result = await rerunReportJobAction("source-job-1")
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data?.id).toBe("new-job-2")
+      }
+      expect(requestReportJob).toHaveBeenCalledWith({
+        reportType: "student_summary",
+        title: "สรุปข้อมูลนักเรียน ม.1/1 (สร้างใหม่)",
+        filters: { classroom: "ม.1/1" },
+      })
+      expect(after).toHaveBeenCalled()
+      expect(processReportJobById).toHaveBeenCalledWith("new-job-2")
+      expect(revalidatePath).toHaveBeenCalledWith("/reports")
     })
   })
 })

@@ -13,6 +13,8 @@ import {
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
 import { checkRateLimit } from "@/lib/server/rate-limiter"
 import { logAudit } from "@/lib/server/audit-logger"
+import { getCurrentUserContext } from "@/lib/server/current-user"
+import { createClient } from "@/utils/supabase/server"
 
 export async function requestReportJobActionState(
   _previousState: ActionResult<{ id: string }> | null,
@@ -209,5 +211,63 @@ export async function deleteReportJobAction(jobId: string): Promise<ActionResult
       )
     }
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการลบรายงาน")
+  }
+}
+
+/**
+ * Re-run an existing report job from history with the same parameters (E7).
+ */
+export async function rerunReportJobAction(jobId: string): Promise<ActionResult<{ id: string }>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.profileId || !context.schoolId) {
+      return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
+    }
+
+    const client = await createClient()
+    const { data: job, error: jobError } = await client
+      .from("report_jobs")
+      .select("id, report_type, title, filters, school_id")
+      .eq("id", jobId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+
+    if (jobError || !job) {
+      return actionFail("NOT_FOUND", "ไม่พบรายงานที่ต้องการสร้างใหม่")
+    }
+
+    const filters = (job.filters as Record<string, unknown>) || {}
+    const newTitle = `${job.title} (สร้างใหม่)`
+
+    const result = await requestReportJob({
+      reportType: job.report_type,
+      title: newTitle.length > 255 ? newTitle.slice(0, 255) : newTitle,
+      filters,
+    })
+
+    after(async () => {
+      try {
+        await processReportJobById(result.id)
+      } catch (err) {
+        console.error("Background rerun report generation error:", err)
+      }
+    })
+
+    logAudit({
+      action: "EXPORT",
+      tableName: "report_jobs",
+      recordId: result.id,
+      newData: { reportType: job.report_type, title: newTitle, sourceJobId: jobId },
+    }).catch(() => {})
+
+    revalidatePath("/reports")
+
+    return actionOk("เริ่มสร้างรายงานใหม่อีกครั้งแล้ว", {
+      data: { id: result.id },
+      revalidated: ["/reports"],
+    })
+  } catch (error) {
+    console.error("rerunReportJobAction error:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการเริ่มสร้างรายงานใหม่")
   }
 }

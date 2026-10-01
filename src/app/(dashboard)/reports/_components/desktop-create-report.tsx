@@ -92,6 +92,56 @@ export type ReportSemesterOption = ReportFilterOption & {
   year?: number | null
 }
 
+const recurringPresets = [
+  {
+    name: "สถิติการมาเรียนรอบเดือนนี้",
+    type: "attendance_report",
+    format: "pdf" as const,
+    title: "รายงานสรุปสถิติการมาเรียนประจำเดือน",
+    getDates: () => {
+      const now = new Date()
+      const y = now.getFullYear()
+      const m = String(now.getMonth() + 1).padStart(2, "0")
+      const d = String(now.getDate()).padStart(2, "0")
+      return { from: `${y}-${m}-01`, to: `${y}-${m}-${d}` }
+    },
+  },
+  {
+    name: "เฝ้าระวังกลุ่มเสี่ยงรอบ 7 วัน",
+    type: "risk_report",
+    format: "pdf" as const,
+    title: "รายงานสรุปการเฝ้าระวังกลุ่มเสี่ยงรอบสัปดาห์",
+    getDates: () => {
+      const now = new Date()
+      const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const format = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      return { from: format(past), to: format(now) }
+    },
+  },
+  {
+    name: "คัดกรอง SDQ ประจำภาคเรียน",
+    type: "screening_summary",
+    format: "pdf" as const,
+    title: "รายงานผลการคัดกรองนักเรียน SDQ และ 5 ด้าน (สพฐ.)",
+    getDates: () => ({ from: "", to: "" }),
+  },
+  {
+    name: "สรุปเยี่ยมบ้าน Excel 100%",
+    type: "home_visit_summary",
+    format: "xlsx" as const,
+    title: "รายงานสรุปผลการเยี่ยมบ้านนักเรียน (สพฐ.)",
+    getDates: () => ({ from: "", to: "" }),
+  },
+  {
+    name: "สรุปภาพรวมสถานศึกษา (SAR)",
+    type: "comprehensive",
+    format: "pdf" as const,
+    title: "รายงานสรุปผลการดำเนินงานระบบดูแลช่วยเหลือ (SAR)",
+    getDates: () => ({ from: "", to: "" }),
+  },
+]
+
 export function DesktopCreateReport({
   classrooms = [],
   semesters = [],
@@ -152,6 +202,41 @@ export function DesktopCreateReport({
   return (
     <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 border border-border shadow-xs mb-6">
       <h3 className="text-sm font-semibold text-foreground mb-4">สร้างรายงานใหม่</h3>
+
+      {/* Recurring Presets Ribbon (E7) */}
+      <div className="mb-4 p-3.5 rounded-xl bg-muted/40 border border-border space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <Sparkles className="size-3.5 text-primary" />
+            แม่แบบรายงานประจำงวด (Recurring Presets)
+          </span>
+          <span className="text-xs text-muted-foreground">คลิกเพื่อเลือกแม่แบบสำเร็จรูป</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {recurringPresets.map((preset) => (
+            <button
+              key={preset.name}
+              type="button"
+              onClick={() => {
+                setSelectedType(preset.type)
+                setSelectedFormat(preset.format)
+                setTitle(preset.title)
+                const dates = preset.getDates()
+                setDateFrom(dates.from)
+                setDateTo(dates.to)
+              }}
+              className={cn(
+                "rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors",
+                selectedType === preset.type && selectedFormat === preset.format
+                  ? "bg-primary/10 border-primary text-primary"
+                  : "bg-card border-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              ⚡ {preset.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Report type cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">

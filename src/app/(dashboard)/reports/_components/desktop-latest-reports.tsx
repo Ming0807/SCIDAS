@@ -2,13 +2,18 @@
 
 import React, { useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Download, FileText, Loader2, RotateCw, Trash2 } from "lucide-react"
+import { AlertCircle, Download, FileText, Loader2, RotateCw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import type { ReportJobItem } from "@/lib/server/report-read-models"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
-import { deleteReportJobAction, retryReportJobAction } from "@/app/actions/reports.actions"
+import {
+  deleteReportJobAction,
+  rerunReportJobAction,
+  retryReportJobAction,
+} from "@/app/actions/reports.actions"
 import { useRealtime } from "@/components/providers/realtime-provider"
+import { ReportDiagnosticsDrawer } from "./report-diagnostics-drawer"
 
 const statusLabels: Record<string, { label: string; class: string }> = {
   queued: { label: "รอดำเนินการ", class: "bg-slate-100 text-slate-700 border-slate-200" },
@@ -35,11 +40,24 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
     router.refresh()
   }, [lastReportJobChange, router])
 
+  const [diagnosticsJob, setDiagnosticsJob] = React.useState<ReportJobItem | null>(null)
+
   const handleRetry = (jobId: string, title: string) => {
     startTransition(async () => {
       const res = await retryReportJobAction(jobId)
       if (res.ok) {
         toast.success(`กำลังประมวลผลรายงาน '${title}' อีกครั้ง`)
+      } else {
+        toast.error(res.message)
+      }
+    })
+  }
+
+  const handleRerun = (jobId: string, title: string) => {
+    startTransition(async () => {
+      const res = await rerunReportJobAction(jobId)
+      if (res.ok) {
+        toast.success(`เริ่มสร้างรายงาน '${title}' ใหม่อีกครั้งแล้ว`)
       } else {
         toast.error(res.message)
       }
@@ -147,6 +165,19 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                           <span className="text-xs text-muted-foreground italic px-2">กำลังเตรียมไฟล์...</span>
                         ) : null}
 
+                        {/* Diagnostics button for failed jobs (E7) */}
+                        {job.status === "failed" && (
+                          <button
+                            type="button"
+                            onClick={() => setDiagnosticsJob(job)}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-200 bg-red-50 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+                            title="ดูการวินิจฉัยข้อผิดพลาด"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                            วินิจฉัย
+                          </button>
+                        )}
+
                         {/* Retry button for failed jobs */}
                         {job.status === "failed" && (
                           <button
@@ -160,6 +191,18 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
                             ลองใหม่
                           </button>
                         )}
+
+                        {/* One-click re-run from history (E7) */}
+                        <button
+                          type="button"
+                          onClick={() => handleRerun(job.id, job.title)}
+                          disabled={isPending}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                          title="สร้างรายงานนี้ใหม่อีกครั้ง (Re-run)"
+                        >
+                          <RotateCw className="w-3.5 h-3.5 text-muted-foreground" />
+                          สร้างซ้ำ
+                        </button>
 
                         {/* Delete button */}
                         <button
@@ -181,6 +224,15 @@ export function DesktopLatestReports({ jobs }: { jobs: ReportJobItem[] }) {
           </table>
         </div>
       )}
+
+      {/* Diagnostics Drawer (E7) */}
+      <ReportDiagnosticsDrawer
+        job={diagnosticsJob}
+        isOpen={Boolean(diagnosticsJob)}
+        onClose={() => setDiagnosticsJob(null)}
+        onRerun={handleRerun}
+        isRerunning={isPending}
+      />
     </div>
   )
 }
