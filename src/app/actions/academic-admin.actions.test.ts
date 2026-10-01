@@ -7,6 +7,7 @@ import {
   deleteSemesterAction,
   upsertClassroomAction,
   deleteClassroomAction,
+  rolloverSemesterAction,
 } from "./academic-admin.actions"
 import type { ActionResult } from "@/lib/server/action-result"
 
@@ -355,6 +356,143 @@ describe("academic-admin.actions", () => {
       expect(result.ok).toBe(true)
       expect(revalidatePath).toHaveBeenCalledWith("/settings/academic")
       expect(revalidatePath).toHaveBeenCalledWith("/students")
+    })
+  })
+
+  describe("rolloverSemesterAction", () => {
+    const validTargetId = "11111111-1111-4111-a111-111111111111"
+    const validSourceId = "22222222-2222-4222-a222-222222222222"
+
+    it("fails with UNAUTHORIZED if user is homeroom_teacher", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "homeroom_teacher",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await rolloverSemesterAction({
+        targetSemesterId: validTargetId,
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("UNAUTHORIZED")
+    })
+
+    it("fails with VALIDATION_ERROR if targetSemesterId is invalid UUID", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const result = await rolloverSemesterAction({
+        targetSemesterId: "not-a-uuid",
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("successfully executes semester rollover and sets active semester", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: "user-1",
+        schoolId: "sch-1",
+        role: "admin",
+        profileId: "prof-1",
+        studentId: null,
+      })
+
+      const mockSemestersUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          neq: vi.fn().mockResolvedValue({ error: null }),
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      })
+
+      const mockAcademicYearsUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          neq: vi.fn().mockResolvedValue({ error: null }),
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      })
+
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "semesters") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({
+                      data: {
+                        id: validTargetId,
+                        semester: "2",
+                        academic_year_id: "ay-1",
+                        school_id: "sch-1",
+                      },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+              update: mockSemestersUpdate,
+            }
+          }
+          if (table === "academic_years") {
+            return {
+              update: mockAcademicYearsUpdate,
+            }
+          }
+          if (table === "classrooms") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockResolvedValue({
+                    data: [{ id: "c-1" }, { id: "c-2" }],
+                    error: null,
+                  }),
+                }),
+              }),
+            }
+          }
+          if (table === "support_records") {
+            return {
+              update: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockReturnValue({
+                      is: vi.fn().mockResolvedValue({ error: null }),
+                    }),
+                  }),
+                }),
+              }),
+            }
+          }
+          return {}
+        }),
+      }
+
+      // @ts-expect-error mock supabase client
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient)
+
+      const result = await rolloverSemesterAction({
+        targetSemesterId: validTargetId,
+        sourceSemesterId: validSourceId,
+        carryoverHomerooms: true,
+        archiveCompletedCases: true,
+        setAsCurrent: true,
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok && result.data) {
+        expect(result.data.carriedOverRoomsCount).toBe(2)
+        expect(result.data.targetSemesterId).toBe(validTargetId)
+      }
+      expect(revalidatePath).toHaveBeenCalledWith("/settings/academic")
+      expect(revalidatePath).toHaveBeenCalledWith("/academics")
+      expect(revalidatePath).toHaveBeenCalledWith("/attendance")
     })
   })
 })

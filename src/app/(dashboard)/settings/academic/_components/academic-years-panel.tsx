@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useTransition } from "react"
-import { Calendar, CheckCircle2, Edit2, Plus, Star, Trash2 } from "lucide-react"
+import { Calendar, CheckCircle2, Edit2, Plus, RefreshCw, Star, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { deleteAcademicYearAction, deleteSemesterAction, setCurrentSemesterAction } from "@/app/actions/academic-admin.actions"
@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/feedback/empty-state"
 import { formatThaiShortDate } from "@/lib/student-care-formatters"
 import type { AcademicYearItem, SemesterItem } from "@/lib/server/academic-admin-read-models"
 import { AcademicYearDialog, SemesterDialog } from "./academic-forms"
+import { SemesterRolloverWizard } from "./semester-rollover-wizard"
 
 export function AcademicYearsPanel({
   academicYears,
@@ -22,6 +23,7 @@ export function AcademicYearsPanel({
   const [isYearDialogOpen, setIsYearDialogOpen] = useState(false)
   const [editingSemester, setEditingSemester] = useState<SemesterItem | null>(null)
   const [isSemesterDialogOpen, setIsSemesterDialogOpen] = useState(false)
+  const [isRolloverOpen, setIsRolloverOpen] = useState(false)
   const [selectedYearId, setSelectedYearId] = useState<string>(
     academicYears.find((y) => y.isCurrent)?.id || academicYears[0]?.id || ""
   )
@@ -87,6 +89,15 @@ export function AcademicYearsPanel({
           >
             <Plus className="size-4" />
             เพิ่มปีการศึกษา
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRolloverOpen(true)}
+            disabled={semesters.length < 2}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary hover:bg-primary/20 disabled:opacity-50 shadow-sm transition-colors"
+          >
+            <RefreshCw className="size-4" />
+            เปลี่ยนผ่านภาคเรียน (Rollover)
           </button>
           <button
             type="button"
@@ -276,6 +287,13 @@ export function AcademicYearsPanel({
           onClose={() => setIsSemesterDialogOpen(false)}
         />
       )}
+
+      <SemesterRolloverWizard
+        open={isRolloverOpen}
+        onOpenChange={setIsRolloverOpen}
+        academicYears={academicYears}
+        semesters={semesters}
+      />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { z } from "zod"
 import { createClient } from "@/utils/supabase/server"
 import { getCurrentUserContext } from "@/lib/server/current-user"
 import { actionFail, actionOk, type ActionResult } from "@/lib/server/action-result"
+import { logAudit } from "@/lib/server/audit-logger"
 import type { Database } from "@/types/database.types"
 
 function assertLeadershipRole(role: string) {
@@ -640,3 +641,124 @@ export async function deleteClassroomSubjectAction(id: string): Promise<ActionRe
     return actionFail("UNAUTHORIZED", error instanceof Error ? error.message : "เกิดข้อผิดพลาด")
   }
 }
+
+// ----------------------------------------------------
+// 5. Semester Rollover Action (E9)
+// ----------------------------------------------------
+const RolloverSemesterSchema = z.object({
+  targetSemesterId: z.string().uuid("รหัสภาคเรียนปลายทางไม่ถูกต้อง"),
+  sourceSemesterId: z.string().uuid().optional(),
+  carryoverHomerooms: z.boolean().default(true),
+  archiveCompletedCases: z.boolean().default(true),
+  setAsCurrent: z.boolean().default(true),
+})
+
+export async function rolloverSemesterAction(
+  input: z.input<typeof RolloverSemesterSchema>,
+): Promise<ActionResult<{ targetSemesterId: string; carriedOverRoomsCount: number }>> {
+  try {
+    const context = await getCurrentUserContext()
+    assertLeadershipRole(context.role)
+
+    const parsed = RolloverSemesterSchema.safeParse(input)
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง")
+    }
+
+    const { targetSemesterId, sourceSemesterId, archiveCompletedCases, setAsCurrent } = parsed.data
+    const supabase = await createClient()
+
+    // 1. Verify target semester exists in the school
+    const { data: targetSem, error: targetError } = await supabase
+      .from("semesters")
+      .select("id, semester, academic_year_id, school_id")
+      .eq("id", targetSemesterId)
+      .eq("school_id", context.schoolId)
+      .maybeSingle()
+
+    if (targetError || !targetSem) {
+      return actionFail("NOT_FOUND", "ไม่พบภาคเรียนปลายทางที่เลือก")
+    }
+
+    // 2. If setAsCurrent, set target semester to is_current: true and all other semesters to false
+    if (setAsCurrent) {
+      await supabase
+        .from("semesters")
+        .update({ is_current: false })
+        .eq("school_id", context.schoolId)
+        .neq("id", targetSemesterId)
+
+      await supabase
+        .from("semesters")
+        .update({ is_current: true })
+        .eq("id", targetSemesterId)
+        .eq("school_id", context.schoolId)
+
+      // Also set target academic year to is_current
+      if (targetSem.academic_year_id) {
+        await supabase
+          .from("academic_years")
+          .update({ is_current: false })
+          .eq("school_id", context.schoolId)
+          .neq("id", targetSem.academic_year_id)
+
+        await supabase
+          .from("academic_years")
+          .update({ is_current: true })
+          .eq("id", targetSem.academic_year_id)
+          .eq("school_id", context.schoolId)
+      }
+    }
+
+    // 3. Count active classrooms
+    const { data: classrooms } = await supabase
+      .from("classrooms")
+      .select("id, name, homeroom_teacher_id, co_teacher_id")
+      .eq("school_id", context.schoolId)
+      .eq("is_active", true)
+
+    const carriedOverRoomsCount = (classrooms ?? []).length
+
+    // 4. If archiveCompletedCases is requested and sourceSemesterId provided, touch completed cases
+    if (archiveCompletedCases && sourceSemesterId) {
+      const nowIso = new Date().toISOString()
+      await supabase
+        .from("support_records")
+        .update({ completed_at: nowIso })
+        .eq("school_id", context.schoolId)
+        .eq("semester_id", sourceSemesterId)
+        .eq("status", "completed")
+        .is("completed_at", null)
+    }
+
+    // 5. Log audit
+    await logAudit({
+      action: "UPDATE",
+      tableName: "semesters",
+      recordId: targetSemesterId,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: {
+        action: "semester_rollover",
+        targetSemesterId,
+        sourceSemesterId: sourceSemesterId ?? null,
+        carriedOverRoomsCount,
+        setAsCurrent,
+      },
+    })
+
+    revalidatePath("/settings/academic")
+    revalidatePath("/academics")
+    revalidatePath("/attendance")
+    revalidatePath("/settings/staff")
+    revalidatePath("/")
+
+    return actionOk(
+      `ดำเนินการเปลี่ยนผ่านไปยังภาคเรียนใหม่เรียบร้อยแล้ว (${carriedOverRoomsCount} ห้องเรียนพร้อมใช้งาน)`,
+      { data: { targetSemesterId, carriedOverRoomsCount } },
+    )
+  } catch (error) {
+    return actionFail("UNAUTHORIZED", error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการเปลี่ยนผ่านภาคเรียน")
+  }
+}
+

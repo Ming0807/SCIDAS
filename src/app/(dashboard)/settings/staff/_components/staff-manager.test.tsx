@@ -77,5 +77,42 @@ describe("StaffManager component", () => {
 
     render(<StaffManager initialData={sampleData} />)
     expect(screen.getByText("สมชาย ใจดี")).toBeDefined()
+    expect(screen.getByText("ความครอบคลุมครูประจำชั้น: 1/1 ห้อง (100%)")).toBeDefined()
+    expect(screen.getByText("การกระจายภาระงานครู (Teacher Workload Distribution)")).toBeDefined()
+  })
+
+  it("renders warning banner when homerooms are unassigned", () => {
+    const unassignedData = {
+      staff: [],
+      classrooms: [
+        {
+          id: "c1",
+          name: "ม.1/1",
+          gradeLevel: "1",
+          section: 1,
+          academicYearId: "ay1",
+          homeroomTeacherId: null,
+          homeroomTeacherName: null,
+          coTeacherId: null,
+          coTeacherName: null,
+          isActive: true,
+        },
+      ],
+      currentUserRole: "admin",
+      currentProfileId: "p1",
+      canManage: true,
+      metrics: {
+        totalStaff: 0,
+        activeStaff: 0,
+        teachersCount: 0,
+        counselorsCount: 0,
+        leadershipCount: 0,
+        unassignedHomeroomsCount: 1,
+      },
+    }
+
+    render(<StaffManager initialData={unassignedData} />)
+    expect(screen.getByText("ความครอบคลุมครูประจำชั้น: 0/1 ห้อง (0%)")).toBeDefined()
+    expect(screen.getByText("มอบหมายครูประจำชั้นทันที")).toBeDefined()
   })
 })

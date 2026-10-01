@@ -38,6 +38,7 @@ import type {
   StaffRole,
 } from "@/lib/staff-constants"
 import { STAFF_ROLE_LABELS, STAFF_ROLES } from "@/lib/staff-constants"
+import { StaffWorkloadOverview } from "./staff-workload-overview"
 
 const ALL_ROLES: StaffRole[] = [...STAFF_ROLES]
 
@@ -275,6 +276,13 @@ export function StaffManager({ initialData }: { initialData?: StaffManagementDat
           size="compact"
         />
       </div>
+
+      {/* Homeroom Coverage Banner & Teacher Workload Card */}
+      <StaffWorkloadOverview
+        classrooms={classrooms}
+        staffList={staffList}
+        onGoToAssignments={() => setActiveTab("assignments")}
+      />
 
       {/* Tabs Switcher */}
       <div className="flex border-b border-border" role="tablist" aria-label="จัดการบุคลากร">
