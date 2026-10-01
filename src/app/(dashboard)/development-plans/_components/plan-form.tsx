@@ -10,7 +10,7 @@ import {
   updateDevelopmentPlanAction,
   type DevelopmentPlan,
 } from "@/app/actions/idp.actions"
-import { ActionFeedback } from "@/components/forms"
+import { ActionFeedback, StudentSearchCombobox } from "@/components/forms"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -112,21 +112,20 @@ export function PlanForm(props: PlanFormProps) {
               </>
             ) : (
               <>
-                <div className="space-y-2 sm:col-span-2">
-                  <label htmlFor="student_id" className="text-sm font-medium">นักเรียน <span className="text-destructive">*</span></label>
-                  <select
-                    id="student_id"
+                <div className="sm:col-span-2">
+                  <StudentSearchCombobox
+                    students={props.mode === "create" ? props.students : []}
                     name="student_id"
-                    required
+                    id="student_id"
                     defaultValue={props.mode === "create" ? (props.defaultStudentId ?? "") : ""}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    aria-invalid={fieldErrors?.student_id ? true : undefined}
-                  >
-                    <option value="" disabled>เลือกนักเรียน</option>
-                    {(props.mode === "create" ? props.students : []).map((student) => <option key={student.id} value={student.id}>{formatStudent(student)}</option>)}
-                  </select>
-                  {props.mode === "create" && props.students.length === 0 ? <p className="text-xs text-muted-foreground">ยังไม่มีนักเรียนที่พร้อมสร้างแผน</p> : null}
-                  <FieldError message={fieldErrors?.student_id?.[0]} />
+                    required
+                    label="นักเรียน"
+                    placeholder="-- เลือกนักเรียน --"
+                    error={fieldErrors?.student_id?.[0]}
+                  />
+                  {props.mode === "create" && props.students.length === 0 ? (
+                    <p className="mt-1 text-xs text-muted-foreground">ยังไม่มีนักเรียนที่พร้อมสร้างแผน</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <label htmlFor="semester_id" className="text-sm font-medium">ภาคเรียน <span className="text-destructive">*</span></label>

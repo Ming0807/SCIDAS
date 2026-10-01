@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Building2, Hospital, LoaderCircle, Send } from "lucide-react"
 
 import { createReferralAction, type ReferralType } from "@/app/actions/referral.actions"
+import { StudentSearchCombobox } from "@/components/forms"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -85,31 +86,17 @@ export function ReferralForm({
           1. ข้อมูลนักเรียนและประเภทการส่งต่อ
         </h2>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="student_id" className="block text-xs font-medium text-foreground mb-1">
-              นักเรียนที่ต้องการส่งต่อ <span className="text-destructive">*</span>
-            </label>
-            <select
-              id="student_id"
-              name="student_id"
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              required
-              aria-invalid={fieldErrors?.student_id ? true : undefined}
-              className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-ring"
-            >
-              <option value="">-- เลือกนักเรียน --</option>
-              {students.map((stu) => (
-                <option key={stu.id} value={stu.id}>
-                  {stu.first_name} {stu.last_name}
-                  {stu.student_code ? ` (รหัส: ${stu.student_code})` : ""}
-                  {stu.classroom_name ? ` - ${stu.classroom_name}` : ""}
-                </option>
-              ))}
-            </select>
-            <FieldError message={fieldErrors?.student_id?.[0]} />
-          </div>
+        <div className="space-y-4">
+          <StudentSearchCombobox
+            students={students}
+            name="student_id"
+            id="student_id"
+            value={selectedStudentId}
+            onChange={(id) => setSelectedStudentId(id)}
+            required
+            label="นักเรียนที่ต้องการส่งต่อ"
+            error={fieldErrors?.student_id?.[0]}
+          />
 
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">

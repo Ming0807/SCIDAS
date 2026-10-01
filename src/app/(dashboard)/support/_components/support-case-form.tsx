@@ -12,7 +12,7 @@ import {
   type SupportCase,
   type SupportType,
 } from "@/app/actions/support.actions"
-import { ActionFeedback } from "@/components/forms"
+import { ActionFeedback, StudentSearchCombobox } from "@/components/forms"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -96,24 +96,35 @@ export function SupportCaseForm({ students, initialCase, defaultStudentId }: Sup
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-2">
-            <label htmlFor="support-student" className="text-sm font-medium text-foreground">
-              นักเรียน
-            </label>
-            <Select name="student_id" defaultValue={initialCase?.student_id ?? defaultStudentId} required>
-              <SelectTrigger id="support-student" className="w-full">
-                <SelectValue placeholder="ค้นหาและเลือกนักเรียน..." />
-              </SelectTrigger>
-              <SelectContent>
-                {students.map((student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {student.first_name} {student.last_name} ({student.student_code ?? "ไม่มีรหัส"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FieldError result={result} field="student_id" />
-          </div>
+          {isEdit && initialCase?.student ? (
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">นักเรียน</span>
+              <input type="hidden" name="student_id" value={initialCase.student_id} />
+              <div className="rounded-xl border border-input bg-muted/40 p-3 text-sm">
+                <span className="font-semibold text-foreground">
+                  {initialCase.student.first_name} {initialCase.student.last_name}
+                </span>
+                {initialCase.student.student_code ? (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    (รหัส: {initialCase.student.student_code})
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <StudentSearchCombobox
+                students={students}
+                name="student_id"
+                id="support-student"
+                defaultValue={initialCase?.student_id ?? defaultStudentId}
+                required
+                label="นักเรียน"
+                placeholder="-- ค้นหาและเลือกนักเรียน --"
+              />
+              <FieldError result={result} field="student_id" />
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">

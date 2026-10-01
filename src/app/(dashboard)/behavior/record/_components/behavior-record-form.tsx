@@ -5,7 +5,7 @@ import { Loader2, Save } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { createBehaviorRecordAction } from "@/app/actions/behavior.actions"
-import { ActionFeedback } from "@/components/forms/action-feedback"
+import { ActionFeedback, StudentSearchCombobox } from "@/components/forms"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -64,23 +64,17 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor="student_id" className="text-sm font-medium">
-                นักเรียน
-              </label>
-              <Select name="student_id" required defaultValue={defaultStudentId}>
-                <SelectTrigger id="student_id" className="w-full" aria-invalid={!!fieldErrors?.student_id}>
-                  <SelectValue placeholder="เลือกนักเรียน..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((student) => (
-                    <SelectItem key={student.id} value={student.id}>
-                      {student.first_name} {student.last_name} ({student.student_code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FieldError message={fieldErrors?.student_id?.[0]} />
+            <div className="md:col-span-2">
+              <StudentSearchCombobox
+                students={students}
+                name="student_id"
+                id="student_id"
+                defaultValue={defaultStudentId}
+                required
+                label="นักเรียน"
+                placeholder="-- ค้นหาและเลือกนักเรียน --"
+                error={fieldErrors?.student_id?.[0]}
+              />
             </div>
 
             <div className="space-y-2">
