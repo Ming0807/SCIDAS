@@ -36,9 +36,6 @@ import {
 } from "@/app/actions/support.actions"
 import {
   getActionQueue,
-  getDueActionItemsMetrics,
-  getDueSoonActionItemsCount,
-  type DueActionItemsMetrics,
   getStudentAttachments,
   getStudentCareDashboard,
   getStudentNotes,
@@ -51,6 +48,13 @@ import {
   type StudentTimelineItem,
   type StudentWorklistItem,
 } from "@/lib/server/student-care-read-models"
+import {
+  getUnifiedFollowUpMetrics,
+  getUnifiedFollowUpQueue,
+  type UnifiedFollowUpItem,
+  type UnifiedFollowUpMetrics,
+} from "@/lib/server/unified-followup-read-models"
+import { FollowUpTabsView } from "./_components/follow-up-tabs-view"
 import { cn } from "@/lib/utils"
 
 type SearchParams = Record<string, string | string[] | undefined>
@@ -82,41 +86,6 @@ function getSearchParam(params: SearchParams, key: string) {
   }
 
   return value ?? ""
-}
-
-function getPriorityTone(priority: ActionQueueItem["priority"]) {
-  if (priority === "critical" || priority === "high") return "high-risk"
-  if (priority === "medium") return "watch"
-  return "normal"
-}
-
-function getPriorityLabel(priority: ActionQueueItem["priority"]) {
-  const labels: Record<ActionQueueItem["priority"], string> = {
-    low: "ต่ำ",
-    medium: "กลาง",
-    high: "สูง",
-    critical: "เร่งด่วน",
-  }
-
-  return labels[priority]
-}
-
-function getActionStatusLabel(status: ActionQueueItem["status"]) {
-  const labels: Record<ActionQueueItem["status"], string> = {
-    todo: "รอดำเนินการ",
-    in_progress: "กำลังทำ",
-    done: "ปิดแล้ว",
-    cancelled: "ยกเลิก",
-  }
-
-  return labels[status]
-}
-
-function getActionStatusTone(status: ActionQueueItem["status"]) {
-  if (status === "done") return "normal"
-  if (status === "in_progress") return "info"
-  if (status === "cancelled") return "neutral"
-  return "watch"
 }
 
 const supportStatusLabels: Record<SupportRecordListItem["status"], string> = {
@@ -201,58 +170,6 @@ const supportCaseColumns: Array<DataTableColumn<SupportRecordListItem>> = [
   },
 ]
 
-const actionColumns: Array<DataTableColumn<ActionQueueItem>> = [
-  {
-    id: "title",
-    header: "งานดูแล",
-    className: "min-w-64",
-    cell: (item) => (
-      <div className="min-w-0 space-y-1">
-        <p className="truncate font-medium text-foreground">{item.title}</p>
-        <p className="truncate text-sm text-muted-foreground">
-          {item.studentName ?? "ไม่ระบุนักเรียน"} / {item.category}
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: "priority",
-    header: "ความสำคัญ",
-    cell: (item) => (
-      <StatusBadge
-        status={getPriorityTone(item.priority)}
-        label={getPriorityLabel(item.priority)}
-        size="sm"
-      />
-    ),
-  },
-  {
-    id: "due",
-    header: "กำหนด",
-    cell: (item) => (
-      <span className="text-muted-foreground">{formatThaiShortDate(item.dueDate)}</span>
-    ),
-  },
-  {
-    id: "status",
-    header: "สถานะ",
-    cell: (item) => (
-      <StatusBadge
-        status={getActionStatusTone(item.status)}
-        label={getActionStatusLabel(item.status)}
-        size="sm"
-      />
-    ),
-  },
-  {
-    id: "actions",
-    header: "จัดการ",
-    align: "right",
-    sticky: "right",
-    cell: (item) => <ActionStatusControls item={item} />,
-  },
-]
-
 function StudentCareCard({
   student,
   isSelected,
@@ -307,23 +224,31 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
   let dashboard = emptyDashboard
   let worklist: StudentWorklistItem[] = []
   let actionQueue: ActionQueueItem[] = []
+  let unifiedQueue: UnifiedFollowUpItem[] = []
   let supportCases: SupportRecordListItem[] = []
   let supportCaseError: string | null = null
   let loadError: string | null = null
-  let dueMetrics: DueActionItemsMetrics = { overdueCount: 0, dueSoonCount: 0, totalDueCount: 0 }
+  let dueMetrics: UnifiedFollowUpMetrics = { overdueCount: 0, dueSoonCount: 0, totalDueCount: 0 }
 
   try {
-    const [dashboardData, worklistData, actionData, supportResult, dueMetricsData] = await Promise.all([
-      getStudentCareDashboard(),
-      getStudentWorklist({ limit: 500 }),
-      getActionQueue({ limit: 24 }),
-      getSupportRecords(),
-      getDueActionItemsMetrics().catch(() => ({ overdueCount: 0, dueSoonCount: 0, totalDueCount: 0 })),
-    ])
+    const [dashboardData, worklistData, actionData, unifiedData, supportResult, dueMetricsData] =
+      await Promise.all([
+        getStudentCareDashboard(),
+        getStudentWorklist({ limit: 500 }),
+        getActionQueue({ limit: 24 }),
+        getUnifiedFollowUpQueue({ limit: 40 }).catch(() => []),
+        getSupportRecords(),
+        getUnifiedFollowUpMetrics().catch(() => ({
+          overdueCount: 0,
+          dueSoonCount: 0,
+          totalDueCount: 0,
+        })),
+      ])
 
     dashboard = dashboardData
     worklist = worklistData
     actionQueue = actionData
+    unifiedQueue = unifiedData
     dueMetrics = dueMetricsData
     if (supportResult.ok) supportCases = supportResult.data ?? []
     else supportCaseError = supportResult.message
@@ -477,34 +402,7 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
         <div className="flex min-w-0 flex-col gap-6">
-          <DataTable
-            className="min-h-[460px]"
-            columns={actionColumns}
-            data={actionQueue}
-            emptyState={
-              <EmptyState
-                title="ยังไม่มีงานดูแลค้าง"
-                description="เมื่อตรวจพบความเสี่ยงหรือสร้างเคส ระบบจะรวมงานที่ต้องติดตามไว้ตรงนี้"
-              />
-            }
-            getRowKey={(item) => item.id}
-            toolbar={
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <h2 className="text-sm font-semibold text-foreground">คิวงานดูแล</h2>
-                  <p className="text-sm text-muted-foreground">
-                    เริ่มงานหรือปิดงานได้จากตารางนี้ แล้วหน้าที่เกี่ยวข้องจะอัปเดตตาม
-                  </p>
-                </div>
-                <Link
-                  href="/students?status=high"
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  ดูนักเรียนเสี่ยงสูง
-                </Link>
-              </div>
-            }
-          />
+          <FollowUpTabsView actionQueue={actionQueue} unifiedQueue={unifiedQueue} />
 
           <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
             <StudentNotesPanel studentId={selectedStudent?.studentId ?? null} notes={notes} />
