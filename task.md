@@ -68,19 +68,15 @@ Goal: โรงเรียนอื่นเช่าใช้ → tenant isola
 - [x] **Dates** ✓ — Bangkok timezone `getTodayBangkok()` across forms, invalid/future `?date=` alert banner in attendance, Bangkok calendar day comparison for IDP due edges.
 
 ### Extension roadmap (ต่อยอด — phased, reuses existing tables)
-- **E1 Risk→action loop**: absence streak / repeated negative behavior / urgent home-visit /
-  GPA<1.5 auto-suggest `action_items`+`support_records` (tables exist; rule engine new).
-- **E2 Student 360° handoff**: peer counts + one-click create (IDP/case/referral prefilled) on every
-  detail page for same `student_id`.
-- **E3 Unified follow-up inbox**: merge `support_followups.next_followup_date` + IDP activities +
-  actionQueue `dueDate` into one per-student queue (replaces 3 separate due calculations).
-- **E4 SDQ depth**: trend + auto-flag (`classification` jump → suggest case), classroom bulk print,
-  autosave drafts, `sdq_assessments` completion stats per room.
-- **E5 Screening honesty**: real per-room SDQ progress; label 5-domain/3R cards "เร็วๆ นี้" until forms exist.
-- **E6 Referrals**: SLA view, agency directory, attachments, ack tracker, split status/follow-up forms.
-- **E7 Reports**: recurring presets, failed-job diagnostics drawer, one-click re-run from history.
-- **E8 Parent**: risk-toned cards, teacher-contact button, consent ack feeding case/plan status.
-- **E9 Settings**: workload card, homeroom coverage banner, semester rollover wizard, audit export CSV.
+- [x] **E1 Risk→action loop** ✓: absence streak / repeated negative behavior / urgent home-visit / GPA<1.5 auto-suggest `action_items`+`support_records` (rule engine in `src/lib/server/risk-action-rules.ts` + 11 unit tests).
+- [x] **E2 Student 360° handoff** ✓: peer counts + one-click create (IDP/case/referral prefilled) on every detail page for same `student_id`.
+- [x] **E3 Unified follow-up inbox** ✓: merge `support_followups.next_followup_date` + IDP activities + actionQueue `dueDate` into one per-student queue (`src/lib/server/unified-followup-read-models.ts` + 4 unit tests + follow-up inbox UI).
+- [x] **E4 SDQ depth** ✓: longitudinal trend indicator + auto-flag (`classification` jump → suggest IDP/case in `sdq-trend.ts`), classroom bulk print summary sheet dialog, autosave drafts with localStorage, per-classroom completion rate stats.
+- [x] **E5 Screening honesty** ✓: real per-room SDQ progress; label 5-domain/3R cards "เร็วๆ นี้" until forms exist.
+- [x] **E6 Referrals** ✓: SLA view (Critical 2d, High 7d, Med/Low 14d), agency directory modal with hotlines (1323, 1300), ack tracker, split status/follow-up forms (`addReferralFollowupAction`).
+- [x] **E7 Reports** ✓: 5 recurring presets (Monthly attendance, Weekly risk brief, Semester SDQ, Home visit, SAR), failed-job diagnostics drawer, one-click re-run from history (`rerunReportJobAction`).
+- [x] **E8 Parent** ✓: risk-toned child cards (color accents & status badges), empathetic care guidance banner, teacher-contact dialog (`ParentTeacherContactDialog` with homeroom/co-teacher/school hotlines), consent acknowledgement workflow (`acknowledgeParentConsentAction` feeding case/plan status).
+- [x] **E9 Settings** ✓: teacher workload distribution card, homeroom coverage progress banner with 1-click assignment trigger, semester rollover wizard dialog (`rolloverSemesterAction`), audit export CSV.
 
 ### UX/UI emphasis backlog (new this round)
 - [x] Sticky save bars with dirty counters (attendance, academics, behavior record).
