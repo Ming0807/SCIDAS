@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -40,6 +40,60 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
   const [result, setResult] = useState<ActionResult<SdqActionResponse> | null>(null)
   const [isPrintOpen, setIsPrintOpen] = useState(false)
 
+  const draftKey = `sdq_draft_${student.id}`
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null)
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
+
+  // Restore draft on initial load (E4)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(draftKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.answers && Object.keys(parsed.answers).length > 0) {
+          setAnswers(parsed.answers)
+          if (parsed.evaluatorType) setEvaluatorType(parsed.evaluatorType)
+          setDraftSavedAt(
+            parsed.updatedAt ? new Date(parsed.updatedAt).toLocaleTimeString("th-TH") : "ก่อนหน้า"
+          )
+          setHasRestoredDraft(true)
+        }
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [draftKey])
+
+  // Autosave draft when answers change (E4)
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      try {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({
+            answers,
+            evaluatorType,
+            updatedAt: new Date().toISOString(),
+          })
+        )
+        setDraftSavedAt(new Date().toLocaleTimeString("th-TH"))
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+  }, [answers, evaluatorType, draftKey])
+
+  function handleClearDraft() {
+    try {
+      localStorage.removeItem(draftKey)
+      setAnswers({})
+      setDraftSavedAt(null)
+      setHasRestoredDraft(false)
+    } catch {
+      // Ignore
+    }
+  }
+
   const answeredCount = Object.keys(answers).length
   const isComplete = answeredCount === 25
 
@@ -66,6 +120,11 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
       const res = await saveSdqAssessmentAction(null, formData)
       setResult(res)
       if (res.ok) {
+        try {
+          localStorage.removeItem(draftKey)
+        } catch {
+          // Ignore
+        }
         setTimeout(() => {
           router.push("/screening/sdq")
         }, 1200)
@@ -151,6 +210,21 @@ export function SdqAssessmentForm({ student }: SdqAssessmentFormProps) {
         </div>
       </div>
 
+      {hasRestoredDraft && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-primary">💾 กู้คืนแบบร่างอัตโนมัติ:</span>
+            <span>พบคำตอบที่กรอกค้างไว้ในเบราว์เซอร์นี้ (บันทึกเมื่อ {draftSavedAt})</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearDraft}
+            className="text-xs font-semibold text-destructive hover:underline text-left sm:text-right"
+          >
+            ล้างแบบร่างเริ่มต้นใหม่
+          </button>
+        </div>
+      )}
 
       <ActionFeedback result={result} />
 

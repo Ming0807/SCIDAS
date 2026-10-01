@@ -20,6 +20,7 @@ import { getLatestSchoolSdqAssessments } from "@/app/actions/sdq.actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SdqTableActions } from "./_components/sdq-table-actions"
+import { SdqClassroomBulkPrintDialog, type ClassroomStudentSdqSummary } from "./_components/sdq-classroom-bulk-print-dialog"
 import { formatPercent } from "@/lib/student-care-formatters"
 import { cn } from "@/lib/utils"
 
@@ -30,17 +31,19 @@ interface SdqOverviewPageProps {
 }
 
 function buildSdqUrl(
-  base: { risk?: string; q?: string; studentId?: string },
-  overrides: { risk?: string | null; q?: string | null; studentId?: string | null }
+  base: { risk?: string; q?: string; studentId?: string; classroom?: string },
+  overrides: { risk?: string | null; q?: string | null; studentId?: string | null; classroom?: string | null }
 ) {
   const sp = new URLSearchParams()
   const risk = overrides.risk !== undefined ? overrides.risk : base.risk
   const q = overrides.q !== undefined ? overrides.q : base.q
   const studentId = overrides.studentId !== undefined ? overrides.studentId : base.studentId
+  const classroom = overrides.classroom !== undefined ? overrides.classroom : base.classroom
 
   if (risk) sp.set("risk", risk)
   if (q) sp.set("q", q)
   if (studentId) sp.set("studentId", studentId)
+  if (classroom) sp.set("classroom", classroom)
 
   const qs = sp.toString()
   return qs ? `/screening/sdq?${qs}` : "/screening/sdq"
@@ -51,15 +54,53 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
   const query = typeof resolvedParams.q === "string" ? resolvedParams.q.trim().toLowerCase() : ""
   const studentId = typeof resolvedParams.studentId === "string" ? resolvedParams.studentId.trim() : ""
   const riskFilter = typeof resolvedParams.risk === "string" ? resolvedParams.risk.trim() : ""
-  const baseParams = { risk: riskFilter, q: query, studentId }
+  const classroomFilter = typeof resolvedParams.classroom === "string" ? resolvedParams.classroom.trim() : ""
+  const baseParams = { risk: riskFilter, q: query, studentId, classroom: classroomFilter }
 
   const [worklist, sdqMap] = await Promise.all([
     getStudentWorklist(),
     getLatestSchoolSdqAssessments(),
   ])
 
+  // Compute classroom completion stats per room (E4)
+  type ClassroomStat = {
+    name: string
+    total: number
+    assessed: number
+    rate: number
+    normal: number
+    watch: number
+    high: number
+  }
+
+  const classroomStatsMap = new Map<string, ClassroomStat>()
+  worklist.forEach((s) => {
+    const room = s.classroomName || "ไม่ระบุห้อง"
+    let stat = classroomStatsMap.get(room)
+    if (!stat) {
+      stat = { name: room, total: 0, assessed: 0, rate: 0, normal: 0, watch: 0, high: 0 }
+      classroomStatsMap.set(room, stat)
+    }
+    stat.total++
+    const sdq = sdqMap[s.studentId]
+    if (sdq) {
+      stat.assessed++
+      if (sdq.riskLevel === "high") stat.high++
+      else if (sdq.riskLevel === "watch") stat.watch++
+      else stat.normal++
+    }
+  })
+
+  const classroomStats = Array.from(classroomStatsMap.values())
+    .map((c) => ({
+      ...c,
+      rate: c.total > 0 ? (c.assessed / c.total) * 100 : 0,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "th"))
+
   const filteredStudents = worklist.filter((s) => {
     if (studentId && s.studentId !== studentId) return false
+    if (classroomFilter && s.classroomName !== classroomFilter) return false
     if (riskFilter) {
       const studentSdq = sdqMap[s.studentId]
       if (riskFilter === "unassessed") {
@@ -87,13 +128,37 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
     ? (filteredStudents[0] ?? worklist.find((s) => s.studentId === studentId) ?? null)
     : null
 
+  const bulkPrintStudents: ClassroomStudentSdqSummary[] = (
+    classroomFilter
+      ? worklist.filter((s) => s.classroomName === classroomFilter)
+      : filteredStudents
+  ).map((s, idx) => {
+    const sdq = sdqMap[s.studentId]
+    return {
+      studentId: s.studentId,
+      studentCode: s.studentCode,
+      fullName: s.fullName,
+      studentNumber: idx + 1,
+      classroomName: s.classroomName,
+      isAssessed: Boolean(sdq),
+      assessmentDate: sdq ? sdq.assessedAt : null,
+      riskScore: sdq ? sdq.score : null,
+      riskLevel: sdq ? sdq.riskLevel : null,
+      evaluatorType: sdq ? "ครูประจำชั้น" : null,
+    }
+  })
+
   return (
     <PageShell size="wide" spacing="default">
       <PageHeader
         title="แบบประเมินพฤติกรรมและอารมณ์เด็ก (SDQ)"
         description="Strengths and Difficulties Questionnaire — ระบบคัดกรอง 25 ข้อ 5 ด้าน ตามมาตรฐาน สพฐ. และกรมสุขภาพจิต"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <SdqClassroomBulkPrintDialog
+            classroomName={classroomFilter || "นักเรียนทั้งหมด"}
+            students={bulkPrintStudents}
+          />
           <Link href="/screening">
             <Button variant="outline" size="sm" className="gap-1.5 text-xs">
               <ArrowLeft className="size-3.5" />
@@ -196,24 +261,80 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
         </Link>
       </div>
 
-      {studentId || riskFilter ? (
+      {studentId || riskFilter || classroomFilter ? (
         <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-primary">ตัวกรองปัจจุบัน:</span>
+            {classroomFilter && (
+              <span className="font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                ห้อง: {classroomFilter}
+              </span>
+            )}
             {studentId && (
               <span>
                 นักเรียน: {bannerStudent ? `${bannerStudent.fullName} (${bannerStudent.studentCode})` : "นักเรียนที่เลือก"}
               </span>
             )}
             {riskFilter && (
-              <span className="ml-2 font-medium">
+              <span className="font-medium">
                 ระดับ: {riskFilter === "high" ? "กลุ่มมีปัญหา" : riskFilter === "watch" ? "กลุ่มเสี่ยง" : riskFilter === "unassessed" ? "ยังไม่ประเมิน" : "กลุ่มปกติ"}
               </span>
             )}
           </div>
-          <Link href={buildSdqUrl(baseParams, { risk: null, studentId: null })} className="font-semibold text-primary hover:underline">
+          <Link href={buildSdqUrl(baseParams, { risk: null, studentId: null, classroom: null })} className="font-semibold text-primary hover:underline">
             ล้างตัวกรอง (แสดงทั้งหมด) &times;
           </Link>
+        </div>
+      ) : null}
+
+      {/* Classroom Completion Stats per Room (E4) */}
+      {classroomStats.length > 0 ? (
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-foreground">
+              ความคืบหน้าการประเมิน SDQ แยกตามห้องเรียน
+            </span>
+            <span className="text-xs text-muted-foreground">
+              คลิกเพื่อกรองรายชื่อเฉพาะห้อง
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Link
+              href={buildSdqUrl(baseParams, { classroom: null })}
+              className={cn(
+                "rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors",
+                !classroomFilter
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted text-muted-foreground hover:text-foreground border-border"
+              )}
+            >
+              ทุกห้อง ({assessedCount}/{total} คน)
+            </Link>
+            {classroomStats.map((stat) => (
+              <Link
+                key={stat.name}
+                href={buildSdqUrl(baseParams, { classroom: stat.name })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors",
+                  classroomFilter === stat.name
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground hover:text-foreground border-border"
+                )}
+              >
+                <span>{stat.name}</span>
+                <span
+                  className={cn(
+                    "text-xs font-mono px-1 py-0.5 rounded",
+                    classroomFilter === stat.name
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  )}
+                >
+                  {stat.assessed}/{stat.total} ({formatPercent(stat.rate)})
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -242,6 +363,7 @@ export default async function SdqOverviewPage({ searchParams }: SdqOverviewPageP
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
               {riskFilter ? <input type="hidden" name="risk" value={riskFilter} /> : null}
               {studentId ? <input type="hidden" name="studentId" value={studentId} /> : null}
+              {classroomFilter ? <input type="hidden" name="classroom" value={classroomFilter} /> : null}
               <Input
                 name="q"
                 defaultValue={query}

@@ -37,7 +37,7 @@ export default async function SdqStudentPage({ params }: SdqStudentPageProps) {
         }}
       />
       <div className="mt-6">
-        <SdqHistory assessments={assessments} canDelete={canDelete} />
+        <SdqHistory assessments={assessments} canDelete={canDelete} studentId={profile.studentId} />
       </div>
     </PageShell>
   )
