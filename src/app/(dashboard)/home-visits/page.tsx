@@ -263,22 +263,30 @@ function HomeVisitCard({ visit }: { visit: HomeVisitRecord }) {
         ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <Link
-            href={`/home-visits/${visit.id}`}
-            className={cn(buttonVariants({ size: "sm" }))}
-          >
-            <Eye /> ดูรายละเอียด
-          </Link>
-          {visit.canEdit ? (
+          <div className="flex items-center gap-2">
             <Link
-              href={`/home-visits/${visit.id}/edit`}
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              href={`/home-visits/${visit.id}`}
+              className={cn(buttonVariants({ size: "sm" }))}
             >
-              <Pencil /> แก้ไข
+              <Eye /> ดูรายละเอียด
             </Link>
-          ) : null}
+            {visit.canEdit ? (
+              <Link
+                href={`/home-visits/${visit.id}/edit`}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              >
+                <Pencil /> แก้ไข
+              </Link>
+            ) : null}
+          </div>
           {visit.followUpNeeded ? (
-            <StatusBadge status="watch" label="มีงานติดตาม" size="sm" />
+            <Link
+              href={`/support/new?studentId=${visit.studentId}`}
+              className="inline-flex items-center gap-1 group"
+              title="เปิดเคสช่วยเหลือสำหรับนักเรียนนี้"
+            >
+              <StatusBadge status="watch" label="มีงานติดตาม → ส่งต่อ" size="sm" className="group-hover:ring-1 group-hover:ring-amber-500 cursor-pointer" />
+            </Link>
           ) : null}
         </div>
       </div>

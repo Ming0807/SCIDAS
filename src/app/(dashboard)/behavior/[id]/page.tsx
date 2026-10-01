@@ -219,7 +219,18 @@ export default async function BehaviorDetailPage({ params }: PageProps) {
                       />
                     </td>
                     <td className="py-2 px-3 text-foreground max-w-xs truncate">
-                      {r.description}
+                      {r.id === record.id ? (
+                        <span className="font-semibold text-foreground">
+                          {r.description} <span className="text-xs text-muted-foreground font-normal">(กำลังดู)</span>
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/behavior/${r.id}`}
+                          className="font-medium text-foreground hover:text-primary hover:underline"
+                        >
+                          {r.description}
+                        </Link>
+                      )}
                     </td>
                     <td
                       className={cn(

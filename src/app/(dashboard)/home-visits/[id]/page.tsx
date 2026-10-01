@@ -8,6 +8,7 @@ import {
   Home,
   MapPin,
   Pencil,
+  Plus,
   User,
 } from "lucide-react"
 
@@ -122,6 +123,14 @@ export default async function HomeVisitDetailPage({ params, searchParams }: Page
           >
             <User /> ดูข้อมูลนักเรียน
           </Link>
+          {record.followUpNeeded || record.status !== "completed" ? (
+            <Link
+              href={`/support/new?studentId=${record.studentId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-amber-600 dark:text-amber-400")}
+            >
+              <Plus /> เปิดเคสช่วยเหลือ
+            </Link>
+          ) : null}
           {record.canEdit ? (
             <Link
               href={`/home-visits/${record.id}/edit`}

@@ -248,7 +248,12 @@ function BehaviorTableRow({ record, profileId, canEditAll }: { record: BehaviorR
         <StatusBadge status={statusTone} label={getBehaviorTypeLabel(record.behaviorType)} size="sm" />
       </td>
       <td className="py-3 px-4 text-foreground font-medium whitespace-nowrap max-w-48 truncate">
-        {record.description}
+        <Link
+          href={`/behavior/${record.id}`}
+          className="hover:text-primary hover:underline"
+        >
+          {record.description}
+        </Link>
       </td>
       <td className="py-3 px-3 text-center whitespace-nowrap">
         <span
@@ -269,21 +274,21 @@ function BehaviorTableRow({ record, profileId, canEditAll }: { record: BehaviorR
       </td>
       <td className="py-3 px-5 text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-2">
+          <Link
+            href={`/behavior/${record.id}`}
+            className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 hover:text-primary/80"
+          >
+            ดูข้อมูล
+          </Link>
           {(canEditAll || Boolean(profileId && record.reportedById === profileId)) ? (
             <Link
-              href={`/behavior/${record.id}`}
-              className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 hover:text-primary/80"
+              href={`/behavior/${record.id}/edit`}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
             >
-              ดูข้อมูล
+              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+              แก้ไข
             </Link>
           ) : null}
-          <Link
-            href={`/behavior/${record.id}/edit`}
-            className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
-          >
-            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-            แก้ไข
-          </Link>
         </div>
       </td>
     </tr>
