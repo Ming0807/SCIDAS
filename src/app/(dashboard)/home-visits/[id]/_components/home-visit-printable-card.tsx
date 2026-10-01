@@ -28,6 +28,7 @@ export function HomeVisitPrintableCard({
   attachments = [],
 }: HomeVisitPrintableCardProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; caption?: string | null } | null>(null)
 
   const handlePrint = () => {
     window.print()
@@ -232,9 +233,14 @@ export function HomeVisitPrintableCard({
                     <h2 className="text-sm font-bold text-foreground border-b border-border/60 pb-2">
                       ส่วนที่ 5: ภาพถ่ายประกอบการเยี่ยมบ้าน
                     </h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
-                      {allImages.slice(0, 3).map((img, idx) => (
-                        <div key={idx} className="space-y-1 rounded-md border border-border bg-background p-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 print:grid-cols-3 gap-3 pt-1">
+                      {allImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setLightboxImage(img)}
+                          className="space-y-1 rounded-md border border-border bg-background p-2 cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all print:cursor-default print:hover:ring-0"
+                          title="คลิกเพื่อดูภาพขนาดใหญ่"
+                        >
                           <div className="aspect-4/3 w-full overflow-hidden rounded bg-muted">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -291,6 +297,43 @@ export function HomeVisitPrintableCard({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Lightbox Modal */}
+      {lightboxImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md print:hidden"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-3xl max-h-[85vh] rounded-2xl overflow-hidden bg-card border border-border p-3 shadow-2xl flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 z-10 size-8 rounded-full bg-black/50 text-white hover:bg-black/80 flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="ปิดภาพขยาย"
+            >
+              <X className="size-4" />
+            </button>
+            <div className="overflow-hidden rounded-xl max-h-[75vh]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lightboxImage.url}
+                alt={lightboxImage.caption ?? "ภาพถ่ายการเยี่ยมบ้าน"}
+                className="max-h-[75vh] w-auto object-contain"
+              />
+            </div>
+            {lightboxImage.caption ? (
+              <p className="mt-2 text-sm font-medium text-foreground text-center">
+                {lightboxImage.caption}
+              </p>
+            ) : null}
           </div>
         </div>
       )}

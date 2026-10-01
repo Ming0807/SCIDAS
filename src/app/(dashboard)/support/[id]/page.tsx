@@ -9,7 +9,7 @@ import { ErrorState } from "@/components/feedback"
 import { StatusBadge } from "@/components/dashboard"
 import { StudentAttachmentsPanel } from "@/components/care"
 import { Button } from "@/components/ui/button"
-import { getStudentAttachments } from "@/lib/server/student-care-read-models"
+import { getStudentAttachments, getStudentCareProfile } from "@/lib/server/student-care-read-models"
 import { getSemesterOptions } from "@/lib/server/executive-read-models"
 import { formatThaiDateTime, formatThaiShortDate } from "@/lib/student-care-formatters"
 
@@ -72,11 +72,15 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
   }
 
   const supportCase = result.data
-  const attachments = await getStudentAttachments(supportCase.student_id, 10, {
-    referenceTable: "support_cases",
-    referenceId: supportCase.id,
-  }).catch(() => [])
-  const semesterOptions = await getSemesterOptions().catch(() => [])
+  const [careProfile, attachments, semesterOptions] = await Promise.all([
+    getStudentCareProfile(supportCase.student_id).catch(() => null),
+    getStudentAttachments(supportCase.student_id, 10, {
+      referenceTable: "support_cases",
+      referenceId: supportCase.id,
+    }).catch(() => []),
+    getSemesterOptions().catch(() => []),
+  ])
+  const classroomLabel = careProfile?.classroomName ?? null
   const semesterName =
     semesterOptions.find((s) => s.id === supportCase.semester_id)?.name ?? "ไม่ระบุภาคเรียน"
 
@@ -96,8 +100,9 @@ export default async function SupportCasePage({ params }: SupportCasePageProps) 
     priority: supportCase.priority,
     studentName,
     studentCode: supportCase.student?.student_code ?? null,
+    classroomLabel,
     providerName,
-    semesterId: supportCase.semester_id,
+    semesterId: semesterName,
     startedAt: supportCase.started_at,
     completedAt: supportCase.completed_at,
     createdAt: supportCase.created_at,
