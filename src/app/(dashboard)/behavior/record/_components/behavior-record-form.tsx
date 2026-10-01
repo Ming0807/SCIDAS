@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect } from "react"
+import { useActionState, useEffect, useState } from "react"
 import { Loader2, Save } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -42,6 +42,7 @@ type BehaviorRecordFormProps = {
 
 export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecordFormProps) {
   const router = useRouter()
+  const [isDirty, setIsDirty] = useState(false)
   const [state, formAction, pending] = useActionState<
     ActionResult<{ id: string }> | null,
     FormData
@@ -55,7 +56,7 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
   const today = getTodayBangkok()
 
   return (
-    <form action={formAction} className="w-full">
+    <form action={formAction} onChange={() => setIsDirty(true)} className="w-full">
       <Card className="rounded-2xl border-border shadow-xs">
         <CardHeader>
           <CardTitle>รายละเอียดพฤติกรรม</CardTitle>
@@ -223,6 +224,37 @@ export function BehaviorRecordForm({ students, defaultStudentId }: BehaviorRecor
           </Button>
         </CardFooter>
       </Card>
+
+      {isDirty ? (
+        <div className="sticky bottom-4 z-20 mt-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-card/95 p-3 shadow-lg backdrop-blur-sm sm:px-5">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm font-medium text-foreground">
+              มีข้อมูลพฤติกรรมที่ยังไม่ได้บันทึก
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/behavior")}
+              disabled={pending}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={pending || students.length === 0}
+              className="gap-2"
+            >
+              {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              <span>{pending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</span>
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </form>
   )
 }

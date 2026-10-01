@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { Loader2, Save, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -167,12 +167,40 @@ export function AcademicForm({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [searchTerm, setSearchTerm] = useState("")
-  const [isDirty, setIsDirty] = useState(false)
+  const initialData = useMemo(
+    () => createInitialScoreData(students, subjects, initialScores),
+    [students, subjects, initialScores],
+  )
+  const [savedData, setSavedData] = useState<Record<string, ScoreEntry>>(initialData)
+  const [scoreData, setScoreData] = useState<Record<string, ScoreEntry>>(initialData)
+
+  useEffect(() => {
+    setSavedData(initialData)
+    setScoreData(initialData)
+  }, [initialData])
+
+  const dirtyCount = useMemo(() => {
+    let count = 0
+    for (const key of Object.keys(scoreData)) {
+      const cur = scoreData[key]
+      const init = savedData[key]
+      if (
+        cur &&
+        init &&
+        (cur.classwork_score !== init.classwork_score ||
+          cur.midterm_score !== init.midterm_score ||
+          cur.final_score !== init.final_score ||
+          cur.remark !== init.remark)
+      ) {
+        count++
+      }
+    }
+    return count
+  }, [scoreData, savedData])
+
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false)
   const [result, setResult] = useState<ActionResult<{ count: number }> | null>(null)
-  const [scoreData, setScoreData] = useState<Record<string, ScoreEntry>>(() =>
-    createInitialScoreData(students, subjects, initialScores),
-  )
+  const isDirty = dirtyCount > 0
 
   const analytics = useMemo(() => {
     let totalGradePoints = 0
@@ -250,7 +278,6 @@ export function AcademicForm({
       ...previous,
       [key]: { ...previous[key], [field]: value },
     }))
-    setIsDirty(true)
     setResult(null)
   }
 
@@ -260,7 +287,6 @@ export function AcademicForm({
       ...previous,
       [key]: { ...previous[key], remark: value },
     }))
-    setIsDirty(true)
     setResult(null)
   }
 
@@ -306,7 +332,7 @@ export function AcademicForm({
       try {
         const nextResult = await upsertAcademicScores(currentSemesterId, records)
         setResult(nextResult)
-        if (nextResult.ok) setIsDirty(false)
+        if (nextResult.ok) setSavedData(scoreData)
       } catch {
         setResult({
           ok: false,
@@ -588,6 +614,44 @@ export function AcademicForm({
           </div>
         </>
       )}
+
+      {dirtyCount > 0 ? (
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-card/95 p-3 shadow-lg backdrop-blur-sm sm:px-5">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm font-medium text-foreground">
+              แก้ไขแล้ว {dirtyCount.toLocaleString("th-TH")} รายการ (ยังไม่ได้บันทึก)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setScoreData(savedData)
+                setResult(null)
+              }}
+              disabled={isPending}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isPending}
+              className="gap-2"
+            >
+              {isPending ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
+              ) : (
+                <Save aria-hidden="true" className="size-4" />
+              )}
+              <span>{isPending ? "กำลังบันทึก..." : "บันทึกคะแนน"}</span>
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </form>
 
     <GradePrintableDialog
