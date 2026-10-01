@@ -228,3 +228,126 @@ export async function removeParentAccessAction(
     return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการปิดบัญชีผู้ปกครอง")
   }
 }
+
+const AcknowledgeConsentSchema = z.object({
+  studentId: z.string().uuid("รหัสนักเรียนไม่ถูกต้อง"),
+  targetType: z.enum(["support", "plan"]),
+  targetId: z.string().uuid("รหัสรายการไม่ถูกต้อง"),
+  notes: z.string().trim().max(500).optional(),
+})
+
+export async function acknowledgeParentConsentAction(
+  input: z.infer<typeof AcknowledgeConsentSchema>,
+): Promise<ActionResult<{ acknowledgedAt: string }>> {
+  try {
+    const context = await getCurrentUserContext()
+    if (!context.schoolId || !context.profileId || !context.userId) {
+      return actionFail("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ")
+    }
+
+    const parsed = AcknowledgeConsentSchema.safeParse(input)
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง")
+    }
+
+    const { studentId, targetType, targetId, notes } = parsed.data
+    const supabase = await createClient()
+
+    if (context.role === "parent") {
+      const { data: guardians } = await supabase
+        .from("guardians")
+        .select("id")
+        .eq("school_id", context.schoolId)
+        .eq("user_id", context.userId)
+
+      const guardianIds = (guardians ?? []).map((g) => g.id)
+      if (guardianIds.length === 0) {
+        return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ยืนยันรับทราบสำหรับนักเรียนท่านนี้")
+      }
+
+      const { data: links } = await supabase
+        .from("student_guardians")
+        .select("student_id")
+        .eq("school_id", context.schoolId)
+        .eq("student_id", studentId)
+        .in("guardian_id", guardianIds)
+
+      if (!links || links.length === 0) {
+        return actionFail("FORBIDDEN", "คุณไม่มีสิทธิ์ยืนยันรับทราบสำหรับนักเรียนท่านนี้")
+      }
+    }
+
+    const acknowledgedAt = new Date().toISOString()
+    const sourceTable = targetType === "support" ? "support_records" : "development_plans"
+
+    const { error: actionError } = await supabase.from("action_items").insert({
+      school_id: context.schoolId,
+      student_id: studentId,
+      source_table: sourceTable,
+      source_id: targetId,
+      category: "parent_consent",
+      title: "ผู้ปกครองรับทราบแผนการดูแลและให้ความยินยอม",
+      priority: "medium",
+      status: "completed",
+      completed_at: acknowledgedAt,
+      completed_by: context.profileId,
+      metadata: {
+        parentUserId: context.userId,
+        acknowledgedAt,
+        notes: notes || null,
+        targetType,
+      },
+    })
+
+    if (actionError) {
+      console.error("[parent.actions] acknowledgeParentConsentAction insert error:", actionError)
+      return actionFail("INTERNAL_ERROR", "ไม่สามารถบันทึกการรับทราบได้ กรุณาลองใหม่")
+    }
+
+    if (targetType === "support") {
+      const { data: record } = await supabase
+        .from("support_records")
+        .select("status")
+        .eq("id", targetId)
+        .eq("school_id", context.schoolId)
+        .maybeSingle()
+
+      if (record?.status === "pending") {
+        await supabase
+          .from("support_records")
+          .update({ status: "in_progress", updated_at: acknowledgedAt })
+          .eq("id", targetId)
+          .eq("school_id", context.schoolId)
+      }
+
+      await supabase.from("support_followups").insert({
+        school_id: context.schoolId,
+        support_record_id: targetId,
+        followed_by: context.profileId,
+        followup_date: acknowledgedAt.slice(0, 10),
+        description: `ผู้ปกครองยืนยันรับทราบและยินยอมแผนการช่วยเหลือ${notes ? `: ${notes}` : ""}`,
+      })
+    }
+
+    await logAudit({
+      action: "UPDATE",
+      tableName: sourceTable,
+      recordId: targetId,
+      schoolId: context.schoolId,
+      userId: context.userId,
+      newData: { parentConsent: true, acknowledgedAt },
+    })
+
+    revalidatePath(`/parent/${studentId}`)
+    revalidatePath("/parent")
+    revalidatePath(`/support/${targetId}`)
+    revalidatePath(`/development-plans/${targetId}`)
+
+    return actionOk("บันทึกการรับทราบและยินยอมเรียบร้อยแล้ว", {
+      data: { acknowledgedAt },
+    })
+  } catch (error) {
+    console.error("Error in acknowledgeParentConsentAction:", error)
+    return actionFail("INTERNAL_ERROR", "เกิดข้อผิดพลาดในการบันทึกการรับทราบ")
+  }
+}

@@ -11,6 +11,8 @@ export type ParentChild = {
   photoUrl: string | null
   classroomName: string | null
   relation: string
+  riskLevel?: string
+  riskScore?: number
 }
 
 export type ParentAttendanceRow = {
@@ -36,12 +38,37 @@ export type ParentSupportRow = {
   title: string
   status: string
   startedAt: string | null
+  consentStatus?: "acknowledged" | "pending_ack" | "none"
+  acknowledgedAt?: string | null
 }
 
 export type ParentPlanRow = {
   id: string
   title: string
   status: string
+  consentStatus?: "acknowledged" | "pending_ack" | "none"
+  acknowledgedAt?: string | null
+}
+
+export type ParentTeacherContact = {
+  homeroomTeacher: {
+    name: string
+    phone: string | null
+    email: string | null
+    position: string | null
+  } | null
+  coTeacher: {
+    name: string
+    phone: string | null
+    email: string | null
+    position: string | null
+  } | null
+  schoolContact: {
+    name: string
+    phone: string | null
+    email: string | null
+    address: string | null
+  } | null
 }
 
 export type ParentChildDetail = {
@@ -51,6 +78,7 @@ export type ParentChildDetail = {
   behaviors: ParentBehaviorRow[]
   supportCases: ParentSupportRow[]
   plans: ParentPlanRow[]
+  teacherContact: ParentTeacherContact | null
 }
 
 async function getLinkedStudentIds(
@@ -113,7 +141,7 @@ export async function getParentChildren(): Promise<ParentChild[]> {
       })
     }
 
-    // Enrich classroom names via care profiles (RLS-enforced).
+    // Enrich classroom names and risk levels via care profiles (RLS-enforced).
     const children = [...seen.values()]
     await Promise.all(
       children.map(async (child) => {
@@ -122,6 +150,8 @@ export async function getParentChildren(): Promise<ParentChild[]> {
           if (profile) {
             child.classroomName = profile.classroomName
             if (profile.photoUrl) child.photoUrl = profile.photoUrl
+            child.riskLevel = profile.riskLevel
+            child.riskScore = profile.riskScore
           }
         } catch {
           // Keep the basic row when enrichment fails.
@@ -153,6 +183,9 @@ export async function getParentChildDetail(studentId: string): Promise<ParentChi
       behaviorRes,
       supportRes,
       plansRes,
+      consentRes,
+      enrollmentRes,
+      schoolRes,
     ] = await Promise.all([
       client
         .from("attendance_records")
@@ -189,12 +222,94 @@ export async function getParentChildDetail(studentId: string): Promise<ParentChi
         .eq("student_id", studentId)
         .order("created_at", { ascending: false })
         .limit(10),
+      client
+        .from("action_items")
+        .select("source_table, source_id, completed_at, status")
+        .eq("school_id", context.schoolId)
+        .eq("student_id", studentId)
+        .eq("category", "parent_consent"),
+      client
+        .from("classroom_students")
+        .select(`
+          classroom_id,
+          classrooms (
+            id,
+            name,
+            homeroom_teacher:profiles!classrooms_homeroom_teacher_id_fkey(prefix, first_name, last_name, phone, email, position),
+            co_teacher:profiles!classrooms_co_teacher_id_fkey(prefix, first_name, last_name, phone, email, position)
+          )
+        `)
+        .eq("school_id", context.schoolId)
+        .eq("student_id", studentId)
+        .eq("is_active", true)
+        .maybeSingle(),
+      client
+        .from("schools")
+        .select("name, phone, email, address")
+        .eq("id", context.schoolId)
+        .maybeSingle(),
     ])
 
     type ScoreRow = {
       total_score: number | string | null
       grade: string | null
       classroom_subjects: { subjects: { name: string } | null } | null
+    }
+
+    const consentMap = new Map<string, string>()
+    for (const item of (consentRes.data ?? [])) {
+      if (item.source_id && item.status === "completed") {
+        consentMap.set(item.source_id, item.completed_at ?? new Date().toISOString())
+      }
+    }
+
+    type ProfileMini = {
+      prefix: string | null
+      first_name: string
+      last_name: string
+      phone: string | null
+      email: string | null
+      position: string | null
+    }
+
+    type JoinedClassroom = {
+      id: string
+      name: string
+      homeroom_teacher: ProfileMini | null
+      co_teacher: ProfileMini | null
+    } | null
+
+    const classroom = (enrollmentRes.data?.classrooms as unknown as JoinedClassroom) || null
+    const school = schoolRes.data
+
+    let teacherContact: ParentTeacherContact | null = null
+    if (classroom?.homeroom_teacher || classroom?.co_teacher || school) {
+      teacherContact = {
+        homeroomTeacher: classroom?.homeroom_teacher
+          ? {
+              name: `${classroom.homeroom_teacher.prefix ?? ""}${classroom.homeroom_teacher.first_name} ${classroom.homeroom_teacher.last_name}`.trim(),
+              phone: classroom.homeroom_teacher.phone,
+              email: classroom.homeroom_teacher.email,
+              position: classroom.homeroom_teacher.position ?? "ครูประจำชั้น",
+            }
+          : null,
+        coTeacher: classroom?.co_teacher
+          ? {
+              name: `${classroom.co_teacher.prefix ?? ""}${classroom.co_teacher.first_name} ${classroom.co_teacher.last_name}`.trim(),
+              phone: classroom.co_teacher.phone,
+              email: classroom.co_teacher.email,
+              position: classroom.co_teacher.position ?? "ครูผู้ช่วย/ครูประจำชั้นร่วม",
+            }
+          : null,
+        schoolContact: school
+          ? {
+              name: school.name,
+              phone: school.phone,
+              email: school.email,
+              address: school.address,
+            }
+          : null,
+      }
     }
 
     return {
@@ -214,17 +329,36 @@ export async function getParentChildDetail(studentId: string): Promise<ParentChi
         behaviorType: r.behavior_type,
         description: r.description,
       })),
-      supportCases: (supportRes.data ?? []).map((r) => ({
-        id: r.id,
-        title: r.title,
-        status: r.status,
-        startedAt: r.started_at,
-      })),
-      plans: (plansRes.data ?? []).map((r) => ({
-        id: r.id,
-        title: r.title,
-        status: r.status,
-      })),
+      supportCases: (supportRes.data ?? []).map((r) => {
+        const isAcked = consentMap.has(r.id)
+        return {
+          id: r.id,
+          title: r.title,
+          status: r.status,
+          startedAt: r.started_at,
+          consentStatus: isAcked
+            ? ("acknowledged" as const)
+            : r.status === "pending" || r.status === "in_progress"
+              ? ("pending_ack" as const)
+              : ("none" as const),
+          acknowledgedAt: isAcked ? consentMap.get(r.id) ?? null : null,
+        }
+      }),
+      plans: (plansRes.data ?? []).map((r) => {
+        const isAcked = consentMap.has(r.id)
+        return {
+          id: r.id,
+          title: r.title,
+          status: r.status,
+          consentStatus: isAcked
+            ? ("acknowledged" as const)
+            : r.status === "draft" || r.status === "active"
+              ? ("pending_ack" as const)
+              : ("none" as const),
+          acknowledgedAt: isAcked ? consentMap.get(r.id) ?? null : null,
+        }
+      }),
+      teacherContact,
     }
   } catch {
     return null

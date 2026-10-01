@@ -24,7 +24,11 @@ import { getCurrentUserContext, type AppRole } from "@/lib/server/current-user"
 import { createAdminClient } from "@/lib/server/admin-client"
 import { createClient } from "@/utils/supabase/server"
 
-import { inviteParentAction, removeParentAccessAction } from "./parent.actions"
+import {
+  inviteParentAction,
+  removeParentAccessAction,
+  acknowledgeParentConsentAction,
+} from "./parent.actions"
 
 function mockContext(role: AppRole = "homeroom_teacher", profileId: string | null = "prof-1") {
   vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
@@ -218,6 +222,123 @@ describe("parent.actions", () => {
       })
       expect(result.ok).toBe(true)
       expect(mockDeleteUser).toHaveBeenCalledWith("u-2")
+    })
+  })
+
+  describe("acknowledgeParentConsentAction", () => {
+    const validConsentInput = {
+      studentId: "11111111-1111-4111-a111-111111111111",
+      targetType: "support" as const,
+      targetId: "22222222-2222-4222-a222-222222222222",
+      notes: "ยินยอมให้คุณครูช่วยดูแลเป็นพิเศษ",
+    }
+
+    it("fails with UNAUTHORIZED if not logged in", async () => {
+      vi.mocked(getCurrentUserContext).mockResolvedValueOnce({
+        userId: null as any,
+        schoolId: null as any,
+        role: null as any,
+        profileId: null,
+        studentId: null,
+      })
+
+      const result = await acknowledgeParentConsentAction(validConsentInput)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("UNAUTHORIZED")
+    })
+
+    it("fails with VALIDATION_ERROR for invalid uuid", async () => {
+      mockContext("parent")
+
+      const result = await acknowledgeParentConsentAction({
+        ...validConsentInput,
+        studentId: "invalid-uuid",
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("records consent action_item and updates pending support record", async () => {
+      mockContext("parent", "prof-parent-1")
+
+      const mockInsertAction = vi.fn().mockResolvedValue({ error: null })
+      const mockUpdateSupport = vi.fn().mockResolvedValue({ error: null })
+      const mockInsertFollowup = vi.fn().mockResolvedValue({ error: null })
+
+      const mockClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "guardians") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockResolvedValue({
+                    data: [{ id: "guardian-1" }],
+                    error: null,
+                  }),
+                }),
+              }),
+            }
+          }
+          if (table === "student_guardians") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    in: vi.fn().mockResolvedValue({
+                      data: [{ student_id: validConsentInput.studentId }],
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            }
+          }
+          if (table === "action_items") {
+            return {
+              insert: mockInsertAction,
+            }
+          }
+          if (table === "support_records") {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({
+                      data: { status: "pending" },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+              update: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: mockUpdateSupport,
+                }),
+              }),
+            }
+          }
+          if (table === "support_followups") {
+            return {
+              insert: mockInsertFollowup,
+            }
+          }
+          return {}
+        }),
+      }
+      vi.mocked(createClient).mockResolvedValueOnce(mockClient as never)
+
+      const result = await acknowledgeParentConsentAction(validConsentInput)
+      expect(result.ok).toBe(true)
+      expect(mockInsertAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: "parent_consent",
+          student_id: validConsentInput.studentId,
+          source_id: validConsentInput.targetId,
+          status: "completed",
+        }),
+      )
+      expect(mockUpdateSupport).toHaveBeenCalled()
+      expect(mockInsertFollowup).toHaveBeenCalled()
     })
   })
 })

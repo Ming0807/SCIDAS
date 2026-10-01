@@ -136,6 +136,7 @@ describe("Parent portal", () => {
         behaviors: [],
         supportCases: [],
         plans: [],
+        teacherContact: null,
       })
 
       render(await ParentChildPage({ params: Promise.resolve({ studentId: "stu-1" }) }))
@@ -147,6 +148,67 @@ describe("Parent portal", () => {
       expect(screen.queryByText("บันทึก")).toBeNull()
       expect(screen.queryByText("แก้ไข")).toBeNull()
       expect(screen.queryByText("ลบ")).toBeNull()
+    })
+
+    it("renders teacher contact button and consent acknowledgment affordances", async () => {
+      vi.mocked(getParentChildDetail).mockResolvedValueOnce({
+        profile: {
+          ...profile,
+          riskLevel: "high" as const,
+          riskScore: 65,
+        },
+        attendance: [],
+        scores: [],
+        behaviors: [],
+        supportCases: [
+          {
+            id: "s-1",
+            title: "การให้คำปรึกษาพฤติกรรม",
+            status: "pending",
+            startedAt: null,
+            consentStatus: "pending_ack",
+            acknowledgedAt: null,
+          },
+        ],
+        plans: [
+          {
+            id: "p-1",
+            title: "แผนพัฒนาทักษะการอ่าน",
+            status: "draft",
+            consentStatus: "acknowledged",
+            acknowledgedAt: "2026-09-25",
+          },
+        ],
+        teacherContact: {
+          homeroomTeacher: {
+            name: "ครูมานี สดใส",
+            phone: "0812345678",
+            email: "manee@school.ac.th",
+            position: "ครูประจำชั้น",
+          },
+          coTeacher: null,
+          schoolContact: {
+            name: "โรงเรียนอนุบาลวัดทดสอบ",
+            phone: "021234567",
+            email: "info@school.ac.th",
+            address: "123 กรุงเทพมหานคร",
+          },
+        },
+      })
+
+      render(await ParentChildPage({ params: Promise.resolve({ studentId: "stu-1" }) }))
+
+      // Teacher contact button is present in header
+      expect(screen.getByText("ติดต่อครูประจำชั้น")).toBeInTheDocument()
+
+      // High risk empathetic guidance banner is rendered
+      expect(screen.getByText("ความร่วมมือในการดูแลนักเรียน")).toBeInTheDocument()
+
+      // Pending consent acknowledgment button
+      expect(screen.getByText("ยืนยันรับทราบ")).toBeInTheDocument()
+
+      // Acknowledged badge
+      expect(screen.getByText(/รับทราบแล้ว/)).toBeInTheDocument()
     })
   })
 })

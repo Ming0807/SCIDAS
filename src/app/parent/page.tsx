@@ -1,10 +1,15 @@
 import Link from "next/link"
 import { ChevronRight, Users } from "lucide-react"
 
-import { PageHeader, PageShell } from "@/components/dashboard"
+import { PageHeader, PageShell, StatusBadge } from "@/components/dashboard"
 import { StudentIdentity } from "@/components/dashboard"
 import { EmptyState } from "@/components/feedback"
 import { getParentChildren } from "@/lib/server/parent-read-models"
+import {
+  getStudentRiskLabel,
+  getStudentRiskTone,
+} from "@/lib/student-care-formatters"
+import { cn } from "@/lib/utils"
 
 const relationLabels: Record<string, string> = {
   father: "บิดา",
@@ -39,29 +44,44 @@ export default async function ParentHomePage() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {children.map((child) => (
-            <Link
-              key={child.studentId}
-              href={`/parent/${child.studentId}`}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-primary/40"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <StudentIdentity
-                  avatarUrl={child.photoUrl ?? ""}
-                  name={child.fullName}
-                  studentCode={child.studentCode}
-                  classroom={child.classroomName ?? undefined}
-                  status="neutral"
-                  statusLabel={relationLabels[child.relation] ?? "ผู้ปกครอง"}
-                  size="sm"
-                />
-              </div>
-              <span className="flex shrink-0 items-center gap-2">
-                <Users aria-hidden="true" className="size-4 text-muted-foreground" />
-                <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
-              </span>
-            </Link>
-          ))}
+          {children.map((child) => {
+            const riskTone = getStudentRiskTone(child.riskLevel ?? "normal")
+            const riskLabel = getStudentRiskLabel(child.riskLevel ?? "normal")
+
+            return (
+              <Link
+                key={child.studentId}
+                href={`/parent/${child.studentId}`}
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-xl border border-border p-4 text-card-foreground shadow-sm transition-colors hover:border-primary/40",
+                  riskTone === "danger"
+                    ? "border-l-4 border-l-rose-500 bg-rose-50/15 dark:bg-rose-950/10"
+                    : riskTone === "watch"
+                      ? "border-l-4 border-l-amber-500 bg-amber-50/15 dark:bg-amber-950/10"
+                      : "border-l-4 border-l-emerald-500 bg-card",
+                )}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <StudentIdentity
+                    avatarUrl={child.photoUrl ?? ""}
+                    name={child.fullName}
+                    studentCode={child.studentCode}
+                    classroom={child.classroomName ?? undefined}
+                    status={riskTone}
+                    statusLabel={relationLabels[child.relation] ?? "ผู้ปกครอง"}
+                    size="sm"
+                  />
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <StatusBadge status={riskTone} label={riskLabel} size="sm" />
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Users aria-hidden="true" className="size-4" />
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       )}
 
